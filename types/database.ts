@@ -3,6 +3,7 @@ export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 export type Creator = {
   id: string;
   name: string;
+  username: string | null;
   contact: string | null;
   notes: string | null;
   platform: string;
@@ -138,6 +139,7 @@ export type Database = {
         Insert: {
           id?: string;
           name: string;
+          username?: string | null;
           contact?: string | null;
           notes?: string | null;
           platform?: string;
@@ -148,6 +150,7 @@ export type Database = {
         Update: {
           id?: string;
           name?: string;
+          username?: string | null;
           contact?: string | null;
           notes?: string | null;
           platform?: string;

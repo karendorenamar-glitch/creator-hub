@@ -28,6 +28,7 @@ type CreatorFormState = Omit<CreatorInput, "fee">;
 
 const emptyForm: CreatorFormState = {
   name: "",
+  username: "",
   contact: "",
   notes: "",
   platform: "YouTube",
@@ -53,6 +54,7 @@ export function CreatorFormModal({
     if (creator) {
       setForm({
         name: creator.name,
+        username: creator.username ?? "",
         contact: creator.contact ?? "",
         notes: creator.notes ?? "",
         platform: creator.platform,
@@ -82,6 +84,7 @@ export function CreatorFormModal({
 
     return {
       name: form.name,
+      username: form.username,
       contact: form.contact,
       notes: form.notes,
       platform: form.platform,
@@ -96,6 +99,11 @@ export function CreatorFormModal({
 
     if (!form.name.trim()) {
       setError("Name is required.");
+      return;
+    }
+
+    if (!form.username.trim()) {
+      setError("TikTok username is required.");
       return;
     }
 
@@ -146,6 +154,18 @@ export function CreatorFormModal({
             onChange={(event) => handleChange("name", event.target.value)}
             className={inputClassName}
             placeholder="Creator name"
+            required
+          />
+        </FormField>
+
+        <FormField label="TikTok Username" htmlFor="creator-username">
+          <input
+            id="creator-username"
+            name="username"
+            value={form.username}
+            onChange={(event) => handleChange("username", event.target.value)}
+            className={inputClassName}
+            placeholder="@username"
             required
           />
         </FormField>

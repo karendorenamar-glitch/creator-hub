@@ -1,12 +1,21 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { parseIDRInput, validateCreatorFee } from "@/lib/utils";
+import {
+  CREATOR_ALREADY_EXISTS_ERROR,
+  CREATOR_NAME_EXISTS_ERROR,
+  normalizeCreatorContact,
+  normalizeCreatorName,
+  normalizeCreatorUsername,
+  parseIDRInput,
+  validateCreatorFee,
+} from "@/lib/utils";
 import { revalidateCreatorDetail, revalidateCreatorHub } from "@/lib/revalidate";
 import type { Creator } from "@/types/database";
 
 export type CreatorInput = {
   name: string;
+  username: string;
   contact: string;
   notes: string;
   platform: string;
@@ -16,6 +25,7 @@ export type CreatorInput = {
 
 type CreatorWritePayload = {
   name: string;
+  username: string;
   contact: string | null;
   notes: string | null;
   platform: string;
@@ -30,14 +40,25 @@ function buildCreatorPayload(input: CreatorInput) {
     return { error: feeResult.error ?? "Fee is required." };
   }
 
+  const username = normalizeCreatorUsername(input.username);
+
+  if (!username) {
+    return { error: "TikTok username is required." };
+  }
+
   const payload: CreatorWritePayload = {
-    name: input.name.trim(),
-    contact: input.contact.trim() || null,
+    name: normalizeCreatorName(input.name),
+    username,
+    contact: normalizeCreatorContact(input.contact),
     notes: input.notes.trim() || null,
     platform: input.platform.trim(),
     followers: parseIDRInput(input.followers),
     fee: feeResult.fee,
   };
+
+  if (!payload.name) {
+    return { error: "Name is required." };
+  }
 
   return { payload };
 }
@@ -52,7 +73,69 @@ function mapCreatorRow(
 }
 
 const creatorSelect =
-  "id, name, contact, notes, platform, followers, fee, created_at";
+  "id, name, username, contact, notes, platform, followers, fee, created_at";
+
+function isUniqueViolation(message: string, code?: string | null) {
+  return (
+    code === "23505" ||
+    message.toLowerCase().includes("duplicate key") ||
+    message.toLowerCase().includes("creators_name_contact_unique")
+  );
+}
+
+function duplicateCreatorError(contact: string | null) {
+  return contact ? CREATOR_ALREADY_EXISTS_ERROR : CREATOR_NAME_EXISTS_ERROR;
+}
+
+async function findDuplicateCreator(
+  name: string,
+  contact: string | null,
+  excludeId?: string,
+) {
+  const supabase = await createClient();
+
+  if (contact) {
+    let query = supabase
+      .from("creators")
+      .select("id")
+      .eq("name", name)
+      .eq("contact", contact);
+
+    if (excludeId) {
+      query = query.neq("id", excludeId);
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    if (data) {
+      return { error: CREATOR_ALREADY_EXISTS_ERROR };
+    }
+
+    return {};
+  }
+
+  let query = supabase.from("creators").select("id").eq("name", name);
+
+  if (excludeId) {
+    query = query.neq("id", excludeId);
+  }
+
+  const { data, error } = await query.limit(1);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (data?.length) {
+    return { error: CREATOR_NAME_EXISTS_ERROR };
+  }
+
+  return {};
+}
 
 type CreatorDeleteBlockers = {
   videoCount: number;
@@ -141,6 +224,15 @@ export async function createCreator(input: CreatorInput) {
     return { error: parsed.error };
   }
 
+  const duplicate = await findDuplicateCreator(
+    parsed.payload.name,
+    parsed.payload.contact,
+  );
+
+  if (duplicate.error) {
+    return { error: duplicate.error };
+  }
+
   const { data: created, error: insertError } = await supabase
     .from("creators")
     .insert(parsed.payload)
@@ -148,6 +240,10 @@ export async function createCreator(input: CreatorInput) {
     .maybeSingle();
 
   if (insertError) {
+    if (isUniqueViolation(insertError.message, insertError.code)) {
+      return { error: duplicateCreatorError(parsed.payload.contact) };
+    }
+
     return { error: insertError.message };
   }
 
@@ -179,10 +275,21 @@ export async function updateCreator(id: string, input: CreatorInput) {
 
   const payload = parsed.payload;
 
+  const duplicate = await findDuplicateCreator(
+    payload.name,
+    payload.contact,
+    id,
+  );
+
+  if (duplicate.error) {
+    return { error: duplicate.error };
+  }
+
   const { data: updated, error: updateError } = await supabase
     .from("creators")
     .update({
       name: payload.name,
+      username: payload.username,
       contact: payload.contact,
       notes: payload.notes,
       platform: payload.platform,
@@ -194,6 +301,10 @@ export async function updateCreator(id: string, input: CreatorInput) {
     .maybeSingle();
 
   if (updateError) {
+    if (isUniqueViolation(updateError.message, updateError.code)) {
+      return { error: duplicateCreatorError(payload.contact) };
+    }
+
     return { error: updateError.message };
   }
 

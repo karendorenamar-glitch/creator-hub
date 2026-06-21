@@ -54,7 +54,7 @@ export async function getCreators(search?: string): Promise<Creator[]> {
   const supabase = await createClient();
   let query = supabase
     .from("creators")
-    .select("id, name, contact, notes, platform, followers, fee, created_at")
+    .select("id, name, username, contact, notes, platform, followers, fee, created_at")
     .order("created_at", { ascending: false });
 
   if (search?.trim()) {
@@ -78,7 +78,7 @@ export async function getCreatorById(id: string): Promise<CreatorDetail | null> 
 
   const { data: creator, error } = await supabase
     .from("creators")
-    .select("id, name, contact, notes, platform, followers, fee, created_at")
+    .select("id, name, username, contact, notes, platform, followers, fee, created_at")
     .eq("id", id)
     .maybeSingle();
 

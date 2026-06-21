@@ -3,6 +3,7 @@
 create table if not exists public.creators (
   id uuid primary key default gen_random_uuid(),
   name text not null,
+  username text,
   contact text,
   notes text,
   platform text not null default 'YouTube',
@@ -10,6 +11,12 @@ create table if not exists public.creators (
   fee numeric(15, 2) not null default 0,
   created_at timestamptz not null default now()
 );
+
+create unique index if not exists creators_name_contact_unique
+  on public.creators (
+    lower(trim(name)),
+    lower(trim(coalesce(contact, '')))
+  );
 
 create table if not exists public.videos (
   id uuid primary key default gen_random_uuid(),

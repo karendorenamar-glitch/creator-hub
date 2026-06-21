@@ -1,5 +1,29 @@
 export const MIN_CREATOR_FEE = 0;
 
+export const CREATOR_ALREADY_EXISTS_ERROR = "Creator already exists.";
+export const CREATOR_NAME_EXISTS_ERROR =
+  "A creator with this name already exists. Please add a contact number to differentiate.";
+
+export function normalizeCreatorName(value: string | null | undefined): string {
+  return String(value ?? "").trim();
+}
+
+export function normalizeCreatorContact(
+  value: string | null | undefined,
+): string | null {
+  const trimmed = String(value ?? "").trim();
+  return trimmed || null;
+}
+
+export function normalizeCreatorUsername(
+  value: string | null | undefined,
+): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/^@+/, "")
+    .toLowerCase();
+}
+
 export function parseIDRInput(value: string | number | null | undefined): number {
   if (typeof value === "number") {
     return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;
