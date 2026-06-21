@@ -1,0 +1,144 @@
+"use client";
+
+import { Pencil, Trash2 } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
+import type { VideoWithCreator } from "@/types/database";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableElement,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+  EmptyState,
+} from "@/components/ui/data-table";
+
+type VideosTableProps = {
+  videos: VideoWithCreator[];
+  onEdit: (video: VideoWithCreator) => void;
+  onDelete: (video: VideoWithCreator) => void;
+  onRefresh: (video: VideoWithCreator) => void;
+  refreshingId: string | null;
+  isRefreshingAll: boolean;
+};
+
+export function VideosTable({
+  videos,
+  onEdit,
+  onDelete,
+  onRefresh,
+  refreshingId,
+  isRefreshingAll,
+}: VideosTableProps) {
+  if (videos.length === 0) {
+    return (
+      <DataTable>
+        <EmptyState
+          title="No videos yet"
+          description="Add your first video to start tracking performance."
+        />
+      </DataTable>
+    );
+  }
+
+  return (
+    <DataTable>
+      <DataTableElement>
+        <DataTableHead>
+          <DataTableHeaderCell>Video URL</DataTableHeaderCell>
+          <DataTableHeaderCell>Creator</DataTableHeaderCell>
+          <DataTableHeaderCell className="text-right">Views</DataTableHeaderCell>
+          <DataTableHeaderCell className="text-right">Likes</DataTableHeaderCell>
+          <DataTableHeaderCell className="text-right">
+            Comments
+          </DataTableHeaderCell>
+          <DataTableHeaderCell className="text-right">Shares</DataTableHeaderCell>
+          <DataTableHeaderCell className="text-right">Saves</DataTableHeaderCell>
+          <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+        </DataTableHead>
+        <DataTableBody>
+          {videos.map((video) => (
+            <DataTableRow key={video.id}>
+              <DataTableCell className="max-w-xs">
+                <a
+                  href={video.video_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block truncate font-medium text-indigo-600 hover:text-indigo-500"
+                >
+                  {video.video_url}
+                </a>
+              </DataTableCell>
+              <DataTableCell>
+                <div>
+                  <p className="font-medium text-slate-900">
+                    {video.creators?.name ?? "Unknown"}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {video.creators?.platform ?? "—"}
+                  </p>
+                </div>
+              </DataTableCell>
+              <DataTableCell className="text-right">
+                {formatNumber(video.views)}
+              </DataTableCell>
+              <DataTableCell className="text-right">
+                {formatNumber(video.likes)}
+              </DataTableCell>
+              <DataTableCell className="text-right">
+                {formatNumber(video.comments)}
+              </DataTableCell>
+              <DataTableCell className="text-right">
+                {formatNumber(video.shares)}
+              </DataTableCell>
+              <DataTableCell className="text-right">
+                {formatNumber(video.saves)}
+              </DataTableCell>
+              <DataTableCell className="text-right">
+                <div className="flex justify-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onRefresh(video)}
+                    disabled={
+                      isRefreshingAll ||
+                      (refreshingId !== null && refreshingId !== video.id)
+                    }
+                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    aria-label={`Refresh metrics for ${video.video_url}`}
+                  >
+                    <span
+                      className={
+                        refreshingId === video.id || isRefreshingAll
+                          ? "inline-block animate-spin"
+                          : undefined
+                      }
+                    >
+                      🔄
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onEdit(video)}
+                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                    aria-label={`Edit ${video.video_url}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete(video)}
+                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                    aria-label={`Delete ${video.video_url}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </DataTableCell>
+            </DataTableRow>
+          ))}
+        </DataTableBody>
+      </DataTableElement>
+    </DataTable>
+  );
+}
