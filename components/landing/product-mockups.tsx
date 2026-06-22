@@ -27,7 +27,7 @@ export function ProductMockupFrame({
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
         </div>
         <div className="mx-auto truncate rounded-md bg-white px-3 py-1 text-[11px] text-slate-400 ring-1 ring-slate-200">
-          app.kefoo.io/{title}
+          kefoo.tech/{title}
         </div>
       </div>
       <div className="bg-slate-50">{children}</div>
@@ -37,7 +37,7 @@ export function ProductMockupFrame({
 
 export function DashboardMockup() {
   return (
-    <ProductMockupFrame title="reporting">
+    <ProductMockupFrame title="dashboard">
       <div className="p-4 sm:p-6">
         <div className="mb-4 border-b border-slate-200 pb-4">
           <p className="text-lg font-semibold tracking-tight text-slate-900">

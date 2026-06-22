@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://kefoo.tech"),
   title: "KEFOO",
   description:
     "Run creator campaigns without spreadsheets. Manage creators, content plans, campaign deliverables, and reporting in one Creator Campaign OS.",

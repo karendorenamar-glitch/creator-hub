@@ -30,7 +30,7 @@ export function CTAFooter() {
                   Join Kefoo today and make every creator decision count.
                 </p>
                 <div className="mt-10 flex justify-center">
-                  <GradientButton href="mailto:hello@kefoo.io?subject=Early%20Access%20Request" size="lg">
+                  <GradientButton href="mailto:hello@kefoo.tech?subject=Early%20Access%20Request" size="lg">
                     Request Early Access
                     <ArrowRight className="h-5 w-5" />
                   </GradientButton>

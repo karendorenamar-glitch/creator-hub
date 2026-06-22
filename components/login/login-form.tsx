@@ -61,7 +61,7 @@ export function LoginForm() {
         <div className="rounded-[24px] border border-white/[0.08] bg-white/[0.03] p-8 shadow-[0_0_60px_-20px_rgba(168,85,247,0.25)] backdrop-blur-xl sm:p-10">
           <div className="mb-8">
             <h2 className="text-2xl font-bold tracking-tight text-white">
-              Welcome back
+              Welcome back 👋
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-slate-400">
               Sign in to manage creators, track campaign performance, and run

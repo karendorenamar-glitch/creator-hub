@@ -11,6 +11,7 @@ import {
   GradientText,
   fadeUpVariants,
 } from "@/components/landing/landing-shared";
+import { CreatorAvatarGraphic, KarenAvatar } from "@/components/landing/creator-avatars";
 import { cn } from "@/lib/utils";
 
 const benefits = [
@@ -126,9 +127,7 @@ export function Hero() {
                 </div>
 
                 <div className="mb-6 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-sm font-bold text-white">
-                    KD
-                  </div>
+                  <CreatorAvatarGraphic Avatar={KarenAvatar} className="h-11 w-11" />
                   <div>
                     <p className="font-semibold text-white">Karen Dorena</p>
                     <p className="text-sm text-slate-500">@karendorena</p>
