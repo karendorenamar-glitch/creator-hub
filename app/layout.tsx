@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Creator Hub",
-  description: "Modern SaaS dashboard for managing creators and video analytics",
+  title: "KEFOO",
+  description:
+    "Run creator campaigns without spreadsheets. Manage creators, content plans, campaign deliverables, and reporting in one Creator Campaign OS.",
 };
 
 export default function RootLayout({

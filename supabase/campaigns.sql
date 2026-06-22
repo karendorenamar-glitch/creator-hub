@@ -3,7 +3,7 @@
 create table if not exists public.campaigns (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  brand_name text not null,
+  client_name text not null,
   start_date date not null,
   end_date date not null,
   budget numeric(12, 2) not null default 0,

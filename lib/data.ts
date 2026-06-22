@@ -5,6 +5,11 @@ import {
   type CampaignVideoMetrics,
 } from "@/lib/campaign-analytics";
 import {
+  buildDashboardWorkspaceAnalytics,
+  emptyDashboardWorkspaceAnalytics,
+  parseDashboardVideo,
+} from "@/lib/dashboard-analytics";
+import {
   buildDashboardMonthOptions,
   getCurrentMonthKey,
   getMonthDateRange,
@@ -12,14 +17,23 @@ import {
   type DashboardMonthValue,
   type DashboardPlatformValue,
 } from "@/lib/dashboard-month-filter";
+import { enrichPayout } from "@/lib/payouts";
+import { normalizeProofUrl } from "@/lib/payout-invoice";
 import { calculateEngagementRateFromTotals, parseIDRInput } from "@/lib/utils";
+import { buildCampaignSummaries } from "@/lib/campaigns";
 import type {
   CampaignDetail,
   CampaignListItem,
   Campaign,
+  CampaignOption,
+  CampaignSummary,
+  ContentPlannerAgency,
   Creator,
   CreatorDetail,
   DashboardStats,
+  Payout,
+  PayoutStatus,
+  PayoutWithTiming,
   VideoWithCreator,
 } from "@/types/database";
 
@@ -54,7 +68,7 @@ export async function getCreators(search?: string): Promise<Creator[]> {
   const supabase = await createClient();
   let query = supabase
     .from("creators")
-    .select("id, name, username, contact, notes, platform, followers, fee, created_at")
+    .select("id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_at")
     .order("created_at", { ascending: false });
 
   if (search?.trim()) {
@@ -78,7 +92,7 @@ export async function getCreatorById(id: string): Promise<CreatorDetail | null> 
 
   const { data: creator, error } = await supabase
     .from("creators")
-    .select("id, name, username, contact, notes, platform, followers, fee, created_at")
+    .select("id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_at")
     .eq("id", id)
     .maybeSingle();
 
@@ -99,7 +113,7 @@ export async function getCreatorById(id: string): Promise<CreatorDetail | null> 
       .order("views", { ascending: false }),
     supabase
       .from("campaign_creators")
-      .select("campaigns(id, name, brand_name, status)")
+      .select("campaigns(id, name, client_name, status)")
       .eq("creator_id", id),
   ]);
 
@@ -110,7 +124,7 @@ export async function getCreatorById(id: string): Promise<CreatorDetail | null> 
 
   const campaigns = (campaignsResult.data ?? [])
     .map((row) => row.campaigns)
-    .filter((campaign): campaign is Pick<Campaign, "id" | "name" | "brand_name" | "status"> =>
+    .filter((campaign): campaign is Pick<Campaign, "id" | "name" | "client_name" | "status"> =>
       Boolean(campaign),
     );
 
@@ -286,10 +300,20 @@ export async function getCampaignById(
   const creatorFees = Object.fromEntries(
     creators.map((creator) => [creator.id, creator.fee]),
   );
+  const contentVideos = videos.map((video) => ({
+    video_url: video.video_url,
+    views: video.views,
+    likes: video.likes,
+    comments: video.comments,
+    shares: video.shares,
+    saves: video.saves,
+    creators: video.creators,
+  }));
   const analytics = calculateCampaignAnalytics(
     videoMetrics,
     budget,
     creatorFees,
+    contentVideos,
   );
 
   return {
@@ -301,8 +325,111 @@ export async function getCampaignById(
   };
 }
 
+export async function getCampaignOptions(): Promise<CampaignOption[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("campaigns")
+    .select("id, name")
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("Failed to fetch campaign options:", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+export async function getCampaignSummaries(): Promise<CampaignSummary[]> {
+  const supabase = await createClient();
+
+  const { data: campaigns, error } = await supabase
+    .from("campaigns")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch campaigns:", error.message);
+    return [];
+  }
+
+  if (!campaigns?.length) {
+    return [];
+  }
+
+  const campaignIds = campaigns.map((campaign) => campaign.id);
+
+  const [creatorsResult, videosResult] = await Promise.all([
+    supabase
+      .from("campaign_creators")
+      .select("campaign_id")
+      .in("campaign_id", campaignIds),
+    supabase
+      .from("campaign_videos")
+      .select("campaign_id")
+      .in("campaign_id", campaignIds),
+  ]);
+
+  const creatorCounts = (creatorsResult.data ?? []).reduce<Record<string, number>>(
+    (acc, row) => {
+      acc[row.campaign_id] = (acc[row.campaign_id] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  const videoCounts = (videosResult.data ?? []).reduce<Record<string, number>>(
+    (acc, row) => {
+      acc[row.campaign_id] = (acc[row.campaign_id] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
+
+  return buildCampaignSummaries(
+    campaigns.map((campaign) => ({
+      ...campaign,
+      budget: Number(campaign.budget),
+    })),
+    creatorCounts,
+    videoCounts,
+  );
+}
+
+export async function getContentPlannerItemsByCampaignId(
+  campaignId: string,
+): Promise<ContentPlannerAgency[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("content_planner_agency")
+    .select(
+      "id, user_id, content_pillar, content_idea, hook, creator_names, campaign_id, planned_date, inspiration_url, platform, status, created_at",
+    )
+    .eq("user_id", user.id)
+    .eq("campaign_id", campaignId)
+    .order("planned_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch campaign content planner items:", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
+
 const emptyDashboardStats = (): DashboardStats => ({
-  totalCampaigns: 0,
+  activeCampaigns: 0,
   totalBudget: 0,
   totalCampaignViews: 0,
   averageEngagementRate: 0,
@@ -310,6 +437,7 @@ const emptyDashboardStats = (): DashboardStats => ({
   topCreator: null,
   highestErCreator: null,
   mostEfficientCreator: null,
+  workspace: emptyDashboardWorkspaceAnalytics(),
 });
 
 export async function getDashboardMonthOptions() {
@@ -329,13 +457,46 @@ export async function getDashboardMonthOptions() {
   );
 }
 
+export async function getDashboardCampaignOptions(
+  monthFilter: DashboardMonthValue = getCurrentMonthKey(),
+): Promise<{ id: string; name: string }[]> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("campaigns")
+    .select("id, name, start_date")
+    .eq("status", "active")
+    .order("name", { ascending: true });
+
+  if (monthFilter !== "all") {
+    const { start, end } = getMonthDateRange(monthFilter);
+    query = query.gte("start_date", start).lte("start_date", end);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Failed to fetch dashboard campaign options:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((campaign) => ({
+    id: campaign.id,
+    name: campaign.name,
+  }));
+}
+
 export async function getDashboardStats(
   monthFilter: DashboardMonthValue = getCurrentMonthKey(),
   platformFilter: DashboardPlatformValue = "all",
+  campaignFilter: string = "all",
 ): Promise<DashboardStats> {
   const supabase = await createClient();
 
-  let campaignsQuery = supabase.from("campaigns").select("id, budget, start_date");
+  let campaignsQuery = supabase
+    .from("campaigns")
+    .select("id, name, budget, start_date")
+    .eq("status", "active");
 
   if (monthFilter !== "all") {
     const { start, end } = getMonthDateRange(monthFilter);
@@ -357,16 +518,22 @@ export async function getDashboardStats(
 
   const campaignIds = campaigns.map((campaign) => campaign.id);
 
-  const [videosResult, creatorsResult] = await Promise.all([
+  const [videosResult, creatorsResult, plannerResult] = await Promise.all([
     supabase
       .from("campaign_videos")
       .select(
-        "campaign_id, videos(views, likes, comments, shares, saves, creator_id, creators(name, platform))",
+        "campaign_id, videos(id, title, views, likes, comments, shares, saves, creator_id, created_at, creators(name, platform))",
       )
       .in("campaign_id", campaignIds),
     supabase
       .from("campaign_creators")
       .select("campaign_id, creator_id, creators(id, fee, platform)")
+      .in("campaign_id", campaignIds),
+    supabase
+      .from("content_planner_agency")
+      .select(
+        "id, user_id, content_pillar, content_idea, hook, creator_names, campaign_id, planned_date, inspiration_url, platform, status, created_at",
+      )
       .in("campaign_id", campaignIds),
   ]);
 
@@ -419,12 +586,21 @@ export async function getDashboardStats(
     return emptyDashboardStats();
   }
 
-  const filteredCampaignIds = new Set(
-    filteredCampaigns.map((campaign) => campaign.id),
+  const scopedCampaigns =
+    campaignFilter === "all"
+      ? filteredCampaigns
+      : filteredCampaigns.filter((campaign) => campaign.id === campaignFilter);
+
+  if (!scopedCampaigns.length) {
+    return emptyDashboardStats();
+  }
+
+  const scopedCampaignIds = new Set(
+    scopedCampaigns.map((campaign) => campaign.id),
   );
 
   const campaignVideos = videosByCampaign
-    .filter((row) => filteredCampaignIds.has(row.campaignId))
+    .filter((row) => scopedCampaignIds.has(row.campaignId))
     .filter((row) =>
       matchesDashboardPlatform(row.metrics.creators?.platform, platformFilter),
     )
@@ -432,7 +608,7 @@ export async function getDashboardStats(
 
   const creatorFees = (creatorsResult.data ?? []).reduce<Record<string, number>>(
     (acc, row) => {
-      if (!filteredCampaignIds.has(row.campaign_id)) {
+      if (!scopedCampaignIds.has(row.campaign_id)) {
         return acc;
       }
 
@@ -457,7 +633,7 @@ export async function getDashboardStats(
     {},
   );
 
-  const totalBudget = filteredCampaigns.reduce(
+  const totalBudget = scopedCampaigns.reduce(
     (sum, campaign) => sum + Number(campaign.budget),
     0,
   );
@@ -468,8 +644,76 @@ export async function getDashboardStats(
     creatorFees,
   );
 
+  const dashboardVideos = (videosResult.data ?? [])
+    .map((row) => parseDashboardVideo(row.campaign_id, row.videos))
+    .filter((video): video is NonNullable<typeof video> => Boolean(video))
+    .filter((video) => scopedCampaignIds.has(video.campaign_id))
+    .filter((video) =>
+      matchesDashboardPlatform(video.creators?.platform, platformFilter),
+    );
+
+  const plannerItems = (plannerResult.data ?? []) as ContentPlannerAgency[];
+
+  const workspaceCampaigns =
+    campaignFilter === "all"
+      ? filteredCampaigns.map((campaign) => ({
+          id: campaign.id,
+          name: campaign.name,
+          budget: Number(campaign.budget),
+        }))
+      : scopedCampaigns.map((campaign) => ({
+          id: campaign.id,
+          name: campaign.name,
+          budget: Number(campaign.budget),
+        }));
+
+  const campaignComparisonVideos =
+    campaignFilter === "all"
+      ? (videosResult.data ?? [])
+          .map((row) => parseDashboardVideo(row.campaign_id, row.videos))
+          .filter((video): video is NonNullable<typeof video> => Boolean(video))
+          .filter((video) => qualifyingCampaignIds.has(video.campaign_id))
+          .filter((video) =>
+            matchesDashboardPlatform(video.creators?.platform, platformFilter),
+          )
+      : dashboardVideos;
+
+  let monthlyComparisonVideos: typeof dashboardVideos = [];
+
+  if (campaignFilter !== "all") {
+    const { data: monthlyVideosResult, error: monthlyVideosError } =
+      await supabase
+        .from("campaign_videos")
+        .select(
+          "campaign_id, videos(id, title, views, likes, comments, shares, saves, creator_id, created_at, creators(name, platform))",
+        )
+        .eq("campaign_id", campaignFilter);
+
+    if (monthlyVideosError) {
+      console.error(
+        "Failed to fetch monthly campaign videos:",
+        monthlyVideosError.message,
+      );
+    } else {
+      monthlyComparisonVideos = (monthlyVideosResult ?? [])
+        .map((row) => parseDashboardVideo(row.campaign_id, row.videos))
+        .filter((video): video is NonNullable<typeof video> => Boolean(video))
+        .filter((video) =>
+          matchesDashboardPlatform(video.creators?.platform, platformFilter),
+        );
+    }
+  }
+
+  const workspace = buildDashboardWorkspaceAnalytics(
+    workspaceCampaigns,
+    campaignFilter === "all" ? campaignComparisonVideos : dashboardVideos,
+    creatorFees,
+    plannerItems,
+    monthlyComparisonVideos,
+  );
+
   return {
-    totalCampaigns: filteredCampaigns.length,
+    activeCampaigns: scopedCampaigns.length,
     totalBudget,
     totalCampaignViews: analytics.total_views,
     averageEngagementRate: analytics.engagement_rate,
@@ -495,5 +739,88 @@ export async function getDashboardStats(
           cpv: analytics.most_efficient_creator.cpv,
         }
       : null,
+    workspace,
   };
+}
+
+export async function getContentPlannerItems(): Promise<ContentPlannerAgency[]> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("content_planner_agency")
+    .select(
+      "id, user_id, content_pillar, content_idea, hook, creator_names, campaign_id, planned_date, inspiration_url, platform, status, created_at",
+    )
+    .eq("user_id", user.id)
+    .order("planned_date", { ascending: true, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch content planner items:", error.message);
+    return [];
+  }
+
+  return data ?? [];
+}
+
+function mapPayoutRow(row: {
+  id: string;
+  creator_id: string;
+  campaign_id: string | null;
+  amount: number | string;
+  status: string;
+  requested_at: string;
+  due_date: string;
+  payment_term_days: number;
+  notes: string;
+  proof_url: string | null;
+  created_at: string;
+  creators: Pick<Creator, "name"> | Pick<Creator, "name">[] | null;
+  campaigns: Pick<Campaign, "name"> | Pick<Campaign, "name">[] | null;
+}): Payout {
+  const creators = Array.isArray(row.creators) ? row.creators[0] : row.creators;
+  const campaigns = Array.isArray(row.campaigns) ? row.campaigns[0] : row.campaigns;
+
+  return {
+    id: row.id,
+    creator_id: row.creator_id,
+    campaign_id: row.campaign_id,
+    amount: Number(row.amount),
+    status: row.status as PayoutStatus,
+    requested_at: row.requested_at,
+    due_date: row.due_date,
+    payment_term_days: row.payment_term_days,
+    notes: row.notes,
+    proof_url: normalizeProofUrl(row.proof_url),
+    created_at: row.created_at,
+    creators: creators ?? null,
+    campaigns: campaigns ?? null,
+  };
+}
+
+export async function getPayouts(): Promise<PayoutWithTiming[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("payouts")
+    .select(
+      "id, creator_id, campaign_id, amount, status, requested_at, due_date, payment_term_days, notes, proof_url, created_at, creators(name), campaigns(name)",
+    )
+    .order("due_date", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Failed to fetch payouts:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row) => enrichPayout(mapPayoutRow(row)));
 }

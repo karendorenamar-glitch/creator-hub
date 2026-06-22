@@ -90,7 +90,7 @@ export function CampaignsTable({
                   />
                 </div>
               </DataTableCell>
-              <DataTableCell>{campaign.brand_name}</DataTableCell>
+              <DataTableCell>{campaign.client_name}</DataTableCell>
               <DataTableCell>
                 <CampaignStatusBadge status={campaign.status} />
               </DataTableCell>

@@ -9,9 +9,16 @@ import {
   type DashboardPlatformValue,
 } from "@/lib/dashboard-month-filter";
 
+type DashboardCampaignOption = {
+  id: string;
+  name: string;
+};
+
 type DashboardFiltersProps = {
   selectedMonth: DashboardMonthValue;
   selectedPlatform: DashboardPlatformValue;
+  selectedCampaign: string;
+  campaigns: DashboardCampaignOption[];
   currentMonth: DashboardMonthValue;
   previousMonths: DashboardMonthValue[];
 };
@@ -19,6 +26,8 @@ type DashboardFiltersProps = {
 export function DashboardFilters({
   selectedMonth,
   selectedPlatform,
+  selectedCampaign,
+  campaigns,
   currentMonth,
   previousMonths,
 }: DashboardFiltersProps) {
@@ -29,10 +38,12 @@ export function DashboardFilters({
   function updateFilters(updates: {
     month?: DashboardMonthValue;
     platform?: DashboardPlatformValue;
+    campaign?: string;
   }) {
     const params = new URLSearchParams(searchParams.toString());
     const nextMonth = updates.month ?? selectedMonth;
     const nextPlatform = updates.platform ?? selectedPlatform;
+    const nextCampaign = updates.campaign ?? selectedCampaign;
 
     if (nextMonth === currentMonth) {
       params.delete("month");
@@ -46,11 +57,20 @@ export function DashboardFilters({
       params.set("platform", nextPlatform.toLowerCase());
     }
 
+    if (nextCampaign === "all") {
+      params.delete("campaign");
+    } else {
+      params.set("campaign", nextCampaign);
+    }
+
     startTransition(() => {
       const query = params.toString();
-      router.replace(query ? `/?${query}` : "/");
+      router.replace(query ? `/dashboard?${query}` : "/dashboard");
     });
   }
+
+  const selectClassName =
+    "min-w-[220px] rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-indigo-500 focus:border-indigo-500 focus:ring-2 disabled:opacity-60";
 
   return (
     <div className="mb-6 flex flex-wrap items-end gap-4">
@@ -68,7 +88,7 @@ export function DashboardFilters({
             updateFilters({ month: event.target.value as DashboardMonthValue })
           }
           disabled={isPending}
-          className="min-w-[220px] rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-indigo-500 focus:border-indigo-500 focus:ring-2 disabled:opacity-60"
+          className={selectClassName}
         >
           <optgroup label="Current Month">
             <option value={currentMonth}>
@@ -89,6 +109,29 @@ export function DashboardFilters({
           <optgroup label="All Time">
             <option value="all">All Time</option>
           </optgroup>
+        </select>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <label
+          htmlFor="dashboard-campaign-filter"
+          className="text-sm font-medium text-slate-700"
+        >
+          Campaign
+        </label>
+        <select
+          id="dashboard-campaign-filter"
+          value={selectedCampaign}
+          onChange={(event) => updateFilters({ campaign: event.target.value })}
+          disabled={isPending}
+          className={selectClassName}
+        >
+          <option value="all">All Campaigns</option>
+          {campaigns.map((campaign) => (
+            <option key={campaign.id} value={campaign.id}>
+              {campaign.name}
+            </option>
+          ))}
         </select>
       </div>
 

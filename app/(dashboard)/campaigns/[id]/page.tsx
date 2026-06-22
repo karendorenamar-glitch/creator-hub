@@ -26,7 +26,7 @@ export default async function CampaignDetailPage({
     <>
       <Header
         title="Campaign Details"
-        description="Review campaign performance, linked creators, and videos."
+        description="Executive performance summary for this campaign."
       />
 
       <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">

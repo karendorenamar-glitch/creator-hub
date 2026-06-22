@@ -192,7 +192,7 @@ export function CreatorDetailSection({ creator }: CreatorDetailSectionProps) {
                         {campaign.name}
                       </Link>
                       <p className="text-sm text-slate-500">
-                        {campaign.brand_name}
+                        {campaign.client_name}
                       </p>
                     </div>
                     <CampaignStatusBadge status={campaign.status} />

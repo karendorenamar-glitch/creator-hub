@@ -21,6 +21,20 @@ export type CampaignMostEfficientCreator = {
   cpv: number;
 };
 
+export type CampaignContentInsight = {
+  title: string;
+  creator_name: string;
+  platform: string;
+  metric_value: string;
+  metric_label: string;
+};
+
+export type CampaignHealth = {
+  status: "Strong" | "On Track" | "Needs Attention" | "Insufficient Data";
+  headline: string;
+  detail: string;
+};
+
 export type CampaignAnalytics = {
   total_views: number;
   total_likes: number;
@@ -29,9 +43,12 @@ export type CampaignAnalytics = {
   total_saves: number;
   engagement_rate: number;
   cpv: number;
+  cpe: number;
   top_creator: CampaignTopCreator | null;
   best_engagement_creator: CampaignBestEngagementCreator | null;
   most_efficient_creator: CampaignMostEfficientCreator | null;
+  most_valuable_content: CampaignContentInsight | null;
+  best_engagement_content: CampaignContentInsight | null;
 };
 
 export type CampaignVideoMetrics = {
@@ -43,6 +60,122 @@ export type CampaignVideoMetrics = {
   creator_id: string;
   creators: { name: string; platform: string } | null;
 };
+
+type CampaignVideoInsightInput = {
+  video_url: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  creators: { name: string; platform: string } | null;
+};
+
+function truncateContentTitle(title: string, maxLength = 48) {
+  const trimmed = title.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return `${trimmed.slice(0, maxLength - 1)}…`;
+}
+
+function calculateContentInsights(videos: CampaignVideoInsightInput[]) {
+  const mostValuable = [...videos]
+    .sort(
+      (left, right) =>
+        right.saves - left.saves ||
+        right.views - left.views ||
+        left.video_url.localeCompare(right.video_url),
+    )
+    .find((video) => video.saves > 0);
+
+  const bestEngagement = [...videos]
+    .map((video) => ({
+      video,
+      engagement_rate: calculateEngagementRate(
+        video.views,
+        video.likes,
+        video.comments,
+        video.shares,
+        video.saves,
+      ),
+    }))
+    .filter((entry) => entry.video.views > 0)
+    .sort(
+      (left, right) =>
+        right.engagement_rate - left.engagement_rate ||
+        right.video.views - left.video.views,
+    )[0];
+
+  return {
+    most_valuable_content: mostValuable
+      ? {
+          title: truncateContentTitle(mostValuable.video_url),
+          creator_name: mostValuable.creators?.name ?? "Unknown",
+          platform: mostValuable.creators?.platform ?? "—",
+          metric_label: "Saves",
+          metric_value: mostValuable.saves.toLocaleString("en-US"),
+        }
+      : null,
+    best_engagement_content: bestEngagement
+      ? {
+          title: truncateContentTitle(bestEngagement.video.video_url),
+          creator_name: bestEngagement.video.creators?.name ?? "Unknown",
+          platform: bestEngagement.video.creators?.platform ?? "—",
+          metric_label: "Engagement rate",
+          metric_value: `${bestEngagement.engagement_rate.toFixed(1)}%`,
+        }
+      : null,
+  };
+}
+
+export function getCampaignHealth(
+  analytics: Pick<
+    CampaignAnalytics,
+    "total_views" | "engagement_rate" | "total_likes" | "total_comments" | "total_shares" | "total_saves"
+  >,
+  videoCount: number,
+): CampaignHealth {
+  if (videoCount === 0) {
+    return {
+      status: "Insufficient Data",
+      headline: "Campaign tracking not started",
+      detail:
+        "Link creators and videos to this campaign to generate performance insights.",
+    };
+  }
+
+  if (analytics.total_views === 0) {
+    return {
+      status: "Needs Attention",
+      headline: "No measurable reach yet",
+      detail:
+        "Linked videos have no recorded views. Confirm tracking or refresh video metrics.",
+    };
+  }
+
+  const engagementLabel = `${analytics.engagement_rate.toFixed(1)}%`;
+
+  if (analytics.engagement_rate >= 6) {
+    return {
+      status: "Strong",
+      headline: "Strong campaign performance",
+      detail: `Engagement is healthy at ${engagementLabel} average ER with ${analytics.total_views.toLocaleString("en-US")} total views across ${videoCount} videos.`,
+    };
+  }
+
+  if (analytics.engagement_rate >= 3) {
+    return {
+      status: "On Track",
+      headline: "Campaign is on track",
+      detail: `Performance is steady at ${engagementLabel} average ER. Monitor top content and optimize underperforming assets.`,
+    };
+  }
+
+  return {
+    status: "Needs Attention",
+    headline: "Engagement needs improvement",
+    detail: `Average ER is ${engagementLabel}. Review creative hooks and creator fit to lift saves and comments.`,
+  };
+}
 
 type CreatorCampaignStats = {
   name: string;
@@ -89,6 +222,7 @@ export function calculateCampaignAnalytics(
   videos: CampaignVideoMetrics[],
   budget: number,
   creatorFees: Record<string, number> = {},
+  contentVideos: CampaignVideoInsightInput[] = [],
 ): CampaignAnalytics {
   const totals = videos.reduce(
     (acc, video) => ({
@@ -150,6 +284,10 @@ export function calculateCampaignAnalytics(
         )[0]
     : null;
 
+  const totalEngagements =
+    totals.likes + totals.comments + totals.shares + totals.saves;
+  const contentInsights = calculateContentInsights(contentVideos);
+
   return {
     total_views: totals.views,
     total_likes: totals.likes,
@@ -158,6 +296,7 @@ export function calculateCampaignAnalytics(
     total_saves: totals.saves,
     engagement_rate: calculateEngagementRateFromTotals(totals),
     cpv: totals.views > 0 ? budget / totals.views : 0,
+    cpe: totalEngagements > 0 ? budget / totalEngagements : 0,
     top_creator: topCreatorEntry
       ? {
           name: topCreatorEntry.name,
@@ -179,6 +318,7 @@ export function calculateCampaignAnalytics(
           cpv: mostEfficientEntry.cpv,
         }
       : null,
+    ...contentInsights,
   };
 }
 

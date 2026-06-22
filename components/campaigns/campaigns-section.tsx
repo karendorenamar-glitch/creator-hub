@@ -4,17 +4,17 @@ import { useState, useTransition } from "react";
 import { Plus } from "lucide-react";
 import { deleteCampaign } from "@/app/actions/campaigns";
 import { CampaignFormModal } from "@/components/campaigns/campaign-form-modal";
-import { CampaignsTable } from "@/components/campaigns/campaigns-table";
+import { CampaignSummaryCards } from "@/components/campaigns/campaign-summary-cards";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import type {
-  CampaignListItem,
+  CampaignSummary,
   Creator,
   VideoWithCreator,
 } from "@/types/database";
 
 type CampaignsSectionProps = {
-  campaigns: CampaignListItem[];
+  campaigns: CampaignSummary[];
   creators: Creator[];
   videos: VideoWithCreator[];
 };
@@ -26,11 +26,10 @@ export function CampaignsSection({
 }: CampaignsSectionProps) {
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] =
-    useState<CampaignListItem | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<CampaignListItem | null>(
+  const [editingCampaign, setEditingCampaign] = useState<CampaignSummary | null>(
     null,
   );
+  const [deleteTarget, setDeleteTarget] = useState<CampaignSummary | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
 
   function openCreate() {
@@ -38,7 +37,7 @@ export function CampaignsSection({
     setFormOpen(true);
   }
 
-  function openEdit(campaign: CampaignListItem) {
+  function openEdit(campaign: CampaignSummary) {
     setEditingCampaign(campaign);
     setFormOpen(true);
   }
@@ -73,11 +72,11 @@ export function CampaignsSection({
           className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
         >
           <Plus className="h-4 w-4" />
-          Add Campaign
+          Create Campaign
         </button>
       </div>
 
-      <CampaignsTable
+      <CampaignSummaryCards
         campaigns={campaigns}
         onEdit={openEdit}
         onDelete={setDeleteTarget}
@@ -94,7 +93,7 @@ export function CampaignsSection({
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="Delete campaign?"
-        description={`This will permanently remove "${deleteTarget?.name ?? "this campaign"}" and unlink all associated creators and videos.`}
+        description={`This will permanently remove "${deleteTarget?.name ?? "this campaign"}". Linked content planner items will be kept but unassigned from this campaign.`}
         loading={isDeleting}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}

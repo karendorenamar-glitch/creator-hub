@@ -1,3 +1,5 @@
+import { formatMoney } from "@/lib/format";
+
 export const MIN_CREATOR_FEE = 0;
 
 export const CREATOR_ALREADY_EXISTS_ERROR = "Creator already exists.";
@@ -15,13 +17,15 @@ export function normalizeCreatorContact(
   return trimmed || null;
 }
 
-export function normalizeCreatorUsername(
+export function normalizeCreatorPlatformUsername(
   value: string | null | undefined,
-): string {
-  return String(value ?? "")
+): string | null {
+  const normalized = String(value ?? "")
     .trim()
     .replace(/^@+/, "")
     .toLowerCase();
+
+  return normalized || null;
 }
 
 export function parseIDRInput(value: string | number | null | undefined): number {
@@ -70,20 +74,14 @@ export function formatEngagementRate(value: number): string {
 }
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: value < 1 ? 4 : 0,
-  }).format(value);
+  return formatMoney(value);
 }
 
 export function formatIDR(value: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(value);
+  return formatMoney(value);
 }
+
+export { formatMoney } from "@/lib/format";
 
 export function formatIDRDecimal(
   value: number,
@@ -100,6 +98,11 @@ export function formatIDRDecimal(
 export function formatCPV(budget: number, views: number): string {
   if (views === 0) return "—";
   return formatCurrency(budget / views);
+}
+
+export function formatCPE(budget: number, engagements: number): string {
+  if (engagements === 0) return "—";
+  return formatCurrency(budget / engagements);
 }
 
 export function formatCreatorCPV(fee: number, views: number): string {

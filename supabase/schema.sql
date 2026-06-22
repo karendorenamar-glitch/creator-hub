@@ -3,7 +3,9 @@
 create table if not exists public.creators (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  username text,
+  tiktok_username text,
+  instagram_username text,
+  threads_username text,
   contact text,
   notes text,
   platform text not null default 'YouTube',
@@ -70,7 +72,7 @@ create policy "Allow public delete on videos"
 create table if not exists public.campaigns (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  brand_name text not null,
+  client_name text not null,
   start_date date not null,
   end_date date not null,
   budget numeric(12, 2) not null default 0,

@@ -16,7 +16,16 @@ import { useToast } from "@/components/ui/toast";
 import { MIN_CREATOR_FEE, validateCreatorFee } from "@/lib/utils";
 import type { Creator } from "@/types/database";
 
-const PLATFORMS = ["YouTube", "TikTok", "Instagram", "Twitch", "Other"];
+const PLATFORMS = ["YouTube", "TikTok", "Instagram", "Threads", "Twitch", "Other"];
+
+const USERNAME_FIELDS = {
+  TikTok: "tiktok_username",
+  Instagram: "instagram_username",
+  Threads: "threads_username",
+} as const;
+
+type UsernameFieldKey =
+  (typeof USERNAME_FIELDS)[keyof typeof USERNAME_FIELDS];
 
 type CreatorFormModalProps = {
   open: boolean;
@@ -28,12 +37,35 @@ type CreatorFormState = Omit<CreatorInput, "fee">;
 
 const emptyForm: CreatorFormState = {
   name: "",
-  username: "",
+  tiktok_username: "",
+  instagram_username: "",
+  threads_username: "",
   contact: "",
   notes: "",
   platform: "YouTube",
   followers: 0,
 };
+
+function getUsernameFieldKey(platform: string): UsernameFieldKey | null {
+  if (platform in USERNAME_FIELDS) {
+    return USERNAME_FIELDS[platform as keyof typeof USERNAME_FIELDS];
+  }
+
+  return null;
+}
+
+function getUsernameLabel(platform: string) {
+  switch (platform) {
+    case "TikTok":
+      return "TikTok Username";
+    case "Instagram":
+      return "Instagram Username";
+    case "Threads":
+      return "Threads Username";
+    default:
+      return "Username";
+  }
+}
 
 export function CreatorFormModal({
   open,
@@ -45,16 +77,23 @@ export function CreatorFormModal({
   const [form, setForm] = useState<CreatorFormState>(emptyForm);
   const [feeInput, setFeeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isFetchingTikTok, setIsFetchingTikTok] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const usernameFieldKey = getUsernameFieldKey(form.platform);
 
   useEffect(() => {
     if (!open) return;
 
     setError(null);
+    setFetchError(null);
     if (creator) {
       setForm({
         name: creator.name,
-        username: creator.username ?? "",
+        tiktok_username: creator.tiktok_username ?? "",
+        instagram_username: creator.instagram_username ?? "",
+        threads_username: creator.threads_username ?? "",
         contact: creator.contact ?? "",
         notes: creator.notes ?? "",
         platform: creator.platform,
@@ -75,6 +114,58 @@ export function CreatorFormModal({
     setForm((current) => ({ ...current, [field]: value }));
   }
 
+  function handleUsernameChange(value: string) {
+    if (!usernameFieldKey) return;
+
+    setFetchError(null);
+    setForm((current) => ({ ...current, [usernameFieldKey]: value }));
+  }
+
+  async function handleFetchTikTokData() {
+    const username = form.tiktok_username.trim();
+
+    if (!username) {
+      setFetchError("Enter a TikTok username before fetching profile data.");
+      return;
+    }
+
+    setFetchError(null);
+    setIsFetchingTikTok(true);
+
+    try {
+      const response = await fetch("/api/tiktok/profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      const result = (await response.json()) as {
+        data?: { followers: number; name: string | null };
+        error?: string;
+      };
+
+      if (!response.ok || result.error) {
+        setFetchError(result.error ?? "Failed to fetch TikTok profile.");
+        return;
+      }
+
+      if (result.data) {
+        setForm((current) => ({
+          ...current,
+          followers: result.data!.followers,
+          ...(result.data!.name ? { name: result.data!.name } : {}),
+        }));
+        showSuccess("TikTok profile data loaded.");
+      }
+    } catch {
+      setFetchError("Failed to fetch TikTok profile.");
+    } finally {
+      setIsFetchingTikTok(false);
+    }
+  }
+
   function buildPayload(): CreatorInput | { error: string } {
     const feeResult = validateCreatorFee(feeInput);
 
@@ -84,7 +175,9 @@ export function CreatorFormModal({
 
     return {
       name: form.name,
-      username: form.username,
+      tiktok_username: form.tiktok_username,
+      instagram_username: form.instagram_username,
+      threads_username: form.threads_username,
       contact: form.contact,
       notes: form.notes,
       platform: form.platform,
@@ -99,11 +192,6 @@ export function CreatorFormModal({
 
     if (!form.name.trim()) {
       setError("Name is required.");
-      return;
-    }
-
-    if (!form.username.trim()) {
-      setError("TikTok username is required.");
       return;
     }
 
@@ -146,30 +234,6 @@ export function CreatorFormModal({
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Name" htmlFor="creator-name">
-          <input
-            id="creator-name"
-            name="name"
-            value={form.name}
-            onChange={(event) => handleChange("name", event.target.value)}
-            className={inputClassName}
-            placeholder="Creator name"
-            required
-          />
-        </FormField>
-
-        <FormField label="TikTok Username" htmlFor="creator-username">
-          <input
-            id="creator-username"
-            name="username"
-            value={form.username}
-            onChange={(event) => handleChange("username", event.target.value)}
-            className={inputClassName}
-            placeholder="@username"
-            required
-          />
-        </FormField>
-
         <FormField label="Platform" htmlFor="creator-platform">
           <select
             id="creator-platform"
@@ -185,6 +249,70 @@ export function CreatorFormModal({
               </option>
             ))}
           </select>
+        </FormField>
+
+        {usernameFieldKey && (
+          <FormField
+            label={getUsernameLabel(form.platform)}
+            htmlFor="creator-platform-username"
+          >
+            {form.platform === "TikTok" ? (
+              <div className="space-y-2">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    id="creator-platform-username"
+                    name={usernameFieldKey}
+                    value={form[usernameFieldKey]}
+                    onChange={(event) =>
+                      handleUsernameChange(event.target.value)
+                    }
+                    className={inputClassName}
+                    placeholder="@username"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleFetchTikTokData}
+                    disabled={
+                      isPending ||
+                      isFetchingTikTok ||
+                      !form.tiktok_username.trim()
+                    }
+                    className="shrink-0 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-60"
+                  >
+                    {isFetchingTikTok ? "Fetching..." : "Fetch TikTok Data"}
+                  </button>
+                </div>
+                {fetchError && (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {fetchError}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <input
+                id="creator-platform-username"
+                name={usernameFieldKey}
+                value={form[usernameFieldKey]}
+                onChange={(event) =>
+                  handleUsernameChange(event.target.value)
+                }
+                className={inputClassName}
+                placeholder="@username"
+              />
+            )}
+          </FormField>
+        )}
+
+        <FormField label="Name" htmlFor="creator-name">
+          <input
+            id="creator-name"
+            name="name"
+            value={form.name}
+            onChange={(event) => handleChange("name", event.target.value)}
+            className={inputClassName}
+            placeholder="Creator name"
+            required
+          />
         </FormField>
 
         <FormField label="Followers" htmlFor="creator-followers">

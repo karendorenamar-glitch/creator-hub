@@ -6,10 +6,11 @@ import { useMobileMenu } from "@/components/layout/dashboard-shell";
 type HeaderProps = {
   title: string;
   description?: string;
+  titleAddon?: React.ReactNode;
   actions?: React.ReactNode;
 };
 
-export function Header({ title, description, actions }: HeaderProps) {
+export function Header({ title, description, titleAddon, actions }: HeaderProps) {
   const { openMobileMenu } = useMobileMenu();
 
   return (
@@ -25,9 +26,12 @@ export function Header({ title, description, actions }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-              {title}
-            </h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+                {title}
+              </h1>
+              {titleAddon}
+            </div>
             {description && (
               <p className="mt-1 text-sm text-slate-500">{description}</p>
             )}

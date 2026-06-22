@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   createCampaign,
   getCampaignRelationIds,
@@ -28,7 +29,7 @@ type CampaignFormModalProps = {
 
 const emptyForm: CampaignInput = {
   name: "",
-  brand_name: "",
+  client_name: "",
   start_date: "",
   end_date: "",
   budget: 0,
@@ -45,6 +46,7 @@ export function CampaignFormModal({
   videos,
 }: CampaignFormModalProps) {
   const isEditing = Boolean(campaign);
+  const router = useRouter();
   const { showSuccess, showError } = useToast();
   const [form, setForm] = useState<CampaignInput>(emptyForm);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export function CampaignFormModal({
       .then(({ creator_ids, video_ids }) => {
         setForm({
           name: campaign.name,
-          brand_name: campaign.brand_name,
+          client_name: campaign.client_name,
           start_date: campaign.start_date,
           end_date: campaign.end_date,
           budget: Number(campaign.budget),
@@ -101,8 +103,8 @@ export function CampaignFormModal({
     event.preventDefault();
     setError(null);
 
-    if (!form.name.trim() || !form.brand_name.trim()) {
-      setError("Campaign name and brand name are required.");
+    if (!form.name.trim() || !form.client_name.trim()) {
+      setError("Campaign name and client name are required.");
       return;
     }
 
@@ -133,6 +135,7 @@ export function CampaignFormModal({
           : "Campaign created successfully.",
       );
       onClose();
+      router.refresh();
     });
   }
 
@@ -162,12 +165,12 @@ export function CampaignFormModal({
             />
           </FormField>
 
-          <FormField label="Brand Name" htmlFor="campaign-brand">
+          <FormField label="Client" htmlFor="campaign-client">
             <input
-              id="campaign-brand"
-              value={form.brand_name}
+              id="campaign-client"
+              value={form.client_name}
               onChange={(event) =>
-                handleChange("brand_name", event.target.value)
+                handleChange("client_name", event.target.value)
               }
               className={inputClassName}
               placeholder="Acme Co."

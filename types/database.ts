@@ -1,9 +1,14 @@
+import type { DashboardWorkspaceAnalytics } from "@/lib/dashboard-analytics";
+import type { PayoutTimingBadge } from "@/lib/payouts";
+
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 
 export type Creator = {
   id: string;
   name: string;
-  username: string | null;
+  tiktok_username: string | null;
+  instagram_username: string | null;
+  threads_username: string | null;
   contact: string | null;
   notes: string | null;
   platform: string;
@@ -38,7 +43,7 @@ export type CreatorDetail = Creator & {
   average_engagement_rate: number;
   cpv: number;
   cpl: number;
-  campaigns: Pick<Campaign, "id" | "name" | "brand_name" | "status">[];
+  campaigns: Pick<Campaign, "id" | "name" | "client_name" | "status">[];
   top_performing_video: VideoWithCreator | null;
   videos: VideoWithCreator[];
 };
@@ -46,13 +51,20 @@ export type CreatorDetail = Creator & {
 export type Campaign = {
   id: string;
   name: string;
-  brand_name: string;
+  client_name: string;
   start_date: string;
   end_date: string;
   budget: number;
   status: CampaignStatus;
   created_at: string;
 };
+
+export type CampaignSummary = Campaign & {
+  creator_count: number;
+  video_count: number;
+};
+
+export type CampaignOption = Pick<Campaign, "id" | "name">;
 
 export type CampaignListItem = Campaign & {
   creator_count: number;
@@ -91,6 +103,7 @@ export type CampaignDetail = Campaign & {
   total_saves: number;
   engagement_rate: number;
   cpv: number;
+  cpe: number;
   top_creator: {
     name: string;
     platform: string;
@@ -106,10 +119,24 @@ export type CampaignDetail = Campaign & {
     platform: string;
     cpv: number;
   } | null;
+  most_valuable_content: {
+    title: string;
+    creator_name: string;
+    platform: string;
+    metric_value: string;
+    metric_label: string;
+  } | null;
+  best_engagement_content: {
+    title: string;
+    creator_name: string;
+    platform: string;
+    metric_value: string;
+    metric_label: string;
+  } | null;
 };
 
 export type DashboardStats = {
-  totalCampaigns: number;
+  activeCampaigns: number;
   totalBudget: number;
   totalCampaignViews: number;
   averageEngagementRate: number;
@@ -129,6 +156,47 @@ export type DashboardStats = {
     platform: string;
     cpv: number;
   } | null;
+  workspace: DashboardWorkspaceAnalytics;
+};
+
+export type ContentPlannerAgency = {
+  id: string;
+  user_id: string;
+  content_pillar: string;
+  content_idea: string;
+  hook: string;
+  creator_names: string[] | null;
+  campaign_id: string | null;
+  planned_date: string | null;
+  inspiration_url: string | null;
+  platform: string;
+  status: string;
+  created_at: string;
+};
+
+export type PayoutStatus = "PENDING" | "PAID" | "CANCELLED";
+
+export type Payout = {
+  id: string;
+  creator_id: string;
+  campaign_id: string | null;
+  amount: number;
+  status: PayoutStatus;
+  requested_at: string;
+  due_date: string;
+  payment_term_days: number;
+  notes: string;
+  proof_url: string | null;
+  created_at: string;
+  creators: Pick<Creator, "name"> | null;
+  campaigns: Pick<Campaign, "name"> | null;
+};
+
+export type PayoutWithTiming = Payout & {
+  daysLeft: number | null;
+  isOverdue: boolean;
+  timingBadge: PayoutTimingBadge | null;
+  timingLabel: string;
 };
 
 export type Database = {
@@ -139,7 +207,9 @@ export type Database = {
         Insert: {
           id?: string;
           name: string;
-          username?: string | null;
+          tiktok_username?: string | null;
+          instagram_username?: string | null;
+          threads_username?: string | null;
           contact?: string | null;
           notes?: string | null;
           platform?: string;
@@ -150,7 +220,9 @@ export type Database = {
         Update: {
           id?: string;
           name?: string;
-          username?: string | null;
+          tiktok_username?: string | null;
+          instagram_username?: string | null;
+          threads_username?: string | null;
           contact?: string | null;
           notes?: string | null;
           platform?: string;
@@ -209,7 +281,7 @@ export type Database = {
         Insert: {
           id?: string;
           name: string;
-          brand_name: string;
+          client_name: string;
           start_date: string;
           end_date: string;
           budget?: number;
@@ -219,7 +291,7 @@ export type Database = {
         Update: {
           id?: string;
           name?: string;
-          brand_name?: string;
+          client_name?: string;
           start_date?: string;
           end_date?: string;
           budget?: number;
@@ -287,6 +359,68 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      content_planner_agency: {
+        Row: ContentPlannerAgency;
+        Insert: {
+          id?: string;
+          user_id: string;
+          content_pillar?: string;
+          content_idea?: string;
+          hook?: string;
+          creator_names?: string[] | null;
+          campaign_id?: string | null;
+          planned_date?: string | null;
+          inspiration_url?: string | null;
+          platform?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          content_pillar?: string;
+          content_idea?: string;
+          hook?: string;
+          creator_names?: string[] | null;
+          campaign_id?: string | null;
+          planned_date?: string | null;
+          inspiration_url?: string | null;
+          platform?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      payouts: {
+        Row: Omit<Payout, "creators" | "campaigns">;
+        Insert: {
+          id?: string;
+          creator_id: string;
+          campaign_id?: string | null;
+          amount?: number;
+          status?: PayoutStatus;
+          requested_at?: string;
+          due_date: string;
+          payment_term_days?: number;
+          notes?: string;
+          proof_url?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          creator_id?: string;
+          campaign_id?: string | null;
+          amount?: number;
+          status?: PayoutStatus;
+          requested_at?: string;
+          due_date?: string;
+          payment_term_days?: number;
+          notes?: string;
+          proof_url?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;

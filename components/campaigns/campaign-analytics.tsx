@@ -6,6 +6,30 @@ import {
 } from "@/lib/utils";
 import type { CampaignAnalytics } from "@/lib/campaign-analytics";
 
+type CampaignAnalyticsSummaryData = Pick<
+  CampaignAnalytics,
+  | "total_likes"
+  | "total_comments"
+  | "total_shares"
+  | "total_saves"
+  | "engagement_rate"
+  | "total_views"
+  | "top_creator"
+>;
+
+type CampaignAnalyticsGridData = Pick<
+  CampaignAnalytics,
+  | "total_views"
+  | "total_likes"
+  | "total_comments"
+  | "total_shares"
+  | "total_saves"
+  | "engagement_rate"
+  | "top_creator"
+  | "best_engagement_creator"
+  | "most_efficient_creator"
+>;
+
 function AnalyticsCard({
   label,
   value,
@@ -28,7 +52,7 @@ export function CampaignAnalyticsGrid({
   analytics,
   budget,
 }: {
-  analytics: CampaignAnalytics;
+  analytics: CampaignAnalyticsGridData;
   budget: number;
 }) {
   const aggregateStats = [
@@ -92,7 +116,7 @@ export function CampaignAnalyticsSummary({
   analytics,
   budget,
 }: {
-  analytics: CampaignAnalytics;
+  analytics: CampaignAnalyticsSummaryData;
   budget: number;
 }) {
   return (

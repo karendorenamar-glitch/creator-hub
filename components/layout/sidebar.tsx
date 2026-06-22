@@ -3,20 +3,24 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  CalendarDays,
   LayoutDashboard,
   Users,
   Video,
-  Sparkles,
   Megaphone,
+  Wallet,
   X,
 } from "lucide-react";
+import { KeffooLogo } from "@/components/login/kefoo-logo";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/planner", label: "Content Planner", icon: CalendarDays },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/creators", label: "Creators", icon: Users },
   { href: "/videos", label: "Videos", icon: Video },
+  { href: "/payouts", label: "Payouts", icon: Wallet },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
 ];
 
 type SidebarProps = {
@@ -30,12 +34,14 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const content = (
     <>
       <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-500">
-          <Sparkles className="h-5 w-5 text-white" />
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+          <div className="origin-center scale-[0.34]">
+            <KeffooLogo />
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold text-white">Creator Hub</p>
-          <p className="text-xs text-slate-400">Analytics dashboard</p>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white">KEFOO</p>
+          <p className="text-xs text-slate-400">Creator Campaign OS</p>
         </div>
         {onMobileClose && (
           <button
@@ -52,7 +58,9 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map(({ href, label, icon: Icon }) => {
           const isActive =
-            href === "/" ? pathname === "/" : pathname.startsWith(href);
+            href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(href);
 
           return (
             <Link

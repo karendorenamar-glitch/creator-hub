@@ -6,7 +6,7 @@ import type { CampaignStatus } from "@/types/database";
 
 export type CampaignInput = {
   name: string;
-  brand_name: string;
+  client_name: string;
   start_date: string;
   end_date: string;
   budget: number;
@@ -18,7 +18,7 @@ export type CampaignInput = {
 function parseCampaignInput(input: CampaignInput) {
   return {
     name: input.name.trim(),
-    brand_name: input.brand_name.trim(),
+    client_name: input.client_name.trim(),
     start_date: input.start_date,
     end_date: input.end_date,
     budget: Math.max(0, input.budget),

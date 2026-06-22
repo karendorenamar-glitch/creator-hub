@@ -6,7 +6,7 @@ import {
   CREATOR_NAME_EXISTS_ERROR,
   normalizeCreatorContact,
   normalizeCreatorName,
-  normalizeCreatorUsername,
+  normalizeCreatorPlatformUsername,
   parseIDRInput,
   validateCreatorFee,
 } from "@/lib/utils";
@@ -15,7 +15,9 @@ import type { Creator } from "@/types/database";
 
 export type CreatorInput = {
   name: string;
-  username: string;
+  tiktok_username: string;
+  instagram_username: string;
+  threads_username: string;
   contact: string;
   notes: string;
   platform: string;
@@ -25,7 +27,9 @@ export type CreatorInput = {
 
 type CreatorWritePayload = {
   name: string;
-  username: string;
+  tiktok_username: string | null;
+  instagram_username: string | null;
+  threads_username: string | null;
   contact: string | null;
   notes: string | null;
   platform: string;
@@ -40,15 +44,13 @@ function buildCreatorPayload(input: CreatorInput) {
     return { error: feeResult.error ?? "Fee is required." };
   }
 
-  const username = normalizeCreatorUsername(input.username);
-
-  if (!username) {
-    return { error: "TikTok username is required." };
-  }
-
   const payload: CreatorWritePayload = {
     name: normalizeCreatorName(input.name),
-    username,
+    tiktok_username: normalizeCreatorPlatformUsername(input.tiktok_username),
+    instagram_username: normalizeCreatorPlatformUsername(
+      input.instagram_username,
+    ),
+    threads_username: normalizeCreatorPlatformUsername(input.threads_username),
     contact: normalizeCreatorContact(input.contact),
     notes: input.notes.trim() || null,
     platform: input.platform.trim(),
@@ -73,7 +75,7 @@ function mapCreatorRow(
 }
 
 const creatorSelect =
-  "id, name, username, contact, notes, platform, followers, fee, created_at";
+  "id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_at";
 
 function isUniqueViolation(message: string, code?: string | null) {
   return (
@@ -289,7 +291,9 @@ export async function updateCreator(id: string, input: CreatorInput) {
     .from("creators")
     .update({
       name: payload.name,
-      username: payload.username,
+      tiktok_username: payload.tiktok_username,
+      instagram_username: payload.instagram_username,
+      threads_username: payload.threads_username,
       contact: payload.contact,
       notes: payload.notes,
       platform: payload.platform,
