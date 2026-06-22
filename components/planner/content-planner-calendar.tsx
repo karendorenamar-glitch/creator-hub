@@ -92,7 +92,7 @@ function CalendarDayCell({
               className={cn(
                 "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium sm:h-7 sm:w-7 sm:text-sm",
                 isToday
-                  ? "bg-indigo-600 text-white"
+                  ? "bg-kefoo-600 text-white"
                   : "text-slate-700",
               )}
             >
@@ -102,7 +102,7 @@ function CalendarDayCell({
               <button
                 type="button"
                 onClick={() => onAddContent(dateKey)}
-                className="rounded-md border border-slate-200 bg-white p-1 text-slate-500 opacity-0 shadow-sm transition-all hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 group-hover:opacity-100 group-focus-within:opacity-100 sm:p-1.5"
+                className="rounded-md border border-slate-200 bg-white p-1 text-slate-500 opacity-0 shadow-sm transition-all hover:border-kefoo-200 hover:bg-kefoo-50 hover:text-kefoo-600 group-hover:opacity-100 group-focus-within:opacity-100 sm:p-1.5"
                 aria-label={`Add content for ${dateKey}`}
               >
                 <Plus className="h-3.5 w-3.5" />

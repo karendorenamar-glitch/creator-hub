@@ -33,7 +33,7 @@ const metricConfig: Record<
 > = {
   views: {
     label: "Views",
-    color: "bg-indigo-500",
+    color: "bg-kefoo-500",
     format: (value) => formatNumber(value ?? 0),
   },
   saves: {
@@ -84,7 +84,7 @@ function isLeader(
 
 function LeaderBadge({ label }: { label: string }) {
   return (
-    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700">
+    <span className="rounded-full bg-kefoo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-kefoo-700">
       {label}
     </span>
   );

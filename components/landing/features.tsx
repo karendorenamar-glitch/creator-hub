@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 const statusStyles = {
   Planned: "bg-slate-500/15 text-slate-400 border-slate-500/20",
   "In Review": "bg-amber-500/10 text-amber-300 border-amber-500/20",
-  Approved: "bg-blue-500/10 text-blue-300 border-blue-500/20",
+  Approved: "bg-kefoo-500/10 text-kefoo-300 border-kefoo-500/20",
   Published: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
 } as const;
 
@@ -102,7 +102,7 @@ function BulkUploadVisual() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] text-indigo-200">
+      <div className="rounded-lg border border-kefoo-500/20 bg-kefoo-500/10 px-3 py-2 text-[10px] text-kefoo-200">
         Uploading 2 of 3...
       </div>
 
@@ -158,7 +158,7 @@ export function ContentPlannerVisual() {
             key={`${post.creator}-${post.date}`}
             className="flex items-center gap-2.5 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2.5 py-2"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/30 to-violet-500/30 text-[9px] font-semibold text-white">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-kefoo-500/30 to-violet-500/30 text-[9px] font-semibold text-white">
               {post.initials}
             </div>
             <div className="min-w-0 flex-1">
@@ -282,10 +282,10 @@ function CampaignAnalyticsVisual() {
           <defs>
             <linearGradient id="analyticsArea" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#A855F7" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#3B82F6" stopOpacity="0" />
+              <stop offset="100%" stopColor="#6EA5F7" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="analyticsLine" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="0%" stopColor="#6EA5F7" />
               <stop offset="100%" stopColor="#A855F7" />
             </linearGradient>
           </defs>

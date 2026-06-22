@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { ArrowRight, Sparkles, Zap, BarChart3, Target } from "lucide-react";
 import { motion } from "framer-motion";
 import {
@@ -47,8 +46,6 @@ const secondaryMetrics = [
 ];
 
 export function Hero() {
-  const [url, setUrl] = useState("");
-
   return (
     <section className="relative pt-32 pb-28 sm:pt-36">
       <div className={CONTAINER_CLASS}>
@@ -56,34 +53,26 @@ export function Hero() {
           <div>
             <FadeIn>
               <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-5xl lg:text-[3.25rem]">
-                Drop a link.{" "}
-                <GradientText>Track and scale creator performance</GradientText>{" "}
-                instantly.
+                KOL Campaign Tracking and{" "}
+                <GradientText>Analytics</GradientText>
               </h1>
             </FadeIn>
 
             <FadeIn delay={0.1}>
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-400 sm:text-lg">
-                Paste any TikTok or Instagram video link and get instant performance
-                insights, track campaign impact, compare results, and manage payouts
-                — all in one place.
+              <p className="mt-6 max-w-xl text-sm leading-relaxed text-slate-400 sm:text-base">
+                Bulk upload creator URLs and instantly track performance, campaign
+                results and reporting
               </p>
             </FadeIn>
 
             <FadeIn delay={0.15}>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="Paste TikTok or Instagram video link here..."
-                  className="w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-5 py-4 text-sm text-white placeholder:text-slate-500 backdrop-blur-sm transition-colors focus:border-violet-500/40 focus:outline-none focus:ring-2 focus:ring-violet-500/20"
-                />
+              <div className="mt-8">
                 <GradientButton
-                  href="#access"
-                  className="shrink-0 whitespace-nowrap px-6 py-4"
+                  href="mailto:hello@kefoo.tech?subject=Schedule%20a%20Demo"
+                  size="lg"
+                  className="px-8"
                 >
-                  Analyze Instantly
+                  Schedule a Demo
                   <ArrowRight className="h-4 w-4" />
                 </GradientButton>
               </div>
@@ -93,7 +82,7 @@ export function Hero() {
               <div className="mt-8 grid gap-4 sm:grid-cols-3">
                 {benefits.map((item) => (
                   <div key={item.title} className="flex items-start gap-3">
-                    <div className="mt-0.5 rounded-xl bg-gradient-to-br from-blue-500/15 to-violet-500/15 p-2">
+                    <div className="mt-0.5 rounded-xl bg-gradient-to-br from-kefoo-500/15 to-violet-500/15 p-2">
                       <item.icon className="h-4 w-4 text-violet-300" />
                     </div>
                     <div>
@@ -114,7 +103,7 @@ export function Hero() {
           >
             <GlassCard glow className="relative overflow-hidden p-6 sm:p-8">
               <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-500/20 blur-3xl" />
-              <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-blue-500/15 blur-3xl" />
+              <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-kefoo-500/15 blur-3xl" />
 
               <div className="relative">
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-violet-500/25 bg-violet-500/10 px-3 py-1.5">

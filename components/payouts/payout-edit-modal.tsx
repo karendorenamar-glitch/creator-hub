@@ -227,7 +227,7 @@ export function PayoutEditModal({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
           >
             Save Changes
           </button>

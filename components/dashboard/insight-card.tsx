@@ -14,7 +14,7 @@ export function InsightCard({ label, name, detail, meta }: InsightCardProps) {
       <p className="mt-2 truncate text-base font-semibold text-slate-900">
         {name}
       </p>
-      <p className="mt-1 text-sm font-medium text-indigo-600">{detail}</p>
+      <p className="mt-1 text-sm font-medium text-kefoo-600">{detail}</p>
       {meta && <p className="mt-1 truncate text-xs text-slate-500">{meta}</p>}
     </article>
   );

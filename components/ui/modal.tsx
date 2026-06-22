@@ -67,7 +67,7 @@ export function Modal({
         <div className="relative px-6 py-5">
           {loading && (
             <div className="absolute inset-0 z-20 flex items-center justify-center rounded-b-2xl bg-white/70">
-              <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-kefoo-600" />
             </div>
           )}
           {children}
@@ -100,7 +100,7 @@ export function FormField({
 }
 
 export const inputClassName =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500";
+  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20 disabled:bg-slate-50 disabled:text-slate-500";
 
 export function FormError({ message }: { message: string }) {
   return (

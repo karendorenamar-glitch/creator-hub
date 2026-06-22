@@ -65,7 +65,7 @@ export function ComparisonTable({
             return (
               <tr
                 key={row.id}
-                className={isTop ? "bg-indigo-50/40" : undefined}
+                className={isTop ? "bg-kefoo-50/40" : undefined}
               >
                 <td className="px-4 py-3 text-slate-500">{index + 1}</td>
                 <td className="px-4 py-3">

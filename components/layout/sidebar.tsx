@@ -5,9 +5,10 @@ import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   LayoutDashboard,
+  Megaphone,
+  Settings,
   Users,
   Video,
-  Megaphone,
   Wallet,
   X,
 } from "lucide-react";
@@ -15,13 +16,26 @@ import { KeffooLogo } from "@/components/login/kefoo-logo";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/planner", label: "Content Planner", icon: CalendarDays },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/creators", label: "Creators", icon: Users },
   { href: "/videos", label: "Videos", icon: Video },
-  { href: "/payouts", label: "Payouts", icon: Wallet },
+  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/planner", label: "Content Planner", icon: CalendarDays },
+  { href: "/payouts", label: "Payouts", icon: Wallet },
 ];
+
+function isNavActive(pathname: string, href: string) {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname.startsWith(href);
+}
+
+const navLinkClassName = (active: boolean) =>
+  cn(
+    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+    active
+      ? "bg-kefoo-500/15 text-kefoo-300"
+      : "text-slate-400 hover:bg-slate-800 hover:text-white",
+  );
 
 type SidebarProps = {
   mobileOpen?: boolean;
@@ -57,22 +71,14 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
       <nav className="flex-1 space-y-1 p-4">
         {navItems.map(({ href, label, icon: Icon }) => {
-          const isActive =
-            href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname.startsWith(href);
+          const isActive = isNavActive(pathname, href);
 
           return (
             <Link
               key={href}
               href={href}
               onClick={onMobileClose}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-indigo-500/15 text-indigo-300"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white",
-              )}
+              className={navLinkClassName(isActive)}
             >
               <Icon className="h-5 w-5 shrink-0" />
               {label}
@@ -82,13 +88,14 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       </nav>
 
       <div className="border-t border-slate-800 p-4">
-        <div className="rounded-lg bg-slate-800/60 p-4">
-          <p className="text-xs font-medium text-slate-300">Pro tip</p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-400">
-            Track engagement trends weekly to spot your top-performing creators
-            early.
-          </p>
-        </div>
+        <Link
+          href="/settings"
+          onClick={onMobileClose}
+          className={navLinkClassName(isNavActive(pathname, "/settings"))}
+        >
+          <Settings className="h-5 w-5 shrink-0" />
+          Settings
+        </Link>
       </div>
     </>
   );

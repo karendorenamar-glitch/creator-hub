@@ -69,7 +69,7 @@ export function CampaignsSection({
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500"
+          className="inline-flex items-center gap-2 rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-500"
         >
           <Plus className="h-4 w-4" />
           Create Campaign

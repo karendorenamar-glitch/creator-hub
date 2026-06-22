@@ -29,7 +29,7 @@ type CreatorDetailSectionProps = {
 
 function CreatorAvatar({ creator }: { creator: CreatorDetail }) {
   return (
-    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-xl font-semibold text-indigo-700">
+    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-kefoo-100 text-xl font-semibold text-kefoo-700">
       {creator.name.charAt(0).toUpperCase()}
     </div>
   );
@@ -187,7 +187,7 @@ export function CreatorDetailSection({ creator }: CreatorDetailSectionProps) {
                     <div>
                       <Link
                         href={`/campaigns/${campaign.id}`}
-                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                        className="font-medium text-kefoo-600 hover:text-kefoo-500"
                       >
                         {campaign.name}
                       </Link>
@@ -217,7 +217,7 @@ export function CreatorDetailSection({ creator }: CreatorDetailSectionProps) {
                     href={video.video_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block truncate font-medium text-indigo-600 hover:text-indigo-500"
+                    className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
                   >
                     {video.video_url}
                   </a>

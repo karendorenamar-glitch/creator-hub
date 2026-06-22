@@ -26,7 +26,7 @@ type UploadFailure = {
 };
 
 const textareaClassName =
-  "min-h-[220px] w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:bg-slate-50 disabled:text-slate-500";
+  "min-h-[220px] w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20 disabled:bg-slate-50 disabled:text-slate-500";
 
 export function VideoBulkUploadModal({
   open,
@@ -209,7 +209,7 @@ export function VideoBulkUploadModal({
               checked={importMetrics}
               onChange={(event) => setImportMetrics(event.target.checked)}
               disabled={isUploading}
-              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              className="rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
             />
             Import metrics from TikTok
           </label>
@@ -224,7 +224,7 @@ export function VideoBulkUploadModal({
         </div>
 
         {isUploading ? (
-          <div className="rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900">
+          <div className="rounded-lg border border-kefoo-100 bg-kefoo-50 px-4 py-3 text-sm text-kefoo-900">
             Uploading {progress.current} of {progress.total}...
           </div>
         ) : null}
@@ -280,7 +280,7 @@ export function VideoBulkUploadModal({
           <button
             type="submit"
             disabled={isUploading || campaigns.length === 0 || parsedLinks.valid.length === 0}
-            className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
           >
             {isUploading
               ? `Uploading (${progress.current}/${progress.total})...`

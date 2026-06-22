@@ -67,7 +67,7 @@ export function ContentPlannerDetailDrawer({
               href={inspirationUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="block truncate font-medium text-indigo-600 hover:text-indigo-500"
+              className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
             >
               {inspirationUrl}
             </a>

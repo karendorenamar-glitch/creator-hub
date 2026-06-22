@@ -253,7 +253,7 @@ export function ContentPlannerFormModal({
                     type="checkbox"
                     checked={selectedCreatorIds.includes(creator.id)}
                     onChange={() => toggleCreator(creator.id)}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
                   />
                   <span className="text-sm text-slate-700">
                     {creator.name} · {creator.platform}
@@ -333,7 +333,7 @@ export function ContentPlannerFormModal({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
           >
             {isPending
               ? "Saving..."

@@ -64,7 +64,7 @@ export function DashboardPreviewCard({ className }: { className?: string }) {
             aria-valuemax={100}
             aria-label="Campaign progress"
           >
-            <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-[#3B82F6] to-[#A855F7] shadow-[0_0_12px_rgba(168,85,247,0.45)] transition-all duration-500 group-hover:w-[87%]" />
+            <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-[#6EA5F7] to-[#A855F7] shadow-[0_0_12px_rgba(168,85,247,0.45)] transition-all duration-500 group-hover:w-[87%]" />
           </div>
         </div>
 

@@ -65,7 +65,7 @@ export function VideosTable({
                   href={video.video_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block truncate font-medium text-indigo-600 hover:text-indigo-500"
+                  className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
                 >
                   {video.video_url}
                 </a>
@@ -120,7 +120,7 @@ export function VideosTable({
                   <button
                     type="button"
                     onClick={() => onEdit(video)}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
                     aria-label={`Edit ${video.video_url}`}
                   >
                     <Pencil className="h-4 w-4" />

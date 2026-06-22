@@ -49,7 +49,7 @@ export function DashboardMockup() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Active Campaigns", value: "12", accent: "text-indigo-600 bg-indigo-50" },
+            { label: "Active Campaigns", value: "12", accent: "text-kefoo-600 bg-kefoo-50" },
             { label: "Total Budget", value: "$248K", accent: "text-violet-600 bg-violet-50" },
             { label: "Total Views", value: "4.2M", accent: "text-emerald-600 bg-emerald-50" },
             { label: "Average ER", value: "6.8%", accent: "text-amber-600 bg-amber-50" },
@@ -79,7 +79,7 @@ export function DashboardMockup() {
               {[38, 52, 44, 68, 58, 74, 62, 88, 72, 96].map((height, index) => (
                 <div
                   key={index}
-                  className="flex-1 rounded-t-md bg-gradient-to-t from-indigo-500 to-indigo-400 opacity-90"
+                  className="flex-1 rounded-t-md bg-gradient-to-t from-kefoo-500 to-kefoo-400 opacity-90"
                   style={{ height: `${height}%` }}
                 />
               ))}
@@ -125,7 +125,7 @@ export function PlannerMockup() {
             const hasEvent = [2, 5, 8, 11, 14, 17, 20].includes(index);
             const statuses = [
               "bg-violet-100 text-violet-700 border-violet-200",
-              "bg-blue-100 text-blue-700 border-blue-200",
+              "bg-kefoo-100 text-kefoo-700 border-kefoo-200",
               "bg-emerald-100 text-emerald-700 border-emerald-200",
             ];
 
@@ -172,7 +172,7 @@ export function CreatorsMockup() {
               className="grid grid-cols-4 items-center border-b border-slate-100 px-3 py-3 text-xs last:border-0"
             >
               <div className="col-span-2 flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-semibold text-indigo-700">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-kefoo-100 text-[10px] font-semibold text-kefoo-700">
                   {name?.[0]}
                 </div>
                 <span className="font-medium text-slate-900">{name}</span>
@@ -203,7 +203,7 @@ export function CampaignsMockup() {
           >
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-semibold text-indigo-600">{campaign.name}</p>
+                <p className="font-semibold text-kefoo-600">{campaign.name}</p>
                 <p className="text-xs text-slate-500">{campaign.client}</p>
               </div>
               <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">

@@ -39,7 +39,7 @@ function Shimmer({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-xl bg-gradient-to-r from-violet-500/10 via-blue-400/15 to-violet-500/10",
+        "animate-pulse rounded-xl bg-gradient-to-r from-violet-500/10 via-kefoo-400/15 to-violet-500/10",
         className,
       )}
     />
@@ -59,7 +59,7 @@ function ResultCard({
     <div
       className={cn(
         "rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm transition-all duration-300",
-        glow && "shadow-[0_0_36px_-14px_rgba(129,140,248,0.45)]",
+        glow && "shadow-[0_0_36px_-14px_rgba(110,165,247,0.4)]",
         className,
       )}
     >
@@ -73,7 +73,7 @@ function EmptyPreview() {
     <div className="flex min-h-[400px] flex-col">
       <div className="flex items-center gap-2">
         <span className="relative flex h-2 w-2">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400/30" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-kefoo-400/30" />
           <span className="relative h-2 w-2 rounded-full bg-violet-400/70" />
         </span>
         <span className="text-xs text-slate-400">Intelligence engine ready</span>
@@ -150,7 +150,7 @@ export function HeroInteractiveDemo() {
         <label htmlFor="hero-video-input" className="sr-only">
           Paste TikTok Instagram or YouTube link
         </label>
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_8px_40px_-16px_rgba(99,102,241,0.35)] backdrop-blur-sm transition-all focus-within:border-violet-400/25 focus-within:shadow-[0_8px_48px_-12px_rgba(129,140,248,0.4)]">
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_8px_40px_-16px_rgba(74,134,232,0.3)] backdrop-blur-sm transition-all focus-within:border-violet-400/25 focus-within:shadow-[0_8px_48px_-12px_rgba(110,165,247,0.35)]">
           <input
             id="hero-video-input"
             type="url"
@@ -191,7 +191,7 @@ export function HeroInteractiveDemo() {
         </div>
       </div>
 
-      <div className="landing-card-hover relative min-h-[420px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/[0.07] via-transparent to-blue-500/[0.06] p-5 sm:p-6">
+      <div className="landing-card-hover relative min-h-[420px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/[0.07] via-transparent to-kefoo-500/[0.06] p-5 sm:p-6">
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
 
         {phase === "idle" && <EmptyPreview />}
@@ -243,7 +243,7 @@ export function HeroInteractiveDemo() {
 
             <ResultCard
               glow
-              className="matrix-reveal matrix-reveal-delay-2 border-blue-400/15 bg-gradient-to-br from-violet-500/[0.08] to-blue-500/[0.05]"
+              className="matrix-reveal matrix-reveal-delay-2 border-kefoo-400/15 bg-gradient-to-br from-violet-500/[0.08] to-kefoo-500/[0.05]"
             >
               <p className="mb-3 text-xs font-medium text-violet-200/90">
                 Intelligence

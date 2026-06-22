@@ -121,10 +121,10 @@ export function LoginForm() {
           <p className="mt-8 text-center text-sm text-slate-500">
             Don&apos;t have an account?{" "}
             <Link
-              href="/"
+              href="mailto:hello@kefoo.tech?subject=Schedule%20a%20Demo"
               className="font-medium text-violet-300 transition-colors hover:text-violet-200"
             >
-              Request Early Access
+              Schedule a Demo
             </Link>
           </p>
         </div>

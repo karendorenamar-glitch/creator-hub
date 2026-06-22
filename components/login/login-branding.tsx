@@ -9,7 +9,7 @@ export function LoginBranding() {
         className="pointer-events-none absolute inset-0 opacity-70"
         style={{
           background:
-            "radial-gradient(ellipse 70% 50% at 20% 20%, rgba(168,85,247,0.14), transparent), radial-gradient(ellipse 50% 40% at 80% 80%, rgba(59,130,246,0.1), transparent)",
+            "radial-gradient(ellipse 70% 50% at 20% 20%, rgba(168,85,247,0.14), transparent), radial-gradient(ellipse 50% 40% at 80% 80%, rgba(110,165,247,0.1), transparent)",
         }}
         aria-hidden
       />

@@ -10,7 +10,7 @@ type StatCardProps = {
 };
 
 const accentStyles = {
-  indigo: "bg-indigo-50 text-indigo-600",
+  indigo: "bg-kefoo-50 text-kefoo-600",
   violet: "bg-violet-50 text-violet-600",
   emerald: "bg-emerald-50 text-emerald-600",
   amber: "bg-amber-50 text-amber-600",

@@ -75,7 +75,7 @@ function InspirationReferenceCell({
       rel="noopener noreferrer"
       aria-label="Open reference link"
       title="Open reference link"
-      className="inline-flex rounded-md p-1 text-base transition-colors hover:bg-indigo-50"
+      className="inline-flex rounded-md p-1 text-base transition-colors hover:bg-kefoo-50"
       onClick={(event) => event.stopPropagation()}
     >
       🔗

@@ -58,7 +58,7 @@ const monthlyBars = [
 const plannerColumns = [
   { label: "Idea Bank", count: 4, color: "bg-slate-500/20 text-slate-300" },
   { label: "In Progress", count: 3, color: "bg-violet-500/20 text-violet-300" },
-  { label: "Scheduled", count: 5, color: "bg-blue-500/20 text-blue-300" },
+  { label: "Scheduled", count: 5, color: "bg-kefoo-500/20 text-kefoo-300" },
   { label: "Posted", count: 12, color: "bg-emerald-500/20 text-emerald-300" },
 ];
 
@@ -88,7 +88,7 @@ export function WhatKefooDoesSection() {
           key={card.title}
           className="landing-card-hover rounded-2xl border border-white/10 bg-white/[0.03] p-6"
         >
-          <div className="mb-4 inline-flex rounded-xl bg-gradient-to-br from-violet-500/15 to-blue-500/10 p-2.5">
+          <div className="mb-4 inline-flex rounded-xl bg-gradient-to-br from-violet-500/15 to-kefoo-500/10 p-2.5">
             <card.icon className="h-4 w-4 text-violet-300" />
           </div>
           <h3 className="text-base font-semibold text-white">{card.title}</h3>
@@ -143,7 +143,7 @@ export function DashboardShowcaseSection() {
           {monthlyBars.map((bar) => (
             <div key={bar.month} className="flex flex-1 flex-col items-center gap-1">
               <div
-                className="w-full rounded-t-lg bg-gradient-to-t from-violet-600/80 to-blue-400/70"
+                className="w-full rounded-t-lg bg-gradient-to-t from-violet-600/80 to-kefoo-400/70"
                 style={{ height: `${bar.value}%` }}
               />
               <span className="text-[8px] text-slate-500">{bar.month}</span>

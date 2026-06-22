@@ -23,7 +23,7 @@ type CreatorsTableProps = {
 
 function CreatorAvatar({ creator }: { creator: Creator }) {
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-100 text-sm font-semibold text-indigo-700">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-kefoo-100 text-sm font-semibold text-kefoo-700">
       {creator.name.charAt(0).toUpperCase()}
     </div>
   );
@@ -63,7 +63,7 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
                   <CreatorAvatar creator={creator} />
                   <Link
                     href={`/creators/${creator.id}`}
-                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                    className="font-medium text-kefoo-600 hover:text-kefoo-500"
                   >
                     {creator.name}
                   </Link>
@@ -91,7 +91,7 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
                   <button
                     type="button"
                     onClick={() => onEdit(creator)}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
                     aria-label={`Edit ${creator.name}`}
                   >
                     <Pencil className="h-4 w-4" />

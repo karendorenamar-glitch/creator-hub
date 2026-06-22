@@ -71,7 +71,7 @@ export function CampaignsTable({
               <DataTableCell className="min-w-[220px] whitespace-normal">
                 <Link
                   href={`/campaigns/${campaign.id}`}
-                  className="font-medium text-indigo-600 hover:text-indigo-500"
+                  className="font-medium text-kefoo-600 hover:text-kefoo-500"
                 >
                   {campaign.name}
                 </Link>
@@ -145,7 +145,7 @@ export function CampaignsTable({
                   <button
                     type="button"
                     onClick={() => onEdit(campaign)}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-indigo-50 hover:text-indigo-600"
+                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
                     aria-label={`Edit ${campaign.name}`}
                   >
                     <Pencil className="h-4 w-4" />

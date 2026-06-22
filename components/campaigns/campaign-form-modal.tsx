@@ -255,7 +255,7 @@ export function CampaignFormModal({
                     type="checkbox"
                     checked={form.creator_ids.includes(creator.id)}
                     onChange={() => toggleId("creator_ids", creator.id)}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
                   />
                   <span className="text-sm text-slate-700">
                     {creator.name} · {creator.platform}
@@ -285,7 +285,7 @@ export function CampaignFormModal({
                     type="checkbox"
                     checked={form.video_ids.includes(video.id)}
                     onChange={() => toggleId("video_ids", video.id)}
-                    className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="mt-0.5 rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
                   />
                   <span className="text-sm text-slate-700">
                     <span className="block truncate">{video.video_url}</span>
@@ -314,7 +314,7 @@ export function CampaignFormModal({
           <button
             type="submit"
             disabled={isPending || loadingRelations}
-            className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
           >
             {isPending
               ? "Saving..."

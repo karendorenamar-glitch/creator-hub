@@ -44,7 +44,7 @@ export function CampaignPlannerPanel({
           </div>
           <Link
             href="/planner"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            className="text-sm font-medium text-kefoo-600 hover:text-kefoo-500"
           >
             Open Content Planner
           </Link>
@@ -73,7 +73,7 @@ export function CampaignPlannerPanel({
                       <button
                         type="button"
                         onClick={() => openDetails(item)}
-                        className="max-w-xs text-left font-medium text-indigo-600 hover:text-indigo-500"
+                        className="max-w-xs text-left font-medium text-kefoo-600 hover:text-kefoo-500"
                       >
                         {item.content_idea}
                       </button>

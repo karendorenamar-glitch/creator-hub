@@ -21,17 +21,20 @@ export function CTAFooter() {
               hover={false}
               className="relative overflow-hidden px-6 py-16 text-center sm:px-12 sm:py-20"
             >
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-violet-500/15" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-kefoo-500/10 via-transparent to-violet-500/15" />
               <div className="relative">
                 <h2 className="text-3xl font-bold tracking-tight text-white sm:text-5xl">
-                  Stop guessing. Start scaling.
+                  Built for the People Behind Every Campaign.
                 </h2>
-                <p className="mx-auto mt-4 max-w-xl text-base text-slate-400 sm:text-lg">
-                  Join Kefoo today and make every creator decision count.
+                <p className="mx-auto mt-4 max-w-xl text-sm text-slate-400 sm:text-base">
+                  For the late nights, endless spreadsheets and everything in between.
                 </p>
                 <div className="mt-10 flex justify-center">
-                  <GradientButton href="mailto:hello@kefoo.tech?subject=Early%20Access%20Request" size="lg">
-                    Request Early Access
+                  <GradientButton
+                    href="mailto:hello@kefoo.tech?subject=Schedule%20a%20Demo"
+                    size="lg"
+                  >
+                    Schedule a Demo
                     <ArrowRight className="h-5 w-5" />
                   </GradientButton>
                 </div>

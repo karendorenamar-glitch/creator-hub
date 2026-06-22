@@ -232,7 +232,7 @@ function PricingButton({
           variant === "secondary" &&
             "border border-white/[0.08] bg-white/[0.04] text-white hover:border-white/15 hover:bg-white/[0.06]",
           variant === "gradient" &&
-            "border border-violet-400/20 bg-gradient-to-r from-[#3B82F6]/90 to-[#A855F7]/90 text-white shadow-[0_4px_24px_-8px_rgba(99,102,241,0.45)] hover:shadow-[0_8px_32px_-8px_rgba(129,140,248,0.5)]",
+            "border border-violet-400/20 bg-gradient-to-r from-[#6EA5F7]/90 to-[#A855F7]/90 text-white shadow-[0_4px_24px_-8px_rgba(74,134,232,0.4)] hover:shadow-[0_8px_32px_-8px_rgba(110,165,247,0.45)]",
           variant === "dark" &&
             "border border-white/10 bg-white/[0.05] text-white hover:border-white/20 hover:bg-white/[0.08]",
         )}
@@ -475,7 +475,7 @@ export function Pricing() {
         className="pointer-events-none absolute inset-0 opacity-50"
         style={{
           background:
-            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(139,92,246,0.08), transparent), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(59,130,246,0.05), transparent)",
+            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(139,92,246,0.08), transparent), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(110,165,247,0.05), transparent)",
         }}
       />
 

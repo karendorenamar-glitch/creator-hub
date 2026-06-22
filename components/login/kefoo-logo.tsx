@@ -33,7 +33,7 @@ type KeffooEyeProps = {
 
 function KeffooEye({ pupilStyle }: KeffooEyeProps) {
   return (
-    <div className="kefoo-eye relative h-[1.125rem] w-[1.125rem] rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.14)] ring-1 ring-blue-400/20 sm:h-5 sm:w-5">
+    <div className="kefoo-eye relative h-[1.125rem] w-[1.125rem] rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.14)] ring-1 ring-kefoo-400/20 sm:h-5 sm:w-5">
       <div
         className="kefoo-pupil absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-slate-800 sm:h-2.5 sm:w-2.5"
         style={pupilStyle}
@@ -115,7 +115,7 @@ export function KeffooLogo({ className }: { className?: string }) {
       aria-label="KEFOO logo"
     >
       <span
-        className="absolute select-none bg-gradient-to-b from-blue-400 to-blue-600 bg-clip-text text-[5.75rem] font-black leading-none tracking-tighter text-transparent sm:text-[7.25rem]"
+        className="absolute select-none bg-gradient-to-b from-kefoo-300 to-kefoo-600 bg-clip-text text-[5.75rem] font-black leading-none tracking-tighter text-transparent sm:text-[7.25rem]"
         aria-hidden
       >
         K
@@ -136,7 +136,7 @@ export function KeffooLogo({ className }: { className?: string }) {
 export function KeffooWordmark({ className }: { className?: string }) {
   return (
     <p
-      className={`text-center text-sm font-semibold uppercase tracking-[0.35em] text-blue-300/90 pl-[0.35em] ${className ?? ""}`}
+      className={`text-center text-sm font-semibold uppercase tracking-[0.35em] text-kefoo-300/90 pl-[0.35em] ${className ?? ""}`}
     >
       KEFOO
     </p>

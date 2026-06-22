@@ -192,7 +192,7 @@ export function VideoFormModal({
               type="button"
               onClick={handleImportMetrics}
               disabled={isPending || isImporting || !form.video_url.trim()}
-              className="shrink-0 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-60"
+              className="shrink-0 rounded-lg border border-kefoo-200 bg-kefoo-50 px-4 py-2.5 text-sm font-medium text-kefoo-700 hover:bg-kefoo-100 disabled:opacity-60"
             >
               {isImporting ? "Importing..." : "Import Metrics"}
             </button>
@@ -280,7 +280,7 @@ export function VideoFormModal({
           <button
             type="submit"
             disabled={isPending || creators.length === 0}
-            className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
           >
             {isPending
               ? "Saving..."

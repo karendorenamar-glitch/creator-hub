@@ -45,15 +45,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href="/login"
-            className="hidden text-sm text-slate-400 transition-colors hover:text-white sm:inline"
-          >
-            Sign In
-          </Link>
-          <GradientButton href="#access">Request Early Access</GradientButton>
-        </div>
+        <GradientButton href="/login">Sign In</GradientButton>
       </div>
     </motion.header>
   );

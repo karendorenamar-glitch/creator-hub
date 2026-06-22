@@ -32,7 +32,7 @@ export function CreatorsSearch() {
         defaultValue={currentQuery}
         placeholder="Search creators..."
         onChange={(event) => handleSearch(event.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm outline-none ring-indigo-500 focus:border-indigo-500 focus:ring-2"
+        className="w-full rounded-lg border border-slate-300 bg-white py-2.5 pl-10 pr-4 text-sm outline-none ring-kefoo-500 focus:border-kefoo-500 focus:ring-2"
       />
       {isPending && (
         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">

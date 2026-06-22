@@ -68,7 +68,7 @@ function InsightCard({
           <p className="text-sm font-medium text-slate-500">{title}</p>
           <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
         </div>
-        <span className="shrink-0 rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+        <span className="shrink-0 rounded-full bg-kefoo-50 px-2.5 py-1 text-xs font-semibold text-kefoo-700">
           {metric}
         </span>
       </div>
@@ -85,9 +85,9 @@ const healthStyles = {
     accent: "bg-emerald-500",
   },
   "On Track": {
-    badge: "bg-indigo-50 text-indigo-700",
-    border: "border-indigo-200",
-    accent: "bg-indigo-500",
+    badge: "bg-kefoo-50 text-kefoo-700",
+    border: "border-kefoo-200",
+    accent: "bg-kefoo-500",
   },
   "Needs Attention": {
     badge: "bg-amber-50 text-amber-700",

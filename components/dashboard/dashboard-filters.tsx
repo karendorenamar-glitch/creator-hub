@@ -70,7 +70,7 @@ export function DashboardFilters({
   }
 
   const selectClassName =
-    "min-w-[220px] rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-indigo-500 focus:border-indigo-500 focus:ring-2 disabled:opacity-60";
+    "min-w-[220px] rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-kefoo-500 focus:border-kefoo-500 focus:ring-2 disabled:opacity-60";
 
   return (
     <div className="mb-6 flex flex-wrap items-end gap-4">
@@ -151,7 +151,7 @@ export function DashboardFilters({
             })
           }
           disabled={isPending}
-          className="min-w-[180px] rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-indigo-500 focus:border-indigo-500 focus:ring-2 disabled:opacity-60"
+          className="min-w-[180px] rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-kefoo-500 focus:border-kefoo-500 focus:ring-2 disabled:opacity-60"
         >
           <option value="all">All</option>
           {DASHBOARD_PLATFORMS.map((platform) => (

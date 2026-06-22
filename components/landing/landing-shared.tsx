@@ -40,7 +40,7 @@ export function LandingBackground() {
       />
       <div
         className="absolute top-1/3 -right-40 h-[420px] w-[420px] rounded-full blur-[100px]"
-        style={{ background: "radial-gradient(circle, rgba(59,130,246,0.16), transparent 70%)" }}
+        style={{ background: "radial-gradient(circle, rgba(110,165,247,0.16), transparent 70%)" }}
       />
       <div
         className="absolute bottom-0 -left-32 h-[380px] w-[380px] rounded-full blur-[90px]"
@@ -94,7 +94,7 @@ export function GlassCard({
         "rounded-[24px] border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl",
         "shadow-[0_0_60px_-20px_rgba(168,85,247,0.25)]",
         hover && "transition-shadow duration-300 hover:shadow-[0_0_80px_-16px_rgba(168,85,247,0.4)]",
-        glow && "shadow-[0_0_80px_-12px_rgba(129,140,248,0.45)]",
+        glow && "shadow-[0_0_80px_-12px_rgba(110,165,247,0.4)]",
         className,
       )}
     >
@@ -120,10 +120,10 @@ export function GradientButton({
         href={href}
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-white transition-shadow",
-          "bg-gradient-to-r from-[#3B82F6] to-[#A855F7]",
+          "bg-gradient-to-r from-[#6EA5F7] to-[#A855F7]",
           size === "lg"
             ? "px-8 py-4 text-base shadow-[0_0_48px_-8px_rgba(168,85,247,0.65)] hover:shadow-[0_0_64px_-6px_rgba(168,85,247,0.75)]"
-            : "px-5 py-2.5 text-sm shadow-[0_8px_32px_-8px_rgba(99,102,241,0.55)] hover:shadow-[0_12px_40px_-8px_rgba(129,140,248,0.6)]",
+            : "px-5 py-2.5 text-sm shadow-[0_8px_32px_-8px_rgba(74,134,232,0.45)] hover:shadow-[0_12px_40px_-8px_rgba(110,165,247,0.5)]",
           className,
         )}
       >
@@ -143,7 +143,7 @@ export function GradientText({
   return (
     <span
       className={cn(
-        "bg-gradient-to-r from-[#3B82F6] to-[#A855F7] bg-clip-text text-transparent",
+        "bg-gradient-to-r from-[#6EA5F7] to-[#A855F7] bg-clip-text text-transparent",
         className,
       )}
     >

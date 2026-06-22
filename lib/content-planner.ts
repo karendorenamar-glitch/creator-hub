@@ -41,13 +41,13 @@ export type ContentPlannerView = "list" | "calendar";
 
 export const contentPlannerStatusStyles: Record<string, string> = {
   Idea: "bg-violet-50 text-violet-700",
-  Scripting: "bg-blue-50 text-blue-700",
+  Scripting: "bg-kefoo-50 text-kefoo-700",
   Filming: "bg-orange-50 text-orange-700",
   Editing: "bg-yellow-50 text-yellow-800",
   Posted: "bg-emerald-50 text-emerald-700",
   Draft: "bg-slate-100 text-slate-700",
   Ready: "bg-emerald-50 text-emerald-700",
-  Scheduled: "bg-indigo-50 text-indigo-700",
+  Scheduled: "bg-kefoo-50 text-kefoo-700",
 };
 
 export const contentPlannerCalendarStatusStyles: Record<
@@ -59,8 +59,8 @@ export const contentPlannerCalendarStatusStyles: Record<
     border: "border-violet-200",
   },
   Scripting: {
-    card: "bg-blue-50 text-blue-900",
-    border: "border-blue-200",
+    card: "bg-kefoo-50 text-kefoo-900",
+    border: "border-kefoo-200",
   },
   Filming: {
     card: "bg-orange-50 text-orange-900",
@@ -83,8 +83,8 @@ export const contentPlannerCalendarStatusStyles: Record<
     border: "border-emerald-200",
   },
   Scheduled: {
-    card: "bg-indigo-50 text-indigo-900",
-    border: "border-indigo-200",
+    card: "bg-kefoo-50 text-kefoo-900",
+    border: "border-kefoo-200",
   },
 };
 

@@ -54,7 +54,7 @@ export function ValueProps() {
           {valueProps.map((item, index) => (
             <FadeIn key={item.title} delay={index * 0.06}>
               <GlassCard className="h-full p-5 text-center">
-                <div className="mx-auto mb-4 inline-flex rounded-2xl bg-gradient-to-br from-blue-500/15 to-violet-500/15 p-3">
+                <div className="mx-auto mb-4 inline-flex rounded-2xl bg-gradient-to-br from-kefoo-500/15 to-violet-500/15 p-3">
                   <item.icon className="h-5 w-5 text-violet-300" />
                 </div>
                 <h3 className="text-sm font-semibold text-white">{item.title}</h3>
