@@ -104,7 +104,7 @@ const plans: PricingPlan[] = [
       "Custom Reports",
       "Priority Support",
     ],
-    cta: "Contact Sales",
+    cta: "Start Scaling",
     ctaHref: "mailto:hello@kefoo.tech?subject=Scale%20Plan%20Inquiry",
     buttonVariant: "dark",
   },
