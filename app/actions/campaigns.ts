@@ -75,6 +75,51 @@ async function syncCampaignRelations(
   return { success: true };
 }
 
+export async function linkVideoToCampaign(
+  campaignId: string,
+  videoId: string,
+  creatorId: string,
+  options?: { revalidate?: boolean },
+) {
+  if (!campaignId) {
+    return { error: "Campaign is required." };
+  }
+
+  if (!videoId) {
+    return { error: "Video is required." };
+  }
+
+  if (!creatorId) {
+    return { error: "Creator is required." };
+  }
+
+  const supabase = await createClient();
+
+  const { error: videoError } = await supabase.from("campaign_videos").insert({
+    campaign_id: campaignId,
+    video_id: videoId,
+  });
+
+  if (videoError && videoError.code !== "23505") {
+    return { error: videoError.message };
+  }
+
+  const { error: creatorError } = await supabase.from("campaign_creators").insert({
+    campaign_id: campaignId,
+    creator_id: creatorId,
+  });
+
+  if (creatorError && creatorError.code !== "23505") {
+    return { error: creatorError.message };
+  }
+
+  if (options?.revalidate !== false) {
+    revalidateCreatorHub(campaignId);
+  }
+
+  return { success: true };
+}
+
 export async function createCampaign(input: CampaignInput) {
   const supabase = await createClient();
 

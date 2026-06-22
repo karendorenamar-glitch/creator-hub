@@ -10,6 +10,12 @@ export type TikTokMetrics = {
   saves: number;
 };
 
+export type TikTokVideoData = TikTokMetrics & {
+  authorUsername: string | null;
+  authorDisplayName: string | null;
+  authorFollowers: number;
+};
+
 export type TikTokProfileData = {
   followers: number;
   name: string | null;
@@ -48,7 +54,47 @@ function parseApifyError(status: number, body: string): string {
   return `Apify request failed (${status}).`;
 }
 
-export async function fetchTikTokMetrics(videoUrl: string): Promise<TikTokMetrics> {
+function getAuthorProfileFromVideoItem(item: Record<string, unknown>) {
+  const authorMeta = getAuthorMeta(item);
+  if (!authorMeta) {
+    return { displayName: null, followers: 0 };
+  }
+
+  const nickName =
+    typeof authorMeta.nickName === "string" ? authorMeta.nickName.trim() : "";
+  const name =
+    typeof authorMeta.name === "string" ? authorMeta.name.trim() : "";
+
+  return {
+    displayName: nickName || name || null,
+    followers: numberOrZero(
+      authorMeta.fans ?? authorMeta.followerCount ?? authorMeta.followers,
+    ),
+  };
+}
+
+function getAuthorUsernameFromVideoItem(
+  item: Record<string, unknown>,
+): string | null {
+  const authorMeta = getAuthorMeta(item);
+  if (!authorMeta) return null;
+
+  const uniqueId =
+    typeof authorMeta.uniqueId === "string"
+      ? authorMeta.uniqueId
+      : typeof authorMeta.name === "string"
+        ? authorMeta.name
+        : null;
+
+  if (!uniqueId) return null;
+
+  const normalized = uniqueId.replace(/^@+/, "").trim().toLowerCase();
+  return normalized || null;
+}
+
+export async function fetchTikTokVideoData(
+  videoUrl: string,
+): Promise<TikTokVideoData> {
   const token = getApifyToken();
   const response = await fetch(
     `${APIFY_BASE_URL}/acts/${TIKTOK_VIDEO_ACTOR}/run-sync-get-dataset-items`,
@@ -76,6 +122,7 @@ export async function fetchTikTokMetrics(videoUrl: string): Promise<TikTokMetric
   }
 
   const item = items[0];
+  const authorProfile = getAuthorProfileFromVideoItem(item);
 
   return {
     views: numberOrZero(item.playCount),
@@ -83,6 +130,20 @@ export async function fetchTikTokMetrics(videoUrl: string): Promise<TikTokMetric
     comments: numberOrZero(item.commentCount),
     shares: numberOrZero(item.shareCount),
     saves: numberOrZero(item.collectCount),
+    authorUsername: getAuthorUsernameFromVideoItem(item),
+    authorDisplayName: authorProfile.displayName,
+    authorFollowers: authorProfile.followers,
+  };
+}
+
+export async function fetchTikTokMetrics(videoUrl: string): Promise<TikTokMetrics> {
+  const data = await fetchTikTokVideoData(videoUrl);
+  return {
+    views: data.views,
+    likes: data.likes,
+    comments: data.comments,
+    shares: data.shares,
+    saves: data.saves,
   };
 }
 

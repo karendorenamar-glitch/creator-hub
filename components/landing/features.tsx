@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
+import { type ComponentType } from "react";
 import {
   analyticsCreatorAvatars,
   CreatorAvatarGraphic,
@@ -51,7 +51,72 @@ const scheduledPosts = [
   },
 ];
 
-function ContentPlannerVisual() {
+function BulkUploadVisual() {
+  const sampleLinks = [
+    "https://www.tiktok.com/@karendorena/video/1234567890",
+    "https://www.tiktok.com/@alyaputri/video/9876543210",
+    "https://www.tiktok.com/@bimaaditya/video/5555555555",
+  ];
+
+  return (
+    <div className="mt-5 flex flex-1 flex-col gap-3">
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          Campaign
+        </p>
+        <div className="mt-1.5 flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+          <span className="text-[11px] font-medium text-slate-200">Twin Date 6:6</span>
+          <span className="text-[10px] text-slate-500">▾</span>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          Platform
+        </p>
+        <div className="mt-1.5 flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+          <span className="text-[11px] font-medium text-slate-200">TikTok</span>
+          <span className="text-[10px] text-slate-500">▾</span>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          TikTok Video Links
+        </p>
+        <div className="mt-2 min-h-[132px] rounded-lg border border-white/[0.08] bg-[#070b18] p-3 font-mono text-[9px] leading-relaxed text-slate-400">
+          {sampleLinks.map((link) => (
+            <p key={link} className="truncate">
+              {link}
+            </p>
+          ))}
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <label className="inline-flex items-center gap-2 text-[10px] text-slate-400">
+            <span className="flex h-3.5 w-3.5 items-center justify-center rounded border border-violet-500/40 bg-violet-500/20 text-[8px] text-violet-200">
+              ✓
+            </span>
+            Import metrics from TikTok
+          </label>
+          <span className="text-[10px] text-slate-500">3 valid links</span>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-3 py-2 text-[10px] text-indigo-200">
+        Uploading 2 of 3...
+      </div>
+
+      <button
+        type="button"
+        className="landing-btn-gradient w-full rounded-xl px-4 py-2.5 text-[11px] font-medium text-white"
+      >
+        Upload 3 Videos
+      </button>
+    </div>
+  );
+}
+
+export function ContentPlannerVisual() {
   const days = ["M", "T", "W", "T", "F", "S", "S"];
   const dates = Array.from({ length: 28 }, (_, i) => i + 1);
   const highlighted = [3, 7, 12, 14, 18, 22, 26];
@@ -242,341 +307,11 @@ function CampaignAnalyticsVisual() {
   );
 }
 
-const monthlyCampaignLines = [
-  {
-    name: "Twin Date",
-    color: "#A855F7",
-    points: "0,68 40,52 80,58 120,38 160,44 200,28 240,34 280,18",
-  },
-  {
-    name: "Monthly Product",
-    color: "#3B82F6",
-    points: "0,75 40,62 80,55 120,48 160,52 200,40 240,46 280,32",
-  },
-  {
-    name: "Holiday",
-    color: "#6366F1",
-    points: "0,82 40,70 80,72 120,58 160,60 200,50 240,55 280,42",
-  },
-];
-
-const campaignBars = [
-  { name: "Twin Date 6:6", views: 88, er: 72, cpv: 65 },
-  { name: "Twin Date 7:7", views: 74, er: 58, cpv: 82 },
-  { name: "Twin Date 8:8", views: 62, er: 84, cpv: 54 },
-];
-
-const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
-
-const barCampaignColors = ["#A855F7", "#3B82F6", "#6366F1"];
-
-function CampaignFilterPills({
-  options,
-  selectedCampaign,
-  onSelect,
-}: {
-  options: { name: string; color: string }[];
-  selectedCampaign: string;
-  onSelect: (value: string) => void;
-}) {
-  return (
-    <div className="mb-3 flex flex-wrap gap-1.5">
-      <button
-        type="button"
-        onClick={() => onSelect("all")}
-        className={cn(
-          "rounded-full border px-2.5 py-1 text-[9px] font-medium transition-all",
-          selectedCampaign === "all"
-            ? "border-white/20 bg-white/[0.08] text-white"
-            : "border-white/[0.06] bg-transparent text-slate-500 hover:border-white/10 hover:text-slate-300",
-        )}
-      >
-        All Campaigns
-      </button>
-      {options.map((option) => (
-        <button
-          key={option.name}
-          type="button"
-          onClick={() => onSelect(option.name)}
-          className={cn(
-            "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[9px] font-medium transition-all",
-            selectedCampaign === option.name
-              ? "border-white/20 bg-white/[0.08] text-white"
-              : "border-white/[0.06] bg-transparent text-slate-500 hover:border-white/10 hover:text-slate-300",
-          )}
-        >
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: option.color }}
-          />
-          {option.name}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function CompareCampaignBarChart({
-  selectedCampaign,
-  onSelectCampaign,
-}: {
-  selectedCampaign: string;
-  onSelectCampaign: (value: string) => void;
-}) {
-  const [hovered, setHovered] = useState<string | null>(null);
-  const visibleCampaigns = useMemo(
-    () =>
-      selectedCampaign === "all"
-        ? campaignBars
-        : campaignBars.filter((campaign) => campaign.name === selectedCampaign),
-    [selectedCampaign],
-  );
-  const metrics = [
-    { key: "views", label: "Views", color: "#A855F7" },
-    { key: "er", label: "ER", color: "#3B82F6" },
-    { key: "cpv", label: "CPV", color: "#818CF8" },
-  ] as const;
-
-  const chartW = 280;
-  const chartH = 120;
-  const pad = { top: 8, right: 8, bottom: 22, left: 8 };
-  const plotW = chartW - pad.left - pad.right;
-  const plotH = chartH - pad.top - pad.bottom;
-  const groupW = plotW / Math.max(visibleCampaigns.length, 1);
-  const barW = groupW / metrics.length - 4;
-  const barFilterOptions = campaignBars.map((campaign, index) => ({
-    name: campaign.name,
-    color: barCampaignColors[index % barCampaignColors.length],
-  }));
-
-  return (
-    <div className="mt-3 flex flex-1 flex-col rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-      <CampaignFilterPills
-        options={barFilterOptions}
-        selectedCampaign={selectedCampaign}
-        onSelect={onSelectCampaign}
-      />
-
-      <div className="mb-2 flex flex-wrap gap-3">
-        {metrics.map((metric) => (
-          <span key={metric.key} className="flex items-center gap-1.5 text-[9px] text-slate-500">
-            <span
-              className="h-2 w-2 rounded-sm"
-              style={{ backgroundColor: metric.color, opacity: 0.85 }}
-            />
-            {metric.label === "ER" ? "Engagement Rate" : metric.label}
-          </span>
-        ))}
-      </div>
-
-      <svg viewBox={`0 0 ${chartW} ${chartH}`} className="min-h-[150px] w-full flex-1">
-        {[0.25, 0.5, 0.75, 1].map((tick) => {
-          const y = pad.top + plotH * (1 - tick);
-          return (
-            <line
-              key={tick}
-              x1={pad.left}
-              y1={y}
-              x2={chartW - pad.right}
-              y2={y}
-              stroke="rgba(255,255,255,0.05)"
-              strokeWidth="1"
-            />
-          );
-        })}
-
-        {visibleCampaigns.map((campaign, groupIndex) => {
-          const groupX = pad.left + groupIndex * groupW + groupW / 2;
-
-          return (
-            <g key={campaign.name}>
-              {metrics.map((metric, barIndex) => {
-                const value = campaign[metric.key];
-                const barHeight = (value / 100) * plotH;
-                const x =
-                  pad.left +
-                  groupIndex * groupW +
-                  barIndex * (barW + 3) +
-                  (groupW - metrics.length * barW - (metrics.length - 1) * 3) / 2;
-                const y = pad.top + plotH - barHeight;
-                const id = `${campaign.name}-${metric.key}`;
-
-                return (
-                  <rect
-                    key={id}
-                    x={x}
-                    y={y}
-                    width={barW}
-                    height={barHeight}
-                    rx={3}
-                    fill={metric.color}
-                    opacity={
-                      hovered && hovered !== id ? 0.35 : hovered === id ? 1 : 0.78
-                    }
-                    className="transition-opacity duration-200"
-                    onMouseEnter={() => setHovered(id)}
-                    onMouseLeave={() => setHovered(null)}
-                  />
-                );
-              })}
-              <text
-                x={groupX}
-                y={chartH - 4}
-                textAnchor="middle"
-                className="fill-slate-500 text-[8px]"
-              >
-                {campaign.name}
-              </text>
-            </g>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-function CompareCampaignLineChart({
-  selectedCampaign,
-  onSelectCampaign,
-}: {
-  selectedCampaign: string;
-  onSelectCampaign: (value: string) => void;
-}) {
-  const chartW = 280;
-  const chartH = 130;
-  const pad = { top: 10, right: 10, bottom: 24, left: 10 };
-  const lineFilterOptions = monthlyCampaignLines.map((line) => ({
-    name: line.name,
-    color: line.color,
-  }));
-  const visibleLines = useMemo(
-    () =>
-      selectedCampaign === "all"
-        ? monthlyCampaignLines
-        : monthlyCampaignLines.filter((line) => line.name === selectedCampaign),
-    [selectedCampaign],
-  );
-
-  return (
-    <div className="mt-3 flex flex-1 flex-col rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-      <CampaignFilterPills
-        options={lineFilterOptions}
-        selectedCampaign={selectedCampaign}
-        onSelect={onSelectCampaign}
-      />
-
-      <svg viewBox={`0 0 ${chartW} ${chartH}`} className="min-h-[150px] w-full flex-1">
-        {[0.25, 0.5, 0.75].map((tick) => {
-          const y = pad.top + (chartH - pad.top - pad.bottom) * tick;
-          return (
-            <line
-              key={tick}
-              x1={pad.left}
-              y1={y}
-              x2={chartW - pad.right}
-              y2={y}
-              stroke="rgba(255,255,255,0.05)"
-              strokeWidth="1"
-            />
-          );
-        })}
-
-        {visibleLines.map((line) => (
-          <g key={line.name}>
-            <polyline
-              points={line.points}
-              fill="none"
-              stroke={line.color}
-              strokeWidth={selectedCampaign === "all" ? 1.75 : 2.25}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              opacity={0.9}
-            />
-            {line.points.split(" ").map((point, i) => {
-              const [x, y] = point.split(",").map(Number);
-              if (Number.isNaN(x) || Number.isNaN(y)) return null;
-              return (
-                <circle
-                  key={`${line.name}-${i}`}
-                  cx={x}
-                  cy={y}
-                  r={2.5}
-                  fill={line.color}
-                  opacity={0.95}
-                />
-              );
-            })}
-          </g>
-        ))}
-
-        {monthLabels.map((label, i) => {
-          const x = pad.left + (i / (monthLabels.length - 1)) * (chartW - pad.left - pad.right);
-          return (
-            <text
-              key={label}
-              x={x}
-              y={chartH - 6}
-              textAnchor="middle"
-              className="fill-slate-500 text-[8px]"
-            >
-              {label}
-            </text>
-          );
-        })}
-      </svg>
-    </div>
-  );
-}
-
-function CompareCampaignsVisual() {
-  const [mode, setMode] = useState<"month" | "campaign">("campaign");
-  const [selectedCampaign, setSelectedCampaign] = useState("all");
-
-  function handleModeChange(nextMode: "month" | "campaign") {
-    setMode(nextMode);
-    setSelectedCampaign("all");
-  }
-
-  return (
-    <div className="mt-5 flex flex-1 flex-col">
-      <div className="flex gap-2">
-        {(["month", "campaign"] as const).map((key) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => handleModeChange(key)}
-            className={cn(
-              "rounded-lg border px-2.5 py-1 text-[10px] font-medium transition-all",
-              mode === key
-                ? "border-violet-500/25 bg-violet-500/10 text-violet-200"
-                : "border-transparent text-slate-500 hover:border-white/10 hover:text-slate-300",
-            )}
-          >
-            {key === "month" ? "By Month" : "By Campaign"}
-          </button>
-        ))}
-      </div>
-
-      {mode === "month" ? (
-        <CompareCampaignLineChart
-          selectedCampaign={selectedCampaign}
-          onSelectCampaign={setSelectedCampaign}
-        />
-      ) : (
-        <CompareCampaignBarChart
-          selectedCampaign={selectedCampaign}
-          onSelectCampaign={setSelectedCampaign}
-        />
-      )}
-    </div>
-  );
-}
-
 export function Features() {
   return (
     <section id="features" className="py-28">
       <div className={CONTAINER_CLASS}>
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-6 lg:grid-cols-2">
           <FadeIn delay={0.05}>
             <GlassCard className="flex h-full min-h-[480px] flex-col p-6">
               <h3 className="text-lg font-semibold text-white">Campaign Analytics Overview</h3>
@@ -589,21 +324,11 @@ export function Features() {
 
           <FadeIn delay={0.1}>
             <GlassCard className="flex h-full min-h-[480px] flex-col p-6">
-              <h3 className="text-lg font-semibold text-white">Compare Campaigns</h3>
+              <h3 className="text-lg font-semibold text-white">Bulk Upload Videos</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                Analyze campaign performance side-by-side and identify top performers.
+                Paste TikTok links, pick a campaign, and auto-create creators from @usernames.
               </p>
-              <CompareCampaignsVisual />
-            </GlassCard>
-          </FadeIn>
-
-          <FadeIn delay={0.15}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6">
-              <h3 className="text-lg font-semibold text-white">Content Planner</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
-                Plan, organize, and manage creator deliverables across campaigns.
-              </p>
-              <ContentPlannerVisual />
+              <BulkUploadVisual />
             </GlassCard>
           </FadeIn>
         </div>

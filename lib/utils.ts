@@ -28,6 +28,37 @@ export function normalizeCreatorPlatformUsername(
   return normalized || null;
 }
 
+export function getCreatorDisplayUsername(creator: {
+  platform: string;
+  tiktok_username: string | null;
+  instagram_username: string | null;
+  threads_username: string | null;
+}): string | null {
+  switch (creator.platform) {
+    case "TikTok":
+      return creator.tiktok_username;
+    case "Instagram":
+      return creator.instagram_username;
+    case "Threads":
+      return creator.threads_username;
+    default:
+      return (
+        creator.tiktok_username ??
+        creator.instagram_username ??
+        creator.threads_username
+      );
+  }
+}
+
+export function formatCreatorUsername(username: string | null | undefined): string {
+  const normalized = normalizeCreatorPlatformUsername(username);
+  return normalized ? `@${normalized}` : "—";
+}
+
+export function slugifyCreatorName(name: string | null | undefined): string {
+  return normalizeCreatorName(name).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 export function parseIDRInput(value: string | number | null | undefined): number {
   if (typeof value === "number") {
     return Number.isFinite(value) ? Math.max(0, Math.trunc(value)) : 0;

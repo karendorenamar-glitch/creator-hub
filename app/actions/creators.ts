@@ -218,6 +218,124 @@ async function fetchCreatorById(id: string) {
   return { data: mapCreatorRow(data) };
 }
 
+export async function syncCreatorTikTokUsername(
+  creatorId: string,
+  username: string | null | undefined,
+) {
+  if (!creatorId) return;
+
+  const normalized = normalizeCreatorPlatformUsername(username);
+  if (!normalized) return;
+
+  const supabase = await createClient();
+
+  await supabase
+    .from("creators")
+    .update({ tiktok_username: normalized })
+    .eq("id", creatorId);
+}
+
+export async function findOrCreateCreatorForTikTokUsername(
+  username: string,
+  options: {
+    platform: string;
+    displayName?: string | null;
+    followers?: number;
+    autoCreate?: boolean;
+    revalidate?: boolean;
+  },
+) {
+  const normalized = normalizeCreatorPlatformUsername(username);
+
+  if (!normalized) {
+    return { error: "Could not read TikTok username from this link." };
+  }
+
+  const supabase = await createClient();
+  const { data: creators, error } = await supabase
+    .from("creators")
+    .select("id, tiktok_username");
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  const existing = creators?.find(
+    (creator) =>
+      normalizeCreatorPlatformUsername(creator.tiktok_username) === normalized,
+  );
+
+  if (existing) {
+    return { creatorId: existing.id, created: false as const };
+  }
+
+  if (options.autoCreate === false) {
+    return {
+      error: `No creator found for @${normalized}. Add them on the Creators page first.`,
+    };
+  }
+
+  const displayName = options.displayName?.trim() || `@${normalized}`;
+  const payload = {
+    name: displayName,
+    tiktok_username: normalized,
+    instagram_username: null,
+    threads_username: null,
+    contact: normalized,
+    notes: null,
+    platform: options.platform.trim() || "TikTok",
+    followers: Math.max(0, options.followers ?? 0),
+    fee: 0,
+  };
+
+  const { data: created, error: insertError } = await supabase
+    .from("creators")
+    .insert(payload)
+    .select("id")
+    .maybeSingle();
+
+  if (insertError) {
+    if (isUniqueViolation(insertError.message, insertError.code)) {
+      const retry = creators?.find(
+        (creator) =>
+          normalizeCreatorPlatformUsername(creator.tiktok_username) ===
+          normalized,
+      );
+
+      if (retry) {
+        return { creatorId: retry.id, created: false as const };
+      }
+    }
+
+    return { error: insertError.message };
+  }
+
+  if (!created?.id) {
+    return { error: "Failed to create creator." };
+  }
+
+  if (options.revalidate !== false) {
+    revalidateCreatorHub();
+  }
+
+  return { creatorId: created.id, created: true as const };
+}
+
+/** @deprecated Use findOrCreateCreatorForTikTokUsername */
+export async function findCreatorIdForTikTokUsername(username: string) {
+  const result = await findOrCreateCreatorForTikTokUsername(username, {
+    platform: "TikTok",
+    autoCreate: false,
+    revalidate: false,
+  });
+
+  if (result.error || !result.creatorId) {
+    return { error: result.error ?? "Creator not found." };
+  }
+
+  return { creatorId: result.creatorId };
+}
+
 export async function createCreator(input: CreatorInput) {
   const supabase = await createClient();
   const parsed = buildCreatorPayload(input);
@@ -291,9 +409,6 @@ export async function updateCreator(id: string, input: CreatorInput) {
     .from("creators")
     .update({
       name: payload.name,
-      tiktok_username: payload.tiktok_username,
-      instagram_username: payload.instagram_username,
-      threads_username: payload.threads_username,
       contact: payload.contact,
       notes: payload.notes,
       platform: payload.platform,

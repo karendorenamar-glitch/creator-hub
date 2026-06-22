@@ -1,9 +1,13 @@
 import { Header } from "@/components/layout/header";
 import { VideosSection } from "@/components/videos/videos-section";
-import { getCreators, getVideos } from "@/lib/data";
+import { getCampaignOptions, getCreators, getVideos } from "@/lib/data";
 
 export default async function VideosPage() {
-  const [videos, creators] = await Promise.all([getVideos(), getCreators()]);
+  const [videos, creators, campaigns] = await Promise.all([
+    getVideos(),
+    getCreators(),
+    getCampaignOptions(),
+  ]);
 
   return (
     <>
@@ -20,6 +24,7 @@ export default async function VideosPage() {
             name,
             platform,
           }))}
+          campaigns={campaigns}
         />
       </main>
     </>

@@ -1,26 +1,29 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import {
   deleteVideo,
   refreshAllVideoMetrics,
   refreshVideoMetrics,
 } from "@/app/actions/videos";
+import { VideoBulkUploadModal } from "@/components/videos/video-bulk-upload-modal";
 import { VideoFormModal } from "@/components/videos/video-form-modal";
 import { VideosTable } from "@/components/videos/videos-table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
-import type { Creator, VideoWithCreator } from "@/types/database";
+import type { CampaignOption, Creator, VideoWithCreator } from "@/types/database";
 
 type VideosSectionProps = {
   videos: VideoWithCreator[];
   creators: Pick<Creator, "id" | "name" | "platform">[];
+  campaigns: CampaignOption[];
 };
 
-export function VideosSection({ videos, creators }: VideosSectionProps) {
+export function VideosSection({ videos, creators, campaigns }: VideosSectionProps) {
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<VideoWithCreator | null>(
     null,
   );
@@ -131,20 +134,40 @@ export function VideosSection({ videos, creators }: VideosSectionProps) {
           {isRefreshingAll ? "Refreshing..." : "Refresh All Videos"}
         </button>
 
-        <button
-          type="button"
-          onClick={openCreate}
-          disabled={creators.length === 0}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <Plus className="h-4 w-4" />
-          Add Video
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setBulkOpen(true)}
+            disabled={campaigns.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Upload className="h-4 w-4" />
+            Bulk Upload
+          </button>
+
+          <button
+            type="button"
+            onClick={openCreate}
+            disabled={creators.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Plus className="h-4 w-4" />
+            Add Video
+          </button>
+        </div>
       </div>
 
-      {creators.length === 0 && (
+      {campaigns.length === 0 && (
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Add at least one creator before creating videos.
+          Create a campaign first to use Bulk Upload. Bulk upload links videos
+          and creators to the campaign you select.
+        </div>
+      )}
+
+      {creators.length === 0 && campaigns.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Add a creator manually to use Add Video, or use Bulk Upload to create
+          creators automatically from TikTok @usernames.
         </div>
       )}
 
@@ -155,6 +178,12 @@ export function VideosSection({ videos, creators }: VideosSectionProps) {
         onRefresh={handleRefresh}
         refreshingId={refreshingId}
         isRefreshingAll={isRefreshingAll}
+      />
+
+      <VideoBulkUploadModal
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        campaigns={campaigns}
       />
 
       <VideoFormModal

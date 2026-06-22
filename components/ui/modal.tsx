@@ -10,7 +10,7 @@ type ModalProps = {
   description?: string;
   children: React.ReactNode;
   loading?: boolean;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "xl";
 };
 
 export function Modal({
@@ -38,7 +38,7 @@ export function Modal({
         aria-labelledby="modal-title"
         className={cn(
           "relative max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl",
-          size === "md" ? "max-w-md" : "max-w-lg",
+          size === "md" ? "max-w-md" : size === "lg" ? "max-w-lg" : "max-w-2xl",
         )}
       >
         <div className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-100 bg-white px-6 py-5">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
-import { formatIDR, formatNumber } from "@/lib/utils";
+import { formatCreatorUsername, formatIDR, formatNumber } from "@/lib/utils";
 import type { Creator } from "@/types/database";
 import {
   DataTable,
@@ -46,6 +46,7 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
       <DataTableElement>
         <DataTableHead>
           <DataTableHeaderCell>Name</DataTableHeaderCell>
+          <DataTableHeaderCell>Profile</DataTableHeaderCell>
           <DataTableHeaderCell>Contact</DataTableHeaderCell>
           <DataTableHeaderCell>Platform</DataTableHeaderCell>
           <DataTableHeaderCell className="text-right">
@@ -67,6 +68,9 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
                     {creator.name}
                   </Link>
                 </div>
+              </DataTableCell>
+              <DataTableCell className="text-slate-600">
+                {formatCreatorUsername(creator.tiktok_username)}
               </DataTableCell>
               <DataTableCell className="max-w-xs truncate text-slate-500">
                 {creator.contact ?? "—"}
