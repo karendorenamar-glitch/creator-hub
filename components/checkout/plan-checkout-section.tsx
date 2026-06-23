@@ -28,7 +28,6 @@ type PlanCheckoutSectionProps = {
   plan: CheckoutPlan;
   currentPlan: OrgPlan;
   orgId: string;
-  orgName: string;
   accountName: string;
   latestSubmission: PaymentSubmission | null;
 };
@@ -37,7 +36,6 @@ export function PlanCheckoutSection({
   plan,
   currentPlan,
   orgId,
-  orgName,
   accountName,
   latestSubmission,
 }: PlanCheckoutSectionProps) {
@@ -184,9 +182,6 @@ export function PlanCheckoutSection({
           <h2 className="mt-2 text-2xl font-semibold text-slate-900">
             {config.name}
           </h2>
-          <p className="mt-2 text-sm text-slate-600">
-            Workspace: <span className="font-medium text-slate-900">{orgName}</span>
-          </p>
           <div className="mt-4 flex flex-wrap items-baseline gap-x-2">
             <span className="text-3xl font-semibold tracking-tight text-slate-900">
               {config.priceLabel}

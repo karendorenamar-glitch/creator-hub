@@ -65,7 +65,6 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             plan={plan}
             currentPlan={planContext.plan}
             orgId={organization.id}
-            orgName={organization.name}
             accountName={accountName}
             latestSubmission={latestSubmission}
           />
