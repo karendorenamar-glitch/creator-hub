@@ -13,7 +13,6 @@ import {
   formatOrgPlanLabel,
   formatPaymentSubmissionStatus,
   getPaymentInstructions,
-  getPaymentQrUrl,
   isPlanAtLeast,
   PAYMENT_BANK_DETAILS,
   type CheckoutPlan,
@@ -44,11 +43,9 @@ export function PlanCheckoutSection({
   const { showSuccess, showError } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const config = CHECKOUT_PLAN_CONFIG[plan];
-  const qrUrl = getPaymentQrUrl();
 
   const [paymentDate, setPaymentDate] = useState("");
   const [senderName, setSenderName] = useState("");
-  const [notes, setNotes] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -92,7 +89,6 @@ export function PlanCheckoutSection({
         plan,
         paymentDate,
         senderName,
-        notes,
         proofUrl: uploadResult.proofUrl,
       });
 
@@ -252,34 +248,6 @@ export function PlanCheckoutSection({
       <div className="space-y-6">
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Scan to pay
-          </p>
-
-          {qrUrl ? (
-            <div className="mt-4 flex justify-center">
-              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrUrl}
-                  alt={`${config.name} payment QR code`}
-                  className="h-60 w-60 object-contain"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-              <p className="text-sm font-medium text-slate-700">
-                QR code coming soon
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                Use the bank transfer details on the left for now.
-              </p>
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Submit payment proof
           </p>
           <p className="mt-2 text-sm text-slate-600">
@@ -308,18 +276,6 @@ export function PlanCheckoutSection({
                 onChange={(event) => setSenderName(event.target.value)}
                 disabled={isSubmitting}
                 placeholder="Name on bank account"
-                className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:opacity-60"
-              />
-            </FormField>
-
-            <FormField label="Notes (optional)" htmlFor="payment-notes">
-              <textarea
-                id="payment-notes"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                disabled={isSubmitting}
-                rows={3}
-                placeholder="Reference number or extra details"
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:opacity-60"
               />
             </FormField>
