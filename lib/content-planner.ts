@@ -1,10 +1,7 @@
 import type { ContentPlannerAgency } from "@/types/database";
+import { SUPPORTED_PLATFORMS } from "@/lib/platforms";
 
-export const CONTENT_PLANNER_PLATFORMS = [
-  "TikTok",
-  "Instagram",
-  "Threads",
-] as const;
+export const CONTENT_PLANNER_PLATFORMS = SUPPORTED_PLATFORMS;
 
 export const CONTENT_PLANNER_STATUSES = [
   "Idea",
@@ -40,7 +37,7 @@ export function normalizeCampaignId(value: string | null | undefined) {
 export type ContentPlannerView = "list" | "calendar";
 
 export const contentPlannerStatusStyles: Record<string, string> = {
-  Idea: "bg-violet-50 text-violet-700",
+  Idea: "bg-kefoo-50 text-kefoo-700",
   Scripting: "bg-kefoo-50 text-kefoo-700",
   Filming: "bg-orange-50 text-orange-700",
   Editing: "bg-yellow-50 text-yellow-800",
@@ -55,8 +52,8 @@ export const contentPlannerCalendarStatusStyles: Record<
   { card: string; border: string }
 > = {
   Idea: {
-    card: "bg-violet-50 text-violet-900",
-    border: "border-violet-200",
+    card: "bg-kefoo-50 text-kefoo-900",
+    border: "border-kefoo-200",
   },
   Scripting: {
     card: "bg-kefoo-50 text-kefoo-900",

@@ -1,6 +1,9 @@
+import { detectVideoPlatform, type VideoPlatform } from "@/lib/video-url";
+
 const APIFY_BASE_URL = "https://api.apify.com/v2";
 const TIKTOK_VIDEO_ACTOR = "clockworks~tiktok-video-scraper";
 const TIKTOK_PROFILE_ACTOR = "clockworks~tiktok-profile-scraper";
+const INSTAGRAM_REEL_ACTOR = "apify~instagram-reel-scraper";
 
 export type TikTokMetrics = {
   views: number;
@@ -14,6 +17,10 @@ export type TikTokVideoData = TikTokMetrics & {
   authorUsername: string | null;
   authorDisplayName: string | null;
   authorFollowers: number;
+};
+
+export type PlatformVideoData = TikTokVideoData & {
+  platform: VideoPlatform;
 };
 
 export type TikTokProfileData = {
@@ -138,6 +145,147 @@ export async function fetchTikTokVideoData(
 
 export async function fetchTikTokMetrics(videoUrl: string): Promise<TikTokMetrics> {
   const data = await fetchTikTokVideoData(videoUrl);
+  return {
+    views: data.views,
+    likes: data.likes,
+    comments: data.comments,
+    shares: data.shares,
+    saves: data.saves,
+  };
+}
+
+function normalizeInstagramUsername(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+
+  const normalized = value.replace(/^@+/, "").trim().toLowerCase();
+  return normalized || null;
+}
+
+function getInstagramViews(item: Record<string, unknown>): number {
+  const viewCount = numberOrZero(item.videoViewCount);
+  if (viewCount > 0) return viewCount;
+
+  return numberOrZero(item.videoPlayCount);
+}
+
+function getInstagramErrorMessage(item: Record<string, unknown>): string {
+  const error = typeof item.error === "string" ? item.error.trim() : "";
+
+  switch (error) {
+    case "not_found":
+      return "Instagram post not found.";
+    case "private":
+      return "This Instagram account is private.";
+    default:
+      return typeof item.errorDescription === "string" && item.errorDescription.trim()
+        ? item.errorDescription
+        : error
+          ? error
+          : "No metrics found for this Instagram URL.";
+  }
+}
+
+export async function fetchInstagramVideoData(
+  videoUrl: string,
+): Promise<TikTokVideoData> {
+  const token = getApifyToken();
+  const response = await fetch(
+    `${APIFY_BASE_URL}/acts/${INSTAGRAM_REEL_ACTOR}/run-sync-get-dataset-items`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        username: [videoUrl.trim()],
+        resultsLimit: 1,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(parseApifyError(response.status, body));
+  }
+
+  const items = (await response.json()) as Array<Record<string, unknown>>;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("No metrics found for this Instagram URL.");
+  }
+
+  const item = items[0];
+
+  if (item.error) {
+    throw new Error(getInstagramErrorMessage(item));
+  }
+
+  const hasMetrics =
+    getInstagramViews(item) > 0 ||
+    numberOrZero(item.likesCount) > 0 ||
+    numberOrZero(item.commentsCount) > 0;
+
+  if (!normalizeInstagramUsername(item.ownerUsername) && !hasMetrics) {
+    throw new Error("No metrics found for this Instagram URL.");
+  }
+
+  const ownerFullName =
+    typeof item.ownerFullName === "string" ? item.ownerFullName.trim() : "";
+
+  return {
+    views: getInstagramViews(item),
+    likes: numberOrZero(item.likesCount),
+    comments: numberOrZero(item.commentsCount),
+    shares: 0,
+    saves: 0,
+    authorUsername: normalizeInstagramUsername(item.ownerUsername),
+    authorDisplayName: ownerFullName || null,
+    authorFollowers: 0,
+  };
+}
+
+export async function fetchInstagramMetrics(
+  videoUrl: string,
+): Promise<TikTokMetrics> {
+  const data = await fetchInstagramVideoData(videoUrl);
+  return {
+    views: data.views,
+    likes: data.likes,
+    comments: data.comments,
+    shares: data.shares,
+    saves: data.saves,
+  };
+}
+
+export async function fetchVideoDataFromUrl(
+  videoUrl: string,
+): Promise<PlatformVideoData> {
+  const platform = detectVideoPlatform(videoUrl);
+
+  if (platform === "Instagram") {
+    return {
+      ...(await fetchInstagramVideoData(videoUrl)),
+      platform,
+    };
+  }
+
+  if (platform === "TikTok") {
+    return {
+      ...(await fetchTikTokVideoData(videoUrl)),
+      platform,
+    };
+  }
+
+  throw new Error(
+    "Unsupported video URL. Paste a TikTok or Instagram Reel/video link.",
+  );
+}
+
+export async function fetchVideoMetricsFromUrl(
+  videoUrl: string,
+): Promise<TikTokMetrics> {
+  const data = await fetchVideoDataFromUrl(videoUrl);
   return {
     views: data.views,
     likes: data.likes,

@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { deleteCampaign } from "@/app/actions/campaigns";
 import { CampaignFormModal } from "@/components/campaigns/campaign-form-modal";
 import { CampaignSummaryCards } from "@/components/campaigns/campaign-summary-cards";
+import { FreeTrialUsageBanner } from "@/components/plan/plan-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import type {
@@ -65,11 +66,13 @@ export function CampaignsSection({
 
   return (
     <>
+      <FreeTrialUsageBanner />
+
       <div className="mb-6 flex justify-end">
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-500"
+          className="inline-flex items-center gap-2 rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-300"
         >
           <Plus className="h-4 w-4" />
           Create Campaign

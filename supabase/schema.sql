@@ -8,7 +8,7 @@ create table if not exists public.creators (
   threads_username text,
   contact text,
   notes text,
-  platform text not null default 'YouTube',
+  platform text not null default 'TikTok',
   followers integer not null default 0,
   fee numeric(15, 2) not null default 0,
   created_at timestamptz not null default now()
@@ -78,12 +78,20 @@ create table if not exists public.campaigns (
   budget numeric(12, 2) not null default 0,
   status text not null default 'draft'
     check (status in ('draft', 'active', 'paused', 'completed')),
+  campaign_type text not null default 'bulk'
+    check (campaign_type in ('bulk', 'personal')),
   created_at timestamptz not null default now()
 );
 
 create table if not exists public.campaign_creators (
   campaign_id uuid not null references public.campaigns(id) on delete cascade,
   creator_id uuid not null references public.creators(id) on delete cascade,
+  fee numeric,
+  workflow_status text
+    check (
+      workflow_status is null
+      or workflow_status in ('brief_sent', 'waiting_content', 'revision', 'posted')
+    ),
   primary key (campaign_id, creator_id)
 );
 
@@ -126,7 +134,7 @@ create policy "Allow public delete on campaign_videos"
 
 -- Sample seed data (optional)
 insert into public.creators (name, contact, platform, followers) values
-  ('Alex Rivera', 'alex@example.com', 'YouTube', 1250000),
+  ('Alex Rivera', 'alex@example.com', 'Instagram', 1250000),
   ('Jordan Lee', 'jordan@example.com', 'TikTok', 890000),
   ('Sam Chen', 'sam@example.com', 'Instagram', 450000)
 on conflict do nothing;

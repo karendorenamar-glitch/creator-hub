@@ -11,6 +11,7 @@ import {
   toDateOnlyString,
   type PayoutStatus,
   type PayoutUpdateInput,
+  formatPayoutStatusLabel,
 } from "@/lib/payouts";
 import type { PayoutWithTiming } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -197,9 +198,8 @@ export function PayoutEditModal({
             }
             className={inputClassName}
           >
-            <option value="PENDING">PENDING</option>
-            <option value="PAID">PAID</option>
-            <option value="CANCELLED">CANCELLED</option>
+            <option value="PENDING">{formatPayoutStatusLabel("PENDING")}</option>
+            <option value="PAID">{formatPayoutStatusLabel("PAID")}</option>
           </select>
         </FormField>
 
@@ -227,7 +227,7 @@ export function PayoutEditModal({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:opacity-60"
           >
             Save Changes
           </button>

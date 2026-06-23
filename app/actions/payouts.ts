@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getOrgIdForAction } from "@/lib/org";
 import {
   preparePayoutInsert,
   validatePayoutUpdate,
@@ -13,7 +14,7 @@ import { normalizeProofUrl } from "@/lib/payout-invoice";
 import type { Payout } from "@/types/database";
 
 const payoutSelect =
-  "id, creator_id, campaign_id, amount, status, requested_at, due_date, payment_term_days, notes, proof_url, created_at, creators(name), campaigns(name)";
+  "id, org_id, creator_id, campaign_id, amount, status, requested_at, due_date, payment_term_days, notes, proof_url, created_at, creators(name), campaigns(name)";
 
 function parsePayoutInput(input: PayoutInput) {
   if (!input.creator_id?.trim()) {
@@ -30,6 +31,11 @@ function parsePayoutInput(input: PayoutInput) {
 }
 
 export async function createPayout(input: PayoutInput) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
   const supabase = await createClient();
   const parsed = parsePayoutInput(input);
 
@@ -39,7 +45,10 @@ export async function createPayout(input: PayoutInput) {
 
   const { data, error } = await supabase
     .from("payouts")
-    .insert(parsed.payload)
+    .insert({
+      ...parsed.payload,
+      org_id: orgResult.orgId,
+    })
     .select(payoutSelect)
     .single();
 
@@ -48,7 +57,7 @@ export async function createPayout(input: PayoutInput) {
   }
 
   revalidatePayouts();
-  return { data: data as Payout };
+  return { data: data as unknown as Payout };
 }
 
 export async function updatePayout(input: PayoutUpdateInput) {
@@ -71,7 +80,7 @@ export async function updatePayout(input: PayoutUpdateInput) {
   }
 
   revalidatePayouts();
-  return { data: data as Payout };
+  return { data: data as unknown as Payout };
 }
 
 export async function updatePayoutStatus(id: string, status: PayoutStatus) {
@@ -138,9 +147,9 @@ export async function savePayoutProofUrl(payoutId: string, proofUrl: string) {
   console.log("[invoice-upload] save_proof_url_response", {
     payoutId,
     proofUrl: normalizedProofUrl,
-    payoutStatus: (data as Payout | null)?.status ?? null,
+    payoutStatus: (data as unknown as Payout | null)?.status ?? null,
   });
 
   revalidatePayouts();
-  return { proof_url: normalizedProofUrl, data: data as Payout };
+  return { proof_url: normalizedProofUrl, data: data as unknown as Payout };
 }

@@ -13,15 +13,15 @@ function MetricBlock({
 }: MetricBlockProps) {
   return (
     <div>
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
         {label}
       </p>
       <p
-        className={`mt-2 text-2xl font-semibold leading-none tracking-tight tabular-nums text-white ${valueClassName ?? ""}`}
+        className={`mt-2 text-2xl font-semibold leading-none tracking-tight tabular-nums text-slate-900 ${valueClassName ?? ""}`}
       >
         {value}
         {suffix ? (
-          <span className="ml-1.5 text-sm font-medium text-slate-400">
+          <span className="ml-1.5 text-sm font-medium text-slate-500">
             {suffix}
           </span>
         ) : null}
@@ -33,10 +33,10 @@ function MetricBlock({
 export function DashboardPreviewCard({ className }: { className?: string }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-white/[0.03] p-6 shadow-[0_0_60px_-20px_rgba(168,85,247,0.25)] backdrop-blur-xl transition-all duration-500 ease-out hover:-translate-y-0.5 hover:border-white/[0.12] hover:shadow-[0_0_80px_-16px_rgba(168,85,247,0.35)] ${className ?? ""}`}
+      className={`group relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_8px_40px_-24px_rgba(16,59,140,0.12)] backdrop-blur-sm transition-all duration-500 ease-out hover:-translate-y-0.5 hover:border-kefoo-200 hover:shadow-[0_12px_48px_-20px_rgba(45,103,214,0.18)] ${className ?? ""}`}
     >
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/10 via-white/[0.04] to-transparent"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-br from-kefoo-50/80 via-white to-transparent"
         aria-hidden
       />
 
@@ -44,12 +44,12 @@ export function DashboardPreviewCard({ className }: { className?: string }) {
         <div className="mb-7">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-500">
                 Campaign Progress
               </p>
-              <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-white">
+              <p className="mt-2 text-3xl font-semibold leading-none tracking-tight text-slate-900">
                 87%
-                <span className="ml-2 text-base font-medium text-slate-400">
+                <span className="ml-2 text-base font-medium text-slate-500">
                   Complete
                 </span>
               </p>
@@ -57,24 +57,24 @@ export function DashboardPreviewCard({ className }: { className?: string }) {
           </div>
 
           <div
-            className="mt-5 h-2 overflow-hidden rounded-full bg-white/15 ring-1 ring-white/10"
+            className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100 ring-1 ring-slate-200/80"
             role="progressbar"
             aria-valuenow={87}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label="Campaign progress"
           >
-            <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-kefoo-300 via-kefoo-500 to-kefoo-600 shadow-[0_0_12px_rgba(74,134,232,0.45)] transition-all duration-500 group-hover:w-[87%]" />
+            <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-kefoo-300 via-kefoo-500 to-kefoo-600 shadow-[0_0_12px_rgba(45,103,214,0.35)] transition-all duration-500 group-hover:w-[87%]" />
           </div>
         </div>
 
-        <div className="space-y-6 border-t border-white/10 pt-6">
+        <div className="space-y-6 border-t border-slate-200/80 pt-6">
           <MetricBlock label="Scheduled Content" value="127" suffix="Posts" />
           <MetricBlock label="Active Creators" value="48" suffix="Creators" />
           <MetricBlock
             label="Performance Growth"
             value="+32%"
-            valueClassName="text-emerald-400"
+            valueClassName="text-emerald-600"
           />
         </div>
       </div>

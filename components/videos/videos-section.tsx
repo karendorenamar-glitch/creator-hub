@@ -10,6 +10,7 @@ import {
 import { VideoBulkUploadModal } from "@/components/videos/video-bulk-upload-modal";
 import { VideoFormModal } from "@/components/videos/video-form-modal";
 import { VideosTable } from "@/components/videos/videos-table";
+import { FreeTrialUsageBanner, useUpgradeIfFreePlan } from "@/components/plan/plan-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import type { CampaignOption, Creator, VideoWithCreator } from "@/types/database";
@@ -22,6 +23,7 @@ type VideosSectionProps = {
 
 export function VideosSection({ videos, creators, campaigns }: VideosSectionProps) {
   const { showSuccess, showError } = useToast();
+  const requireUpgradeIfFreePlan = useUpgradeIfFreePlan();
   const [formOpen, setFormOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [editingVideo, setEditingVideo] = useState<VideoWithCreator | null>(
@@ -121,6 +123,8 @@ export function VideosSection({ videos, creators, campaigns }: VideosSectionProp
 
   return (
     <>
+      <FreeTrialUsageBanner />
+
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -137,7 +141,9 @@ export function VideosSection({ videos, creators, campaigns }: VideosSectionProp
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={() => setBulkOpen(true)}
+            onClick={() =>
+              requireUpgradeIfFreePlan(() => setBulkOpen(true))
+            }
             disabled={campaigns.length === 0}
             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -148,8 +154,7 @@ export function VideosSection({ videos, creators, campaigns }: VideosSectionProp
           <button
             type="button"
             onClick={openCreate}
-            disabled={creators.length === 0}
-            className="inline-flex items-center gap-2 rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-300"
           >
             <Plus className="h-4 w-4" />
             Add Video
@@ -164,10 +169,12 @@ export function VideosSection({ videos, creators, campaigns }: VideosSectionProp
         </div>
       )}
 
-      {creators.length === 0 && campaigns.length > 0 && (
-        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Add a creator manually to use Add Video, or use Bulk Upload to create
-          creators automatically from TikTok @usernames.
+      {creators.length === 0 && (
+        <div className="mb-6 rounded-xl border border-kefoo-200 bg-kefoo-50 px-4 py-3 text-sm text-kefoo-900">
+          No creators yet. Use <strong>Add Video</strong> with a TikTok or
+          Instagram link —
+          we&apos;ll create the creator for you. Bulk upload
+          is available on paid plans.
         </div>
       )}
 

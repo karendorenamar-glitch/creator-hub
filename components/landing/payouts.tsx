@@ -53,20 +53,31 @@ export function Payouts() {
   return (
     <section className="py-28">
       <div className={CONTAINER_CLASS}>
+        <FadeIn>
+          <div className="mx-auto mb-12 max-w-3xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+              Plan content and pay creators with confidence
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-600">
+              Content planning and payout tracking built for agency workflows.
+            </p>
+          </div>
+        </FadeIn>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <FadeIn>
-            <GlassCard hover={false} className="h-full overflow-hidden p-6 sm:p-8">
-              <h2 className="text-2xl font-bold text-white sm:text-3xl">
+            <GlassCard hover={false} className="h-full overflow-hidden p-6 text-center sm:p-8 sm:text-left">
+              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
                 Payouts & Payments
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Track payments, due dates, and invoice status in one place.
               </p>
 
               <div className="mt-8">
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="border-b border-white/[0.06] text-[10px] font-medium uppercase tracking-wider text-slate-500">
+                    <tr className="border-b border-slate-200/70 text-[10px] font-medium uppercase tracking-wider text-slate-500">
                       <th className="pb-3 pr-3">Creator</th>
                       <th className="pb-3 pr-3">Campaign</th>
                       <th className="pb-3 pr-3 text-right whitespace-nowrap">Amount</th>
@@ -77,12 +88,12 @@ export function Payouts() {
                     {payoutRows.map((row) => (
                       <tr
                         key={`${row.creator}-${row.campaign}`}
-                        className="border-b border-white/[0.04] last:border-0"
+                        className="border-b border-slate-200/60 last:border-0"
                       >
-                        <td className="py-3 pr-3 text-sm font-medium text-white">
+                        <td className="py-3 pr-3 text-sm font-medium text-slate-900">
                           {row.creator}
                         </td>
-                        <td className="max-w-[7.5rem] truncate py-3 pr-3 text-sm text-slate-400 sm:max-w-none">
+                        <td className="max-w-[7.5rem] truncate py-3 pr-3 text-sm text-slate-600 sm:max-w-none">
                           {row.campaign}
                         </td>
                         <td className="py-3 pr-3 text-right text-sm font-semibold tabular-nums text-slate-200 whitespace-nowrap">
@@ -104,7 +115,7 @@ export function Payouts() {
                 </table>
               </div>
 
-              <div className="mt-8 grid gap-4 border-t border-white/[0.06] pt-6 sm:grid-cols-3">
+              <div className="mt-8 grid gap-4 border-t border-slate-200/70 pt-6 sm:grid-cols-3">
                 {summaryItems.map((item) => (
                   <div key={item.label}>
                     <p className="text-xs text-slate-500">{item.label}</p>
@@ -114,8 +125,8 @@ export function Payouts() {
                         item.danger
                           ? "text-red-400"
                           : item.highlight
-                            ? "text-white"
-                            : "text-slate-300",
+                            ? "text-slate-900"
+                            : "text-slate-500",
                       )}
                     >
                       {formatMoney(item.value)}
@@ -126,7 +137,7 @@ export function Payouts() {
 
               <Link
                 href="/payouts"
-                className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-violet-300 transition-colors hover:text-violet-200"
+                className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
               >
                 View all payouts
                 <ArrowRight className="h-4 w-4" />
@@ -135,15 +146,15 @@ export function Payouts() {
           </FadeIn>
 
           <FadeIn delay={0.08}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 sm:p-8">
-              <h2 className="text-2xl font-bold text-white sm:text-3xl">Content Planner</h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:p-8 sm:text-left">
+              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Content Planner</h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Plan, organize, and manage creator deliverables across campaigns.
               </p>
               <ContentPlannerVisual />
               <Link
                 href="/planner"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-violet-300 transition-colors hover:text-violet-200"
+                className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
               >
                 Open content planner
                 <ArrowRight className="h-4 w-4" />

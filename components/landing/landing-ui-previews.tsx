@@ -10,9 +10,9 @@ function ShowcasePanel({
   children: ReactNode;
 }) {
   return (
-    <div className="landing-card-hover flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
-      <div className="border-b border-white/[0.06] px-4 py-3">
-        <p className="text-xs font-medium text-slate-400">{title}</p>
+    <div className="landing-card-hover flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm">
+      <div className="border-b border-slate-200/70 px-4 py-3">
+        <p className="text-xs font-medium text-slate-600">{title}</p>
       </div>
       <div className="flex flex-1 flex-col p-4">{children}</div>
     </div>
@@ -56,8 +56,8 @@ const monthlyBars = [
 ];
 
 const plannerColumns = [
-  { label: "Idea Bank", count: 4, color: "bg-slate-500/20 text-slate-300" },
-  { label: "In Progress", count: 3, color: "bg-violet-500/20 text-violet-300" },
+  { label: "Idea Bank", count: 4, color: "bg-slate-500/20 text-slate-500" },
+  { label: "In Progress", count: 3, color: "bg-kefoo-500/20 text-kefoo-300" },
   { label: "Scheduled", count: 5, color: "bg-kefoo-500/20 text-kefoo-300" },
   { label: "Posted", count: 12, color: "bg-emerald-500/20 text-emerald-300" },
 ];
@@ -86,13 +86,13 @@ export function WhatKefooDoesSection() {
       {cards.map((card) => (
         <div
           key={card.title}
-          className="landing-card-hover rounded-2xl border border-white/10 bg-white/[0.03] p-6"
+          className="landing-card-hover rounded-2xl border border-slate-200/80 bg-white/90 p-6"
         >
-          <div className="mb-4 inline-flex rounded-xl bg-gradient-to-br from-violet-500/15 to-kefoo-500/10 p-2.5">
-            <card.icon className="h-4 w-4 text-violet-300" />
+          <div className="mb-4 inline-flex rounded-xl bg-gradient-to-br from-kefoo-500/15 to-kefoo-500/10 p-2.5">
+            <card.icon className="h-4 w-4 text-kefoo-300" />
           </div>
-          <h3 className="text-base font-semibold text-white">{card.title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+          <h3 className="text-base font-semibold text-slate-900">{card.title}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">
             {card.description}
           </p>
         </div>
@@ -116,21 +116,21 @@ export function DashboardShowcaseSection() {
           {creatorComparison.map((row) => (
             <div
               key={row.rank}
-              className="grid grid-cols-[1fr_0.6fr_0.5fr_0.5fr_0.5fr] gap-1 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2 py-2 text-[11px]"
+              className="grid grid-cols-[1fr_0.6fr_0.5fr_0.5fr_0.5fr] gap-1 rounded-xl border border-slate-200/60 bg-white/85 px-2 py-2 text-[11px]"
             >
-              <span className="truncate font-medium text-white">
+              <span className="truncate font-medium text-slate-900">
                 #{row.rank} {row.name}
               </span>
-              <span className="text-right font-mono text-slate-400">
+              <span className="text-right font-mono text-slate-600">
                 {row.views}
               </span>
-              <span className="text-right font-mono text-slate-400">
+              <span className="text-right font-mono text-slate-600">
                 {row.saves}
               </span>
-              <span className="text-right font-mono text-slate-400">
+              <span className="text-right font-mono text-slate-600">
                 {row.er}
               </span>
-              <span className="text-right font-mono text-violet-300">
+              <span className="text-right font-mono text-kefoo-300">
                 {row.cpv}
               </span>
             </div>
@@ -143,14 +143,14 @@ export function DashboardShowcaseSection() {
           {monthlyBars.map((bar) => (
             <div key={bar.month} className="flex flex-1 flex-col items-center gap-1">
               <div
-                className="w-full rounded-t-lg bg-gradient-to-t from-violet-600/80 to-kefoo-400/70"
+                className="w-full rounded-t-lg bg-gradient-to-t from-kefoo-600/80 to-kefoo-400/70"
                 style={{ height: `${bar.value}%` }}
               />
               <span className="text-[8px] text-slate-500">{bar.month}</span>
             </div>
           ))}
         </div>
-        <div className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3">
+        <div className="mt-3 space-y-1.5 border-t border-slate-200/70 pt-3">
           {[
             { name: "Summer Launch", value: "3.1M views" },
             { name: "Brand Refresh", value: "1.8M views" },
@@ -159,8 +159,8 @@ export function DashboardShowcaseSection() {
               key={c.name}
               className="flex items-center justify-between text-[10px]"
             >
-              <span className="text-slate-400">{c.name}</span>
-              <span className="font-mono text-slate-300">{c.value}</span>
+              <span className="text-slate-600">{c.name}</span>
+              <span className="font-mono text-slate-500">{c.value}</span>
             </div>
           ))}
         </div>
@@ -171,7 +171,7 @@ export function DashboardShowcaseSection() {
           {plannerColumns.map((col) => (
             <div
               key={col.label}
-              className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-2.5 py-2"
+              className="rounded-xl border border-slate-200/70 bg-white/85 px-2.5 py-2"
             >
               <p className="text-[10px] text-slate-500">{col.label}</p>
               <p className={cn("mt-1 inline-flex rounded-md px-1.5 py-0.5 text-xs font-medium", col.color)}>
@@ -180,7 +180,7 @@ export function DashboardShowcaseSection() {
             </div>
           ))}
         </div>
-        <div className="mt-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2">
+        <div className="mt-3 rounded-xl border border-slate-200/70 bg-white/85 p-2">
           <div className="mb-1.5 flex items-center gap-1 text-[10px] text-slate-500">
             <CalendarDays className="h-3 w-3" />
             <span>June</span>
@@ -195,7 +195,7 @@ export function DashboardShowcaseSection() {
                 className={cn(
                   "rounded py-0.5",
                   [3, 7, 11].includes(i)
-                    ? "bg-violet-500/25 text-violet-200"
+                    ? "bg-kefoo-500/25 text-kefoo-200"
                     : "text-slate-500",
                 )}
               >
@@ -242,24 +242,24 @@ const payoutRows = [
 
 const statusColors = {
   Pending: "text-amber-400",
-  Paid: "text-slate-400",
+  Paid: "text-slate-600",
   Overdue: "text-red-400",
 };
 
 export function PayoutIntelligenceSection() {
   return (
-    <div className="landing-card-hover overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-      <div className="border-b border-white/[0.06] px-5 py-4 sm:px-6">
+    <div className="landing-card-hover overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90">
+      <div className="border-b border-slate-200/70 px-5 py-4 sm:px-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-white">
+            <h3 className="text-base font-semibold text-slate-900">
               Payouts & creator payments, fully tracked.
             </h3>
             <p className="mt-1 text-xs text-slate-500">
               Invoices · due dates · payment status — calculated automatically
             </p>
           </div>
-          <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-[10px] text-violet-300">
+          <span className="rounded-full border border-kefoo-500/20 bg-kefoo-500/10 px-3 py-1 text-[10px] text-kefoo-300">
             Due in 25 days · next payout
           </span>
         </div>
@@ -268,7 +268,7 @@ export function PayoutIntelligenceSection() {
       <div className="overflow-x-auto p-4 sm:p-6">
         <table className="w-full min-w-[560px] text-left">
           <thead>
-            <tr className="border-b border-white/[0.06] text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            <tr className="border-b border-slate-200/70 text-[10px] font-medium uppercase tracking-wide text-slate-500">
               <th className="pb-3 pr-4">Creator</th>
               <th className="pb-3 pr-4 text-right">Amount</th>
               <th className="pb-3 pr-4">Status</th>
@@ -280,9 +280,9 @@ export function PayoutIntelligenceSection() {
             {payoutRows.map((row) => (
               <tr
                 key={row.creator}
-                className="border-b border-white/[0.04] last:border-0"
+                className="border-b border-slate-200/60 last:border-0"
               >
-                <td className="py-3 pr-4 text-sm font-medium text-white">
+                <td className="py-3 pr-4 text-sm font-medium text-slate-900">
                   {row.creator}
                 </td>
                 <td className="py-3 pr-4 text-right font-mono text-sm tabular-nums text-slate-200">
@@ -293,7 +293,7 @@ export function PayoutIntelligenceSection() {
                     {row.status}
                   </span>
                 </td>
-                <td className="py-3 pr-4 text-xs text-slate-400">{row.timing}</td>
+                <td className="py-3 pr-4 text-xs text-slate-600">{row.timing}</td>
                 <td className="py-3">
                   <span
                     className={cn(

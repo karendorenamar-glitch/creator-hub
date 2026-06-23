@@ -1,4 +1,4 @@
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatCompactFee, parseCompactFee } from "@/lib/format";
 
 export const MIN_CREATOR_FEE = 0;
 
@@ -55,6 +55,16 @@ export function formatCreatorUsername(username: string | null | undefined): stri
   return normalized ? `@${normalized}` : "—";
 }
 
+export function formatCreatorListUsername(creator: {
+  platform: string;
+  tiktok_username: string | null;
+  instagram_username: string | null;
+  threads_username: string | null;
+}): string {
+  const username = getCreatorDisplayUsername(creator);
+  return formatCreatorUsername(username);
+}
+
 export function slugifyCreatorName(name: string | null | undefined): string {
   return normalizeCreatorName(name).toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -76,7 +86,7 @@ export function validateCreatorFee(
   value: string | number | null | undefined,
 ): { fee?: number; error?: string } {
   if (value == null || (typeof value === "string" && value.trim() === "")) {
-    return { error: "Fee is required." };
+    return { fee: 0 };
   }
 
   const fee = parseIDRInput(value);
@@ -86,6 +96,19 @@ export function validateCreatorFee(
   }
 
   return { fee };
+}
+
+export function formatOptionalNumber(value: number): string {
+  return value > 0 ? formatNumber(value) : "—";
+}
+
+export function formatOptionalIDR(value: number): string {
+  return value > 0 ? formatIDR(value) : "—";
+}
+
+export function formatCreatorDisplayName(name: string | null | undefined): string {
+  const trimmed = normalizeCreatorName(name);
+  return trimmed || "—";
 }
 
 export function formatNumber(value: number): string {
@@ -112,7 +135,7 @@ export function formatIDR(value: number): string {
   return formatMoney(value);
 }
 
-export { formatMoney } from "@/lib/format";
+export { formatMoney, formatCompactFee, parseCompactFee } from "@/lib/format";
 
 export function formatIDRDecimal(
   value: number,
@@ -194,4 +217,15 @@ export function calculateEngagementRateFromTotals(
 
 export function cn(...classes: Array<string | false | null | undefined>): string {
   return classes.filter(Boolean).join(" ");
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function isValidEmail(value: string): boolean {
+  return EMAIL_PATTERN.test(value.trim());
+}
+
+export function isValidPhoneNumber(value: string): boolean {
+  const digits = value.replace(/\D/g, "");
+  return digits.length >= 10 && digits.length <= 15;
 }

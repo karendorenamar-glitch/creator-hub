@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createVideoFromUrl } from "@/app/actions/videos";
+import { AlertTriangle } from "lucide-react";
+import { createVideoFromUrl, revalidateAfterBulkUpload } from "@/app/actions/videos";
 import {
   FormError,
   FormField,
@@ -9,10 +10,17 @@ import {
   Modal,
 } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { parseTikTokVideoUrls } from "@/lib/tiktok-url";
+import { runWithConcurrency } from "@/lib/async-pool";
+import {
+  parseVideoUrlsForPlatform,
+  VIDEO_PLATFORMS,
+  type VideoPlatform,
+} from "@/lib/video-url";
 import type { CampaignOption } from "@/types/database";
 
-const PLATFORMS = ["TikTok", "Instagram", "Threads", "YouTube", "Twitch", "Other"];
+const MAX_BULK_VIDEOS = 100;
+/** Apify scrapes run in parallel (up to this many at once). */
+const BULK_UPLOAD_CONCURRENCY = 5;
 
 type VideoBulkUploadModalProps = {
   open: boolean;
@@ -28,6 +36,13 @@ type UploadFailure = {
 const textareaClassName =
   "min-h-[220px] w-full resize-y rounded-lg border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20 disabled:bg-slate-50 disabled:text-slate-500";
 
+const PLATFORM_PLACEHOLDERS: Record<VideoPlatform, string> = {
+  TikTok:
+    "https://www.tiktok.com/@creator/video/1234567890\nhttps://www.tiktok.com/@creator/video/9876543210",
+  Instagram:
+    "https://www.instagram.com/reel/ABC123/\nhttps://www.instagram.com/p/XYZ789/",
+};
+
 export function VideoBulkUploadModal({
   open,
   onClose,
@@ -35,7 +50,7 @@ export function VideoBulkUploadModal({
 }: VideoBulkUploadModalProps) {
   const { showSuccess, showError } = useToast();
   const [campaignId, setCampaignId] = useState("");
-  const [platform, setPlatform] = useState("TikTok");
+  const [platform, setPlatform] = useState<VideoPlatform>("TikTok");
   const [linksText, setLinksText] = useState("");
   const [importMetrics, setImportMetrics] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +76,15 @@ export function VideoBulkUploadModal({
   }, [open, campaigns]);
 
   const parsedLinks = useMemo(
-    () => parseTikTokVideoUrls(linksText),
-    [linksText],
+    () => parseVideoUrlsForPlatform(linksText, platform),
+    [linksText, platform],
   );
+
+  const validLinkCount = parsedLinks.valid.length;
+  const wrongPlatformCount = parsedLinks.wrongPlatform.length;
+  const exceedsLimit = validLinkCount > MAX_BULK_VIDEOS;
+  const otherPlatform =
+    platform === "TikTok" ? ("Instagram" as const) : ("TikTok" as const);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -77,31 +98,47 @@ export function VideoBulkUploadModal({
       return;
     }
 
-    if (parsedLinks.valid.length === 0) {
-      setError("Add at least one valid TikTok video link.");
+    if (validLinkCount === 0) {
+      setError(`Add at least one valid ${platform} video link.`);
+      return;
+    }
+
+    if (exceedsLimit) {
+      setError(
+        `You can upload up to ${MAX_BULK_VIDEOS} videos at a time. Remove ${validLinkCount - MAX_BULK_VIDEOS} link${validLinkCount - MAX_BULK_VIDEOS === 1 ? "" : "s"} and run another batch for the rest.`,
+      );
       return;
     }
 
     setIsUploading(true);
-    setProgress({ current: 0, total: parsedLinks.valid.length });
+    setProgress({ current: 0, total: validLinkCount });
 
     const failed: UploadFailure[] = [];
     let added = 0;
     let newCreators = 0;
+    const urls = parsedLinks.valid;
 
     try {
-      for (let index = 0; index < parsedLinks.valid.length; index += 1) {
-        const url = parsedLinks.valid[index];
-        setProgress({ current: index + 1, total: parsedLinks.valid.length });
+      const results = await runWithConcurrency(
+        urls,
+        BULK_UPLOAD_CONCURRENCY,
+        async (url) =>
+          createVideoFromUrl({
+            video_url: url,
+            platform,
+            campaign_id: campaignId,
+            import_metrics: importMetrics,
+            auto_create_creator: true,
+            revalidate: false,
+          }),
+        (completed, total) => {
+          setProgress({ current: completed, total });
+        },
+      );
 
-        const result = await createVideoFromUrl({
-          video_url: url,
-          platform,
-          campaign_id: campaignId,
-          import_metrics: importMetrics,
-          auto_create_creator: true,
-          revalidate: index === parsedLinks.valid.length - 1,
-        });
+      for (let index = 0; index < results.length; index += 1) {
+        const url = urls[index];
+        const result = results[index];
 
         if (result.error) {
           failed.push({ url, error: result.error });
@@ -111,6 +148,10 @@ export function VideoBulkUploadModal({
             newCreators += 1;
           }
         }
+      }
+
+      if (added > 0) {
+        await revalidateAfterBulkUpload(campaignId);
       }
     } finally {
       setIsUploading(false);
@@ -147,11 +188,33 @@ export function VideoBulkUploadModal({
       open={open}
       onClose={onClose}
       title="Bulk Upload Videos"
-      description="Paste TikTok links, one per line. Videos and creators are linked to the selected campaign automatically."
+      description={`Paste ${platform} links only, one per line (up to ${MAX_BULK_VIDEOS} per batch). Switch platform for a different batch.`}
       loading={isUploading}
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div
+          role="alert"
+          className="rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3.5 text-amber-950"
+        >
+          <div className="flex gap-3">
+            <AlertTriangle
+              className="mt-0.5 size-5 shrink-0 text-amber-600"
+              aria-hidden
+            />
+            <div className="space-y-1">
+              <p className="text-base font-bold tracking-tight">
+                Keep this browser tab open until the upload finishes.
+              </p>
+              <p className="text-sm font-medium text-amber-900">
+                Closing the tab, switching apps, or putting your laptop to sleep
+                will stop the import. Videos already added are saved — the rest
+                will not upload.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <FormField label="Campaign" htmlFor="bulk-video-campaign">
           <select
             id="bulk-video-campaign"
@@ -177,11 +240,13 @@ export function VideoBulkUploadModal({
           <select
             id="bulk-video-platform"
             value={platform}
-            onChange={(event) => setPlatform(event.target.value)}
+            onChange={(event) =>
+              setPlatform(event.target.value as VideoPlatform)
+            }
             className={inputClassName}
             disabled={isUploading}
           >
-            {PLATFORMS.map((option) => (
+            {VIDEO_PLATFORMS.map((option) => (
               <option key={option} value={option}>
                 {option}
               </option>
@@ -189,18 +254,38 @@ export function VideoBulkUploadModal({
           </select>
         </FormField>
 
-        <FormField label="TikTok Video Links" htmlFor="bulk-video-links">
+        <FormField label={`${platform} Video Links`} htmlFor="bulk-video-links">
           <textarea
             id="bulk-video-links"
             value={linksText}
             onChange={(event) => setLinksText(event.target.value)}
             className={textareaClassName}
-            placeholder={
-              "https://www.tiktok.com/@karendorena/video/1234567890\nhttps://www.tiktok.com/@newcreator/video/9876543210"
-            }
+            placeholder={PLATFORM_PLACEHOLDERS[platform]}
             disabled={isUploading}
           />
         </FormField>
+
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <p>
+            <span className="font-medium">Up to {MAX_BULK_VIDEOS} videos per batch.</span>{" "}
+            Imports run {BULK_UPLOAD_CONCURRENCY} at a time — a full batch usually
+            takes around 5–10 minutes with metrics on. Run another batch if you
+            have more links.
+          </p>
+        </div>
+
+        {exceedsLimit && !isUploading ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-medium">
+              Too many links ({validLinkCount}/{MAX_BULK_VIDEOS})
+            </p>
+            <p className="mt-1">
+              Remove {validLinkCount - MAX_BULK_VIDEOS} link
+              {validLinkCount - MAX_BULK_VIDEOS === 1 ? "" : "s"} to continue,
+              then upload the rest in a separate batch.
+            </p>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">
           <label className="inline-flex items-center gap-2">
@@ -211,21 +296,57 @@ export function VideoBulkUploadModal({
               disabled={isUploading}
               className="rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
             />
-            Import metrics from TikTok
+            Import metrics from {platform}
           </label>
 
           <p>
-            {parsedLinks.valid.length} valid link
-            {parsedLinks.valid.length === 1 ? "" : "s"}
+            {validLinkCount} valid {platform} link
+            {validLinkCount === 1 ? "" : "s"}
+            {validLinkCount > 0 ? ` · max ${MAX_BULK_VIDEOS} per batch` : ""}
             {parsedLinks.invalid.length > 0
               ? ` · ${parsedLinks.invalid.length} invalid`
+              : ""}
+            {wrongPlatformCount > 0
+              ? ` · ${wrongPlatformCount} ${otherPlatform}`
               : ""}
           </p>
         </div>
 
+        {wrongPlatformCount > 0 && !isUploading ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <p className="font-medium">
+              Skipped {otherPlatform} links ({wrongPlatformCount})
+            </p>
+            <p className="mt-1">
+              This batch is set to {platform}. Switch platform or remove{" "}
+              {otherPlatform} links.
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {parsedLinks.wrongPlatform.slice(0, 5).map((line) => (
+                <li key={line} className="break-all font-mono text-xs">
+                  {line}
+                </li>
+              ))}
+            </ul>
+            {wrongPlatformCount > 5 ? (
+              <p className="mt-2 text-xs">+{wrongPlatformCount - 5} more</p>
+            ) : null}
+          </div>
+        ) : null}
+
         {isUploading ? (
-          <div className="rounded-lg border border-kefoo-100 bg-kefoo-50 px-4 py-3 text-sm text-kefoo-900">
-            Uploading {progress.current} of {progress.total}...
+          <div className="space-y-3">
+            <div
+              role="status"
+              className="rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3 text-amber-950"
+            >
+              <p className="text-base font-bold">
+                Do not close this tab — upload in progress.
+              </p>
+            </div>
+            <div className="rounded-lg border border-kefoo-100 bg-kefoo-50 px-4 py-3 text-sm text-kefoo-900">
+              Uploading {progress.current} of {progress.total}...
+            </div>
           </div>
         ) : null}
 
@@ -279,12 +400,17 @@ export function VideoBulkUploadModal({
           </button>
           <button
             type="submit"
-            disabled={isUploading || campaigns.length === 0 || parsedLinks.valid.length === 0}
-            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
+            disabled={
+              isUploading ||
+              campaigns.length === 0 ||
+              validLinkCount === 0 ||
+              exceedsLimit
+            }
+            className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:opacity-60"
           >
             {isUploading
               ? `Uploading (${progress.current}/${progress.total})...`
-              : `Upload ${parsedLinks.valid.length || ""} Video${parsedLinks.valid.length === 1 ? "" : "s"}`.trim()}
+              : `Upload ${validLinkCount || ""} Video${validLinkCount === 1 ? "" : "s"}`.trim()}
           </button>
         </div>
       </form>

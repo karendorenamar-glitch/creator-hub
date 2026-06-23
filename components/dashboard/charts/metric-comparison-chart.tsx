@@ -38,7 +38,7 @@ const metricConfig: Record<
   },
   saves: {
     label: "Saves",
-    color: "bg-violet-500",
+    color: "bg-kefoo-500",
     format: (value) => formatNumber(value ?? 0),
   },
   engagementRate: {

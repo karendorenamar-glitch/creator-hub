@@ -92,7 +92,7 @@ function CalendarDayCell({
               className={cn(
                 "inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium sm:h-7 sm:w-7 sm:text-sm",
                 isToday
-                  ? "bg-kefoo-600 text-white"
+                  ? "bg-kefoo-400 text-white"
                   : "text-slate-700",
               )}
             >

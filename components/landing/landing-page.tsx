@@ -17,8 +17,7 @@ const inter = Inter({
 export function LandingPage() {
   return (
     <div
-      className={`${inter.className} min-h-screen text-slate-100 antialiased`}
-      style={{ backgroundColor: "#050816" }}
+      className={`${inter.className} min-h-screen bg-white text-slate-900 antialiased`}
     >
       <LandingBackground />
       <Navbar />

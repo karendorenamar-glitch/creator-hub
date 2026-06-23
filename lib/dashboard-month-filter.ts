@@ -1,11 +1,8 @@
 export type DashboardMonthValue = "all" | `${number}-${string}`;
 
-export const DASHBOARD_PLATFORMS = [
-  "TikTok",
-  "Instagram",
-  "Threads",
-  "YouTube",
-] as const;
+import { SUPPORTED_PLATFORMS } from "@/lib/platforms";
+
+export const DASHBOARD_PLATFORMS = SUPPORTED_PLATFORMS;
 
 export type DashboardPlatformValue =
   | "all"

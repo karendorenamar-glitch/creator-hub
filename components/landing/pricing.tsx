@@ -36,21 +36,18 @@ type PricingPlan = {
 const plans: PricingPlan[] = [
   {
     name: "Free Trial",
-    badge: "14 Days Free",
+    badge: "30 Days Free",
     badgeStyle: "free",
     price: "Free",
     features: [
       "1 User",
       "3 Campaigns/month",
       "10 Creators/month",
-      "30 Tracked Contents/month",
+      "15 Tracked Contents/month",
       "Basic Campaign Analytics",
-      "Advanced Performance Dashboard",
-      "Campaign Comparison",
-      "Creator Comparison",
     ],
     cta: "Start Free Trial",
-    ctaHref: "#access",
+    ctaHref: "/login?signup=1",
     buttonVariant: "outline",
   },
   {
@@ -161,17 +158,12 @@ type ComparisonValue = string | boolean;
 const planColumns = ["Free Trial", "Starter", "Growth", "Scale"] as const;
 
 const comparisonRows: { feature: string; values: ComparisonValue[] }[] = [
-  {
-    feature: "Subscription Price",
-    values: ["Free", "IDR 529K/mo", "IDR 1.499M/mo", "IDR 2.599M/mo"],
-  },
-  { feature: "Duration", values: ["14 Days", "Monthly", "Monthly", "Monthly"] },
   { feature: "Users", values: ["1", "1", "3", "5"] },
   { feature: "Campaigns/month", values: ["3", "10", "Unlimited", "Unlimited"] },
   { feature: "Creators/month", values: ["10", "30", "100", "500"] },
   {
     feature: "Tracked Contents/month",
-    values: ["30", "90", "300", "1,500"],
+    values: ["15", "90", "300", "1,500"],
   },
   { feature: "Bulk Uploads", values: [false, false, true, true] },
   {
@@ -180,7 +172,7 @@ const comparisonRows: { feature: string; values: ComparisonValue[] }[] = [
   },
   {
     feature: "Advanced Performance Dashboard",
-    values: [true, false, true, true],
+    values: [false, false, true, true],
   },
   { feature: "Content Planner", values: [false, false, false, true] },
   { feature: "Payout Management", values: [false, false, false, true] },
@@ -200,9 +192,9 @@ function PlanBadge({
       className={cn(
         "inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider",
         style === "popular" &&
-          "border border-violet-400/30 bg-violet-500/10 text-violet-200",
+          "border border-kefoo-400/30 bg-kefoo-500/10 text-kefoo-200",
         style === "free" &&
-          "border border-white/10 bg-white/[0.04] text-slate-400",
+          "border border-slate-200/80 bg-white text-slate-600",
       )}
     >
       {label}
@@ -228,13 +220,13 @@ function PricingButton({
         className={cn(
           "flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200",
           variant === "outline" &&
-            "border border-white/15 bg-transparent text-white hover:border-white/25 hover:bg-white/[0.03]",
+            "border border-slate-300 bg-transparent text-slate-900 hover:border-slate-300 hover:bg-white/90",
           variant === "secondary" &&
-            "border border-white/[0.08] bg-white/[0.04] text-white hover:border-white/15 hover:bg-white/[0.06]",
+            "border border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50",
           variant === "gradient" &&
-            "border border-kefoo-400/25 bg-gradient-to-r from-kefoo-300/95 via-kefoo-500/95 to-kefoo-600/95 text-white shadow-[0_4px_24px_-8px_rgba(74,134,232,0.4)] hover:shadow-[0_8px_32px_-8px_rgba(110,165,247,0.45)]",
+            "border border-kefoo-300/40 bg-gradient-to-r from-kefoo-200 via-kefoo-300 to-kefoo-400 text-white shadow-[0_4px_20px_-8px_rgba(45,103,214,0.35)] hover:shadow-[0_8px_28px_-8px_rgba(45,103,214,0.4)]",
           variant === "dark" &&
-            "border border-white/10 bg-white/[0.05] text-white hover:border-white/20 hover:bg-white/[0.08]",
+            "border border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 hover:bg-white/[0.08]",
         )}
       >
         {children}
@@ -246,8 +238,8 @@ function PricingButton({
 function FeatureCheck({ active }: { active: boolean }) {
   if (active) {
     return (
-      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.06]">
-        <Check className="h-3 w-3 text-slate-300" strokeWidth={2.5} />
+      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-slate-50">
+        <Check className="h-3 w-3 text-slate-500" strokeWidth={2.5} />
       </span>
     );
   }
@@ -268,7 +260,7 @@ function ComparisonCell({ value }: { value: ComparisonValue }) {
     );
   }
 
-  return <span className="text-sm text-slate-300">{value}</span>;
+  return <span className="text-sm text-slate-500">{value}</span>;
 }
 
 function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
@@ -279,19 +271,19 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
       <motion.div
         whileHover={{ y: -3, transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } }}
         className={cn(
-          "relative flex h-full flex-col rounded-[20px] border bg-white/[0.025] p-6 backdrop-blur-xl transition-shadow duration-300 sm:p-7",
+          "relative flex h-full flex-col rounded-[20px] border bg-white/95 p-6 backdrop-blur-xl transition-shadow duration-300 sm:p-7",
           isHighlighted
-            ? "border-violet-400/20 shadow-[0_0_48px_-16px_rgba(139,92,246,0.35)] hover:shadow-[0_0_56px_-12px_rgba(139,92,246,0.42)] lg:scale-[1.02] lg:py-8"
-            : "border-white/[0.07] shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] hover:border-white/[0.1] hover:shadow-[0_12px_48px_-20px_rgba(0,0,0,0.55)]",
+            ? "border-kefoo-400/20 shadow-[0_0_48px_-16px_rgba(45,103,214,0.35)] hover:shadow-[0_0_56px_-12px_rgba(45,103,214,0.42)] lg:scale-[1.02] lg:py-8"
+            : "border-slate-200/80 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] hover:border-white/[0.1] hover:shadow-[0_12px_48px_-20px_rgba(0,0,0,0.55)]",
         )}
       >
         {isHighlighted ? (
-          <div className="pointer-events-none absolute inset-0 rounded-[20px] bg-gradient-to-b from-violet-500/[0.07] to-transparent" />
+          <div className="pointer-events-none absolute inset-0 rounded-[20px] bg-gradient-to-b from-kefoo-500/[0.07] to-transparent" />
         ) : null}
 
         <div className="relative flex flex-1 flex-col">
           <div className="mb-6 flex min-h-[28px] flex-wrap items-center gap-2">
-            <h3 className="text-base font-semibold tracking-tight text-white">{plan.name}</h3>
+            <h3 className="text-base font-semibold tracking-tight text-slate-900">{plan.name}</h3>
             {plan.badge ? (
               <PlanBadge label={plan.badge} style={plan.badgeStyle} />
             ) : null}
@@ -306,7 +298,7 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
             <div className="mt-1 flex flex-wrap items-baseline gap-x-1 gap-y-0.5">
               <span
                 className={cn(
-                  "font-semibold tracking-tight text-white",
+                  "font-semibold tracking-tight text-slate-900",
                   plan.price === "Free" ? "text-3xl" : "text-[1.65rem] leading-none",
                 )}
               >
@@ -318,13 +310,13 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
             </div>
           </div>
 
-          <ul className="flex-1 space-y-3 border-t border-white/[0.06] pt-6">
+          <ul className="flex-1 space-y-3 border-t border-slate-200/70 pt-6">
             {plan.features.map((feature) => (
-              <li key={feature} className="flex items-start gap-3 text-[13px] leading-snug text-slate-400">
+              <li key={feature} className="flex items-start gap-3 text-[13px] leading-snug text-slate-600">
                 <Check
                   className={cn(
                     "mt-0.5 h-3.5 w-3.5 shrink-0",
-                    isHighlighted ? "text-violet-300/90" : "text-slate-500",
+                    isHighlighted ? "text-kefoo-300/90" : "text-slate-500",
                   )}
                   strokeWidth={2.5}
                 />
@@ -353,16 +345,16 @@ function AddOnCard({ addOn, index }: { addOn: AddOn; index: number }) {
     <FadeIn delay={index * 0.05}>
       <motion.div
         whileHover={{ y: -3, transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] } }}
-        className="group flex h-full flex-col rounded-[20px] border border-white/[0.07] bg-white/[0.025] p-6 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-shadow duration-300 hover:border-white/[0.1] hover:shadow-[0_12px_48px_-20px_rgba(0,0,0,0.55)]"
+        className="group flex h-full flex-col rounded-[20px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] backdrop-blur-xl transition-shadow duration-300 hover:border-white/[0.1] hover:shadow-[0_12px_48px_-20px_rgba(0,0,0,0.55)]"
       >
-        <div className="mb-4 inline-flex rounded-xl border border-white/[0.06] bg-white/[0.04] p-2.5 transition-colors group-hover:border-white/10 group-hover:bg-white/[0.06]">
-          <Icon className="h-4 w-4 text-slate-400 group-hover:text-slate-300" strokeWidth={1.75} />
+        <div className="mb-4 inline-flex rounded-xl border border-slate-200/70 bg-white p-2.5 transition-colors group-hover:border-slate-200/80 group-hover:bg-slate-50">
+          <Icon className="h-4 w-4 text-slate-600 group-hover:text-slate-500" strokeWidth={1.75} />
         </div>
 
-        <h3 className="text-sm font-semibold tracking-tight text-white">{addOn.title}</h3>
+        <h3 className="text-sm font-semibold tracking-tight text-slate-900">{addOn.title}</h3>
 
         <div className="mt-3 flex items-baseline gap-0.5">
-          <span className="text-xl font-semibold tracking-tight text-white">{addOn.price}</span>
+          <span className="text-xl font-semibold tracking-tight text-slate-900">{addOn.price}</span>
           <span className="text-sm text-slate-500">/month</span>
         </div>
 
@@ -377,10 +369,10 @@ function AddOnsSection() {
     <div className="mt-20">
       <FadeIn>
         <div className="mx-auto mb-10 max-w-2xl text-center">
-          <span className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+          <span className="inline-flex rounded-full border border-slate-200/80 bg-white px-3 py-1 text-[10px] font-medium uppercase tracking-wider text-slate-500">
             Flexible Add-ons
           </span>
-          <h3 className="mt-4 text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          <h3 className="mt-4 text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
             Scale as your team grows
           </h3>
           <p className="mt-2 text-sm text-slate-500">
@@ -403,7 +395,7 @@ function ComparisonTable() {
     <FadeIn delay={0.2}>
       <div className="mt-20">
         <div className="mb-8 text-center sm:mb-10">
-          <h3 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
+          <h3 className="text-xl font-semibold tracking-tight text-slate-900 sm:text-2xl">
             Compare plans
           </h3>
           <p className="mt-2 text-sm text-slate-500">
@@ -411,12 +403,12 @@ function ComparisonTable() {
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-[20px] border border-white/[0.08] bg-white/[0.02] shadow-[0_8px_40px_-24px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        <div className="overflow-hidden rounded-[20px] border border-slate-200/80 bg-white/85 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.55)] backdrop-blur-xl">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left">
               <thead>
-                <tr className="border-b border-white/[0.08] bg-white/[0.02]">
-                  <th className="sticky left-0 z-20 min-w-[220px] bg-[#070b16]/95 px-5 py-4 text-xs font-medium uppercase tracking-wider text-slate-500 backdrop-blur-md sm:px-6">
+                <tr className="border-b border-slate-200/80 bg-white/85">
+                  <th className="sticky left-0 z-20 min-w-[220px] bg-white/95 px-5 py-4 text-xs font-medium uppercase tracking-wider text-slate-500 backdrop-blur-md sm:px-6">
                     Feature
                   </th>
                   {planColumns.map((column, index) => (
@@ -425,7 +417,7 @@ function ComparisonTable() {
                       className={cn(
                         "min-w-[120px] px-4 py-4 text-center text-xs font-medium uppercase tracking-wider sm:px-5",
                         index === 2
-                          ? "bg-violet-500/[0.06] text-violet-200"
+                          ? "bg-kefoo-500/[0.06] text-kefoo-200"
                           : "text-slate-500",
                       )}
                     >
@@ -439,11 +431,11 @@ function ComparisonTable() {
                   <tr
                     key={row.feature}
                     className={cn(
-                      "border-b border-white/[0.05] last:border-0",
+                      "border-b border-slate-200/60 last:border-0",
                       rowIndex % 2 === 0 ? "bg-transparent" : "bg-white/[0.015]",
                     )}
                   >
-                    <td className="sticky left-0 z-10 bg-[#070b16]/95 px-5 py-3.5 text-sm text-slate-400 backdrop-blur-md sm:px-6">
+                    <td className="sticky left-0 z-10 bg-white/95 px-5 py-3.5 text-sm text-slate-600 backdrop-blur-md sm:px-6">
                       {row.feature}
                     </td>
                     {row.values.map((value, colIndex) => (
@@ -451,7 +443,7 @@ function ComparisonTable() {
                         key={`${row.feature}-${colIndex}`}
                         className={cn(
                           "px-4 py-3.5 text-center sm:px-5",
-                          colIndex === 2 && "bg-violet-500/[0.04]",
+                          colIndex === 2 && "bg-kefoo-500/[0.04]",
                         )}
                       >
                         <ComparisonCell value={value} />
@@ -471,18 +463,10 @@ function ComparisonTable() {
 export function Pricing() {
   return (
     <section id="pricing" className="relative py-28">
-      <div
-        className="pointer-events-none absolute inset-0 opacity-50"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 50% 0%, rgba(139,92,246,0.08), transparent), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(110,165,247,0.05), transparent)",
-        }}
-      />
-
       <div className={CONTAINER_CLASS}>
         <FadeIn>
           <div className="mx-auto mb-16 max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
               Simple pricing for creator campaign teams
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-500 sm:text-lg">

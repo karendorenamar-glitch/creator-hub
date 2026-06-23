@@ -14,7 +14,7 @@ export function Header({ title, description, titleAddon, actions }: HeaderProps)
   const { openMobileMenu } = useMobileMenu();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white backdrop-blur-md">
       <div className="flex items-start justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
         <div className="flex items-start gap-3">
           <button

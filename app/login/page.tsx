@@ -6,6 +6,12 @@ export const metadata: Metadata = {
   description: "Sign in to your Kefoo Creator Intelligence OS workspace.",
 };
 
-export default function Page() {
-  return <LoginPage />;
+type PageProps = {
+  searchParams: Promise<{ signup?: string }>;
+};
+
+export default async function Page({ searchParams }: PageProps) {
+  const { signup } = await searchParams;
+
+  return <LoginPage initialMode={signup ? "signup" : "signin"} />;
 }

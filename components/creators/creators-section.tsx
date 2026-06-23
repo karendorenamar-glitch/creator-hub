@@ -5,19 +5,25 @@ import { Plus } from "lucide-react";
 import { deleteCreator } from "@/app/actions/creators";
 import { CreatorFormModal } from "@/components/creators/creator-form-modal";
 import { CreatorsTable } from "@/components/creators/creators-table";
+import { FreeTrialUsageBanner } from "@/components/plan/plan-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
-import type { Creator } from "@/types/database";
+import type { CampaignOption, CreatorListItem } from "@/types/database";
 
 type CreatorsSectionProps = {
-  creators: Creator[];
+  creators: CreatorListItem[];
+  campaigns: CampaignOption[];
 };
 
-export function CreatorsSection({ creators }: CreatorsSectionProps) {
+export function CreatorsSection({ creators, campaigns }: CreatorsSectionProps) {
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCreator, setEditingCreator] = useState<Creator | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Creator | null>(null);
+  const [editingCreator, setEditingCreator] = useState<CreatorListItem | null>(
+    null,
+  );
+  const [deleteTarget, setDeleteTarget] = useState<CreatorListItem | null>(
+    null,
+  );
   const [isDeleting, startDeleteTransition] = useTransition();
 
   function openCreate() {
@@ -25,7 +31,7 @@ export function CreatorsSection({ creators }: CreatorsSectionProps) {
     setFormOpen(true);
   }
 
-  function openEdit(creator: Creator) {
+  function openEdit(creator: CreatorListItem) {
     setEditingCreator(creator);
     setFormOpen(true);
   }
@@ -53,11 +59,13 @@ export function CreatorsSection({ creators }: CreatorsSectionProps) {
 
   return (
     <>
+      <FreeTrialUsageBanner />
+
       <div className="mb-6 flex justify-end">
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-500"
+          className="inline-flex items-center gap-2 rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-300"
         >
           <Plus className="h-4 w-4" />
           Add Creator
@@ -73,6 +81,7 @@ export function CreatorsSection({ creators }: CreatorsSectionProps) {
       <CreatorFormModal
         open={formOpen}
         onClose={closeForm}
+        campaigns={campaigns}
         creator={editingCreator}
       />
 

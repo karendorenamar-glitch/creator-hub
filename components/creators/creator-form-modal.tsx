@@ -13,33 +13,43 @@ import {
   Modal,
 } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { MIN_CREATOR_FEE, validateCreatorFee } from "@/lib/utils";
-import type { Creator } from "@/types/database";
-
-const PLATFORMS = ["YouTube", "TikTok", "Instagram", "Threads", "Twitch", "Other"];
+import {
+  getCreatorDisplayUsername,
+  MIN_CREATOR_FEE,
+  validateCreatorFee,
+} from "@/lib/utils";
+import type { CampaignOption, CreatorListItem } from "@/types/database";
+import { SUPPORTED_PLATFORMS } from "@/lib/platforms";
 
 type CreatorFormModalProps = {
   open: boolean;
   onClose: () => void;
-  creator?: Creator | null;
+  campaigns: CampaignOption[];
+  creator?: CreatorListItem | null;
 };
 
-type CreatorFormState = Omit<
-  CreatorInput,
-  "fee" | "tiktok_username" | "instagram_username" | "threads_username"
->;
+type CreatorFormState = {
+  platform: string;
+  username: string;
+  name: string;
+  followers: string;
+  contact: string;
+  campaign_ids: string[];
+};
 
 const emptyForm: CreatorFormState = {
+  platform: "TikTok",
+  username: "",
   name: "",
+  followers: "",
   contact: "",
-  notes: "",
-  platform: "YouTube",
-  followers: 0,
+  campaign_ids: [],
 };
 
 export function CreatorFormModal({
   open,
   onClose,
+  campaigns,
   creator,
 }: CreatorFormModalProps) {
   const isEditing = Boolean(creator);
@@ -55,55 +65,65 @@ export function CreatorFormModal({
     setError(null);
     if (creator) {
       setForm({
-        name: creator.name,
-        contact: creator.contact ?? "",
-        notes: creator.notes ?? "",
         platform: creator.platform,
-        followers: creator.followers,
+        username: getCreatorDisplayUsername(creator) ?? "",
+        name: creator.name,
+        followers: creator.followers > 0 ? String(creator.followers) : "",
+        contact: creator.contact ?? "",
+        campaign_ids: creator.campaigns.map((campaign) => campaign.id),
       });
-      setFeeInput(String(creator.fee));
+      setFeeInput(creator.fee > 0 ? String(creator.fee) : "");
       return;
     }
 
     setForm(emptyForm);
-    setFeeInput("0");
-  }, [open, creator]);
+    setFeeInput("");
+  }, [open, creator, campaigns]);
 
-  function handleChange(
-    field: keyof CreatorFormState,
-    value: string | number,
-  ) {
+  function handleChange(field: keyof CreatorFormState, value: string) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function toggleCampaign(campaignId: string) {
+    setForm((current) => ({
+      ...current,
+      campaign_ids: current.campaign_ids.includes(campaignId)
+        ? current.campaign_ids.filter((id) => id !== campaignId)
+        : [...current.campaign_ids, campaignId],
+    }));
   }
 
   function buildPayload(): CreatorInput | { error: string } {
     const feeResult = validateCreatorFee(feeInput);
 
     if (feeResult.error || feeResult.fee == null) {
-      return { error: feeResult.error ?? "Fee is required." };
+      return { error: feeResult.error ?? "Fee is invalid." };
+    }
+
+    const username = form.username.trim().replace(/^@+/, "");
+
+    if (!username) {
+      return { error: "Username is required." };
     }
 
     return {
       name: form.name,
+      username,
       tiktok_username: "",
       instagram_username: "",
       threads_username: "",
       contact: form.contact,
-      notes: form.notes,
+      notes: "",
       platform: form.platform,
-      followers: form.followers,
+      followers: form.followers.trim() ? Number(form.followers) || 0 : 0,
       fee: feeResult.fee,
+      campaign_ids: form.campaign_ids,
     };
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-
-    if (!form.name.trim()) {
-      setError("Name is required.");
-      return;
-    }
 
     const payload = buildPayload();
 
@@ -138,7 +158,7 @@ export function CreatorFormModal({
       description={
         isEditing
           ? "Update creator details and save changes."
-          : "Add a new creator to your hub. TikTok usernames are filled automatically when you upload video links."
+          : "Add a creator manually, or let video imports fill username and name automatically."
       }
       loading={isPending}
       size="lg"
@@ -153,12 +173,24 @@ export function CreatorFormModal({
             className={inputClassName}
             required
           >
-            {PLATFORMS.map((platform) => (
+            {SUPPORTED_PLATFORMS.map((platform) => (
               <option key={platform} value={platform}>
                 {platform}
               </option>
             ))}
           </select>
+        </FormField>
+
+        <FormField label="Username" htmlFor="creator-username">
+          <input
+            id="creator-username"
+            name="username"
+            value={form.username}
+            onChange={(event) => handleChange("username", event.target.value)}
+            className={inputClassName}
+            placeholder="@creator"
+            required
+          />
         </FormField>
 
         <FormField label="Name" htmlFor="creator-name">
@@ -168,8 +200,7 @@ export function CreatorFormModal({
             value={form.name}
             onChange={(event) => handleChange("name", event.target.value)}
             className={inputClassName}
-            placeholder="Creator name"
-            required
+            placeholder="Display name"
           />
         </FormField>
 
@@ -180,11 +211,9 @@ export function CreatorFormModal({
             type="number"
             min="0"
             value={form.followers}
-            onChange={(event) =>
-              handleChange("followers", Number(event.target.value) || 0)
-            }
+            onChange={(event) => handleChange("followers", event.target.value)}
             className={inputClassName}
-            required
+            placeholder="0"
           />
         </FormField>
 
@@ -195,15 +224,12 @@ export function CreatorFormModal({
             type="number"
             min={MIN_CREATOR_FEE}
             step="1"
-            required
             value={feeInput}
             onChange={(event) => setFeeInput(event.target.value)}
             className={inputClassName}
             placeholder="0"
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Minimum {MIN_CREATOR_FEE.toLocaleString("id-ID")} IDR
-          </p>
+          <p className="mt-1 text-xs text-slate-500">IDR · leave blank for 0</p>
         </FormField>
 
         <FormField label="Contact" htmlFor="creator-contact">
@@ -218,16 +244,30 @@ export function CreatorFormModal({
           />
         </FormField>
 
-        <FormField label="Notes" htmlFor="creator-notes">
-          <textarea
-            id="creator-notes"
-            name="notes"
-            value={form.notes}
-            onChange={(event) => handleChange("notes", event.target.value)}
-            className={`${inputClassName} min-h-24 resize-y`}
-            placeholder="Internal notes about this creator"
-            rows={4}
-          />
+        <FormField label="Campaign (optional)" htmlFor="creator-campaigns">
+          <div
+            id="creator-campaigns"
+            className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-slate-200 p-3"
+          >
+            {campaigns.length === 0 ? (
+              <p className="text-sm text-slate-500">No campaigns available.</p>
+            ) : (
+              campaigns.map((campaign) => (
+                <label
+                  key={campaign.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={form.campaign_ids.includes(campaign.id)}
+                    onChange={() => toggleCampaign(campaign.id)}
+                    className="rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
+                  />
+                  <span className="text-sm text-slate-700">{campaign.name}</span>
+                </label>
+              ))
+            )}
+          </div>
         </FormField>
 
         {error && <FormError message={error} />}
@@ -244,7 +284,7 @@ export function CreatorFormModal({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:opacity-60"
           >
             {isPending
               ? "Saving..."

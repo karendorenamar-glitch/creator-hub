@@ -15,6 +15,7 @@ create table if not exists public.campaigns (
 create table if not exists public.campaign_creators (
   campaign_id uuid not null references public.campaigns(id) on delete cascade,
   creator_id uuid not null references public.creators(id) on delete cascade,
+  fee numeric,
   primary key (campaign_id, creator_id)
 );
 

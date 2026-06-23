@@ -6,13 +6,18 @@ import { motion, useInView, type Variants } from "framer-motion";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
-export const LANDING_BG = "#050816";
+export const LANDING_BG = "#ffffff";
+export const LANDING_SURFACE =
+  "rounded-2xl border border-slate-200/80 bg-white shadow-[0_8px_40px_-24px_rgba(15,23,42,0.08)] backdrop-blur-sm";
+export const LANDING_SURFACE_SUBTLE =
+  "rounded-xl border border-slate-200/70 bg-white backdrop-blur-sm";
 export const KEFOO_BUTTON_GRADIENT =
-  "bg-gradient-to-r from-kefoo-300 via-kefoo-500 to-kefoo-600";
+  "bg-gradient-to-r from-kefoo-200 via-kefoo-300 to-kefoo-400";
 export const KEFOO_TEXT_GRADIENT =
-  "bg-gradient-to-r from-kefoo-300 via-kefoo-400 to-kefoo-600 bg-clip-text text-transparent";
+  "bg-gradient-to-r from-kefoo-300 via-kefoo-400 to-kefoo-500 bg-clip-text text-transparent";
 export const SECTION_CLASS = "py-28";
-export const CONTAINER_CLASS = "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8";
+export const CONTAINER_CLASS =
+  "mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10 xl:px-12";
 
 export const fadeUpVariants: Variants = {
   hidden: { opacity: 0, y: 28 },
@@ -25,32 +30,10 @@ export const fadeUpVariants: Variants = {
 
 export function LandingBackground() {
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-      <div
-        className="absolute inset-0"
-        style={{ backgroundColor: LANDING_BG }}
-      />
-      <div
-        className="absolute inset-0 opacity-[0.35]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-          backgroundSize: "64px 64px",
-        }}
-      />
-      <div
-        className="absolute -top-32 left-1/2 h-[520px] w-[820px] -translate-x-1/2 rounded-full blur-[120px]"
-        style={{ background: "radial-gradient(circle, rgba(168,85,247,0.22), transparent 70%)" }}
-      />
-      <div
-        className="absolute top-1/3 -right-40 h-[420px] w-[420px] rounded-full blur-[100px]"
-        style={{ background: "radial-gradient(circle, rgba(110,165,247,0.16), transparent 70%)" }}
-      />
-      <div
-        className="absolute bottom-0 -left-32 h-[380px] w-[380px] rounded-full blur-[90px]"
-        style={{ background: "radial-gradient(circle, rgba(139,92,246,0.12), transparent 70%)" }}
-      />
-    </div>
+    <div
+      className="pointer-events-none fixed inset-0 -z-10 bg-white"
+      style={{ backgroundColor: LANDING_BG }}
+    />
   );
 }
 
@@ -95,10 +78,10 @@ export function GlassCard({
     <motion.div
       whileHover={hover ? { y: -4, transition: { duration: 0.25 } } : undefined}
       className={cn(
-        "rounded-[24px] border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl",
-        "shadow-[0_0_60px_-20px_rgba(168,85,247,0.25)]",
-        hover && "transition-shadow duration-300 hover:shadow-[0_0_80px_-16px_rgba(168,85,247,0.4)]",
-        glow && "shadow-[0_0_80px_-12px_rgba(110,165,247,0.4)]",
+        LANDING_SURFACE,
+        "transition-shadow duration-300",
+        hover && "hover:shadow-[0_12px_48px_-20px_rgba(15,23,42,0.1)]",
+        glow && "shadow-[0_12px_48px_-16px_rgba(15,23,42,0.12)]",
         className,
       )}
     >
@@ -126,8 +109,8 @@ export function GradientButton({
           "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-white transition-shadow",
           KEFOO_BUTTON_GRADIENT,
           size === "lg"
-            ? "px-8 py-4 text-base shadow-[0_0_48px_-8px_rgba(74,134,232,0.5)] hover:shadow-[0_0_64px_-6px_rgba(110,165,247,0.55)]"
-            : "px-5 py-2.5 text-sm shadow-[0_8px_32px_-8px_rgba(74,134,232,0.45)] hover:shadow-[0_12px_40px_-8px_rgba(110,165,247,0.5)]",
+            ? "px-8 py-4 text-base shadow-[0_8px_32px_-10px_rgba(45,103,214,0.35)] hover:shadow-[0_12px_40px_-10px_rgba(45,103,214,0.42)]"
+            : "px-5 py-2.5 text-sm shadow-[0_6px_24px_-10px_rgba(45,103,214,0.32)] hover:shadow-[0_10px_32px_-10px_rgba(45,103,214,0.38)]",
           className,
         )}
       >
@@ -164,11 +147,11 @@ export function SectionHeading({
 }) {
   return (
     <div className={cn("mx-auto mb-16 max-w-3xl text-center", className)}>
-      <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+      <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
         {title}
       </h2>
       {subtitle ? (
-        <p className="mt-4 text-base leading-relaxed text-slate-400 sm:text-lg">
+        <p className="mt-4 text-base leading-relaxed text-slate-600 sm:text-lg">
           {subtitle}
         </p>
       ) : null}

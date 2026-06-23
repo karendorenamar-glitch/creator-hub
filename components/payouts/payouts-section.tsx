@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { deletePayout } from "@/app/actions/payouts";
 import { PayoutEditModal } from "@/components/payouts/payout-edit-modal";
 import { PayoutFormModal } from "@/components/payouts/payout-form-modal";
+import { PayoutStatusChart } from "@/components/payouts/payout-status-chart";
 import { PayoutsTable } from "@/components/payouts/payouts-table";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
@@ -49,11 +50,13 @@ export function PayoutsSection({
 
   return (
     <>
+      <PayoutStatusChart payouts={payouts} />
+
       <div className="mb-6 flex justify-end">
         <button
           type="button"
           onClick={() => setFormOpen(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-500"
+          className="inline-flex items-center gap-2 rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-300"
         >
           <Plus className="h-4 w-4" />
           Create Payout

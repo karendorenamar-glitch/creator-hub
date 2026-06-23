@@ -2,6 +2,8 @@
 
 import { createContext, useContext, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { PlanProvider } from "@/components/plan/plan-provider";
+import type { PlanContext } from "@/lib/plan";
 
 type MobileMenuContextValue = {
   openMobileMenu: () => void;
@@ -19,22 +21,25 @@ export function useMobileMenu() {
 
 type DashboardShellProps = {
   children: React.ReactNode;
+  plan: PlanContext;
 };
 
-export function DashboardShell({ children }: DashboardShellProps) {
+export function DashboardShell({ children, plan }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <MobileMenuContext.Provider
-      value={{ openMobileMenu: () => setMobileOpen(true) }}
-    >
-      <div className="flex min-h-screen bg-slate-50">
-        <Sidebar
-          mobileOpen={mobileOpen}
-          onMobileClose={() => setMobileOpen(false)}
-        />
-        <div className="flex min-w-0 flex-1 flex-col">{children}</div>
-      </div>
-    </MobileMenuContext.Provider>
+    <PlanProvider plan={plan}>
+      <MobileMenuContext.Provider
+        value={{ openMobileMenu: () => setMobileOpen(true) }}
+      >
+        <div className="flex min-h-screen bg-white">
+          <Sidebar
+            mobileOpen={mobileOpen}
+            onMobileClose={() => setMobileOpen(false)}
+          />
+          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+        </div>
+      </MobileMenuContext.Provider>
+    </PlanProvider>
   );
 }

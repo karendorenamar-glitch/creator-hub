@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import {
-  createVideo,
+  createVideoFromUrl,
   importVideoMetrics,
   updateVideo,
   type VideoInput,
@@ -14,6 +14,11 @@ import {
   Modal,
 } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import {
+  validateVideoUrlForPlatform,
+  VIDEO_PLATFORMS,
+  type VideoPlatform,
+} from "@/lib/video-url";
 import type { Creator, VideoWithCreator } from "@/types/database";
 
 type VideoFormModalProps = {
@@ -33,6 +38,17 @@ const emptyForm: VideoInput = {
   saves: 0,
 };
 
+const PLATFORM_PLACEHOLDERS: Record<VideoPlatform, string> = {
+  TikTok: "https://www.tiktok.com/@creator/video/1234567890",
+  Instagram:
+    "https://www.instagram.com/reel/ABC123/ or https://www.instagram.com/p/XYZ789/",
+};
+
+const PLATFORM_URL_LABELS: Record<VideoPlatform, string> = {
+  TikTok: "TikTok URL",
+  Instagram: "Reels URL",
+};
+
 export function VideoFormModal({
   open,
   onClose,
@@ -42,6 +58,7 @@ export function VideoFormModal({
   const isEditing = Boolean(video);
   const { showSuccess, showError } = useToast();
   const [form, setForm] = useState<VideoInput>(emptyForm);
+  const [platform, setPlatform] = useState<VideoPlatform>("TikTok");
   const [error, setError] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -50,6 +67,7 @@ export function VideoFormModal({
     if (!open) return;
 
     setError(null);
+    setPlatform("TikTok");
     setForm(
       video
         ? {
@@ -63,7 +81,7 @@ export function VideoFormModal({
           }
         : {
             ...emptyForm,
-            creator_id: creators[0]?.id ?? "",
+            creator_id: "",
           },
     );
   }, [open, video, creators]);
@@ -74,9 +92,10 @@ export function VideoFormModal({
 
   async function handleImportMetrics() {
     const trimmedUrl = form.video_url.trim();
+    const platformError = validateVideoUrlForPlatform(trimmedUrl, platform);
 
-    if (!trimmedUrl) {
-      setError("Enter a TikTok URL before importing metrics.");
+    if (platformError) {
+      setError(platformError);
       return;
     }
 
@@ -84,7 +103,7 @@ export function VideoFormModal({
     setIsImporting(true);
 
     try {
-      const result = await importVideoMetrics(trimmedUrl);
+      const result = await importVideoMetrics(trimmedUrl, platform);
 
       if (result.error) {
         setError(result.error);
@@ -101,7 +120,11 @@ export function VideoFormModal({
           shares: result.data.shares,
           saves: result.data.saves,
         }));
-        showSuccess("Metrics imported from TikTok.");
+        showSuccess(
+          platform === "Instagram"
+            ? "Metrics imported from Instagram."
+            : "Metrics imported from TikTok.",
+        );
       }
     } finally {
       setIsImporting(false);
@@ -112,20 +135,37 @@ export function VideoFormModal({
     event.preventDefault();
     setError(null);
 
-    if (!form.creator_id) {
-      setError("Please select a creator.");
-      return;
-    }
+    if (!isEditing) {
+      const platformError = validateVideoUrlForPlatform(
+        form.video_url.trim(),
+        platform,
+      );
 
-    if (!form.video_url.trim()) {
-      setError("TikTok URL is required.");
+      if (platformError) {
+        setError(platformError);
+        return;
+      }
+    } else if (!form.video_url.trim()) {
+      setError("Video URL is required.");
       return;
     }
 
     startTransition(async () => {
-      const result = video
-        ? await updateVideo(video.id, form)
-        : await createVideo(form);
+      const result = isEditing
+        ? await updateVideo(video!.id, form)
+        : await createVideoFromUrl({
+            video_url: form.video_url,
+            platform,
+            import_metrics: false,
+            auto_create_creator: true,
+            metrics: {
+              views: form.views,
+              likes: form.likes,
+              comments: form.comments,
+              shares: form.shares,
+              saves: form.saves,
+            },
+          });
 
       if (result.error) {
         setError(result.error);
@@ -148,34 +188,73 @@ export function VideoFormModal({
       description={
         isEditing
           ? "Update video metrics and save changes."
-          : "Add a new video to track performance."
+          : `Paste a ${platform} link. We'll detect the creator from the link automatically.`
       }
       loading={isPending}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormField label="Creator" htmlFor="video-creator">
-          <select
-            id="video-creator"
-            value={form.creator_id}
-            onChange={(event) => handleChange("creator_id", event.target.value)}
-            className={inputClassName}
-            required
-            disabled={creators.length === 0}
+        {!isEditing && platform === "Instagram" ? (
+          <div
+            role="note"
+            className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
           >
-            {creators.length === 0 ? (
-              <option value="">No creators available</option>
-            ) : (
-              creators.map((creator) => (
-                <option key={creator.id} value={creator.id}>
-                  {creator.name} · {creator.platform}
-                </option>
-              ))
-            )}
-          </select>
-        </FormField>
+            <p className="font-medium">
+              Meta only provides views, comments, and likes.
+            </p>
+            <p className="mt-1 text-amber-900">
+              Shares and saves are not available from Instagram — please enter
+              those manually.
+            </p>
+          </div>
+        ) : null}
 
-        <FormField label="TikTok URL" htmlFor="video-url">
+        {isEditing ? (
+          <FormField label="Creator" htmlFor="video-creator">
+            <select
+              id="video-creator"
+              value={form.creator_id}
+              onChange={(event) =>
+                handleChange("creator_id", event.target.value)
+              }
+              className={inputClassName}
+              disabled
+            >
+              {creators.length === 0 ? (
+                <option value="">No creators available</option>
+              ) : (
+                creators.map((creator) => (
+                  <option key={creator.id} value={creator.id}>
+                    {creator.name} · {creator.platform}
+                  </option>
+                ))
+              )}
+            </select>
+          </FormField>
+        ) : (
+          <FormField label="Platform" htmlFor="video-platform">
+            <select
+              id="video-platform"
+              value={platform}
+              onChange={(event) =>
+                setPlatform(event.target.value as VideoPlatform)
+              }
+              className={inputClassName}
+              disabled={isPending || isImporting}
+            >
+              {VIDEO_PLATFORMS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        )}
+
+        <FormField
+          label={isEditing ? "Video URL" : PLATFORM_URL_LABELS[platform]}
+          htmlFor="video-url"
+        >
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               id="video-url"
@@ -185,7 +264,7 @@ export function VideoFormModal({
                 handleChange("video_url", event.target.value)
               }
               className={inputClassName}
-              placeholder="https://www.tiktok.com/@..."
+              placeholder={PLATFORM_PLACEHOLDERS[platform]}
               required
             />
             <button
@@ -279,8 +358,8 @@ export function VideoFormModal({
           </button>
           <button
             type="submit"
-            disabled={isPending || creators.length === 0}
-            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
+            disabled={isPending}
+            className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:opacity-60"
           >
             {isPending
               ? "Saving..."

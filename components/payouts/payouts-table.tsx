@@ -7,6 +7,7 @@ import { PayoutInvoiceCell } from "@/components/payouts/payout-invoice-cell";
 import { PayoutTimingBadge } from "@/components/payouts/payout-timing-badge";
 import { useToast } from "@/components/ui/toast";
 import { formatDate, formatIDR } from "@/lib/utils";
+import { formatPayoutStatusLabel } from "@/lib/payouts";
 import type { PayoutWithTiming } from "@/types/database";
 import {
   DataTable,
@@ -40,7 +41,7 @@ function PayoutStatusBadge({ status }: { status: PayoutWithTiming["status"] }) {
         styles[status],
       )}
     >
-      {status}
+      {formatPayoutStatusLabel(status)}
     </span>
   );
 }

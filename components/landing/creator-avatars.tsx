@@ -14,7 +14,7 @@ function AvatarFrame({
     <svg
       viewBox="0 0 64 64"
       aria-hidden
-      className={cn("shrink-0 overflow-hidden rounded-full ring-2 ring-[#070b16]", className)}
+      className={cn("shrink-0 overflow-hidden rounded-full ring-2 ring-white", className)}
     >
       <rect width="64" height="64" fill={bg} />
       {children}
@@ -84,7 +84,7 @@ export function RizkyAvatar({ className }: AvatarProps) {
       <circle cx="27" cy="30" r="1.5" fill="#1f2937" />
       <circle cx="37" cy="30" r="1.5" fill="#1f2937" />
       <path d="M28 36q4 2 8 0" stroke="#9a6b43" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <path d="M20 18c4-3 9-4 12-4s8 1 12 4" stroke="#6366f1" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d="M20 18c4-3 9-4 12-4s8 1 12 4" stroke="#2d67d6" strokeWidth="3" fill="none" strokeLinecap="round" />
     </AvatarFrame>
   );
 }

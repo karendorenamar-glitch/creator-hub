@@ -3,8 +3,37 @@ import type { PayoutTimingBadge } from "@/lib/payouts";
 
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 
+export type CampaignType = "bulk" | "personal";
+
+export type CampaignCreatorWorkflowStatus =
+  | "brief_sent"
+  | "waiting_content"
+  | "revision"
+  | "posted";
+
+export type OrgMemberRole = "owner" | "member";
+
+export type OrgPlan = "free_trial" | "starter" | "growth" | "scale";
+
+export type Organization = {
+  id: string;
+  name: string;
+  slug: string | null;
+  plan: OrgPlan;
+  trial_ends_at: string | null;
+  created_at: string;
+};
+
+export type OrgMember = {
+  org_id: string;
+  user_id: string;
+  role: OrgMemberRole;
+  created_at: string;
+};
+
 export type Creator = {
   id: string;
+  org_id: string;
   name: string;
   tiktok_username: string | null;
   instagram_username: string | null;
@@ -17,8 +46,13 @@ export type Creator = {
   created_at: string;
 };
 
+export type CreatorListItem = Creator & {
+  campaigns: Pick<Campaign, "id" | "name">[];
+};
+
 export type Video = {
   id: string;
+  org_id: string;
   creator_id: string;
   video_url: string;
   views: number;
@@ -50,12 +84,14 @@ export type CreatorDetail = Creator & {
 
 export type Campaign = {
   id: string;
+  org_id: string;
   name: string;
   client_name: string;
   start_date: string;
   end_date: string;
   budget: number;
   status: CampaignStatus;
+  campaign_type: CampaignType;
   created_at: string;
 };
 
@@ -93,8 +129,13 @@ export type CampaignListItem = Campaign & {
   } | null;
 };
 
+export type CampaignCreator = Creator & {
+  campaign_fee: number | null;
+  workflow_status: CampaignCreatorWorkflowStatus | null;
+};
+
 export type CampaignDetail = Campaign & {
-  creators: Creator[];
+  creators: CampaignCreator[];
   videos: VideoWithCreator[];
   total_views: number;
   total_likes: number;
@@ -161,6 +202,7 @@ export type DashboardStats = {
 
 export type ContentPlannerAgency = {
   id: string;
+  org_id: string;
   user_id: string;
   content_pillar: string;
   content_idea: string;
@@ -178,6 +220,7 @@ export type PayoutStatus = "PENDING" | "PAID" | "CANCELLED";
 
 export type Payout = {
   id: string;
+  org_id: string;
   creator_id: string;
   campaign_id: string | null;
   amount: number;
@@ -202,10 +245,56 @@ export type PayoutWithTiming = Payout & {
 export type Database = {
   public: {
     Tables: {
+      organizations: {
+        Row: Organization;
+        Insert: {
+          id?: string;
+          name: string;
+          slug?: string | null;
+          plan?: OrgPlan;
+          trial_ends_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          name?: string;
+          slug?: string | null;
+          plan?: OrgPlan;
+          trial_ends_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      org_members: {
+        Row: OrgMember;
+        Insert: {
+          org_id: string;
+          user_id: string;
+          role?: OrgMemberRole;
+          created_at?: string;
+        };
+        Update: {
+          org_id?: string;
+          user_id?: string;
+          role?: OrgMemberRole;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       creators: {
         Row: Creator;
         Insert: {
           id?: string;
+          org_id: string;
           name: string;
           tiktok_username?: string | null;
           instagram_username?: string | null;
@@ -219,6 +308,7 @@ export type Database = {
         };
         Update: {
           id?: string;
+          org_id?: string;
           name?: string;
           tiktok_username?: string | null;
           instagram_username?: string | null;
@@ -235,6 +325,7 @@ export type Database = {
       videos: {
         Row: {
           id: string;
+          org_id: string;
           creator_id: string;
           title: string;
           views: number;
@@ -246,6 +337,7 @@ export type Database = {
         };
         Insert: {
           id?: string;
+          org_id: string;
           creator_id: string;
           title: string;
           views?: number;
@@ -257,6 +349,7 @@ export type Database = {
         };
         Update: {
           id?: string;
+          org_id?: string;
           creator_id?: string;
           title?: string;
           views?: number;
@@ -280,22 +373,26 @@ export type Database = {
         Row: Campaign;
         Insert: {
           id?: string;
+          org_id: string;
           name: string;
           client_name: string;
           start_date: string;
           end_date: string;
           budget?: number;
           status?: CampaignStatus;
+          campaign_type?: CampaignType;
           created_at?: string;
         };
         Update: {
           id?: string;
+          org_id?: string;
           name?: string;
           client_name?: string;
           start_date?: string;
           end_date?: string;
           budget?: number;
           status?: CampaignStatus;
+          campaign_type?: CampaignType;
           created_at?: string;
         };
         Relationships: [];
@@ -304,14 +401,20 @@ export type Database = {
         Row: {
           campaign_id: string;
           creator_id: string;
+          fee: number | null;
+          workflow_status: CampaignCreatorWorkflowStatus | null;
         };
         Insert: {
           campaign_id: string;
           creator_id: string;
+          fee?: number | null;
+          workflow_status?: CampaignCreatorWorkflowStatus | null;
         };
         Update: {
           campaign_id?: string;
           creator_id?: string;
+          fee?: number | null;
+          workflow_status?: CampaignCreatorWorkflowStatus | null;
         };
         Relationships: [
           {
@@ -364,6 +467,7 @@ export type Database = {
         Row: ContentPlannerAgency;
         Insert: {
           id?: string;
+          org_id: string;
           user_id: string;
           content_pillar?: string;
           content_idea?: string;
@@ -378,6 +482,7 @@ export type Database = {
         };
         Update: {
           id?: string;
+          org_id?: string;
           user_id?: string;
           content_pillar?: string;
           content_idea?: string;
@@ -396,6 +501,7 @@ export type Database = {
         Row: Omit<Payout, "creators" | "campaigns">;
         Insert: {
           id?: string;
+          org_id: string;
           creator_id: string;
           campaign_id?: string | null;
           amount?: number;
@@ -409,6 +515,7 @@ export type Database = {
         };
         Update: {
           id?: string;
+          org_id?: string;
           creator_id?: string;
           campaign_id?: string | null;
           amount?: number;
@@ -420,11 +527,43 @@ export type Database = {
           proof_url?: string | null;
           created_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "payouts_creator_id_fkey";
+            columns: ["creator_id"];
+            isOneToOne: false;
+            referencedRelation: "creators";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "payouts_campaign_id_fkey";
+            columns: ["campaign_id"];
+            isOneToOne: false;
+            referencedRelation: "campaigns";
+            referencedColumns: ["id"];
+          },
+        ];
       };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      create_organization_for_user: {
+        Args: {
+          org_name: string;
+          org_slug: string;
+          org_plan?: string;
+          org_trial_ends_at?: string;
+        };
+        Returns: {
+          id: string;
+          name: string;
+          slug: string | null;
+          plan: OrgPlan;
+          trial_ends_at: string | null;
+          created_at: string;
+        }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

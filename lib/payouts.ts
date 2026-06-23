@@ -320,3 +320,31 @@ export function enrichPayout<
     timingLabel: timing.timingLabel,
   };
 }
+
+export function formatPayoutStatusLabel(status: PayoutStatus) {
+  switch (status) {
+    case "PAID":
+      return "Paid";
+    case "PENDING":
+      return "Pending Payment";
+    case "CANCELLED":
+      return "Cancelled";
+  }
+}
+
+export function getPayoutStatusCounts(
+  payouts: Array<{ status: PayoutStatus }>,
+) {
+  return payouts.reduce(
+    (counts, payout) => {
+      if (payout.status === "PAID") {
+        counts.paid += 1;
+      } else if (payout.status === "PENDING") {
+        counts.pending += 1;
+      }
+
+      return counts;
+    },
+    { paid: 0, pending: 0 },
+  );
+}

@@ -1,38 +1,77 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
-import { KeffooLogo, KeffooWordmark } from "@/components/login/kefoo-logo";
+import { type FormEvent, useEffect, useState } from "react";
+import { registerFreeAccount } from "@/app/actions/auth";
+import { resolveAuthSession } from "@/app/actions/org";
+import { KeffooBrandLockup } from "@/components/login/kefoo-logo";
 import { createClient } from "@/lib/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, isValidEmail, isValidPhoneNumber } from "@/lib/utils";
 
 const loginInputClassName =
-  "w-full rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 text-sm text-white outline-none backdrop-blur-sm transition-colors placeholder:text-slate-500 focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/20 disabled:cursor-not-allowed disabled:opacity-60";
+  "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:cursor-not-allowed disabled:opacity-60";
 
-function LoginFormError({ message }: { message: string }) {
+type AuthMode = "signin" | "signup";
+
+function AuthFormError({ message }: { message: string }) {
   return (
-    <p className="rounded-2xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
+    <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
       {message}
     </p>
   );
 }
 
-export function LoginForm() {
+function AuthFormSuccess({ message }: { message: string }) {
+  return (
+    <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-700">
+      {message}
+    </p>
+  );
+}
+
+export function LoginForm({
+  initialMode = "signin",
+}: {
+  initialMode?: AuthMode;
+}) {
   const router = useRouter();
+  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [workspaceName, setWorkspaceName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  function switchMode(nextMode: AuthMode) {
+    setMode(nextMode);
+    setError(null);
+    setSuccess(null);
+  }
+
+  async function handleSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setSuccess(null);
+
+    const trimmedEmail = email.trim();
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: trimmedEmail,
       password,
     });
 
@@ -42,91 +81,282 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    const session = await resolveAuthSession();
+
+    if ("error" in session && session.error) {
+      setError(session.error);
+      setLoading(false);
+      return;
+    }
+
+    if ("needsOnboarding" in session && session.needsOnboarding) {
+      router.push("/onboarding");
+      router.refresh();
+      return;
+    }
+
+    router.push(
+      "redirectTo" in session && session.redirectTo
+        ? session.redirectTo
+        : "/campaigns",
+    );
     router.refresh();
   }
 
+  async function handleSignUp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const trimmedEmail = email.trim();
+    const trimmedPhoneNumber = phoneNumber.trim();
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
+    if (!isValidPhoneNumber(trimmedPhoneNumber)) {
+      setError("Enter a valid phone number.");
+      return;
+    }
+
+    setLoading(true);
+
+    const result = await registerFreeAccount({
+      email: trimmedEmail,
+      password,
+      confirmPassword,
+      workspaceName,
+      phoneNumber: trimmedPhoneNumber,
+    });
+
+    if ("error" in result && result.error) {
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
+
+    if ("needsEmailConfirmation" in result && result.needsEmailConfirmation) {
+      setSuccess(result.message);
+      setLoading(false);
+      switchMode("signin");
+      return;
+    }
+
+    if ("success" in result && result.success) {
+      router.push("/campaigns");
+      router.refresh();
+    }
+  }
+
+  const isSignUp = mode === "signup";
+
   return (
-    <div className="flex flex-1 items-center justify-center px-6 py-12 sm:px-8">
-      <div className="w-full max-w-[420px]">
-        <div className="mb-8 flex flex-col items-center gap-1.5 lg:hidden">
-          <div className="relative h-16 w-16 shrink-0">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[0.36]">
-              <KeffooLogo />
-            </div>
-          </div>
-          <KeffooWordmark className="text-[10px] tracking-[0.28em] text-slate-400" />
-        </div>
-
-        <div className="rounded-[24px] border border-white/[0.08] bg-white/[0.03] p-8 shadow-[0_0_60px_-20px_rgba(168,85,247,0.25)] backdrop-blur-xl sm:p-10">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold tracking-tight text-white">
-              Welcome back 👋
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-slate-400">
-              Sign in to manage creators, track campaign performance, and run
-              your content operations.
-            </p>
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col lg:w-1/2">
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden px-5 py-4 sm:px-8">
+        <div className="my-auto w-full max-w-[400px]">
+          <div className="mb-5 flex justify-center lg:hidden">
+            <KeffooBrandLockup size="sm" />
           </div>
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="login-email" className="sr-only">
-                Email
-              </label>
-              <input
-                id="login-email"
-                type="email"
-                placeholder="Email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                disabled={loading}
-                required
-                className={loginInputClassName}
-              />
+          <div className="rounded-[20px] border border-slate-200/80 bg-white p-5 shadow-[0_8px_40px_-24px_rgba(15,23,42,0.08)] sm:p-6">
+            <div className={cn("mb-4 text-center", isSignUp && "mb-3")}>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+                {isSignUp ? "Start free" : "Welcome back 👋"}
+              </h2>
+              {!isSignUp ? (
+                <p className="mx-auto mt-1.5 max-w-sm text-sm text-slate-600">
+                  Sign in to manage creators, campaigns, and video performance.
+                </p>
+              ) : null}
             </div>
 
-            <div>
-              <label htmlFor="login-password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="login-password"
-                type="password"
-                placeholder="Password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
+          {isSignUp ? (
+            <form className="space-y-2.5" onSubmit={handleSignUp}>
+              <div>
+                <label htmlFor="signup-workspace" className="sr-only">
+                  Workspace name
+                </label>
+                <input
+                  id="signup-workspace"
+                  type="text"
+                  placeholder="Workspace name (e.g. Acme Agency)"
+                  autoComplete="organization"
+                  value={workspaceName}
+                  onChange={(event) => setWorkspaceName(event.target.value)}
+                  disabled={loading}
+                  required
+                  className={loginInputClassName}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="signup-email" className="sr-only">
+                  Email
+                </label>
+                <input
+                  id="signup-email"
+                  type="email"
+                  placeholder="Email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  disabled={loading}
+                  required
+                  className={loginInputClassName}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="signup-phone" className="sr-only">
+                  Phone number
+                </label>
+                <input
+                  id="signup-phone"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder="Phone number"
+                  autoComplete="tel"
+                  value={phoneNumber}
+                  onChange={(event) => setPhoneNumber(event.target.value)}
+                  disabled={loading}
+                  required
+                  className={loginInputClassName}
+                />
+              </div>
+
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="signup-password" className="sr-only">
+                    Password
+                  </label>
+                  <input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Password (min. 8 characters)"
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    disabled={loading}
+                    required
+                    minLength={8}
+                    className={loginInputClassName}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="signup-confirm-password" className="sr-only">
+                    Confirm password
+                  </label>
+                  <input
+                    id="signup-confirm-password"
+                    type="password"
+                    placeholder="Confirm password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(event) =>
+                      setConfirmPassword(event.target.value)
+                    }
+                    disabled={loading}
+                    required
+                    minLength={8}
+                    className={loginInputClassName}
+                  />
+                </div>
+              </div>
+
+              {error ? <AuthFormError message={error} /> : null}
+
+              <button
+                type="submit"
                 disabled={loading}
-                required
-                className={loginInputClassName}
-              />
-            </div>
+                className={cn(
+                  "landing-btn-gradient mt-1 w-full rounded-xl px-4 py-3 text-sm font-medium",
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+              >
+                {loading ? "Creating account..." : "Create free account"}
+              </button>
+            </form>
+          ) : (
+            <form className="space-y-3" onSubmit={handleSignIn}>
+              <div>
+                <label htmlFor="login-email" className="sr-only">
+                  Email
+                </label>
+                <input
+                  id="login-email"
+                  type="email"
+                  placeholder="Email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  disabled={loading}
+                  required
+                  className={loginInputClassName}
+                />
+              </div>
 
-            {error ? <LoginFormError message={error} /> : null}
+              <div>
+                <label htmlFor="login-password" className="sr-only">
+                  Password
+                </label>
+                <input
+                  id="login-password"
+                  type="password"
+                  placeholder="Password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  disabled={loading}
+                  required
+                  className={loginInputClassName}
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className={cn(
-                "landing-btn-gradient mt-2 w-full rounded-2xl px-4 py-3.5 text-sm font-medium",
-                "disabled:cursor-not-allowed disabled:opacity-60",
-              )}
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-          </form>
+              {error ? <AuthFormError message={error} /> : null}
+              {success ? <AuthFormSuccess message={success} /> : null}
 
-          <p className="mt-8 text-center text-sm text-slate-500">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="mailto:hello@kefoo.tech?subject=Schedule%20a%20Demo"
-              className="font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
-            >
-              Schedule a Demo
-            </Link>
+              <button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                  "landing-btn-gradient mt-1 w-full rounded-xl px-4 py-3 text-sm font-medium",
+                  "disabled:cursor-not-allowed disabled:opacity-60",
+                )}
+              >
+                {loading ? "Signing in..." : "Sign In"}
+              </button>
+            </form>
+          )}
+
+          <p className="mt-4 text-center text-sm text-slate-500">
+            {isSignUp ? (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => switchMode("signin")}
+                  className="font-medium text-kefoo-600 transition-colors hover:text-kefoo-500"
+                >
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <>
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => switchMode("signup")}
+                  className="font-medium text-kefoo-600 transition-colors hover:text-kefoo-500"
+                >
+                  Try it for free now
+                </button>
+              </>
+            )}
           </p>
+        </div>
         </div>
       </div>
     </div>

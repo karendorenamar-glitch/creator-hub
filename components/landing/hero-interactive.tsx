@@ -39,7 +39,7 @@ function Shimmer({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "animate-pulse rounded-xl bg-gradient-to-r from-violet-500/10 via-kefoo-400/15 to-violet-500/10",
+        "animate-pulse rounded-xl bg-gradient-to-r from-kefoo-500/10 via-kefoo-400/15 to-kefoo-500/10",
         className,
       )}
     />
@@ -58,7 +58,7 @@ function ResultCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-sm transition-all duration-300",
+        "rounded-2xl border border-slate-200/80 bg-white p-4 backdrop-blur-sm transition-all duration-300",
         glow && "shadow-[0_0_36px_-14px_rgba(110,165,247,0.4)]",
         className,
       )}
@@ -74,14 +74,14 @@ function EmptyPreview() {
       <div className="flex items-center gap-2">
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-kefoo-400/30" />
-          <span className="relative h-2 w-2 rounded-full bg-violet-400/70" />
+          <span className="relative h-2 w-2 rounded-full bg-kefoo-400/70" />
         </span>
-        <span className="text-xs text-slate-400">Intelligence engine ready</span>
+        <span className="text-xs text-slate-600">Intelligence engine ready</span>
       </div>
-      <p className="mt-4 text-sm text-slate-300">
+      <p className="mt-4 text-sm text-slate-500">
         Paste a link to see creator intelligence appear here
       </p>
-      <div className="mt-5 space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="mt-5 space-y-3 rounded-2xl border border-slate-200/80 bg-white/85 p-4">
         {["Views", "Likes", "Performance", "CPV"].map((label) => (
           <div key={label} className="flex items-center gap-3">
             <span className="w-20 text-xs text-slate-500">{label}</span>
@@ -148,16 +148,16 @@ export function HeroInteractiveDemo() {
     <div id="hero-demo" className="mt-14 grid gap-10 lg:grid-cols-2 lg:gap-12">
       <div>
         <label htmlFor="hero-video-input" className="sr-only">
-          Paste TikTok Instagram or YouTube link
+          Paste a TikTok or Instagram link
         </label>
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_8px_40px_-16px_rgba(74,134,232,0.3)] backdrop-blur-sm transition-all focus-within:border-violet-400/25 focus-within:shadow-[0_8px_48px_-12px_rgba(110,165,247,0.35)]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-[0_8px_40px_-16px_rgba(74,134,232,0.3)] backdrop-blur-sm transition-all focus-within:border-kefoo-400/25 focus-within:shadow-[0_8px_48px_-12px_rgba(110,165,247,0.35)]">
           <input
             id="hero-video-input"
             type="url"
             value={videoUrl}
             onChange={(e) => handleInputChange(e.target.value)}
             onPaste={handlePaste}
-            placeholder="Paste TikTok / Instagram / YouTube link"
+            placeholder="Paste TikTok or Instagram link"
             className="w-full bg-transparent px-5 py-4 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
           />
         </div>
@@ -183,7 +183,7 @@ export function HeroInteractiveDemo() {
           {featurePills.map((pill) => (
             <span
               key={pill}
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] text-slate-400"
+              className="rounded-full border border-slate-200/80 bg-white px-3 py-1 text-[11px] text-slate-600"
             >
               {pill}
             </span>
@@ -191,15 +191,15 @@ export function HeroInteractiveDemo() {
         </div>
       </div>
 
-      <div className="landing-card-hover relative min-h-[420px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-500/[0.07] via-transparent to-kefoo-500/[0.06] p-5 sm:p-6">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-violet-500/10 blur-3xl" />
+      <div className="landing-card-hover relative min-h-[420px] overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-kefoo-500/[0.07] via-transparent to-kefoo-500/[0.06] p-5 sm:p-6">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-kefoo-500/10 blur-3xl" />
 
         {phase === "idle" && <EmptyPreview />}
 
         {phase === "loading" && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-slate-300">
-              <Loader2 className="h-4 w-4 animate-spin text-violet-300" />
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin text-kefoo-300" />
               Extracting creator intelligence…
             </div>
             <Shimmer className="h-12" />
@@ -215,10 +215,10 @@ export function HeroInteractiveDemo() {
 
         {phase === "done" && (
           <div className="space-y-3">
-            <ResultCard glow className="matrix-reveal border-violet-400/20">
-              <p className="text-xs text-slate-400">
+            <ResultCard glow className="matrix-reveal border-kefoo-400/20">
+              <p className="text-xs text-slate-600">
                 Creator detected:{" "}
-                <span className="font-medium text-white">{DEMO_CREATOR}</span>
+                <span className="font-medium text-slate-900">{DEMO_CREATOR}</span>
               </p>
             </ResultCard>
 
@@ -230,10 +230,10 @@ export function HeroInteractiveDemo() {
                 {demoMetrics.map((m) => (
                   <div
                     key={m.label}
-                    className="rounded-xl bg-white/[0.04] px-3 py-2.5"
+                    className="rounded-xl bg-white px-3 py-2.5"
                   >
                     <p className="text-[10px] text-slate-500">{m.label}</p>
-                    <p className="mt-0.5 font-mono text-sm font-medium tabular-nums text-white">
+                    <p className="mt-0.5 font-mono text-sm font-medium tabular-nums text-slate-900">
                       {m.value}
                     </p>
                   </div>
@@ -243,21 +243,21 @@ export function HeroInteractiveDemo() {
 
             <ResultCard
               glow
-              className="matrix-reveal matrix-reveal-delay-2 border-kefoo-400/15 bg-gradient-to-br from-violet-500/[0.08] to-kefoo-500/[0.05]"
+              className="matrix-reveal matrix-reveal-delay-2 border-kefoo-400/15 bg-gradient-to-br from-kefoo-500/[0.08] to-kefoo-500/[0.05]"
             >
-              <p className="mb-3 text-xs font-medium text-violet-200/90">
+              <p className="mb-3 text-xs font-medium text-kefoo-200/90">
                 Intelligence
               </p>
               <div className="space-y-2">
                 {intelligenceMetrics.map((item) => (
                   <div
                     key={item.label}
-                    className="flex items-center justify-between rounded-xl bg-white/[0.04] px-3 py-2"
+                    className="flex items-center justify-between rounded-xl bg-white px-3 py-2"
                   >
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-slate-600">
                       {item.label}
                     </span>
-                    <span className="font-mono text-sm font-medium text-white">
+                    <span className="font-mono text-sm font-medium text-slate-900">
                       {item.value}
                     </span>
                   </div>

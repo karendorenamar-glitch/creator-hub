@@ -2,15 +2,19 @@ import { Suspense } from "react";
 import { Header } from "@/components/layout/header";
 import { CreatorsSearch } from "@/components/creators/creators-search";
 import { CreatorsSection } from "@/components/creators/creators-section";
-import { getCreators } from "@/lib/data";
+import { getCampaignOptions, getCreators } from "@/lib/data";
 
 type CreatorsPageProps = {
   searchParams: Promise<{ q?: string }>;
 };
 
 async function CreatorsContent({ query }: { query?: string }) {
-  const creators = await getCreators(query);
-  return <CreatorsSection creators={creators} />;
+  const [creators, campaigns] = await Promise.all([
+    getCreators(query),
+    getCampaignOptions(),
+  ]);
+
+  return <CreatorsSection creators={creators} campaigns={campaigns} />;
 }
 
 export default async function CreatorsPage({ searchParams }: CreatorsPageProps) {

@@ -26,7 +26,7 @@ export function ProductMockupFrame({
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
         </div>
-        <div className="mx-auto truncate rounded-md bg-white px-3 py-1 text-[11px] text-slate-400 ring-1 ring-slate-200">
+        <div className="mx-auto truncate rounded-md bg-white px-3 py-1 text-[11px] text-slate-600 ring-1 ring-slate-200">
           kefoo.tech/{title}
         </div>
       </div>
@@ -50,7 +50,7 @@ export function DashboardMockup() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Active Campaigns", value: "12", accent: "text-kefoo-600 bg-kefoo-50" },
-            { label: "Total Budget", value: "$248K", accent: "text-violet-600 bg-violet-50" },
+            { label: "Total Budget", value: "$248K", accent: "text-kefoo-600 bg-kefoo-50" },
             { label: "Total Views", value: "4.2M", accent: "text-emerald-600 bg-emerald-50" },
             { label: "Average ER", value: "6.8%", accent: "text-amber-600 bg-amber-50" },
           ].map((stat) => (
@@ -109,11 +109,11 @@ export function PlannerMockup() {
             <p className="text-base font-semibold text-slate-900">Content Planner</p>
             <p className="text-xs text-slate-500">June 2026 · Calendar view</p>
           </div>
-          <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-medium text-violet-700">
+          <span className="rounded-full bg-kefoo-50 px-2.5 py-1 text-[10px] font-medium text-kefoo-700">
             24 scheduled
           </span>
         </div>
-        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium text-slate-400">
+        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium text-slate-600">
           {days.map((day) => (
             <div key={day} className="py-1">
               {day}
@@ -124,7 +124,7 @@ export function PlannerMockup() {
           {Array.from({ length: 28 }).map((_, index) => {
             const hasEvent = [2, 5, 8, 11, 14, 17, 20].includes(index);
             const statuses = [
-              "bg-violet-100 text-violet-700 border-violet-200",
+              "bg-kefoo-100 text-kefoo-700 border-kefoo-200",
               "bg-kefoo-100 text-kefoo-700 border-kefoo-200",
               "bg-emerald-100 text-emerald-700 border-emerald-200",
             ];
@@ -134,7 +134,7 @@ export function PlannerMockup() {
                 key={index}
                 className="min-h-14 rounded-lg border border-slate-200 bg-white p-1"
               >
-                <span className="text-[10px] text-slate-400">{index + 1}</span>
+                <span className="text-[10px] text-slate-600">{index + 1}</span>
                 {hasEvent && (
                   <div
                     className={`mt-1 truncate rounded border px-1 py-0.5 text-[8px] font-medium ${statuses[index % statuses.length]}`}
@@ -165,7 +165,7 @@ export function CreatorsMockup() {
           {[
             ["Jordan Lee", "TikTok", "890K"],
             ["Sam Chen", "Instagram", "450K"],
-            ["Alex Rivera", "YouTube", "1.2M"],
+            ["Alex Rivera", "Instagram", "1.2M"],
           ].map(([name, platform, followers]) => (
             <div
               key={name}

@@ -201,7 +201,7 @@ export function PayoutFormModal({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:opacity-60"
           >
             Create Payout
           </button>

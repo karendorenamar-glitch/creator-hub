@@ -12,7 +12,7 @@ export function DashboardWorkspace({ workspace }: DashboardWorkspaceProps) {
 
   return (
     <div className="mt-10 space-y-6">
-      <div className="rounded-2xl border border-kefoo-100 bg-gradient-to-r from-kefoo-50 via-white to-violet-50 p-6">
+      <div className="rounded-2xl border border-kefoo-100 bg-gradient-to-r from-kefoo-50 via-white to-kefoo-50 p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-kefoo-600">
           Intelligence Workspace
         </p>

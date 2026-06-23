@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getOrgIdForAction } from "@/lib/org";
 import { revalidateContentPlanner } from "@/lib/revalidate";
 import {
   type ContentPlannerInput,
@@ -10,7 +11,7 @@ import {
 import type { ContentPlannerAgency } from "@/types/database";
 
 const contentPlannerSelect =
-  "id, user_id, content_pillar, content_idea, hook, creator_names, campaign_id, planned_date, inspiration_url, platform, status, created_at";
+  "id, org_id, user_id, content_pillar, content_idea, hook, creator_names, campaign_id, planned_date, inspiration_url, platform, status, created_at";
 
 function parseContentPlannerInput(input: ContentPlannerInput) {
   const content_pillar = input.content_pillar.trim();
@@ -48,6 +49,11 @@ function parseContentPlannerInput(input: ContentPlannerInput) {
 }
 
 export async function createContentPlannerItem(input: ContentPlannerInput) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
   const supabase = await createClient();
 
   const {
@@ -68,6 +74,7 @@ export async function createContentPlannerItem(input: ContentPlannerInput) {
     .from("content_planner_agency")
     .insert({
       ...parsed.payload,
+      org_id: orgResult.orgId,
       user_id: user.id,
     })
     .select(contentPlannerSelect)
@@ -87,6 +94,11 @@ export async function updateContentPlannerItem(
 ) {
   if (!id) {
     return { error: "Content item is required." };
+  }
+
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
   }
 
   const supabase = await createClient();
@@ -109,7 +121,7 @@ export async function updateContentPlannerItem(
     .from("content_planner_agency")
     .update(parsed.payload)
     .eq("id", id)
-    .eq("user_id", user.id)
+    .eq("org_id", orgResult.orgId)
     .select(contentPlannerSelect)
     .maybeSingle();
 
@@ -130,6 +142,11 @@ export async function deleteContentPlannerItem(id: string) {
     return { error: "Content item is required." };
   }
 
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
   const supabase = await createClient();
 
   const {
@@ -144,7 +161,7 @@ export async function deleteContentPlannerItem(id: string) {
     .from("content_planner_agency")
     .delete()
     .eq("id", id)
-    .eq("user_id", user.id);
+    .eq("org_id", orgResult.orgId);
 
   if (error) {
     return { error: error.message };

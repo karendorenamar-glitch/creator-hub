@@ -2,8 +2,13 @@
 
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
-import { formatCreatorUsername, formatIDR, formatNumber } from "@/lib/utils";
-import type { Creator } from "@/types/database";
+import {
+  formatCreatorDisplayName,
+  formatCreatorListUsername,
+  formatOptionalIDR,
+  formatOptionalNumber,
+} from "@/lib/utils";
+import type { CreatorListItem } from "@/types/database";
 import {
   DataTable,
   DataTableBody,
@@ -16,17 +21,14 @@ import {
 } from "@/components/ui/data-table";
 
 type CreatorsTableProps = {
-  creators: Creator[];
-  onEdit: (creator: Creator) => void;
-  onDelete: (creator: Creator) => void;
+  creators: CreatorListItem[];
+  onEdit: (creator: CreatorListItem) => void;
+  onDelete: (creator: CreatorListItem) => void;
 };
 
-function CreatorAvatar({ creator }: { creator: Creator }) {
-  return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-kefoo-100 text-sm font-semibold text-kefoo-700">
-      {creator.name.charAt(0).toUpperCase()}
-    </div>
-  );
+function formatCampaigns(creator: CreatorListItem): string {
+  if (creator.campaigns.length === 0) return "—";
+  return creator.campaigns.map((campaign) => campaign.name).join(", ");
 }
 
 export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps) {
@@ -45,46 +47,46 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
     <DataTable>
       <DataTableElement>
         <DataTableHead>
+          <DataTableHeaderCell>Username</DataTableHeaderCell>
           <DataTableHeaderCell>Name</DataTableHeaderCell>
-          <DataTableHeaderCell>Profile</DataTableHeaderCell>
-          <DataTableHeaderCell>Contact</DataTableHeaderCell>
-          <DataTableHeaderCell>Platform</DataTableHeaderCell>
           <DataTableHeaderCell className="text-right">
             Followers
           </DataTableHeaderCell>
           <DataTableHeaderCell className="text-right">Fee</DataTableHeaderCell>
+          <DataTableHeaderCell>Contact</DataTableHeaderCell>
+          <DataTableHeaderCell>Campaign</DataTableHeaderCell>
           <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
         </DataTableHead>
         <DataTableBody>
           {creators.map((creator) => (
             <DataTableRow key={creator.id}>
-              <DataTableCell>
-                <div className="flex items-center gap-3">
-                  <CreatorAvatar creator={creator} />
-                  <Link
-                    href={`/creators/${creator.id}`}
-                    className="font-medium text-kefoo-600 hover:text-kefoo-500"
-                  >
-                    {creator.name}
-                  </Link>
-                </div>
+              <DataTableCell className="font-medium text-slate-900">
+                <Link
+                  href={`/creators/${creator.id}`}
+                  className="text-kefoo-600 hover:text-kefoo-500"
+                >
+                  {formatCreatorListUsername(creator)}
+                </Link>
               </DataTableCell>
-              <DataTableCell className="text-slate-600">
-                {formatCreatorUsername(creator.tiktok_username)}
+              <DataTableCell className="text-slate-700">
+                <Link
+                  href={`/creators/${creator.id}`}
+                  className="hover:text-kefoo-600"
+                >
+                  {formatCreatorDisplayName(creator.name)}
+                </Link>
+              </DataTableCell>
+              <DataTableCell className="text-right text-slate-700">
+                {formatOptionalNumber(creator.followers)}
+              </DataTableCell>
+              <DataTableCell className="text-right text-slate-700">
+                {formatOptionalIDR(creator.fee)}
               </DataTableCell>
               <DataTableCell className="max-w-xs truncate text-slate-500">
                 {creator.contact ?? "—"}
               </DataTableCell>
-              <DataTableCell>
-                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                  {creator.platform}
-                </span>
-              </DataTableCell>
-              <DataTableCell className="text-right font-medium text-slate-900">
-                {formatNumber(creator.followers)}
-              </DataTableCell>
-              <DataTableCell className="text-right font-medium text-slate-900">
-                {formatIDR(creator.fee)}
+              <DataTableCell className="max-w-xs truncate text-slate-600">
+                {formatCampaigns(creator)}
               </DataTableCell>
               <DataTableCell className="text-right">
                 <div className="flex justify-end gap-1">

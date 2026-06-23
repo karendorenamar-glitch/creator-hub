@@ -14,7 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const statusStyles = {
-  Planned: "bg-slate-500/15 text-slate-400 border-slate-500/20",
+  Planned: "bg-slate-500/15 text-slate-600 border-slate-500/20",
   "In Review": "bg-amber-500/10 text-amber-300 border-amber-500/20",
   Approved: "bg-kefoo-500/10 text-kefoo-300 border-kefoo-500/20",
   Published: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
@@ -60,31 +60,31 @@ function BulkUploadVisual() {
 
   return (
     <div className="mt-5 flex flex-1 flex-col gap-3">
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="rounded-xl border border-slate-200/70 bg-white/85 p-3">
         <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
           Campaign
         </p>
-        <div className="mt-1.5 flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+        <div className="mt-1.5 flex items-center justify-between rounded-lg border border-slate-200/80 bg-white/90 px-3 py-2">
           <span className="text-[11px] font-medium text-slate-200">Twin Date 6:6</span>
           <span className="text-[10px] text-slate-500">▾</span>
         </div>
       </div>
 
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="rounded-xl border border-slate-200/70 bg-white/85 p-3">
         <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
           Platform
         </p>
-        <div className="mt-1.5 flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+        <div className="mt-1.5 flex items-center justify-between rounded-lg border border-slate-200/80 bg-white/90 px-3 py-2">
           <span className="text-[11px] font-medium text-slate-200">TikTok</span>
           <span className="text-[10px] text-slate-500">▾</span>
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="flex flex-1 flex-col rounded-xl border border-slate-200/70 bg-white/85 p-3">
         <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
           TikTok Video Links
         </p>
-        <div className="mt-2 min-h-[132px] rounded-lg border border-white/[0.08] bg-[#070b18] p-3 font-mono text-[9px] leading-relaxed text-slate-400">
+        <div className="mt-2 min-h-[132px] rounded-lg border border-slate-200/80 bg-slate-50 p-3 font-mono text-[9px] leading-relaxed text-slate-600">
           {sampleLinks.map((link) => (
             <p key={link} className="truncate">
               {link}
@@ -92,8 +92,8 @@ function BulkUploadVisual() {
           ))}
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
-          <label className="inline-flex items-center gap-2 text-[10px] text-slate-400">
-            <span className="flex h-3.5 w-3.5 items-center justify-center rounded border border-violet-500/40 bg-violet-500/20 text-[8px] text-violet-200">
+          <label className="inline-flex items-center gap-2 text-[10px] text-slate-600">
+            <span className="flex h-3.5 w-3.5 items-center justify-center rounded border border-kefoo-500/40 bg-kefoo-500/20 text-[8px] text-kefoo-200">
               ✓
             </span>
             Import metrics from TikTok
@@ -123,10 +123,10 @@ export function ContentPlannerVisual() {
 
   return (
     <div className="mt-5 flex flex-1 flex-col gap-3">
-      <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="rounded-xl border border-slate-200/70 bg-white/85 p-3">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-[11px] font-medium text-slate-300">June 2026</span>
-          <span className="rounded-full border border-violet-500/20 bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-200">
+          <span className="text-[11px] font-medium text-slate-500">June 2026</span>
+          <span className="rounded-full border border-kefoo-500/20 bg-kefoo-500/10 px-2 py-0.5 text-[10px] font-medium text-kefoo-200">
             24 posts planned
           </span>
         </div>
@@ -142,7 +142,7 @@ export function ContentPlannerVisual() {
               className={cn(
                 "rounded py-0.5",
                 highlighted.includes(date)
-                  ? "bg-violet-500/25 font-medium text-violet-200"
+                  ? "bg-kefoo-500/25 font-medium text-kefoo-200"
                   : "text-slate-500",
               )}
             >
@@ -156,9 +156,9 @@ export function ContentPlannerVisual() {
         {scheduledPosts.map((post) => (
           <div
             key={`${post.creator}-${post.date}`}
-            className="flex items-center gap-2.5 rounded-xl border border-white/[0.05] bg-white/[0.02] px-2.5 py-2"
+            className="flex items-center gap-2.5 rounded-xl border border-slate-200/60 bg-white/85 px-2.5 py-2"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-kefoo-500/30 to-violet-500/30 text-[9px] font-semibold text-white">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-kefoo-500/30 to-kefoo-500/30 text-[9px] font-semibold text-white">
               {post.initials}
             </div>
             <div className="min-w-0 flex-1">
@@ -212,7 +212,7 @@ function AnalyticsMetric({
   return (
     <div
       className={cn(
-        "rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-2.5",
+        "rounded-xl border border-slate-200/70 bg-white/90 px-3 py-2.5",
         className,
       )}
     >
@@ -230,14 +230,14 @@ function AnalyticsMetric({
               />
             ))}
           </div>
-          <p className="text-sm font-semibold tracking-tight text-white">{value}</p>
+          <p className="text-sm font-semibold tracking-tight text-slate-900">{value}</p>
         </div>
       ) : (
         <div className="mt-1 flex items-center gap-2.5">
           {avatar ? (
             <CreatorAvatarGraphic Avatar={avatar} className="h-9 w-9" />
           ) : null}
-          <p className="text-sm font-semibold tracking-tight text-white">{value}</p>
+          <p className="text-sm font-semibold tracking-tight text-slate-900">{value}</p>
         </div>
       )}
     </div>
@@ -273,7 +273,7 @@ function CampaignAnalyticsVisual() {
         />
       </div>
 
-      <div className="mt-4 flex-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+      <div className="mt-4 flex-1 rounded-xl border border-slate-200/70 bg-white/85 p-3">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-[10px] font-medium text-slate-500">Performance trend</span>
           <span className="text-[10px] text-emerald-400/90">+18.4%</span>
@@ -311,11 +311,22 @@ export function Features() {
   return (
     <section id="features" className="py-28">
       <div className={CONTAINER_CLASS}>
+        <FadeIn>
+          <div className="mx-auto mb-12 max-w-3xl text-center">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+              Everything you need to run creator campaigns
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-slate-600">
+              Analytics, bulk uploads, and campaign workflows in one platform.
+            </p>
+          </div>
+        </FadeIn>
+
         <div className="grid gap-6 lg:grid-cols-2">
           <FadeIn delay={0.05}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6">
-              <h3 className="text-lg font-semibold text-white">Campaign Analytics Overview</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left">
+              <h3 className="text-lg font-semibold text-slate-900">Campaign Analytics Overview</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Track campaign performance across all creators in real time.
               </p>
               <CampaignAnalyticsVisual />
@@ -323,9 +334,9 @@ export function Features() {
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6">
-              <h3 className="text-lg font-semibold text-white">Bulk Upload Videos</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left">
+              <h3 className="text-lg font-semibold text-slate-900">Bulk Upload Videos</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Paste TikTok links, pick a campaign, and auto-create creators from @usernames.
               </p>
               <BulkUploadVisual />

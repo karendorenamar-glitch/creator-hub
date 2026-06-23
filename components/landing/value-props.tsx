@@ -44,7 +44,7 @@ const valueProps = [
 
 export function ValueProps() {
   return (
-    <section id="resources" className="border-y border-white/[0.06] bg-white/[0.01] py-28">
+    <section id="resources" className="border-y border-slate-200/70 bg-white/80 py-28">
       <div className={CONTAINER_CLASS}>
         <FadeIn>
           <SectionHeading title="Built for KOL specialists who demand clarity and results" />
@@ -54,10 +54,10 @@ export function ValueProps() {
           {valueProps.map((item, index) => (
             <FadeIn key={item.title} delay={index * 0.06}>
               <GlassCard className="h-full p-5 text-center">
-                <div className="mx-auto mb-4 inline-flex rounded-2xl bg-gradient-to-br from-kefoo-500/15 to-violet-500/15 p-3">
-                  <item.icon className="h-5 w-5 text-violet-300" />
+                <div className="mx-auto mb-4 inline-flex rounded-2xl bg-gradient-to-br from-kefoo-500/15 to-kefoo-500/15 p-3">
+                  <item.icon className="h-5 w-5 text-kefoo-300" />
                 </div>
-                <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                <h3 className="text-sm font-semibold text-slate-900">{item.title}</h3>
                 <p className="mt-2 text-xs leading-relaxed text-slate-500">
                   {item.description}
                 </p>

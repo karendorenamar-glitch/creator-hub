@@ -103,8 +103,8 @@ export function CampaignFormModal({
     event.preventDefault();
     setError(null);
 
-    if (!form.name.trim() || !form.client_name.trim()) {
-      setError("Campaign name and client name are required.");
+    if (!form.name.trim()) {
+      setError("Campaign name is required.");
       return;
     }
 
@@ -153,31 +153,16 @@ export function CampaignFormModal({
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Campaign Name" htmlFor="campaign-name">
-            <input
-              id="campaign-name"
-              value={form.name}
-              onChange={(event) => handleChange("name", event.target.value)}
-              className={inputClassName}
-              placeholder="Summer Launch 2026"
-              required
-            />
-          </FormField>
-
-          <FormField label="Client" htmlFor="campaign-client">
-            <input
-              id="campaign-client"
-              value={form.client_name}
-              onChange={(event) =>
-                handleChange("client_name", event.target.value)
-              }
-              className={inputClassName}
-              placeholder="Acme Co."
-              required
-            />
-          </FormField>
-        </div>
+        <FormField label="Campaign Name" htmlFor="campaign-name">
+          <input
+            id="campaign-name"
+            value={form.name}
+            onChange={(event) => handleChange("name", event.target.value)}
+            className={inputClassName}
+            placeholder="Summer Launch 2026"
+            required
+          />
+        </FormField>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Start Date" htmlFor="campaign-start">
@@ -314,7 +299,7 @@ export function CampaignFormModal({
           <button
             type="submit"
             disabled={isPending || loadingRelations}
-            className="rounded-lg bg-kefoo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-500 disabled:opacity-60"
+            className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:opacity-60"
           >
             {isPending
               ? "Saving..."

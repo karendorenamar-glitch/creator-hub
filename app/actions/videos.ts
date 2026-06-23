@@ -1,11 +1,25 @@
 "use server";
 
 import { linkVideoToCampaign } from "@/app/actions/campaigns";
-import { findOrCreateCreatorForTikTokUsername, syncCreatorTikTokUsername } from "@/app/actions/creators";
-import { fetchTikTokMetrics, fetchTikTokVideoData } from "@/lib/apify";
+import {
+  findOrCreateCreatorForInstagramUsername,
+  findOrCreateCreatorForTikTokUsername,
+  syncCreatorInstagramProfile,
+  syncCreatorTikTokProfile,
+} from "@/app/actions/creators";
+import { fetchVideoDataFromUrl, fetchVideoMetricsFromUrl } from "@/lib/apify";
+import { assertCanCreateResource } from "@/lib/plan-enforcement";
 import { createClient } from "@/lib/supabase/server";
+import { getOrgIdForAction } from "@/lib/org";
 import { revalidateCreatorHub } from "@/lib/revalidate";
+import { extractInstagramUsernameFromUrl } from "@/lib/instagram-url";
 import { extractTikTokUsernameFromUrl } from "@/lib/tiktok-url";
+import {
+  detectVideoPlatform,
+  normalizeVideoPlatform,
+  validateVideoUrlForPlatform,
+  type VideoPlatform,
+} from "@/lib/video-url";
 
 export type VideoInput = {
   creator_id: string;
@@ -29,25 +43,106 @@ function parseVideoInput(input: VideoInput) {
   };
 }
 
-async function applyCreatorUsernameFromVideo(
+function extractUsernameFromVideoUrl(
+  videoUrl: string,
+  platform: VideoPlatform,
+): string | null {
+  return platform === "Instagram"
+    ? extractInstagramUsernameFromUrl(videoUrl)
+    : extractTikTokUsernameFromUrl(videoUrl);
+}
+
+function creatorDetectionError(platform: VideoPlatform) {
+  return platform === "Instagram"
+    ? "Could not detect the Instagram creator from this link."
+    : "Could not detect the TikTok creator from this link.";
+}
+
+async function applyCreatorProfileFromVideo(
   creatorId: string,
   videoUrl: string,
-  authorUsername?: string | null,
+  options?: {
+    authorUsername?: string | null;
+    authorDisplayName?: string | null;
+  },
 ) {
+  const platform = detectVideoPlatform(videoUrl);
+  if (!platform) return;
+
   const username =
-    authorUsername ?? extractTikTokUsernameFromUrl(videoUrl);
-  await syncCreatorTikTokUsername(creatorId, username);
+    options?.authorUsername ??
+    extractUsernameFromVideoUrl(videoUrl, platform);
+
+  if (platform === "Instagram") {
+    await syncCreatorInstagramProfile(creatorId, {
+      username,
+      displayName: options?.authorDisplayName,
+    });
+    return;
+  }
+
+  await syncCreatorTikTokProfile(creatorId, {
+    username,
+    displayName: options?.authorDisplayName,
+  });
+}
+
+async function findOrCreateCreatorForVideo(
+  platform: VideoPlatform,
+  authorUsername: string,
+  options: {
+    platformLabel?: string;
+    displayName?: string | null;
+    followers?: number;
+    autoCreate?: boolean;
+    revalidate?: boolean;
+  },
+) {
+  if (platform === "Instagram") {
+    return findOrCreateCreatorForInstagramUsername(authorUsername, {
+      platform: options.platformLabel ?? "Instagram",
+      displayName: options.displayName,
+      followers: options.followers,
+      autoCreate: options.autoCreate,
+      revalidate: options.revalidate,
+    });
+  }
+
+  return findOrCreateCreatorForTikTokUsername(authorUsername, {
+    platform: options.platformLabel ?? "TikTok",
+    displayName: options.displayName,
+    followers: options.followers,
+    autoCreate: options.autoCreate,
+    revalidate: options.revalidate,
+  });
 }
 
 export async function createVideo(
   input: VideoInput,
-  options?: { revalidate?: boolean; authorUsername?: string | null },
+  options?: {
+    revalidate?: boolean;
+    authorUsername?: string | null;
+    authorDisplayName?: string | null;
+  },
 ) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
+  const limitCheck = await assertCanCreateResource(orgResult.orgId, "videos");
+  if ("error" in limitCheck) {
+    return { error: limitCheck.error };
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("videos")
-    .insert(parseVideoInput(input))
+    .insert({
+      ...parseVideoInput(input),
+      org_id: orgResult.orgId,
+    })
     .select()
     .single();
 
@@ -55,11 +150,10 @@ export async function createVideo(
     return { error: error.message };
   }
 
-  await applyCreatorUsernameFromVideo(
-    input.creator_id,
-    input.video_url,
-    options?.authorUsername,
-  );
+  await applyCreatorProfileFromVideo(input.creator_id, input.video_url, {
+    authorUsername: options?.authorUsername,
+    authorDisplayName: options?.authorDisplayName,
+  });
 
   if (options?.revalidate !== false) {
     revalidateCreatorHub();
@@ -75,17 +169,40 @@ export async function createVideoFromUrl(input: {
   import_metrics?: boolean;
   auto_create_creator?: boolean;
   revalidate?: boolean;
+  metrics?: {
+    views: number;
+    likes: number;
+    comments: number;
+    shares: number;
+    saves: number;
+  };
 }) {
   const trimmedUrl = input.video_url.trim();
+  const requestedPlatform = normalizeVideoPlatform(input.platform);
 
   if (!trimmedUrl) {
-    return { error: "TikTok URL is required." };
+    return { error: "Video URL is required." };
   }
 
-  let authorUsername: string | null = extractTikTokUsernameFromUrl(trimmedUrl);
+  if (!requestedPlatform) {
+    return { error: "Select TikTok or Instagram as the platform." };
+  }
+
+  const platformError = validateVideoUrlForPlatform(trimmedUrl, requestedPlatform);
+  if (platformError) {
+    return { error: platformError };
+  }
+
+  const detectedPlatform = detectVideoPlatform(trimmedUrl)!;
+  const platformLabel = requestedPlatform;
+
+  let authorUsername: string | null = extractUsernameFromVideoUrl(
+    trimmedUrl,
+    detectedPlatform,
+  );
   let authorDisplayName: string | null = null;
   let authorFollowers = 0;
-  let metrics = {
+  let metrics = input.metrics ?? {
     views: 0,
     likes: 0,
     comments: 0,
@@ -95,7 +212,7 @@ export async function createVideoFromUrl(input: {
 
   if (input.import_metrics !== false) {
     try {
-      const videoData = await fetchTikTokVideoData(trimmedUrl);
+      const videoData = await fetchVideoDataFromUrl(trimmedUrl);
       metrics = videoData;
       authorUsername = videoData.authorUsername ?? authorUsername;
       authorDisplayName = videoData.authorDisplayName;
@@ -106,6 +223,20 @@ export async function createVideoFromUrl(input: {
           error instanceof Error ? error.message : "Failed to import metrics.",
       };
     }
+  } else if (!input.creator_id && input.auto_create_creator !== false) {
+    try {
+      const videoData = await fetchVideoDataFromUrl(trimmedUrl);
+      authorUsername = videoData.authorUsername ?? authorUsername;
+      authorDisplayName = videoData.authorDisplayName;
+      authorFollowers = videoData.authorFollowers;
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error
+            ? error.message
+            : creatorDetectionError(detectedPlatform),
+      };
+    }
   }
 
   let creatorId = input.creator_id;
@@ -114,18 +245,21 @@ export async function createVideoFromUrl(input: {
   if (!creatorId) {
     if (!authorUsername) {
       return {
-        error:
-          "Could not detect the TikTok creator from this link. Use a full @username/video/... URL or enable metric import.",
+        error: creatorDetectionError(detectedPlatform),
       };
     }
 
-    const match = await findOrCreateCreatorForTikTokUsername(authorUsername, {
-      platform: input.platform ?? "TikTok",
-      displayName: authorDisplayName,
-      followers: authorFollowers,
-      autoCreate: input.auto_create_creator !== false,
-      revalidate: false,
-    });
+    const match = await findOrCreateCreatorForVideo(
+      detectedPlatform,
+      authorUsername,
+      {
+        platformLabel,
+        displayName: authorDisplayName,
+        followers: authorFollowers,
+        autoCreate: input.auto_create_creator !== false,
+        revalidate: false,
+      },
+    );
 
     if (match.error || !match.creatorId) {
       return { error: match.error ?? "Creator not found." };
@@ -141,7 +275,7 @@ export async function createVideoFromUrl(input: {
       video_url: trimmedUrl,
       ...metrics,
     },
-    { revalidate: false, authorUsername },
+    { revalidate: false, authorUsername, authorDisplayName },
   );
 
   if (result.error || !result.data) {
@@ -166,13 +300,23 @@ export async function createVideoFromUrl(input: {
   return { ...result, createdCreator };
 }
 
+export async function revalidateAfterBulkUpload(campaignId?: string) {
+  revalidateCreatorHub(campaignId);
+}
+
 export async function updateVideo(id: string, input: VideoInput) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("videos")
     .update(parseVideoInput(input))
     .eq("id", id)
+    .eq("org_id", orgResult.orgId)
     .select()
     .single();
 
@@ -180,21 +324,34 @@ export async function updateVideo(id: string, input: VideoInput) {
     return { error: error.message };
   }
 
-  await applyCreatorUsernameFromVideo(input.creator_id, input.video_url);
+  await applyCreatorProfileFromVideo(input.creator_id, input.video_url);
 
   revalidateCreatorHub();
   return { data };
 }
 
-export async function importVideoMetrics(videoUrl: string) {
+export async function importVideoMetrics(
+  videoUrl: string,
+  platform?: VideoPlatform,
+) {
   const trimmedUrl = videoUrl.trim();
+  const requestedPlatform = normalizeVideoPlatform(platform);
 
   if (!trimmedUrl) {
-    return { error: "TikTok URL is required." };
+    return { error: "Video URL is required." };
+  }
+
+  if (!requestedPlatform) {
+    return { error: "Select TikTok or Instagram as the platform." };
+  }
+
+  const platformError = validateVideoUrlForPlatform(trimmedUrl, requestedPlatform);
+  if (platformError) {
+    return { error: platformError };
   }
 
   try {
-    const metrics = await fetchTikTokMetrics(trimmedUrl);
+    const metrics = await fetchVideoMetricsFromUrl(trimmedUrl);
     return { data: metrics };
   } catch (error) {
     return {
@@ -209,7 +366,7 @@ async function updateVideoMetricsFromApify(
   videoUrl: string,
   options?: { revalidate?: boolean },
 ) {
-  const videoData = await fetchTikTokVideoData(videoUrl);
+  const videoData = await fetchVideoDataFromUrl(videoUrl);
   const supabase = await createClient();
 
   const { data: video, error: videoError } = await supabase
@@ -240,11 +397,10 @@ async function updateVideoMetricsFromApify(
   }
 
   if (video?.creator_id) {
-    await applyCreatorUsernameFromVideo(
-      video.creator_id,
-      videoUrl,
-      videoData.authorUsername,
-    );
+    await applyCreatorProfileFromVideo(video.creator_id, videoUrl, {
+      authorUsername: videoData.authorUsername,
+      authorDisplayName: videoData.authorDisplayName,
+    });
   }
 
   if (options?.revalidate !== false) {
@@ -274,7 +430,14 @@ export async function refreshVideoMetrics(id: string) {
   const videoUrl = video.title.trim();
 
   if (!videoUrl) {
-    return { error: "Video has no TikTok URL." };
+    return { error: "Video has no URL." };
+  }
+
+  if (!detectVideoPlatform(videoUrl)) {
+    return {
+      error:
+        "Only TikTok and Instagram video links can be refreshed automatically.",
+    };
   }
 
   try {
@@ -308,7 +471,7 @@ export async function refreshAllVideoMetrics() {
   for (const video of videos) {
     const videoUrl = video.title.trim();
 
-    if (!videoUrl) {
+    if (!videoUrl || !detectVideoPlatform(videoUrl)) {
       failed += 1;
       continue;
     }
@@ -336,9 +499,18 @@ export async function refreshAllVideoMetrics() {
 }
 
 export async function deleteVideo(id: string) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
   const supabase = await createClient();
 
-  const { error } = await supabase.from("videos").delete().eq("id", id);
+  const { error } = await supabase
+    .from("videos")
+    .delete()
+    .eq("id", id)
+    .eq("org_id", orgResult.orgId);
 
   if (error) {
     return { error: error.message };

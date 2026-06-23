@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import {
   useCallback,
   useEffect,
@@ -33,7 +34,7 @@ type KeffooEyeProps = {
 
 function KeffooEye({ pupilStyle }: KeffooEyeProps) {
   return (
-    <div className="kefoo-eye relative h-[1.125rem] w-[1.125rem] rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.14)] ring-1 ring-kefoo-400/20 sm:h-5 sm:w-5">
+    <div className="kefoo-eye relative h-[1.125rem] w-[1.125rem] rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.14)] ring-1 ring-[#2d67d6]/20 sm:h-5 sm:w-5">
       <div
         className="kefoo-pupil absolute left-1/2 top-1/2 h-2 w-2 rounded-full bg-slate-800 sm:h-2.5 sm:w-2.5"
         style={pupilStyle}
@@ -115,7 +116,7 @@ export function KeffooLogo({ className }: { className?: string }) {
       aria-label="KEFOO logo"
     >
       <span
-        className="absolute select-none bg-gradient-to-b from-kefoo-300 to-kefoo-600 bg-clip-text text-[5.75rem] font-black leading-none tracking-tighter text-transparent sm:text-[7.25rem]"
+        className="absolute select-none text-[5.75rem] font-black leading-none tracking-tighter text-[#103b8c] sm:text-[7.25rem]"
         aria-hidden
       >
         K
@@ -136,9 +137,89 @@ export function KeffooLogo({ className }: { className?: string }) {
 export function KeffooWordmark({ className }: { className?: string }) {
   return (
     <p
-      className={`text-center text-sm font-semibold uppercase tracking-[0.35em] text-kefoo-300/90 pl-[0.35em] ${className ?? ""}`}
+      className={`text-center text-sm font-semibold uppercase tracking-[0.35em] text-[#103b8c] pl-[0.35em] ${className ?? ""}`}
     >
       KEFOO
     </p>
+  );
+}
+
+const brandLockupSizes = {
+  sm: {
+    box: "h-11 w-11",
+    scale: "scale-[0.42]",
+    title: "text-base",
+    tagline: "text-xs",
+    gap: "gap-2.5",
+    trackingPad: "pl-[0.2em]",
+  },
+  md: {
+    box: "h-12 w-12",
+    scale: "scale-[0.45]",
+    title: "text-sm",
+    tagline: "text-xs",
+    gap: "gap-2.5",
+    trackingPad: "pl-[0.2em]",
+  },
+  lg: {
+    box: "h-16 w-16",
+    scale: "scale-[0.55]",
+    title: "text-lg",
+    tagline: "text-sm",
+    gap: "gap-3",
+    trackingPad: "pl-[0.2em]",
+  },
+} as const;
+
+export function KeffooBrandLockup({
+  size = "sm",
+  showTagline = true,
+  className,
+}: {
+  size?: keyof typeof brandLockupSizes;
+  showTagline?: boolean;
+  className?: string;
+}) {
+  const config = brandLockupSizes[size];
+
+  return (
+    <div className={cn("flex items-center", config.gap, className)}>
+      <div
+        className={cn(
+          "relative flex shrink-0 items-center justify-center",
+          config.box,
+        )}
+      >
+        <div
+          className={cn(
+            "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+            config.scale,
+          )}
+        >
+          <KeffooLogo />
+        </div>
+      </div>
+      <div className="flex min-w-0 flex-col justify-center leading-tight">
+        <p
+          className={cn(
+            "font-bold tracking-[0.2em] text-kefoo-600",
+            config.title,
+          )}
+        >
+          KEFOO
+        </p>
+        {showTagline ? (
+          <p
+            className={cn(
+              "font-medium tracking-wide text-slate-500",
+              config.trackingPad,
+              config.tagline,
+            )}
+          >
+            Creator Intelligence OS
+          </p>
+        ) : null}
+      </div>
+    </div>
   );
 }

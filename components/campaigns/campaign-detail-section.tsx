@@ -1,10 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  AlertTriangle,
+  BarChart3,
+  ClipboardList,
   Heart,
   MessageCircle,
   Pencil,
@@ -13,8 +16,11 @@ import {
   TrendingUp,
   Users,
   Video,
+  Wallet,
 } from "lucide-react";
 import { deleteCampaign } from "@/app/actions/campaigns";
+import { CampaignCreatorsPanel } from "@/components/campaigns/campaign-creators-panel";
+import { CampaignExecutionTrackerPanel } from "@/components/campaigns/campaign-execution-tracker-panel";
 import { CampaignFormModal } from "@/components/campaigns/campaign-form-modal";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -28,14 +34,26 @@ import {
   formatEngagementRate,
   formatIDRDecimal,
   formatNumber,
+  cn,
 } from "@/lib/utils";
-import type { CampaignDetail, Creator, VideoWithCreator } from "@/types/database";
+import type { CampaignCreator, CampaignDetail, Creator, VideoWithCreator } from "@/types/database";
 
 type CampaignDetailSectionProps = {
   campaign: CampaignDetail;
   creators: Creator[];
   videos: VideoWithCreator[];
 };
+
+type CampaignDetailView = "performance" | "execution";
+
+const detailViews: Array<{
+  id: CampaignDetailView;
+  label: string;
+  icon: typeof BarChart3;
+}> = [
+  { id: "performance", label: "Campaign performance", icon: BarChart3 },
+  { id: "execution", label: "Execution tracker", icon: ClipboardList },
+];
 
 function KpiCard({ label, value }: { label: string; value: string }) {
   return (
@@ -101,6 +119,159 @@ const healthStyles = {
   },
 } as const;
 
+function getEffectiveCreatorFee(creator: CampaignCreator) {
+  return creator.campaign_fee ?? creator.fee;
+}
+
+function CampaignBudgetUsage({ campaign }: { campaign: CampaignDetail }) {
+  const budgetUsage = useMemo(() => {
+    const budget = campaign.budget;
+    const feesAssigned = campaign.creators.reduce(
+      (sum, creator) => sum + getEffectiveCreatorFee(creator),
+      0,
+    );
+    const remaining = budget - feesAssigned;
+    const isOverBudget = budget > 0 && feesAssigned > budget;
+    const overBy = isOverBudget ? feesAssigned - budget : 0;
+    const percentUsed =
+      budget > 0 ? Math.min((feesAssigned / budget) * 100, 100) : 0;
+
+    return {
+      budget,
+      feesAssigned,
+      remaining: Math.max(remaining, 0),
+      isOverBudget,
+      overBy,
+      percentUsed,
+      creatorsWithFees: campaign.creators.filter(
+        (creator) => getEffectiveCreatorFee(creator) > 0,
+      ).length,
+    };
+  }, [campaign.budget, campaign.creators]);
+
+  const {
+    budget,
+    feesAssigned,
+    remaining,
+    isOverBudget,
+    overBy,
+    percentUsed,
+    creatorsWithFees,
+  } = budgetUsage;
+
+  const barColor = isOverBudget
+    ? "bg-red-500"
+    : percentUsed >= 90
+      ? "bg-amber-500"
+      : "bg-kefoo-500";
+
+  return (
+    <section
+      className={cn(
+        "mb-8 overflow-hidden rounded-xl border bg-white p-6 shadow-sm",
+        isOverBudget ? "border-red-200" : "border-slate-200",
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-slate-400" />
+            <h3 className="text-lg font-semibold text-slate-900">Budget usage</h3>
+          </div>
+          <p className="mt-1 text-sm text-slate-500">
+            Based on creator fees assigned to this campaign (
+            {creatorsWithFees} of {campaign.creators.length} creators).
+          </p>
+        </div>
+        {isOverBudget ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Over budget
+          </span>
+        ) : budget > 0 && percentUsed >= 90 ? (
+          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+            Near limit
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Campaign budget
+          </p>
+          <p className="mt-1 text-xl font-semibold text-slate-900">
+            {formatCurrency(budget)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Fees assigned
+          </p>
+          <p
+            className={cn(
+              "mt-1 text-xl font-semibold",
+              isOverBudget ? "text-red-700" : "text-slate-900",
+            )}
+          >
+            {formatCurrency(feesAssigned)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            {isOverBudget ? "Over by" : "Remaining"}
+          </p>
+          <p
+            className={cn(
+              "mt-1 text-xl font-semibold",
+              isOverBudget ? "text-red-700" : "text-emerald-700",
+            )}
+          >
+            {isOverBudget
+              ? formatCurrency(overBy)
+              : budget > 0
+                ? formatCurrency(remaining)
+                : "—"}
+          </p>
+        </div>
+      </div>
+
+      {budget > 0 ? (
+        <div className="mt-5">
+          <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+            <span>{percentUsed.toFixed(0)}% of budget used</span>
+            {isOverBudget ? (
+              <span className="font-medium text-red-600">
+                {formatCurrency(overBy)} above limit
+              </span>
+            ) : (
+              <span>{formatCurrency(remaining)} left</span>
+            )}
+          </div>
+          <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className={cn("h-full rounded-full transition-all", barColor)}
+              style={{ width: `${percentUsed}%` }}
+            />
+          </div>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-slate-500">
+          Set a campaign budget in Edit to track spending limits.
+        </p>
+      )}
+
+      {isOverBudget ? (
+        <p className="mt-4 text-sm text-red-600">
+          Creator fees total {formatCurrency(feesAssigned)} against a{" "}
+          {formatCurrency(budget)} budget. Reduce fees or increase the campaign
+          budget.
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 export function CampaignDetailSection({
   campaign,
   creators,
@@ -110,6 +281,7 @@ export function CampaignDetailSection({
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [activeView, setActiveView] = useState<CampaignDetailView>("performance");
   const [isDeleting, startDeleteTransition] = useTransition();
 
   const health = getCampaignHealth(campaign, campaign.videos.length);
@@ -181,6 +353,31 @@ export function CampaignDetailSection({
         </div>
       </div>
 
+      <div className="mb-8 inline-flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1">
+          {detailViews.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setActiveView(id)}
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
+                activeView === id
+                  ? "bg-white text-slate-900 shadow-sm"
+                  : "text-slate-600 hover:text-slate-900",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {activeView === "performance" ? (
+        <>
+      <CampaignBudgetUsage campaign={campaign} />
+
       <section className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <KpiCard label="Total Views" value={formatNumber(campaign.total_views)} />
         <KpiCard label="Total Likes" value={formatNumber(campaign.total_likes)} />
@@ -220,6 +417,8 @@ export function CampaignDetailSection({
           value={campaign.videos.length.toLocaleString("en-US")}
         />
       </section>
+
+      <CampaignCreatorsPanel campaign={campaign} />
 
       <section className="mb-8">
         <div className="mb-4">
@@ -333,6 +532,10 @@ export function CampaignDetailSection({
           </div>
         </div>
       </section>
+        </>
+      ) : (
+        <CampaignExecutionTrackerPanel campaign={campaign} />
+      )}
 
       <CampaignFormModal
         open={formOpen}
