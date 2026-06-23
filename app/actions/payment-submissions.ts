@@ -18,21 +18,31 @@ export type SubmitPlanPaymentInput = {
   proofUrl: string;
 };
 
+function getJakartaDateString(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+  }).format(date);
+}
+
 function parsePaymentDate(value: string) {
   const trimmed = value.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
     return { error: "Enter a valid payment date." };
   }
 
-  const date = new Date(`${trimmed}T00:00:00`);
-  if (Number.isNaN(date.getTime())) {
+  const [year, month, day] = trimmed.split("-").map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() + 1 !== month ||
+    parsed.getUTCDate() !== day
+  ) {
     return { error: "Enter a valid payment date." };
   }
 
-  const today = new Date();
-  today.setHours(23, 59, 59, 999);
-
-  if (date.getTime() > today.getTime()) {
+  const today = getJakartaDateString();
+  if (trimmed > today) {
     return { error: "Payment date cannot be in the future." };
   }
 

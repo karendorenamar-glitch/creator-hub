@@ -343,6 +343,7 @@ export function PlanCheckoutSection({
                 value={paymentDate}
                 onChange={(event) => setPaymentDate(event.target.value)}
                 disabled={isSubmitting}
+                max={new Date().toLocaleDateString("en-CA")}
                 required
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:opacity-60"
               />
