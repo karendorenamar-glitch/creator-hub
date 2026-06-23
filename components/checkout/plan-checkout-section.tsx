@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Check, ExternalLink, Loader2, Upload } from "lucide-react";
@@ -19,10 +19,67 @@ import {
 } from "@/lib/plan-checkout";
 import {
   isAllowedPaymentProofFile,
+  isPaymentProofImageFile,
+  isPaymentProofImageUrl,
+  isPaymentProofPdfUrl,
   MAX_PAYMENT_PROOF_FILE_SIZE_BYTES,
 } from "@/lib/payment-proof";
 import { uploadPaymentProofFile } from "@/lib/payment-proof-storage";
 import type { OrgPlan, PaymentSubmission } from "@/types/database";
+
+function SubmittedProofPreview({
+  proofUrl,
+  title = "Your submitted proof",
+}: {
+  proofUrl: string;
+  title?: string;
+}) {
+  const isImage = isPaymentProofImageUrl(proofUrl);
+  const isPdf = isPaymentProofPdfUrl(proofUrl);
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-900">{title}</p>
+        <a
+          href={proofUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-kefoo-600 hover:text-kefoo-500"
+        >
+          Open full size
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      </div>
+
+      {isImage ? (
+        <a
+          href={proofUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 block overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={proofUrl}
+            alt="Submitted payment proof"
+            className="max-h-96 w-full object-contain"
+          />
+        </a>
+      ) : isPdf ? (
+        <iframe
+          src={proofUrl}
+          title="Submitted payment proof"
+          className="mt-4 h-96 w-full rounded-xl border border-slate-200 bg-slate-50"
+        />
+      ) : (
+        <p className="mt-3 text-sm text-slate-600">
+          Your proof file is saved. Use &quot;Open full size&quot; to view it.
+        </p>
+      )}
+    </div>
+  );
+}
 
 type PlanCheckoutSectionProps = {
   plan: CheckoutPlan;
@@ -47,7 +104,22 @@ export function PlanCheckoutSection({
   const [paymentDate, setPaymentDate] = useState("");
   const [senderName, setSenderName] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!proofFile || !isPaymentProofImageFile(proofFile)) {
+      setProofPreviewUrl(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(proofFile);
+    setProofPreviewUrl(previewUrl);
+
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [proofFile]);
 
   const pendingForPlan =
     latestSubmission?.plan === plan && latestSubmission.status === "pending";
@@ -55,8 +127,9 @@ export function PlanCheckoutSection({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!paymentDate.trim()) {
-      showError("Select the payment date.");
+    const form = event.currentTarget;
+    if (!form.checkValidity()) {
+      form.reportValidity();
       return;
     }
 
@@ -88,7 +161,7 @@ export function PlanCheckoutSection({
       const result = await submitPlanPayment({
         plan,
         paymentDate,
-        senderName,
+        senderName: senderName.trim(),
         proofUrl: uploadResult.proofUrl,
       });
 
@@ -143,6 +216,11 @@ export function PlanCheckoutSection({
             {formatCheckoutPlanLabel(plan)} · submitted{" "}
             {new Date(latestSubmission.created_at).toLocaleDateString("id-ID")}
           </p>
+          {latestSubmission.sender_name ? (
+            <p className="mt-2 text-amber-900">
+              Sender name: {latestSubmission.sender_name}
+            </p>
+          ) : null}
           <p className="mt-2 text-amber-900">
             Need help? Email{" "}
             <a
@@ -155,15 +233,7 @@ export function PlanCheckoutSection({
           </p>
         </div>
 
-        <a
-          href={latestSubmission.proof_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm font-medium text-kefoo-600 hover:text-kefoo-500"
-        >
-          View submitted proof
-          <ExternalLink className="h-4 w-4" />
-        </a>
+        <SubmittedProofPreview proofUrl={latestSubmission.proof_url} />
       </div>
     );
   }
@@ -253,11 +323,11 @@ export function PlanCheckoutSection({
           </p>
           <p className="mt-2 text-sm text-slate-600">
             After transferring, fill in the details below and upload your receipt
-            or screenshot.
+            or screenshot. All fields are required.
           </p>
 
           <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-            <FormField label="Payment date" htmlFor="payment-date">
+            <FormField label="Payment date" htmlFor="payment-date" required>
               <input
                 id="payment-date"
                 type="date"
@@ -269,19 +339,20 @@ export function PlanCheckoutSection({
               />
             </FormField>
 
-            <FormField label="Sender name (optional)" htmlFor="sender-name">
+            <FormField label="Sender name" htmlFor="sender-name" required>
               <input
                 id="sender-name"
                 type="text"
                 value={senderName}
                 onChange={(event) => setSenderName(event.target.value)}
                 disabled={isSubmitting}
-                placeholder="Name on bank account"
+                placeholder="Company or person who transferred"
+                required
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:opacity-60"
               />
             </FormField>
 
-            <FormField label="Payment proof" htmlFor="payment-proof">
+            <FormField label="Payment proof" htmlFor="payment-proof" required>
               <input
                 ref={fileInputRef}
                 id="payment-proof"
@@ -289,6 +360,7 @@ export function PlanCheckoutSection({
                 accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                 className="sr-only"
                 disabled={isSubmitting}
+                required
                 onChange={(event) => {
                   setProofFile(event.target.files?.[0] ?? null);
                 }}
@@ -302,6 +374,20 @@ export function PlanCheckoutSection({
                 <Upload className="h-4 w-4" />
                 {proofFile ? proofFile.name : "Upload PDF, JPG, or PNG"}
               </button>
+              {proofPreviewUrl ? (
+                <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={proofPreviewUrl}
+                    alt="Payment proof preview"
+                    className="max-h-64 w-full object-contain"
+                  />
+                </div>
+              ) : proofFile ? (
+                <p className="mt-2 text-xs text-slate-500">
+                  PDF selected: {proofFile.name}
+                </p>
+              ) : null}
             </FormField>
 
             <button

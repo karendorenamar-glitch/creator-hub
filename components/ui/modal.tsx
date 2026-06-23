@@ -80,10 +80,12 @@ export function Modal({
 export function FormField({
   label,
   htmlFor,
+  required,
   children,
 }: {
   label: string;
   htmlFor: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -93,6 +95,7 @@ export function FormField({
         className="mb-1.5 block text-sm font-medium text-slate-700"
       >
         {label}
+        {required ? <span className="text-red-500"> *</span> : null}
       </label>
       {children}
     </div>

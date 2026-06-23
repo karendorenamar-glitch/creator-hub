@@ -29,6 +29,27 @@ export function isAllowedPaymentProofFile(file: File) {
   return ALLOWED_PAYMENT_PROOF_MIME_TYPES.has(file.type);
 }
 
+export function isPaymentProofImageUrl(url: string) {
+  const path = url.split("?")[0]?.toLowerCase() ?? "";
+
+  return /\.(jpe?g|png|webp)$/.test(path);
+}
+
+export function isPaymentProofPdfUrl(url: string) {
+  const path = url.split("?")[0]?.toLowerCase() ?? "";
+
+  return path.endsWith(".pdf");
+}
+
+export function isPaymentProofImageFile(file: File) {
+  if (file.type.startsWith("image/")) {
+    return true;
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  return extension === "jpg" || extension === "jpeg" || extension === "png";
+}
+
 export function buildPaymentProofStoragePath(orgId: string, fileName: string) {
   const extension = fileName.split(".").pop()?.toLowerCase() ?? "bin";
   const safeExtension = ALLOWED_PAYMENT_PROOF_EXTENSIONS.has(extension)

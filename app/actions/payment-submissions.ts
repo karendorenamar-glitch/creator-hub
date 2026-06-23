@@ -14,8 +14,7 @@ import type { PaymentSubmission } from "@/types/database";
 export type SubmitPlanPaymentInput = {
   plan: CheckoutPlan;
   paymentDate: string;
-  senderName?: string;
-  notes?: string;
+  senderName: string;
   proofUrl: string;
 };
 
@@ -53,6 +52,11 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
   const proofUrl = input.proofUrl.trim();
   if (!proofUrl) {
     return { error: "Upload your payment proof before submitting." };
+  }
+
+  const senderName = input.senderName.trim();
+  if (!senderName) {
+    return { error: "Sender name is required." };
   }
 
   const paymentDate = parsePaymentDate(input.paymentDate);
@@ -97,8 +101,8 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
       plan: input.plan,
       amount_idr: config.amountIdr,
       payment_date: paymentDate.value,
-      sender_name: input.senderName?.trim() || null,
-      notes: input.notes?.trim() || null,
+      sender_name: senderName,
+      notes: null,
       proof_url: proofUrl,
       status: "pending",
     })
