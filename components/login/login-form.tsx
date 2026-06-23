@@ -122,7 +122,7 @@ export function LoginForm() {
             Don&apos;t have an account?{" "}
             <Link
               href="mailto:hello@kefoo.tech?subject=Schedule%20a%20Demo"
-              className="font-medium text-violet-300 transition-colors hover:text-violet-200"
+              className="font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
             >
               Schedule a Demo
             </Link>

@@ -7,6 +7,10 @@ import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export const LANDING_BG = "#050816";
+export const KEFOO_BUTTON_GRADIENT =
+  "bg-gradient-to-r from-kefoo-300 via-kefoo-500 to-kefoo-600";
+export const KEFOO_TEXT_GRADIENT =
+  "bg-gradient-to-r from-kefoo-300 via-kefoo-400 to-kefoo-600 bg-clip-text text-transparent";
 export const SECTION_CLASS = "py-28";
 export const CONTAINER_CLASS = "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8";
 
@@ -120,9 +124,9 @@ export function GradientButton({
         href={href}
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-white transition-shadow",
-          "bg-gradient-to-r from-[#6EA5F7] to-[#A855F7]",
+          KEFOO_BUTTON_GRADIENT,
           size === "lg"
-            ? "px-8 py-4 text-base shadow-[0_0_48px_-8px_rgba(168,85,247,0.65)] hover:shadow-[0_0_64px_-6px_rgba(168,85,247,0.75)]"
+            ? "px-8 py-4 text-base shadow-[0_0_48px_-8px_rgba(74,134,232,0.5)] hover:shadow-[0_0_64px_-6px_rgba(110,165,247,0.55)]"
             : "px-5 py-2.5 text-sm shadow-[0_8px_32px_-8px_rgba(74,134,232,0.45)] hover:shadow-[0_12px_40px_-8px_rgba(110,165,247,0.5)]",
           className,
         )}
@@ -142,10 +146,7 @@ export function GradientText({
 }) {
   return (
     <span
-      className={cn(
-        "bg-gradient-to-r from-[#6EA5F7] to-[#A855F7] bg-clip-text text-transparent",
-        className,
-      )}
+      className={cn(KEFOO_TEXT_GRADIENT, className)}
     >
       {children}
     </span>

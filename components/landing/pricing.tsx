@@ -232,7 +232,7 @@ function PricingButton({
           variant === "secondary" &&
             "border border-white/[0.08] bg-white/[0.04] text-white hover:border-white/15 hover:bg-white/[0.06]",
           variant === "gradient" &&
-            "border border-violet-400/20 bg-gradient-to-r from-[#6EA5F7]/90 to-[#A855F7]/90 text-white shadow-[0_4px_24px_-8px_rgba(74,134,232,0.4)] hover:shadow-[0_8px_32px_-8px_rgba(110,165,247,0.45)]",
+            "border border-kefoo-400/25 bg-gradient-to-r from-kefoo-300/95 via-kefoo-500/95 to-kefoo-600/95 text-white shadow-[0_4px_24px_-8px_rgba(74,134,232,0.4)] hover:shadow-[0_8px_32px_-8px_rgba(110,165,247,0.45)]",
           variant === "dark" &&
             "border border-white/10 bg-white/[0.05] text-white hover:border-white/20 hover:bg-white/[0.08]",
         )}

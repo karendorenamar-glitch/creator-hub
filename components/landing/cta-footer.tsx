@@ -47,15 +47,15 @@ export function CTAFooter() {
       <footer className="border-t border-white/[0.06] pb-10 pt-12">
         <div className={CONTAINER_CLASS}>
           <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <div className="flex items-center gap-3.5">
-              <div className="relative h-12 w-12 shrink-0">
-                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[0.28]">
+            <div className="flex items-center gap-1.5">
+              <div className="relative h-14 w-12 shrink-0 overflow-visible">
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[0.36]">
                   <KeffooLogo />
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold tracking-[0.2em] text-white">KEFOO</p>
-                <p className="text-[10px] text-slate-500">Creator Intelligence OS</p>
+                <p className="text-sm font-bold tracking-[0.2em] text-white">KEFOO</p>
+                <p className="text-xs text-slate-500">Creator Intelligence OS</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500">

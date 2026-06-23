@@ -281,12 +281,12 @@ function CampaignAnalyticsVisual() {
         <svg viewBox="0 0 280 80" className="h-24 w-full" preserveAspectRatio="none">
           <defs>
             <linearGradient id="analyticsArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#A855F7" stopOpacity="0.2" />
+              <stop offset="0%" stopColor="#6EA5F7" stopOpacity="0.2" />
               <stop offset="100%" stopColor="#6EA5F7" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="analyticsLine" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#6EA5F7" />
-              <stop offset="100%" stopColor="#A855F7" />
+              <stop offset="100%" stopColor="#3569C7" />
             </linearGradient>
           </defs>
           <path

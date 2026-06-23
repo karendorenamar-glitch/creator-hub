@@ -6,7 +6,18 @@
   --kefoo-blue-light: #9fc4ff;
   --kefoo-blue: #4a86e8;
   --kefoo-blue-deep: #3569c7;
-  --kefoo-violet: #a855f7;
+  --kefoo-gradient: linear-gradient(
+    135deg,
+    #9fc4ff 0%,
+    #6ea5f7 48%,
+    #3569c7 100%
+  );
+  --kefoo-gradient-soft: linear-gradient(
+    135deg,
+    rgba(159, 196, 255, 0.96) 0%,
+    rgba(110, 165, 247, 0.96) 48%,
+    rgba(53, 105, 199, 0.94) 100%
+  );
 }
 
 @theme inline {
@@ -178,11 +189,7 @@ button {
   justify-content: center;
   gap: 0.5rem;
   border-radius: 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba(74, 134, 232, 0.95),
-    rgba(168, 85, 246, 0.92)
-  );
+  background: var(--kefoo-gradient-soft);
   padding: 0.875rem 1.75rem;
   font-size: 0.875rem;
   font-weight: 500;
