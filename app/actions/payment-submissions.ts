@@ -7,6 +7,7 @@ import {
   isCheckoutPlan,
   type CheckoutPlan,
 } from "@/lib/plan-checkout";
+import { sendPaymentSubmissionNotification } from "@/lib/payment-notification-email";
 import { createClient } from "@/lib/supabase/server";
 import type { PaymentSubmission } from "@/types/database";
 
@@ -108,10 +109,38 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
     return { error: error.message };
   }
 
+  const submission = data as PaymentSubmission;
+
+  const [
+    {
+      data: { user },
+    },
+    { data: organization },
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", orgResult.orgId)
+      .maybeSingle(),
+  ]);
+
+  void sendPaymentSubmissionNotification({
+    submission,
+    customerEmail: user?.email ?? null,
+    customerName:
+      typeof user?.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : null,
+    orgName: organization?.name ?? null,
+  }).catch((notificationError) => {
+    console.error("Payment notification email failed:", notificationError);
+  });
+
   revalidatePath("/settings");
   revalidatePath(`/checkout/${input.plan}`);
 
-  return { data: data as PaymentSubmission };
+  return { data: submission };
 }
 
 export async function getLatestPaymentSubmissionForOrg() {

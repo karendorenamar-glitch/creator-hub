@@ -75,3 +75,8 @@ create policy "Authenticated users can update payment proofs"
 -- update public.organizations
 -- set plan = 'growth', trial_ends_at = null
 -- where id = '<org_id>';
+--
+-- Payment notification email (Vercel env):
+-- RESEND_API_KEY=...
+-- PAYMENT_NOTIFICATION_TO=hello@kefoo.tech
+-- PAYMENT_NOTIFICATION_FROM=Kefoo Payments <payments@kefoo.tech>
