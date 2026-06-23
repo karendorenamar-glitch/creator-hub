@@ -14,9 +14,9 @@ import {
   Modal,
 } from "@/components/ui/modal";
 import {
-  APIFY_IMPORT_DURATION_LABEL,
-  ApifyWaitNotice,
-} from "@/components/ui/apify-wait-notice";
+  IMPORT_DURATION_LABEL,
+  ImportWaitNotice,
+} from "@/components/ui/import-wait-notice";
 import { useToast } from "@/components/ui/toast";
 import {
   validateVideoUrlForPlatform,
@@ -67,7 +67,6 @@ export function VideoFormModal({
   const [metricsImported, setMetricsImported] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const isFetchingTikTok = isImporting;
 
   useEffect(() => {
     if (!open) return;
@@ -199,22 +198,14 @@ export function VideoFormModal({
       description={
         isEditing
           ? "Update video metrics and save changes."
-          : platform === "TikTok"
-            ? "Paste a full TikTok link with @username. Save is instant — use Import Metrics for live stats."
-            : `Paste a ${platform} link. We'll detect the creator from the link automatically.`
+          : `Paste a ${platform} link. We'll detect the creator from the link automatically.`
       }
       loading={isPending || isImporting}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {!isEditing && (platform === "TikTok" || platform === "Instagram") ? (
-          <ApifyWaitNotice
-            detail={
-              platform === "TikTok"
-                ? "Save is instant. Import Metrics fetches live stats and may take up to 60 seconds."
-                : "Import Metrics fetches live stats and may take up to 60 seconds."
-            }
-          />
+          <ImportWaitNotice />
         ) : null}
 
         {!isEditing && platform === "Instagram" ? (
@@ -298,14 +289,9 @@ export function VideoFormModal({
             >
               {isImporting
                 ? "Importing..."
-                : `Import Metrics (${APIFY_IMPORT_DURATION_LABEL})`}
+                : `Import Metrics (${IMPORT_DURATION_LABEL})`}
             </button>
           </div>
-          {isFetchingTikTok ? (
-            <p className="text-xs text-amber-800">
-              Import in progress — up to 60 seconds. Please keep this tab open.
-            </p>
-          ) : null}
         </FormField>
 
         <div className="grid gap-4 sm:grid-cols-2">

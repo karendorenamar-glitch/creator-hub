@@ -20,7 +20,7 @@ const PLAN_RANK: Record<OrgPlan, number> = {
 };
 
 const FEATURE_MIN_PLAN: Record<PlanFeature, OrgPlan> = {
-  dashboard: "starter",
+  dashboard: "growth",
   dashboard_advanced: "growth",
   bulk_upload: "growth",
   payouts: "scale",
@@ -28,7 +28,7 @@ const FEATURE_MIN_PLAN: Record<PlanFeature, OrgPlan> = {
 };
 
 export const FEATURE_UPGRADE_MESSAGES: Record<PlanFeature, string> = {
-  dashboard: "Upgrade to Starter to unlock the dashboard.",
+  dashboard: "Upgrade to Growth to unlock the dashboard.",
   dashboard_advanced:
     "Upgrade to Growth for advanced performance insights and creator comparisons.",
   bulk_upload: "Upgrade to Growth to use bulk video upload.",
@@ -61,7 +61,7 @@ export function getDashboardTier(plan: OrgPlan): DashboardTier {
     return "growth";
   }
 
-  return "starter";
+  return "growth";
 }
 
 export function getDashboardDescription(tier: DashboardTier) {

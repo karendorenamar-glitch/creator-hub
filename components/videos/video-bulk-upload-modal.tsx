@@ -9,7 +9,6 @@ import {
   inputClassName,
   Modal,
 } from "@/components/ui/modal";
-import { ApifyWaitNotice } from "@/components/ui/apify-wait-notice";
 import { useToast } from "@/components/ui/toast";
 import { runWithConcurrency } from "@/lib/async-pool";
 import {
@@ -286,10 +285,6 @@ export function VideoBulkUploadModal({
               then upload the rest in a separate batch.
             </p>
           </div>
-        ) : null}
-
-        {importMetrics ? (
-          <ApifyWaitNotice detail="Each link can take up to 60 seconds when metrics import is enabled." />
         ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600">

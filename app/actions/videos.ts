@@ -2,6 +2,7 @@
 
 import { linkVideoToCampaign } from "@/app/actions/campaigns";
 import {
+  ensureCreatorTikTokFollowers,
   findOrCreateCreatorForInstagramUsername,
   findOrCreateCreatorForTikTokUsername,
   syncCreatorInstagramProfile,
@@ -69,6 +70,7 @@ async function applyCreatorProfileFromVideo(
   options?: {
     authorUsername?: string | null;
     authorDisplayName?: string | null;
+    authorFollowers?: number;
   },
 ) {
   const platform = detectVideoPlatform(videoUrl);
@@ -89,6 +91,7 @@ async function applyCreatorProfileFromVideo(
   await syncCreatorTikTokProfile(creatorId, {
     username,
     displayName: options?.authorDisplayName,
+    followers: options?.authorFollowers,
   });
 }
 
@@ -128,6 +131,7 @@ export async function createVideo(
     revalidate?: boolean;
     authorUsername?: string | null;
     authorDisplayName?: string | null;
+    authorFollowers?: number;
   },
 ) {
   const orgResult = await getOrgIdForAction();
@@ -158,6 +162,7 @@ export async function createVideo(
   await applyCreatorProfileFromVideo(input.creator_id, input.video_url, {
     authorUsername: options?.authorUsername,
     authorDisplayName: options?.authorDisplayName,
+    authorFollowers: options?.authorFollowers,
   });
 
   if (options?.revalidate !== false) {
@@ -326,11 +331,23 @@ export async function createVideoFromUrl(input: {
       video_url: trimmedUrl,
       ...metrics,
     },
-    { revalidate: false, authorUsername, authorDisplayName },
+    { revalidate: false, authorUsername, authorDisplayName, authorFollowers },
   );
 
   if (result.error || !result.data) {
     return result;
+  }
+
+  if (detectedPlatform === "TikTok" && authorFollowers === 0) {
+    const tikTokUsername =
+      authorUsername ??
+      extractUsernameFromVideoUrl(trimmedUrl, detectedPlatform);
+
+    if (tikTokUsername) {
+      await ensureCreatorTikTokFollowers(creatorId, tikTokUsername, {
+        displayName: authorDisplayName,
+      });
+    }
   }
 
   if (input.campaign_id) {
@@ -464,6 +481,7 @@ async function updateVideoMetricsFromApify(
     await applyCreatorProfileFromVideo(video.creator_id, videoUrl, {
       authorUsername: videoData.authorUsername,
       authorDisplayName: videoData.authorDisplayName,
+      authorFollowers: videoData.authorFollowers,
     });
   }
 

@@ -7,7 +7,6 @@ import { ClipboardList, ExternalLink, Link2 } from "lucide-react";
 import { updateCampaignCreatorWorkflowStatus } from "@/app/actions/campaigns";
 import { createVideoFromUrl } from "@/app/actions/videos";
 import { usePlan } from "@/components/plan/plan-provider";
-import { ApifyWaitNotice } from "@/components/ui/apify-wait-notice";
 import { useToast } from "@/components/ui/toast";
 import {
   CAMPAIGN_CREATOR_WORKFLOW_STATUSES,
@@ -252,18 +251,6 @@ export function CampaignExecutionTrackerPanel({
           marked Uploaded to add it to this campaign.
         </p>
       </div>
-
-      {!isFreeTrial ? (
-        <ApifyWaitNotice
-          className="mb-6"
-          detail="Linking a video imports metrics automatically and may take up to 60 seconds per link."
-        />
-      ) : (
-        <ApifyWaitNotice
-          className="mb-6"
-          detail="Free plan links videos instantly. Refresh metrics from the Videos page — up to 60 seconds per video."
-        />
-      )}
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {EXECUTION_TRACKER_STATUS_SUMMARY.map(({ status, label }) => (

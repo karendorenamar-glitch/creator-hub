@@ -12,7 +12,6 @@ import { VideoBulkUploadModal } from "@/components/videos/video-bulk-upload-moda
 import { VideoFormModal } from "@/components/videos/video-form-modal";
 import { VideosTable } from "@/components/videos/videos-table";
 import { FreeTrialUsageBanner, useUpgradeIfFreePlan } from "@/components/plan/plan-provider";
-import { ApifyWaitNotice } from "@/components/ui/apify-wait-notice";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import type { CampaignOption, Creator, VideoWithCreator } from "@/types/database";
@@ -127,11 +126,6 @@ export function VideosSection({ videos, creators, campaigns }: VideosSectionProp
     <>
       <FreeTrialUsageBanner />
 
-      <ApifyWaitNotice
-        className="mb-6"
-        detail="Refresh and Import Metrics fetch live stats from Apify on every plan."
-      />
-
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -142,7 +136,7 @@ export function VideosSection({ videos, creators, campaigns }: VideosSectionProp
           <RefreshCw
             className={cn("h-4 w-4", isRefreshingAll && "animate-spin")}
           />
-          {isRefreshingAll ? "Refreshing..." : "Refresh All Videos (~60s each)"}
+          {isRefreshingAll ? "Refreshing..." : "Refresh All Videos"}
         </button>
 
         <div className="flex flex-wrap items-center gap-3">

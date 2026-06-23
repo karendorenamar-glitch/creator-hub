@@ -339,6 +339,7 @@ export async function syncCreatorTikTokProfile(
   options: {
     username?: string | null;
     displayName?: string | null;
+    followers?: number;
   },
 ) {
   if (!creatorId) return;
@@ -349,7 +350,7 @@ export async function syncCreatorTikTokProfile(
   const supabase = await createClient();
   const { data: creator } = await supabase
     .from("creators")
-    .select("name")
+    .select("name, followers")
     .eq("id", creatorId)
     .maybeSingle();
 
@@ -357,6 +358,7 @@ export async function syncCreatorTikTokProfile(
   const updatePayload: {
     tiktok_username: string;
     name?: string;
+    followers?: number;
   } = {
     tiktok_username: normalized,
   };
@@ -368,7 +370,53 @@ export async function syncCreatorTikTokProfile(
     updatePayload.name = displayName;
   }
 
+  const followers = options.followers;
+  if (
+    typeof followers === "number" &&
+    followers > 0 &&
+    (creator?.followers ?? 0) === 0
+  ) {
+    updatePayload.followers = followers;
+  }
+
   await supabase.from("creators").update(updatePayload).eq("id", creatorId);
+}
+
+export async function ensureCreatorTikTokFollowers(
+  creatorId: string,
+  username: string,
+  options?: { displayName?: string | null },
+) {
+  if (!creatorId) return;
+
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) return;
+
+  const planCheck = await assertCanUseTikTokImport(orgResult.orgId);
+  if ("error" in planCheck) return;
+
+  const normalized = normalizeCreatorPlatformUsername(username);
+  if (!normalized) return;
+
+  const supabase = await createClient();
+  const { data: creator } = await supabase
+    .from("creators")
+    .select("followers")
+    .eq("id", creatorId)
+    .maybeSingle();
+
+  if ((creator?.followers ?? 0) > 0) return;
+
+  try {
+    const profile = await fetchTikTokProfile(normalized);
+    await syncCreatorTikTokProfile(creatorId, {
+      username: normalized,
+      displayName: options?.displayName ?? profile.name,
+      followers: profile.followers,
+    });
+  } catch {
+    // Non-fatal: video save still succeeds without follower count.
+  }
 }
 
 export async function syncCreatorInstagramUsername(
@@ -452,6 +500,7 @@ export async function findOrCreateCreatorForTikTokUsername(
     await syncCreatorTikTokProfile(existing.id, {
       username: normalized,
       displayName: options.displayName,
+      followers: options.followers,
     });
     return { creatorId: existing.id, created: false as const };
   }

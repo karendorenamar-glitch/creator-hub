@@ -52,7 +52,7 @@ export function getDefaultAppPath(
   plan: OrgPlan,
   isTrialExpired = false,
 ) {
-  if (isFreeTrialPlan(plan) || isTrialExpired) {
+  if (isFreeTrialPlan(plan) || isTrialExpired || plan === "starter") {
     return "/campaigns";
   }
 

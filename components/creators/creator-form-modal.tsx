@@ -13,10 +13,6 @@ import {
   inputClassName,
   Modal,
 } from "@/components/ui/modal";
-import {
-  APIFY_IMPORT_DURATION_LABEL,
-  ApifyWaitNotice,
-} from "@/components/ui/apify-wait-notice";
 import { useToast } from "@/components/ui/toast";
 import {
   getCreatorDisplayUsername,
@@ -211,7 +207,7 @@ export function CreatorFormModal({
       description={
         isEditing
           ? "Update creator details and save changes."
-          : "Save creator instantly. Fetch TikTok Data is optional and may take up to 60 seconds."
+          : "For TikTok, you can fetch followers and name from the username."
       }
       loading={isPending}
       size="lg"
@@ -234,10 +230,6 @@ export function CreatorFormModal({
           </select>
         </FormField>
 
-        {form.platform === "TikTok" ? (
-          <ApifyWaitNotice detail="Fetch TikTok Data loads followers and name from Apify." />
-        ) : null}
-
         <FormField label="Username" htmlFor="creator-username">
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
@@ -259,17 +251,10 @@ export function CreatorFormModal({
                 }
                 className="shrink-0 rounded-lg border border-kefoo-200 bg-kefoo-50 px-4 py-2.5 text-sm font-medium text-kefoo-700 hover:bg-kefoo-100 disabled:opacity-60"
               >
-                {isFetchingProfile
-                  ? "Fetching..."
-                  : `Fetch TikTok Data (${APIFY_IMPORT_DURATION_LABEL})`}
+                {isFetchingProfile ? "Fetching..." : "Fetch TikTok Data"}
               </button>
             ) : null}
           </div>
-          {isFetchingProfile ? (
-            <p className="mt-1 text-xs text-amber-800">
-              Import in progress — up to 60 seconds. Please keep this tab open.
-            </p>
-          ) : null}
           {profileFetchError ? (
             <p className="mt-1 text-xs text-red-600">{profileFetchError}</p>
           ) : null}

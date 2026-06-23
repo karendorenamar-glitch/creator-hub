@@ -17,17 +17,6 @@ export function DashboardWorkspace({
 }: DashboardWorkspaceProps) {
   const { insights, creatorComparison, pillarComparison } = workspace;
 
-  if (tier === "starter") {
-    return (
-      <PlanUpgradePrompt
-        feature="dashboard_advanced"
-        title="Advanced Performance Dashboard"
-        description="Unlock key insights, creator comparisons, and monthly performance trends with Growth."
-        className="mt-8"
-      />
-    );
-  }
-
   return (
     <div className="mt-10 space-y-6">
       <div className="rounded-2xl border border-kefoo-100 bg-gradient-to-r from-kefoo-50 via-white to-kefoo-50 p-6">

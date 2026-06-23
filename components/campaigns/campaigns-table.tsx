@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Lightbulb, Pencil, Trash2 } from "lucide-react";
 import { CampaignAnalyticsSummary } from "@/components/campaigns/campaign-analytics";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import {
@@ -137,10 +137,10 @@ export function CampaignsTable({
                 <div className="flex justify-end gap-1">
                   <Link
                     href={`/campaigns/${campaign.id}`}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                    aria-label={`View ${campaign.name}`}
+                    className="rounded-lg p-2 text-violet-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
+                    aria-label={`Open ${campaign.name}`}
                   >
-                    <Eye className="h-4 w-4" />
+                    <Lightbulb className="h-4 w-4" />
                   </Link>
                   <button
                     type="button"
