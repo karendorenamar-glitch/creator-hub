@@ -13,41 +13,55 @@ import {
 } from "@/components/landing/landing-shared";
 import { cn } from "@/lib/utils";
 
-const statusStyles = {
-  Planned: "bg-slate-500/15 text-slate-600 border-slate-500/20",
-  "In Review": "bg-amber-500/10 text-amber-300 border-amber-500/20",
-  Approved: "bg-kefoo-500/10 text-kefoo-300 border-kefoo-500/20",
-  Published: "bg-emerald-500/10 text-emerald-300 border-emerald-500/20",
-} as const;
+import {
+  EXECUTION_TRACKER_STATUS_LABELS,
+  EXECUTION_TRACKER_STATUS_SUMMARY,
+  type CampaignCreatorWorkflowStatus,
+} from "@/lib/campaign-creator-status";
 
-const scheduledPosts = [
+const executionStatusStyles: Record<CampaignCreatorWorkflowStatus, string> = {
+  brief_sent: "bg-slate-500/15 text-slate-600 border-slate-500/20",
+  waiting_content: "bg-amber-500/10 text-amber-700 border-amber-500/20",
+  revision: "bg-orange-500/10 text-orange-700 border-orange-500/20",
+  posted: "bg-emerald-500/10 text-emerald-700 border-emerald-500/20",
+};
+
+const executionSummaryCounts: Record<CampaignCreatorWorkflowStatus, number> = {
+  brief_sent: 2,
+  waiting_content: 1,
+  revision: 1,
+  posted: 2,
+};
+
+const executionRows: Array<{
+  creator: string;
+  initials: string;
+  platform: string;
+  status: CampaignCreatorWorkflowStatus;
+}> = [
   {
     creator: "Karen Dorena",
     initials: "KD",
-    title: "GRWM Date Night",
-    date: "Jun 12",
-    status: "Approved" as const,
+    platform: "TikTok",
+    status: "posted",
   },
   {
     creator: "Alya Putri",
     initials: "AP",
-    title: "Product Review",
-    date: "Jun 14",
-    status: "In Review" as const,
+    platform: "Instagram",
+    status: "waiting_content",
   },
   {
     creator: "Bima Aditya",
     initials: "BA",
-    title: "Campaign Teaser",
-    date: "Jun 18",
-    status: "Planned" as const,
+    platform: "TikTok",
+    status: "revision",
   },
   {
     creator: "Rizky Arif",
     initials: "RA",
-    title: "Behind The Scene",
-    date: "Jun 22",
-    status: "Published" as const,
+    platform: "TikTok",
+    status: "brief_sent",
   },
 ];
 
@@ -116,81 +130,59 @@ function BulkUploadVisual() {
   );
 }
 
-export function ContentPlannerVisual() {
-  const days = ["M", "T", "W", "T", "F", "S", "S"];
-  const dates = Array.from({ length: 28 }, (_, i) => i + 1);
-  const highlighted = [3, 7, 12, 14, 18, 22, 26];
-
+export function ExecutionTrackerVisual() {
   return (
     <div className="mt-5 flex flex-1 flex-col gap-3">
-      <div className="rounded-xl border border-slate-200/70 bg-white/85 p-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-[11px] font-medium text-slate-500">June 2026</span>
-          <span className="rounded-full border border-kefoo-500/20 bg-kefoo-500/10 px-2 py-0.5 text-[10px] font-medium text-kefoo-200">
-            24 posts planned
-          </span>
-        </div>
-        <div className="grid grid-cols-7 gap-0.5 text-center text-[8px] text-slate-600">
-          {days.map((d, i) => (
-            <span key={`${d}-${i}`} className="py-0.5">
-              {d}
-            </span>
-          ))}
-          {dates.map((date) => (
-            <span
-              key={date}
-              className={cn(
-                "rounded py-0.5",
-                highlighted.includes(date)
-                  ? "bg-kefoo-500/25 font-medium text-kefoo-200"
-                  : "text-slate-500",
-              )}
-            >
-              {date}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {scheduledPosts.map((post) => (
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {EXECUTION_TRACKER_STATUS_SUMMARY.map(({ status, label }) => (
           <div
-            key={`${post.creator}-${post.date}`}
-            className="flex items-center gap-2.5 rounded-xl border border-slate-200/60 bg-white/85 px-2.5 py-2"
+            key={status}
+            className="rounded-xl border border-slate-200/70 bg-white/85 px-2.5 py-2 text-left"
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-kefoo-500/30 to-kefoo-500/30 text-[9px] font-semibold text-white">
-              {post.initials}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-medium text-slate-200">{post.title}</p>
-              <p className="text-[9px] text-slate-500">
-                {post.creator} · {post.date}
-              </p>
-            </div>
-            <span
-              className={cn(
-                "shrink-0 rounded-full border px-1.5 py-0.5 text-[8px] font-medium",
-                statusStyles[post.status],
-              )}
-            >
-              {post.status}
-            </span>
+            <p className="text-[9px] font-medium text-slate-500">{label}</p>
+            <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+              {executionSummaryCounts[status]}
+            </p>
           </div>
         ))}
       </div>
 
-      <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
-        {(Object.keys(statusStyles) as Array<keyof typeof statusStyles>).map((status) => (
-          <span
-            key={status}
-            className={cn(
-              "rounded-full border px-2 py-0.5 text-[8px] font-medium",
-              statusStyles[status],
-            )}
-          >
-            {status}
-          </span>
-        ))}
+      <div className="rounded-xl border border-slate-200/70 bg-white/85 p-2.5">
+        <div className="mb-2 grid grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)] gap-2 border-b border-slate-200/70 pb-2 text-[9px] font-medium uppercase tracking-wide text-slate-500">
+          <span>Creator</span>
+          <span>Platform</span>
+          <span>Status</span>
+        </div>
+        <div className="space-y-2">
+          {executionRows.map((row) => (
+            <div
+              key={row.creator}
+              className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)] items-center gap-2"
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-kefoo-500/30 to-kefoo-500/30 text-[9px] font-semibold text-white">
+                  {row.initials}
+                </div>
+                <p className="truncate text-[11px] font-medium text-slate-900">
+                  {row.creator}
+                </p>
+              </div>
+              <span className="text-[10px] text-slate-600">{row.platform}</span>
+              <span
+                className={cn(
+                  "inline-flex w-fit rounded-full border px-2 py-0.5 text-[8px] font-medium",
+                  executionStatusStyles[row.status],
+                )}
+              >
+                {EXECUTION_TRACKER_STATUS_LABELS[row.status]}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-[10px] text-emerald-800">
+        Uploaded creators can paste a video link to auto-import metrics.
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ const PROTECTED_PREFIXES = [
   "/planner",
   "/payouts",
   "/settings",
+  "/checkout",
 ];
 
 function isProtectedPath(pathname: string) {

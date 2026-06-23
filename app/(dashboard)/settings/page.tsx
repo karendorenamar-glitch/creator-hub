@@ -1,16 +1,24 @@
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { SignOutButton } from "@/components/layout/sign-out-button";
+import { getLatestPaymentSubmissionForOrg } from "@/app/actions/payment-submissions";
 import { getDashboardPlanContext } from "@/app/actions/plan";
 import { getOrganizationSettings } from "@/app/actions/org";
+import {
+  formatPaymentSubmissionStatus,
+} from "@/lib/plan-checkout";
 import { getTrialEndsInDays } from "@/lib/plan";
+import { formatMoney } from "@/lib/format";
 
 export default async function SettingsPage() {
-  const [result, plan] = await Promise.all([
+  const [result, plan, submissionResult] = await Promise.all([
     getOrganizationSettings(),
     getDashboardPlanContext(),
+    getLatestPaymentSubmissionForOrg(),
   ]);
   const organization = "data" in result ? result.data : null;
+  const latestSubmission =
+    ("data" in submissionResult ? submissionResult.data : null) ?? null;
   const trialDaysLeft = getTrialEndsInDays(plan.trialEndsAt);
 
   return (
@@ -76,13 +84,52 @@ export default async function SettingsPage() {
               </dl>
             ) : null}
 
+            {latestSubmission ? (
+              <dl className="mt-4 space-y-3 rounded-xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm">
+                <div>
+                  <dt className="font-medium text-slate-500">Latest payment</dt>
+                  <dd className="mt-1 text-slate-900">
+                    {latestSubmission.plan.replace("_", " ")} ·{" "}
+                    {formatMoney(latestSubmission.amount_idr)} ·{" "}
+                    {formatPaymentSubmissionStatus(latestSubmission.status)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">Submitted</dt>
+                  <dd className="mt-1 text-slate-900">
+                    {new Date(latestSubmission.created_at).toLocaleString("id-ID")}
+                  </dd>
+                </div>
+                {latestSubmission.status === "pending" ? (
+                  <p className="text-slate-600">
+                    We are verifying your payment. This usually takes up to 1
+                    business day.
+                  </p>
+                ) : null}
+              </dl>
+            ) : null}
+
             {(plan.isFreeTrial || plan.isTrialExpired) && (
-              <Link
-                href="/#pricing"
-                className="mt-4 inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
-              >
-                Upgrade plan
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  href="/checkout/starter"
+                  className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Upgrade to Starter
+                </Link>
+                <Link
+                  href="/checkout/growth"
+                  className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
+                >
+                  Upgrade to Growth
+                </Link>
+                <Link
+                  href="/checkout/scale"
+                  className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Upgrade to Scale
+                </Link>
+              </div>
             )}
           </section>
 

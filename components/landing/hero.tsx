@@ -8,6 +8,7 @@ import {
   GlassCard,
   GradientButton,
   GradientText,
+  SCHEDULE_DEMO_MAILTO,
   fadeUpVariants,
 } from "@/components/landing/landing-shared";
 import { CreatorAvatarGraphic, KarenAvatar } from "@/components/landing/creator-avatars";
@@ -68,7 +69,7 @@ export function Hero() {
             <FadeIn delay={0.15}>
               <div className="mt-8 flex justify-center lg:justify-start">
                 <GradientButton
-                  href="mailto:hello@kefoo.tech?subject=Schedule%20a%20Demo"
+                  href={SCHEDULE_DEMO_MAILTO}
                   size="lg"
                   className="px-8"
                 >

@@ -24,6 +24,29 @@ export type Organization = {
   created_at: string;
 };
 
+export type PaymentSubmissionStatus = "pending" | "approved" | "rejected";
+
+export type PaymentSubmission = {
+  id: string;
+  org_id: string;
+  plan: Extract<OrgPlan, "starter" | "growth" | "scale">;
+  amount_idr: number;
+  payment_date: string;
+  sender_name: string | null;
+  notes: string | null;
+  proof_url: string;
+  status: PaymentSubmissionStatus;
+  created_at: string;
+  reviewed_at: string | null;
+};
+
+export type PlanCheckoutView = {
+  id: string;
+  org_id: string;
+  plan: Extract<OrgPlan, "starter" | "growth" | "scale">;
+  created_at: string;
+};
+
 export type OrgMember = {
   org_id: string;
   user_id: string;
@@ -283,6 +306,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "org_members_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      payment_submissions: {
+        Row: PaymentSubmission;
+        Insert: {
+          id?: string;
+          org_id: string;
+          plan: PaymentSubmission["plan"];
+          amount_idr: number;
+          payment_date: string;
+          sender_name?: string | null;
+          notes?: string | null;
+          proof_url: string;
+          status?: PaymentSubmissionStatus;
+          created_at?: string;
+          reviewed_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          plan?: PaymentSubmission["plan"];
+          amount_idr?: number;
+          payment_date?: string;
+          sender_name?: string | null;
+          notes?: string | null;
+          proof_url?: string;
+          status?: PaymentSubmissionStatus;
+          created_at?: string;
+          reviewed_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "payment_submissions_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      plan_checkout_views: {
+        Row: PlanCheckoutView;
+        Insert: {
+          id?: string;
+          org_id: string;
+          plan: PlanCheckoutView["plan"];
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          plan?: PlanCheckoutView["plan"];
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "plan_checkout_views_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";

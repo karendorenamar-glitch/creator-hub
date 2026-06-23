@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { ContentPlannerVisual } from "@/components/landing/features";
+import { ExecutionTrackerVisual } from "@/components/landing/features";
 import {
   CONTAINER_CLASS,
   FadeIn,
@@ -56,10 +56,10 @@ export function Payouts() {
         <FadeIn>
           <div className="mx-auto mb-12 max-w-3xl text-center">
             <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Plan content and pay creators with confidence
+              Track execution and pay creators with confidence
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
-              Content planning and payout tracking built for agency workflows.
+              Execution tracking and payout management built for agency workflows.
             </p>
           </div>
         </FadeIn>
@@ -147,16 +147,18 @@ export function Payouts() {
 
           <FadeIn delay={0.08}>
             <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:p-8 sm:text-left">
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Content Planner</h2>
+              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                Execution Tracker
+              </h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                Plan, organize, and manage creator deliverables across campaigns.
+                Track each creator from brief through upload inside every campaign.
               </p>
-              <ContentPlannerVisual />
+              <ExecutionTrackerVisual />
               <Link
-                href="/planner"
+                href="/login"
                 className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
               >
-                Open content planner
+                See execution tracker
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </GlassCard>

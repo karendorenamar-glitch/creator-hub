@@ -7,11 +7,16 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{ signup?: string }>;
+  searchParams: Promise<{ signup?: string; next?: string }>;
 };
 
 export default async function Page({ searchParams }: PageProps) {
-  const { signup } = await searchParams;
+  const { signup, next } = await searchParams;
 
-  return <LoginPage initialMode={signup ? "signup" : "signin"} />;
+  return (
+    <LoginPage
+      initialMode={signup ? "signup" : "signin"}
+      redirectTo={next}
+    />
+  );
 }

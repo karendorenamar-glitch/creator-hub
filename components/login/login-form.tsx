@@ -6,7 +6,7 @@ import { registerFreeAccount } from "@/app/actions/auth";
 import { resolveAuthSession } from "@/app/actions/org";
 import { KeffooBrandLockup } from "@/components/login/kefoo-logo";
 import { createClient } from "@/lib/supabase/client";
-import { cn, isValidEmail, isValidPhoneNumber } from "@/lib/utils";
+import { cn, getSafeRedirectPath, isValidEmail, isValidPhoneNumber } from "@/lib/utils";
 
 const loginInputClassName =
   "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:cursor-not-allowed disabled:opacity-60";
@@ -31,8 +31,10 @@ function AuthFormSuccess({ message }: { message: string }) {
 
 export function LoginForm({
   initialMode = "signin",
+  redirectTo,
 }: {
   initialMode?: AuthMode;
+  redirectTo?: string;
 }) {
   const router = useRouter();
   const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -96,9 +98,10 @@ export function LoginForm({
     }
 
     router.push(
-      "redirectTo" in session && session.redirectTo
-        ? session.redirectTo
-        : "/campaigns",
+      getSafeRedirectPath(redirectTo) ??
+        ("redirectTo" in session && session.redirectTo
+          ? session.redirectTo
+          : "/campaigns"),
     );
     router.refresh();
   }
@@ -145,7 +148,7 @@ export function LoginForm({
     }
 
     if ("success" in result && result.success) {
-      router.push("/campaigns");
+      router.push(getSafeRedirectPath(redirectTo) ?? "/campaigns");
       router.refresh();
     }
   }

@@ -156,7 +156,7 @@ export function VideoFormModal({
         : await createVideoFromUrl({
             video_url: form.video_url,
             platform,
-            import_metrics: false,
+            import_metrics: platform === "TikTok",
             auto_create_creator: true,
             metrics: {
               views: form.views,

@@ -3,9 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import {
   defaultTrialEndsAt,
   DEFAULT_FREE_TRIAL_PLAN,
+  DEFAULT_FULL_ACCESS_PLAN,
   DEFAULT_ORG_ID,
   getFallbackOrgPlan,
+  getOrgPlanForNewOrganization,
   isDuplicateOrgSlugError,
+  isLifetimeScaleEmail,
   isMissingPlanColumnError,
 } from "@/lib/org-plan-schema";
 import type { Organization } from "@/types/database";
@@ -66,7 +69,14 @@ export async function getUserOrganizations(userId: string): Promise<Organization
     .filter((org): org is Organization => org !== null);
 }
 
-async function getOrgPlanForRouting(orgId: string): Promise<OrgPlan> {
+async function getOrgPlanForRouting(
+  orgId: string,
+  userEmail?: string | null,
+): Promise<OrgPlan> {
+  if (isLifetimeScaleEmail(userEmail)) {
+    return DEFAULT_FULL_ACCESS_PLAN;
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organizations")
@@ -96,6 +106,8 @@ async function getOrgPlanForRouting(orgId: string): Promise<OrgPlan> {
 }
 
 async function resolveActiveOrgId(userId: string): Promise<string | null> {
+  const user = await getAuthUser();
+  const userEmail = user?.email ?? null;
   const organizations = await getUserOrganizations(userId);
   if (organizations.length === 0) {
     return null;
@@ -123,8 +135,8 @@ async function resolveActiveOrgId(userId: string): Promise<string | null> {
   }
 
   const [candidatePlan, defaultPlan] = await Promise.all([
-    getOrgPlanForRouting(candidateId),
-    getOrgPlanForRouting(DEFAULT_ORG_ID),
+    getOrgPlanForRouting(candidateId, userEmail),
+    getOrgPlanForRouting(DEFAULT_ORG_ID, userEmail),
   ]);
 
   if (candidatePlan === "free_trial" && defaultPlan === "scale") {
@@ -309,13 +321,14 @@ async function createOrganizationAttempt(
   userId: string,
   trimmedName: string,
   slug: string,
-  trialEndsAt: string,
+  orgPlan: typeof DEFAULT_FREE_TRIAL_PLAN | typeof DEFAULT_FULL_ACCESS_PLAN,
+  orgTrialEndsAt: string | null,
 ) {
   const rpcResult = await supabase.rpc("create_organization_for_user", {
     org_name: trimmedName,
     org_slug: slug,
-    org_plan: DEFAULT_FREE_TRIAL_PLAN,
-    org_trial_ends_at: trialEndsAt,
+    org_plan: orgPlan,
+    org_trial_ends_at: orgTrialEndsAt ?? undefined,
   });
 
   if (!rpcResult.error && rpcResult.data) {
@@ -350,7 +363,8 @@ async function createOrganizationAttempt(
     userId,
     trimmedName,
     slug,
-    trialEndsAt,
+    orgPlan,
+    orgTrialEndsAt,
     includePlanFields: !isMissingPlanColumnError(rpcResult.error?.message),
   });
 
@@ -373,7 +387,9 @@ export async function createOrganizationForUser(userId: string, name: string) {
   }
 
   const supabase = await createClient();
-  const trialEndsAt = defaultTrialEndsAt();
+  const user = await getAuthUser();
+  const { plan: orgPlan, trial_ends_at: orgTrialEndsAt } =
+    getOrgPlanForNewOrganization(user?.email);
   const slugCandidates = buildOrgSlugCandidates(trimmedName);
 
   for (const slug of slugCandidates) {
@@ -382,7 +398,8 @@ export async function createOrganizationForUser(userId: string, name: string) {
       userId,
       trimmedName,
       slug,
-      trialEndsAt,
+      orgPlan,
+      orgTrialEndsAt,
     );
 
     if ("data" in result && result.data) {
@@ -406,14 +423,16 @@ async function createOrganizationWithMembershipFallback({
   userId,
   trimmedName,
   slug,
-  trialEndsAt,
+  orgPlan,
+  orgTrialEndsAt,
   includePlanFields,
 }: {
   supabase: Awaited<ReturnType<typeof createClient>>;
   userId: string;
   trimmedName: string;
   slug: string;
-  trialEndsAt: string;
+  orgPlan: typeof DEFAULT_FREE_TRIAL_PLAN | typeof DEFAULT_FULL_ACCESS_PLAN;
+  orgTrialEndsAt: string | null;
   includePlanFields: boolean;
 }) {
   const orgId = crypto.randomUUID();
@@ -425,8 +444,8 @@ async function createOrganizationWithMembershipFallback({
   const payload = includePlanFields
     ? {
         ...basePayload,
-        plan: DEFAULT_FREE_TRIAL_PLAN,
-        trial_ends_at: trialEndsAt,
+        plan: orgPlan,
+        trial_ends_at: orgTrialEndsAt,
       }
     : basePayload;
 
@@ -441,7 +460,8 @@ async function createOrganizationWithMembershipFallback({
         userId,
         trimmedName,
         slug,
-        trialEndsAt,
+        orgPlan,
+        orgTrialEndsAt,
         includePlanFields: false,
       });
     }

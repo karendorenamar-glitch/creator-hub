@@ -38,6 +38,48 @@ export const DEFAULT_ORG_ID = "11111111-1111-1111-1111-111111111111";
 
 export const DEFAULT_FULL_ACCESS_PLAN = "scale" as const;
 
+/** Owner account with permanent Scale access in app and on new workspaces. */
+export const LIFETIME_SCALE_EMAIL = "karendorenamar@gmail.com";
+
+export function normalizeAccountEmail(email: string | null | undefined) {
+  return email?.trim().toLowerCase() ?? "";
+}
+
+export function isLifetimeScaleEmail(email: string | null | undefined) {
+  return normalizeAccountEmail(email) === normalizeAccountEmail(LIFETIME_SCALE_EMAIL);
+}
+
+export function getOrgPlanForNewOrganization(userEmail: string | null | undefined): {
+  plan: typeof DEFAULT_FREE_TRIAL_PLAN | typeof DEFAULT_FULL_ACCESS_PLAN;
+  trial_ends_at: string | null;
+} {
+  if (isLifetimeScaleEmail(userEmail)) {
+    return {
+      plan: DEFAULT_FULL_ACCESS_PLAN,
+      trial_ends_at: null,
+    };
+  }
+
+  return {
+    plan: DEFAULT_FREE_TRIAL_PLAN,
+    trial_ends_at: defaultTrialEndsAt(),
+  };
+}
+
+export function applyLifetimeScalePlanOverride<
+  T extends { plan: string; trial_ends_at: string | null },
+>(record: T, userEmail: string | null | undefined): T {
+  if (!isLifetimeScaleEmail(userEmail)) {
+    return record;
+  }
+
+  return {
+    ...record,
+    plan: DEFAULT_FULL_ACCESS_PLAN,
+    trial_ends_at: null,
+  };
+}
+
 export function getFallbackOrgPlan(
   orgId: string,
   createdAt?: string | null,

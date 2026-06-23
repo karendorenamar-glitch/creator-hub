@@ -19,6 +19,11 @@ export const SECTION_CLASS = "py-28";
 export const CONTAINER_CLASS =
   "mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10 xl:px-12";
 
+export const SCHEDULE_DEMO_MAILTO = `mailto:hello@kefoo.tech?${new URLSearchParams({
+  subject: "Schedule a Demo",
+  body: "Hi ! I would like to see your demo, can we schedule a meeting?",
+}).toString()}`;
+
 export const fadeUpVariants: Variants = {
   hidden: { opacity: 0, y: 28 },
   visible: {
@@ -101,21 +106,26 @@ export function GradientButton({
   className?: string;
   size?: "md" | "lg";
 }) {
+  const classNames = cn(
+    "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-white transition-shadow",
+    KEFOO_BUTTON_GRADIENT,
+    size === "lg"
+      ? "px-8 py-4 text-base shadow-[0_8px_32px_-10px_rgba(45,103,214,0.35)] hover:shadow-[0_12px_40px_-10px_rgba(45,103,214,0.42)]"
+      : "px-5 py-2.5 text-sm shadow-[0_6px_24px_-10px_rgba(45,103,214,0.32)] hover:shadow-[0_10px_32px_-10px_rgba(45,103,214,0.38)]",
+    className,
+  );
+
   return (
     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-      <Link
-        href={href}
-        className={cn(
-          "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-white transition-shadow",
-          KEFOO_BUTTON_GRADIENT,
-          size === "lg"
-            ? "px-8 py-4 text-base shadow-[0_8px_32px_-10px_rgba(45,103,214,0.35)] hover:shadow-[0_12px_40px_-10px_rgba(45,103,214,0.42)]"
-            : "px-5 py-2.5 text-sm shadow-[0_6px_24px_-10px_rgba(45,103,214,0.32)] hover:shadow-[0_10px_32px_-10px_rgba(45,103,214,0.38)]",
-          className,
-        )}
-      >
-        {children}
-      </Link>
+      {href.startsWith("mailto:") || href.startsWith("http") ? (
+        <a href={href} className={classNames}>
+          {children}
+        </a>
+      ) : (
+        <Link href={href} className={classNames}>
+          {children}
+        </Link>
+      )}
     </motion.div>
   );
 }

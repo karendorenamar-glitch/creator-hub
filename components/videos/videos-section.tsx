@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Upload } from "lucide-react";
+import { Plus, RefreshCw, Upload } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   deleteVideo,
   refreshAllVideoMetrics,
@@ -132,9 +133,9 @@ export function VideosSection({ videos, creators, campaigns }: VideosSectionProp
           disabled={videos.length === 0 || isRefreshingAll || refreshingId !== null}
           className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <span className={isRefreshingAll ? "inline-block animate-spin" : undefined}>
-            🔄
-          </span>
+          <RefreshCw
+            className={cn("h-4 w-4", isRefreshingAll && "animate-spin")}
+          />
           {isRefreshingAll ? "Refreshing..." : "Refresh All Videos"}
         </button>
 

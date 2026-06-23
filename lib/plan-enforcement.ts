@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   DEFAULT_FREE_TRIAL_PLAN,
-  DEFAULT_ORG_ID,
+  applyLifetimeScalePlanOverride,
   getFallbackOrgPlan,
   isMissingPlanColumnError,
 } from "@/lib/org-plan-schema";
@@ -75,6 +75,17 @@ async function getVerifiedOrgMembership(orgId: string) {
   return data?.org_id ?? null;
 }
 
+async function resolvePlanRecordWithOverrides(
+  record: Pick<Organization, "id" | "plan" | "trial_ends_at">,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return applyLifetimeScalePlanOverride(record, user?.email);
+}
+
 export async function getOrganizationPlanRecord(
   orgId: string,
 ): Promise<Pick<Organization, "id" | "plan" | "trial_ends_at"> | null> {
@@ -87,11 +98,11 @@ export async function getOrganizationPlanRecord(
     .maybeSingle();
 
   if (!withPlanError && withPlan) {
-    return {
+    return resolvePlanRecordWithOverrides({
       id: withPlan.id,
       plan: (withPlan.plan ?? DEFAULT_FREE_TRIAL_PLAN) as Organization["plan"],
       trial_ends_at: withPlan.trial_ends_at,
-    };
+    });
   }
 
   const withPlanErrorMessage = withPlanError?.message ?? null;
@@ -109,13 +120,17 @@ export async function getOrganizationPlanRecord(
       .maybeSingle();
 
     if (!basicError && basic) {
-      return buildDefaultPlanRecord(basic.id, basic.created_at);
+      return resolvePlanRecordWithOverrides(
+        buildDefaultPlanRecord(basic.id, basic.created_at),
+      );
     }
   }
 
   const membershipOrgId = await getVerifiedOrgMembership(orgId);
   if (membershipOrgId) {
-    return buildDefaultPlanRecord(membershipOrgId);
+    return resolvePlanRecordWithOverrides(
+      buildDefaultPlanRecord(membershipOrgId),
+    );
   }
 
   if (withPlanError) {
@@ -180,6 +195,24 @@ export async function assertCanCreateResource(
 
   if (nextCount > limit) {
     return { error: formatPlanLimitMessage(resource, limit, plan) };
+  }
+
+  return { ok: true as const };
+}
+
+export async function assertCanUseTikTokImport(orgId: string) {
+  const org = await getOrganizationPlanRecord(orgId);
+
+  if (!org) {
+    return { error: "Organization not found." };
+  }
+
+  const plan = (org.plan ?? "free_trial") as OrgPlan;
+
+  if (isTrialExpired(plan, org.trial_ends_at)) {
+    return {
+      error: "Your free trial has ended. Upgrade your plan to continue.",
+    };
   }
 
   return { ok: true as const };

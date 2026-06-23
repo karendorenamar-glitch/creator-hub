@@ -33,11 +33,11 @@ export function UpgradePlanModal({
             Keep exploring
           </button>
           <Link
-            href="/#pricing"
+            href="/checkout/growth"
             onClick={onClose}
             className="inline-flex items-center justify-center rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
           >
-            View plans
+            View upgrade options
           </Link>
         </div>
       </div>

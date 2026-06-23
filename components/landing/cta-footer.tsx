@@ -8,6 +8,7 @@ import {
   FadeIn,
   GlassCard,
   GradientButton,
+  SCHEDULE_DEMO_MAILTO,
 } from "@/components/landing/landing-shared";
 
 export function CTAFooter() {
@@ -30,10 +31,7 @@ export function CTAFooter() {
                   For the late nights, endless spreadsheets and everything in between.
                 </p>
                 <div className="mt-10 flex justify-center">
-                  <GradientButton
-                    href="mailto:hello@kefoo.tech?subject=Schedule%20a%20Demo"
-                    size="lg"
-                  >
+                  <GradientButton href={SCHEDULE_DEMO_MAILTO} size="lg">
                     Schedule a Demo
                     <ArrowRight className="h-5 w-5" />
                   </GradientButton>
@@ -60,9 +58,17 @@ export function CTAFooter() {
               </Link>
             </div>
           </div>
-          <p className="mt-8 text-center text-xs text-slate-600">
-            © {new Date().getFullYear()} Kefoo. All rights reserved.
-          </p>
+          <div className="mt-8 text-center">
+            <a
+              href="mailto:hello@kefoo.tech"
+              className="text-sm font-bold text-kefoo-600 transition-colors hover:text-kefoo-500"
+            >
+              hello@kefoo.tech
+            </a>
+            <p className="mt-2 text-xs text-slate-500">
+              © {new Date().getFullYear()} Kefoo. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </>

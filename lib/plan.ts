@@ -1,3 +1,5 @@
+import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
+
 export type OrgPlan = "free_trial" | "starter" | "growth" | "scale";
 
 export type PlanResource = "campaigns" | "creators" | "videos";
@@ -35,11 +37,12 @@ export const FREE_TRIAL_ALLOWED_PREFIXES = [
   "/creators",
   "/videos",
   "/settings",
+  "/checkout",
 ];
 
 export const FREE_TRIAL_LOCKED_NAV_HREFS = [
   "/dashboard",
-  "/planner",
+  ...(CONTENT_PLANNER_ENABLED ? ["/planner"] : []),
   "/payouts",
 ];
 

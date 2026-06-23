@@ -6,15 +6,17 @@ import { LandingBackground } from "@/components/landing/landing-shared";
 
 export function LoginPage({
   initialMode = "signin",
+  redirectTo,
 }: {
   initialMode?: "signin" | "signup";
+  redirectTo?: string;
 }) {
   return (
     <div className="relative h-dvh max-h-dvh overflow-hidden bg-white text-slate-900 antialiased">
       <LandingBackground />
       <div className="relative flex h-full min-h-0">
         <LoginBranding />
-        <LoginForm initialMode={initialMode} />
+        <LoginForm initialMode={initialMode} redirectTo={redirectTo} />
       </div>
     </div>
   );

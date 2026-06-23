@@ -11,15 +11,24 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 import { UpgradePlanModal } from "@/components/plan/upgrade-plan-modal";
 import {
-  isPathAllowedOnFreeTrial,
+  FEATURE_UPGRADE_MESSAGES,
+  hasPlanFeature,
+  isPathAllowedForPlan,
+  isNavHrefLocked,
+  type PlanFeature,
+} from "@/lib/plan-features";
+import {
+  isFreeTrialPlan,
   type PlanContext,
   UPGRADE_PLAN_MESSAGE,
 } from "@/lib/plan";
+import { PlanUsageBanner } from "@/components/plan/plan-usage-banner";
 
 type PlanContextValue = PlanContext & {
   openUpgradeModal: (description?: string) => void;
   isNavLocked: (href: string) => boolean;
   isFreePlan: boolean;
+  hasFeature: (feature: PlanFeature) => boolean;
 };
 
 const PlanContext = createContext<PlanContextValue | null>(null);
@@ -45,22 +54,22 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeDescription, setUpgradeDescription] = useState(UPGRADE_PLAN_MESSAGE);
 
-  const isFreePlan = plan.isFreeTrial || plan.isTrialExpired;
+  const isFreePlan =
+    isFreeTrialPlan(plan.plan) || plan.isTrialExpired;
 
   const openUpgradeModal = useCallback((description?: string) => {
     setUpgradeDescription(description ?? UPGRADE_PLAN_MESSAGE);
     setUpgradeOpen(true);
   }, []);
 
-  const isNavLocked = useCallback(
-    (href: string) => {
-      if (!isFreePlan) {
-        return false;
-      }
+  const hasFeature = useCallback(
+    (feature: PlanFeature) => hasPlanFeature(plan.plan, feature),
+    [plan.plan],
+  );
 
-      return !isPathAllowedOnFreeTrial(href);
-    },
-    [isFreePlan],
+  const isNavLocked = useCallback(
+    (href: string) => isNavHrefLocked(plan.plan, href, plan.isTrialExpired),
+    [plan.plan, plan.isTrialExpired],
   );
 
   const value = useMemo(
@@ -69,17 +78,22 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
       openUpgradeModal,
       isNavLocked,
       isFreePlan,
+      hasFeature,
     }),
-    [plan, openUpgradeModal, isNavLocked, isFreePlan],
+    [plan, openUpgradeModal, isNavLocked, isFreePlan, hasFeature],
   );
 
-  const routeLocked = isFreePlan && !isPathAllowedOnFreeTrial(pathname);
+  const routeLocked = !isPathAllowedForPlan(
+    plan.plan,
+    pathname,
+    plan.isTrialExpired,
+  );
 
   function handleCloseUpgrade() {
     setUpgradeOpen(false);
 
     if (routeLocked) {
-      router.push("/campaigns");
+      router.push(isFreePlan ? "/campaigns" : "/settings");
     }
   }
 
@@ -94,10 +108,10 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
           <button
             type="button"
             className="absolute inset-0 z-40 flex items-start justify-center bg-white/20 p-6 pt-28"
-            onClick={() => openUpgradeModal(UPGRADE_PLAN_MESSAGE)}
+            onClick={() => openUpgradeModal(upgradeDescription)}
           >
             <span className="rounded-2xl border border-kefoo-200 bg-white px-5 py-3 text-sm font-medium text-slate-900 shadow-lg">
-              {UPGRADE_PLAN_MESSAGE}
+              {upgradeDescription}
             </span>
           </button>
         ) : null}
@@ -113,38 +127,36 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
 }
 
 export function FreeTrialUsageBanner() {
-  const plan = usePlan();
+  const { isFreeTrial, isTrialExpired, plan } = usePlan();
 
-  if (!plan.isFreeTrial || plan.isTrialExpired) {
+  if (isTrialExpired) {
     return null;
   }
 
-  const { limits, usage } = plan;
+  if (!isFreeTrial && plan !== "starter") {
+    return null;
+  }
 
-  return (
-    <div className="mb-6 rounded-2xl border border-kefoo-200 bg-kefoo-50 px-4 py-3 text-sm text-kefoo-900">
-      <p className="font-medium">Free trial limits</p>
-      <p className="mt-1 text-kefoo-800">
-        {usage.campaigns}/{limits.campaigns ?? "∞"} campaigns · {usage.creators}/
-        {limits.creators ?? "∞"} creators · {usage.videos}/{limits.videos ?? "∞"}{" "}
-        videos
-      </p>
-    </div>
-  );
+  return <PlanUsageBanner showUpgradeLink />;
 }
 
-export function useUpgradeIfFreePlan() {
-  const { isFreePlan, openUpgradeModal } = usePlan();
+export function useRequirePlanFeature(feature: PlanFeature) {
+  const { hasFeature, openUpgradeModal } = usePlan();
 
   return useCallback(
     (onAllowed: () => void) => {
-      if (isFreePlan) {
-        openUpgradeModal(UPGRADE_PLAN_MESSAGE);
+      if (!hasFeature(feature)) {
+        openUpgradeModal(FEATURE_UPGRADE_MESSAGES[feature]);
         return;
       }
 
       onAllowed();
     },
-    [isFreePlan, openUpgradeModal],
+    [hasFeature, feature, openUpgradeModal],
   );
+}
+
+/** @deprecated Use useRequirePlanFeature("bulk_upload") instead. */
+export function useUpgradeIfFreePlan() {
+  return useRequirePlanFeature("bulk_upload");
 }

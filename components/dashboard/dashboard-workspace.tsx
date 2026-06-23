@@ -1,14 +1,32 @@
 import { ComparisonSection } from "@/components/dashboard/comparison-section";
 import { ComparisonTable } from "@/components/dashboard/comparison-table";
 import { InsightCard } from "@/components/dashboard/insight-card";
+import { PlanUpgradePrompt } from "@/components/plan/plan-upgrade-prompt";
+import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
+import type { DashboardTier } from "@/lib/plan-features";
 import type { DashboardWorkspaceAnalytics } from "@/lib/dashboard-analytics";
 
 type DashboardWorkspaceProps = {
   workspace: DashboardWorkspaceAnalytics;
+  tier: DashboardTier;
 };
 
-export function DashboardWorkspace({ workspace }: DashboardWorkspaceProps) {
+export function DashboardWorkspace({
+  workspace,
+  tier,
+}: DashboardWorkspaceProps) {
   const { insights, creatorComparison, pillarComparison } = workspace;
+
+  if (tier === "starter") {
+    return (
+      <PlanUpgradePrompt
+        feature="dashboard_advanced"
+        title="Advanced Performance Dashboard"
+        description="Unlock key insights, creator comparisons, and monthly performance trends with Growth."
+        className="mt-8"
+      />
+    );
+  }
 
   return (
     <div className="mt-10 space-y-6">
@@ -20,8 +38,8 @@ export function DashboardWorkspace({ workspace }: DashboardWorkspaceProps) {
           Creator Campaign Intelligence Center
         </h2>
         <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
-          Compare campaigns, creators, and content pillars to decide where to
-          invest next. Built for quick answers — not spreadsheet reporting.
+          Compare campaigns and creators to decide where to invest next. Built
+          for quick answers — not spreadsheet reporting.
         </p>
       </div>
 
@@ -85,16 +103,26 @@ export function DashboardWorkspace({ workspace }: DashboardWorkspaceProps) {
         />
       </ComparisonSection>
 
-      <ComparisonSection
-        title="Content Pillar Comparison"
-        description="Which content pillars drive the best results across your campaigns?"
-      >
-        <ComparisonTable
-          rows={pillarComparison}
-          nameLabel="Content Pillar"
-          emptyMessage="Assign content pillars in the Content Planner and link them to campaigns."
+      {tier === "growth" ? (
+        <PlanUpgradePrompt
+          feature="payouts"
+          title="Scale reporting and payouts"
+          description="Move to Scale for payout management, custom reports, and priority support."
         />
-      </ComparisonSection>
+      ) : null}
+
+      {tier === "scale" && CONTENT_PLANNER_ENABLED ? (
+        <ComparisonSection
+          title="Content Pillar Comparison"
+          description="Which content pillars drive the best results across your campaigns?"
+        >
+          <ComparisonTable
+            rows={pillarComparison}
+            nameLabel="Content Pillar"
+            emptyMessage="Assign content pillars in the Content Planner and link them to campaigns."
+          />
+        </ComparisonSection>
+      ) : null}
     </div>
   );
 }

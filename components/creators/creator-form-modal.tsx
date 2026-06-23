@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import {
   createCreator,
+  fetchCreatorTikTokProfile,
   updateCreator,
   type CreatorInput,
 } from "@/app/actions/creators";
@@ -57,12 +58,17 @@ export function CreatorFormModal({
   const [form, setForm] = useState<CreatorFormState>(emptyForm);
   const [feeInput, setFeeInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [profileFetchError, setProfileFetchError] = useState<string | null>(
+    null,
+  );
+  const [isFetchingProfile, setIsFetchingProfile] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
 
     setError(null);
+    setProfileFetchError(null);
     if (creator) {
       setForm({
         platform: creator.platform,
@@ -81,7 +87,50 @@ export function CreatorFormModal({
   }, [open, creator, campaigns]);
 
   function handleChange(field: keyof CreatorFormState, value: string) {
+    if (field === "username" || field === "platform") {
+      setProfileFetchError(null);
+    }
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function handleFetchTikTokProfile() {
+    const username = form.username.trim().replace(/^@+/, "");
+
+    if (!username) {
+      setProfileFetchError("Enter a TikTok username first.");
+      return;
+    }
+
+    setProfileFetchError(null);
+    setIsFetchingProfile(true);
+
+    try {
+      const result = await fetchCreatorTikTokProfile(username);
+
+      if (result.error) {
+        setProfileFetchError(result.error);
+        showError(result.error);
+        return;
+      }
+
+      if (result.data) {
+        setForm((current) => ({
+          ...current,
+          followers:
+            result.data!.followers > 0
+              ? String(result.data!.followers)
+              : current.followers,
+          name: result.data!.name?.trim() || current.name,
+        }));
+        showSuccess("TikTok profile loaded.");
+      }
+    } catch {
+      const message = "Failed to fetch TikTok profile.";
+      setProfileFetchError(message);
+      showError(message);
+    } finally {
+      setIsFetchingProfile(false);
+    }
   }
 
   function toggleCampaign(campaignId: string) {
@@ -158,7 +207,7 @@ export function CreatorFormModal({
       description={
         isEditing
           ? "Update creator details and save changes."
-          : "Add a creator manually, or let video imports fill username and name automatically."
+          : "For TikTok, fetch followers and name from the username. Instagram is manual only."
       }
       loading={isPending}
       size="lg"
@@ -182,15 +231,33 @@ export function CreatorFormModal({
         </FormField>
 
         <FormField label="Username" htmlFor="creator-username">
-          <input
-            id="creator-username"
-            name="username"
-            value={form.username}
-            onChange={(event) => handleChange("username", event.target.value)}
-            className={inputClassName}
-            placeholder="@creator"
-            required
-          />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              id="creator-username"
+              name="username"
+              value={form.username}
+              onChange={(event) => handleChange("username", event.target.value)}
+              className={inputClassName}
+              placeholder="@creator"
+              disabled={isPending || isFetchingProfile}
+              required
+            />
+            {form.platform === "TikTok" ? (
+              <button
+                type="button"
+                onClick={handleFetchTikTokProfile}
+                disabled={
+                  isPending || isFetchingProfile || !form.username.trim()
+                }
+                className="shrink-0 rounded-lg border border-kefoo-200 bg-kefoo-50 px-4 py-2.5 text-sm font-medium text-kefoo-700 hover:bg-kefoo-100 disabled:opacity-60"
+              >
+                {isFetchingProfile ? "Fetching..." : "Fetch TikTok Data"}
+              </button>
+            ) : null}
+          </div>
+          {profileFetchError ? (
+            <p className="mt-1 text-xs text-red-600">{profileFetchError}</p>
+          ) : null}
         </FormField>
 
         <FormField label="Name" htmlFor="creator-name">

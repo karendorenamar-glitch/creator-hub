@@ -1,7 +1,11 @@
 "use server";
 
 import { syncCreatorCampaigns } from "@/app/actions/campaigns";
-import { assertCanCreateResource } from "@/lib/plan-enforcement";
+import {
+  assertCanCreateResource,
+  assertCanUseTikTokImport,
+} from "@/lib/plan-enforcement";
+import { fetchTikTokProfile } from "@/lib/apify";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgIdForAction } from "@/lib/org";
 import {
@@ -299,6 +303,35 @@ export async function syncCreatorTikTokUsername(
   username: string | null | undefined,
 ) {
   await syncCreatorTikTokProfile(creatorId, { username });
+}
+
+export async function fetchCreatorTikTokProfile(username: string) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
+  const planCheck = await assertCanUseTikTokImport(orgResult.orgId);
+  if ("error" in planCheck) {
+    return { error: planCheck.error };
+  }
+
+  const normalized = normalizeCreatorPlatformUsername(username);
+  if (!normalized) {
+    return { error: "TikTok username is required." };
+  }
+
+  try {
+    const data = await fetchTikTokProfile(normalized);
+    return { data };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch TikTok profile.",
+    };
+  }
 }
 
 export async function syncCreatorTikTokProfile(

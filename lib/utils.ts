@@ -229,3 +229,13 @@ export function isValidPhoneNumber(value: string): boolean {
   const digits = value.replace(/\D/g, "");
   return digits.length >= 10 && digits.length <= 15;
 }
+
+export function getSafeRedirectPath(value: string | null | undefined) {
+  const trimmed = value?.trim();
+
+  if (!trimmed?.startsWith("/") || trimmed.startsWith("//")) {
+    return null;
+  }
+
+  return trimmed;
+}

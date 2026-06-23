@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { CONTAINER_CLASS, FadeIn } from "@/components/landing/landing-shared";
+import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 type ButtonVariant = "outline" | "secondary" | "gradient" | "dark";
@@ -63,7 +64,7 @@ const plans: PricingPlan[] = [
       "Basic Campaign Analytics",
     ],
     cta: "Get Started",
-    ctaHref: "#access",
+    ctaHref: "/checkout/starter",
     buttonVariant: "secondary",
   },
   {
@@ -81,7 +82,7 @@ const plans: PricingPlan[] = [
       "Advanced Performance Dashboard",
     ],
     cta: "Start Growing",
-    ctaHref: "#access",
+    ctaHref: "/checkout/growth",
     buttonVariant: "gradient",
     highlighted: true,
   },
@@ -102,7 +103,7 @@ const plans: PricingPlan[] = [
       "Priority Support",
     ],
     cta: "Start Scaling",
-    ctaHref: "mailto:hello@kefoo.tech?subject=Scale%20Plan%20Inquiry",
+    ctaHref: "/checkout/scale",
     buttonVariant: "dark",
   },
 ];
@@ -382,9 +383,14 @@ function AddOnsSection() {
       </FadeIn>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {addOns.map((addOn, index) => (
-          <AddOnCard key={addOn.title} addOn={addOn} index={index} />
-        ))}
+        {addOns
+          .filter(
+            (addOn) =>
+              CONTENT_PLANNER_ENABLED || addOn.title !== "Content Planner",
+          )
+          .map((addOn, index) => (
+            <AddOnCard key={addOn.title} addOn={addOn} index={index} />
+          ))}
       </div>
     </div>
   );
@@ -427,7 +433,13 @@ function ComparisonTable() {
                 </tr>
               </thead>
               <tbody>
-                {comparisonRows.map((row, rowIndex) => (
+                {comparisonRows
+                  .filter(
+                    (row) =>
+                      CONTENT_PLANNER_ENABLED ||
+                      row.feature !== "Content Planner",
+                  )
+                  .map((row, rowIndex) => (
                   <tr
                     key={row.feature}
                     className={cn(
@@ -478,7 +490,17 @@ export function Pricing() {
 
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch xl:gap-4">
           {plans.map((plan, index) => (
-            <PricingCard key={plan.name} plan={plan} index={index} />
+            <PricingCard
+              key={plan.name}
+              plan={{
+                ...plan,
+                features: plan.features.filter(
+                  (feature) =>
+                    CONTENT_PLANNER_ENABLED || feature !== "Content Planner",
+                ),
+              }}
+              index={index}
+            />
           ))}
         </div>
 

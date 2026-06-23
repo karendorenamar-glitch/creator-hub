@@ -2,10 +2,20 @@ import { Suspense } from "react";
 import { Header } from "@/components/layout/header";
 import { CampaignPerformanceSection } from "@/components/dashboard/campaign-performance-section";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
+import { DashboardPlanUsage } from "@/components/dashboard/dashboard-plan-usage";
+import { DashboardScaleSection } from "@/components/dashboard/dashboard-scale-section";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { MonthlyPerformanceSection } from "@/components/dashboard/monthly-performance-section";
+import { PlanUpgradePrompt } from "@/components/plan/plan-upgrade-prompt";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { getDashboardPlanContext } from "@/app/actions/plan";
 import { parseDashboardCampaignParam } from "@/lib/dashboard-analytics";
+import {
+  getDashboardDescription,
+  getDashboardTier,
+  hasPlanFeature,
+} from "@/lib/plan-features";
+import { formatOrgPlanLabel } from "@/lib/plan-checkout";
 import {
   getDashboardCampaignOptions,
   getDashboardMonthOptions,
@@ -47,6 +57,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const params = await searchParams;
   const monthFilter = parseDashboardMonthParam(params.month);
   const platformFilter = parseDashboardPlatformParam(params.platform);
+  const planContext = await getDashboardPlanContext();
+  const tier = getDashboardTier(planContext.plan);
+  const showAdvanced = hasPlanFeature(planContext.plan, "dashboard_advanced");
+
   const [monthOptions, campaignOptions] = await Promise.all([
     getDashboardMonthOptions(),
     getDashboardCampaignOptions(monthFilter),
@@ -75,7 +89,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     <>
       <Header
         title="Dashboard"
-        description="Compare campaigns, creators, and content pillars to guide your next move."
+        description={getDashboardDescription(tier)}
+        titleAddon={
+          tier !== "none" ? (
+            <span className="rounded-full border border-kefoo-200 bg-kefoo-50 px-3 py-1 text-xs font-medium text-kefoo-700">
+              {formatOrgPlanLabel(planContext.plan)} plan
+            </span>
+          ) : null
+        }
       />
 
       <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
@@ -93,6 +114,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             previousMonths={monthOptions.previousMonths}
           />
         </Suspense>
+
+        <DashboardPlanUsage />
 
         <section>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
@@ -139,14 +162,31 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <CampaignPerformanceSection
             campaigns={stats.workspace.campaignComparison}
           />
-        ) : (
+        ) : showAdvanced ? (
           <MonthlyPerformanceSection
             months={stats.workspace.monthlyComparison}
             campaignName={selectedCampaignName ?? "Selected campaign"}
           />
+        ) : (
+          <CampaignPerformanceSection
+            campaigns={stats.workspace.campaignComparison}
+          />
         )}
 
-        <DashboardWorkspace workspace={stats.workspace} />
+        {showAdvanced ? (
+          <>
+            <DashboardWorkspace workspace={stats.workspace} tier={tier} />
+
+            {tier === "scale" ? <DashboardScaleSection /> : null}
+          </>
+        ) : (
+          <PlanUpgradePrompt
+            feature="dashboard_advanced"
+            title="Advanced Performance Dashboard"
+            description="Compare creators, surface key insights, and track monthly trends with Growth."
+            className="mt-8"
+          />
+        )}
       </main>
     </>
   );

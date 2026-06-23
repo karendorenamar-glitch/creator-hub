@@ -8,7 +8,7 @@ import {
   syncCreatorTikTokProfile,
 } from "@/app/actions/creators";
 import { fetchVideoDataFromUrl, fetchVideoMetricsFromUrl } from "@/lib/apify";
-import { assertCanCreateResource } from "@/lib/plan-enforcement";
+import { assertCanCreateResource, assertCanUseTikTokImport } from "@/lib/plan-enforcement";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgIdForAction } from "@/lib/org";
 import { revalidateCreatorHub } from "@/lib/revalidate";
@@ -161,6 +161,14 @@ export async function createVideo(
   return { data };
 }
 
+async function assertCanFetchTikTokData(orgId: string, platform: VideoPlatform) {
+  if (platform !== "TikTok") {
+    return { ok: true as const };
+  }
+
+  return assertCanUseTikTokImport(orgId);
+}
+
 export async function createVideoFromUrl(input: {
   creator_id?: string;
   video_url: string;
@@ -195,6 +203,19 @@ export async function createVideoFromUrl(input: {
 
   const detectedPlatform = detectVideoPlatform(trimmedUrl)!;
   const platformLabel = requestedPlatform;
+
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
+  const tikTokPlanCheck = await assertCanFetchTikTokData(
+    orgResult.orgId,
+    detectedPlatform,
+  );
+  if ("error" in tikTokPlanCheck) {
+    return { error: tikTokPlanCheck.error };
+  }
 
   let authorUsername: string | null = extractUsernameFromVideoUrl(
     trimmedUrl,
@@ -350,6 +371,19 @@ export async function importVideoMetrics(
     return { error: platformError };
   }
 
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
+  const tikTokPlanCheck = await assertCanFetchTikTokData(
+    orgResult.orgId,
+    requestedPlatform,
+  );
+  if ("error" in tikTokPlanCheck) {
+    return { error: tikTokPlanCheck.error };
+  }
+
   try {
     const metrics = await fetchVideoMetricsFromUrl(trimmedUrl);
     return { data: metrics };
@@ -411,6 +445,11 @@ async function updateVideoMetricsFromApify(
 }
 
 export async function refreshVideoMetrics(id: string) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
   const supabase = await createClient();
 
   const { data: video, error } = await supabase
@@ -440,6 +479,15 @@ export async function refreshVideoMetrics(id: string) {
     };
   }
 
+  const detectedPlatform = detectVideoPlatform(videoUrl)!;
+  const tikTokPlanCheck = await assertCanFetchTikTokData(
+    orgResult.orgId,
+    detectedPlatform,
+  );
+  if ("error" in tikTokPlanCheck) {
+    return { error: tikTokPlanCheck.error };
+  }
+
   try {
     return await updateVideoMetricsFromApify(id, videoUrl);
   } catch (error) {
@@ -451,6 +499,11 @@ export async function refreshVideoMetrics(id: string) {
 }
 
 export async function refreshAllVideoMetrics() {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
   const supabase = await createClient();
 
   const { data: videos, error } = await supabase
@@ -472,6 +525,16 @@ export async function refreshAllVideoMetrics() {
     const videoUrl = video.title.trim();
 
     if (!videoUrl || !detectVideoPlatform(videoUrl)) {
+      failed += 1;
+      continue;
+    }
+
+    const detectedPlatform = detectVideoPlatform(videoUrl)!;
+    const tikTokPlanCheck = await assertCanFetchTikTokData(
+      orgResult.orgId,
+      detectedPlatform,
+    );
+    if ("error" in tikTokPlanCheck) {
       failed += 1;
       continue;
     }

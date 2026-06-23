@@ -1,7 +1,7 @@
 "use client";
 
-import { Pencil, Trash2 } from "lucide-react";
-import { formatNumber } from "@/lib/utils";
+import { Pencil, RefreshCw, Trash2 } from "lucide-react";
+import { cn, formatNumber } from "@/lib/utils";
 import type { VideoWithCreator } from "@/types/database";
 import {
   DataTable,
@@ -107,15 +107,13 @@ export function VideosTable({
                     className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
                     aria-label={`Refresh metrics for ${video.video_url}`}
                   >
-                    <span
-                      className={
-                        refreshingId === video.id || isRefreshingAll
-                          ? "inline-block animate-spin"
-                          : undefined
-                      }
-                    >
-                      🔄
-                    </span>
+                    <RefreshCw
+                      className={cn(
+                        "h-4 w-4",
+                        (refreshingId === video.id || isRefreshingAll) &&
+                          "animate-spin",
+                      )}
+                    />
                   </button>
                   <button
                     type="button"

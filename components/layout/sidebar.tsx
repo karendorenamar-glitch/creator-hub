@@ -16,15 +16,35 @@ import {
 import { KeffooLogo } from "@/components/login/kefoo-logo";
 import { SignOutButton } from "@/components/layout/sign-out-button";
 import { usePlan } from "@/components/plan/plan-provider";
+import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
+import { FEATURE_UPGRADE_MESSAGES } from "@/lib/plan-features";
 import { UPGRADE_PLAN_MESSAGE } from "@/lib/plan";
 import { cn } from "@/lib/utils";
+
+function getNavUpgradeMessage(href: string) {
+  if (href === "/dashboard") {
+    return FEATURE_UPGRADE_MESSAGES.dashboard;
+  }
+
+  if (href === "/payouts") {
+    return FEATURE_UPGRADE_MESSAGES.payouts;
+  }
+
+  if (href === "/planner") {
+    return FEATURE_UPGRADE_MESSAGES.content_planner;
+  }
+
+  return UPGRADE_PLAN_MESSAGE;
+}
 
 const navItems = [
   { href: "/creators", label: "Creators", icon: Users },
   { href: "/videos", label: "Videos", icon: Video },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/planner", label: "Content Planner", icon: CalendarDays },
+  ...(CONTENT_PLANNER_ENABLED
+    ? [{ href: "/planner", label: "Content Planner", icon: CalendarDays }]
+    : []),
   { href: "/payouts", label: "Payouts", icon: Wallet },
 ];
 
@@ -129,7 +149,9 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               icon={icon}
               active={isNavActive(pathname, href)}
               locked={locked}
-              onLockedClick={() => openUpgradeModal(UPGRADE_PLAN_MESSAGE)}
+              onLockedClick={() =>
+                openUpgradeModal(getNavUpgradeMessage(href))
+              }
               onNavigate={onMobileClose}
             />
           );
