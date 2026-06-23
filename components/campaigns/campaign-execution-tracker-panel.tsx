@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { ClipboardList, ExternalLink, Link2 } from "lucide-react";
 import { updateCampaignCreatorWorkflowStatus } from "@/app/actions/campaigns";
 import { createVideoFromUrl } from "@/app/actions/videos";
+import { usePlan } from "@/components/plan/plan-provider";
+import { ApifyWaitNotice } from "@/components/ui/apify-wait-notice";
 import { useToast } from "@/components/ui/toast";
 import {
   CAMPAIGN_CREATOR_WORKFLOW_STATUSES,
@@ -66,6 +68,7 @@ export function CampaignExecutionTrackerPanel({
 }: CampaignExecutionTrackerPanelProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
+  const { isFreeTrial } = usePlan();
   const [statusByCreator, setStatusByCreator] = useState<
     Record<string, CampaignCreatorWorkflowStatus>
   >({});
@@ -215,7 +218,7 @@ export function CampaignExecutionTrackerPanel({
         video_url: videoUrl,
         platform,
         campaign_id: campaign.id,
-        import_metrics: true,
+        import_metrics: !isFreeTrial,
         auto_create_creator: false,
       });
 
@@ -226,7 +229,11 @@ export function CampaignExecutionTrackerPanel({
         return;
       }
 
-      showSuccess("Video linked and metrics imported.");
+      showSuccess(
+        isFreeTrial
+          ? "Video linked. Use Refresh on the Videos page to import metrics."
+          : "Video linked and metrics imported.",
+      );
       router.refresh();
     });
   }
@@ -241,11 +248,22 @@ export function CampaignExecutionTrackerPanel({
           </h3>
         </div>
         <p className="mt-1 text-sm text-slate-500">
-          Track each creator from brief through upload. When marked Uploaded,
-          paste a video link to add it to this campaign and import metrics
-          automatically.
+          Track each creator from brief through upload. Paste a video link when
+          marked Uploaded to add it to this campaign.
         </p>
       </div>
+
+      {!isFreeTrial ? (
+        <ApifyWaitNotice
+          className="mb-6"
+          detail="Linking a video imports metrics automatically and may take up to 60 seconds per link."
+        />
+      ) : (
+        <ApifyWaitNotice
+          className="mb-6"
+          detail="Free plan links videos instantly. Refresh metrics from the Videos page — up to 60 seconds per video."
+        />
+      )}
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {EXECUTION_TRACKER_STATUS_SUMMARY.map(({ status, label }) => (

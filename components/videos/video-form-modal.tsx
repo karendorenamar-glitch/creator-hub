@@ -13,6 +13,10 @@ import {
   inputClassName,
   Modal,
 } from "@/components/ui/modal";
+import {
+  APIFY_IMPORT_DURATION_LABEL,
+  ApifyWaitNotice,
+} from "@/components/ui/apify-wait-notice";
 import { useToast } from "@/components/ui/toast";
 import {
   validateVideoUrlForPlatform,
@@ -60,13 +64,16 @@ export function VideoFormModal({
   const [form, setForm] = useState<VideoInput>(emptyForm);
   const [platform, setPlatform] = useState<VideoPlatform>("TikTok");
   const [error, setError] = useState<string | null>(null);
+  const [metricsImported, setMetricsImported] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const isFetchingTikTok = isImporting;
 
   useEffect(() => {
     if (!open) return;
 
     setError(null);
+    setMetricsImported(false);
     setPlatform("TikTok");
     setForm(
       video
@@ -87,6 +94,9 @@ export function VideoFormModal({
   }, [open, video, creators]);
 
   function handleChange(field: keyof VideoInput, value: string | number) {
+    if (field === "video_url") {
+      setMetricsImported(false);
+    }
     setForm((current) => ({ ...current, [field]: value }));
   }
 
@@ -112,6 +122,7 @@ export function VideoFormModal({
       }
 
       if (result.data) {
+        setMetricsImported(true);
         setForm((current) => ({
           ...current,
           views: result.data.views,
@@ -156,7 +167,7 @@ export function VideoFormModal({
         : await createVideoFromUrl({
             video_url: form.video_url,
             platform,
-            import_metrics: platform === "TikTok",
+            import_metrics: false,
             auto_create_creator: true,
             metrics: {
               views: form.views,
@@ -188,12 +199,24 @@ export function VideoFormModal({
       description={
         isEditing
           ? "Update video metrics and save changes."
-          : `Paste a ${platform} link. We'll detect the creator from the link automatically.`
+          : platform === "TikTok"
+            ? "Paste a full TikTok link with @username. Save is instant — use Import Metrics for live stats."
+            : `Paste a ${platform} link. We'll detect the creator from the link automatically.`
       }
-      loading={isPending}
+      loading={isPending || isImporting}
       size="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {!isEditing && (platform === "TikTok" || platform === "Instagram") ? (
+          <ApifyWaitNotice
+            detail={
+              platform === "TikTok"
+                ? "Save is instant. Import Metrics fetches live stats and may take up to 60 seconds."
+                : "Import Metrics fetches live stats and may take up to 60 seconds."
+            }
+          />
+        ) : null}
+
         {!isEditing && platform === "Instagram" ? (
           <div
             role="note"
@@ -273,9 +296,16 @@ export function VideoFormModal({
               disabled={isPending || isImporting || !form.video_url.trim()}
               className="shrink-0 rounded-lg border border-kefoo-200 bg-kefoo-50 px-4 py-2.5 text-sm font-medium text-kefoo-700 hover:bg-kefoo-100 disabled:opacity-60"
             >
-              {isImporting ? "Importing..." : "Import Metrics"}
+              {isImporting
+                ? "Importing..."
+                : `Import Metrics (${APIFY_IMPORT_DURATION_LABEL})`}
             </button>
           </div>
+          {isFetchingTikTok ? (
+            <p className="text-xs text-amber-800">
+              Import in progress — up to 60 seconds. Please keep this tab open.
+            </p>
+          ) : null}
         </FormField>
 
         <div className="grid gap-4 sm:grid-cols-2">

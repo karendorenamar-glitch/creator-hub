@@ -8,7 +8,12 @@ import {
   syncCreatorTikTokProfile,
 } from "@/app/actions/creators";
 import { fetchVideoDataFromUrl, fetchVideoMetricsFromUrl } from "@/lib/apify";
-import { assertCanCreateResource, assertCanUseTikTokImport } from "@/lib/plan-enforcement";
+import {
+  assertCanCreateResource,
+  assertCanUseTikTokImport,
+  getOrganizationPlanRecord,
+} from "@/lib/plan-enforcement";
+import { isFreeTrialPlan, type OrgPlan } from "@/lib/plan";
 import { createClient } from "@/lib/supabase/server";
 import { getOrgIdForAction } from "@/lib/org";
 import { revalidateCreatorHub } from "@/lib/revalidate";
@@ -169,6 +174,9 @@ async function assertCanFetchTikTokData(orgId: string, platform: VideoPlatform) 
   return assertCanUseTikTokImport(orgId);
 }
 
+const TIKTOK_FAST_PATH_ERROR =
+  "Could not read @username from this TikTok link. Use a full URL like https://www.tiktok.com/@creator/video/123 or click Import Metrics first.";
+
 export async function createVideoFromUrl(input: {
   creator_id?: string;
   video_url: string;
@@ -209,13 +217,10 @@ export async function createVideoFromUrl(input: {
     return { error: orgResult.error };
   }
 
-  const tikTokPlanCheck = await assertCanFetchTikTokData(
-    orgResult.orgId,
-    detectedPlatform,
+  const orgPlan = await getOrganizationPlanRecord(orgResult.orgId);
+  const onFreeTrial = isFreeTrialPlan(
+    (orgPlan?.plan ?? "free_trial") as OrgPlan,
   );
-  if ("error" in tikTokPlanCheck) {
-    return { error: tikTokPlanCheck.error };
-  }
 
   let authorUsername: string | null = extractUsernameFromVideoUrl(
     trimmedUrl,
@@ -232,6 +237,14 @@ export async function createVideoFromUrl(input: {
   };
 
   if (input.import_metrics !== false) {
+    const tikTokPlanCheck = await assertCanFetchTikTokData(
+      orgResult.orgId,
+      detectedPlatform,
+    );
+    if ("error" in tikTokPlanCheck) {
+      return { error: tikTokPlanCheck.error };
+    }
+
     try {
       const videoData = await fetchVideoDataFromUrl(trimmedUrl);
       metrics = videoData;
@@ -245,18 +258,35 @@ export async function createVideoFromUrl(input: {
       };
     }
   } else if (!input.creator_id && input.auto_create_creator !== false) {
-    try {
-      const videoData = await fetchVideoDataFromUrl(trimmedUrl);
-      authorUsername = videoData.authorUsername ?? authorUsername;
-      authorDisplayName = videoData.authorDisplayName;
-      authorFollowers = videoData.authorFollowers;
-    } catch (error) {
-      return {
-        error:
-          error instanceof Error
-            ? error.message
-            : creatorDetectionError(detectedPlatform),
-      };
+    authorUsername =
+      authorUsername ?? extractUsernameFromVideoUrl(trimmedUrl, detectedPlatform);
+
+    if (!authorUsername) {
+      if (detectedPlatform === "TikTok" && onFreeTrial) {
+        return { error: TIKTOK_FAST_PATH_ERROR };
+      }
+
+      const tikTokPlanCheck = await assertCanFetchTikTokData(
+        orgResult.orgId,
+        detectedPlatform,
+      );
+      if ("error" in tikTokPlanCheck) {
+        return { error: tikTokPlanCheck.error };
+      }
+
+      try {
+        const videoData = await fetchVideoDataFromUrl(trimmedUrl);
+        authorUsername = videoData.authorUsername ?? authorUsername;
+        authorDisplayName = videoData.authorDisplayName;
+        authorFollowers = videoData.authorFollowers;
+      } catch (error) {
+        return {
+          error:
+            error instanceof Error
+              ? error.message
+              : creatorDetectionError(detectedPlatform),
+        };
+      }
     }
   }
 

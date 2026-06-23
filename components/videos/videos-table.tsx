@@ -105,7 +105,8 @@ export function VideosTable({
                       (refreshingId !== null && refreshingId !== video.id)
                     }
                     className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    aria-label={`Refresh metrics for ${video.video_url}`}
+                    aria-label={`Refresh metrics for ${video.video_url} (up to 60 seconds)`}
+                    title="Refresh metrics (up to 60 seconds)"
                   >
                     <RefreshCw
                       className={cn(
