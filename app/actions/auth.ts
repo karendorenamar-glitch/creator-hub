@@ -65,6 +65,103 @@ function validateRegisterInput(input: RegisterFreeAccountInput) {
   };
 }
 
+function workspaceNameFromEmail(email: string) {
+  const local = email.split("@")[0]?.trim() ?? "";
+  const cleaned = local.replace(/[^a-zA-Z0-9]+/g, " ").trim();
+
+  if (cleaned.length >= 2) {
+    return cleaned
+      .split(/\s+/)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(" ");
+  }
+
+  return "My Workspace";
+}
+
+export type RegisterPaidPlanAccountInput = {
+  email: string;
+  password: string;
+};
+
+function validatePaidPlanRegisterInput(input: RegisterPaidPlanAccountInput) {
+  const email = input.email.trim();
+
+  if (!email) {
+    return { error: "Email is required." };
+  }
+
+  if (!isValidEmail(email)) {
+    return { error: "Enter a valid email address." };
+  }
+
+  if (input.password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  return {
+    email,
+    password: input.password,
+    workspaceName: workspaceNameFromEmail(email),
+  };
+}
+
+export async function registerPaidPlanAccount(input: RegisterPaidPlanAccountInput) {
+  const parsed = validatePaidPlanRegisterInput(input);
+
+  if ("error" in parsed) {
+    return { error: parsed.error };
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signUp({
+    email: parsed.email,
+    password: parsed.password,
+    options: {
+      data: {
+        workspace_name: parsed.workspaceName,
+      },
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data.user) {
+    return { error: "Could not create your account. Please try again." };
+  }
+
+  if (!data.session) {
+    return {
+      needsEmailConfirmation: true as const,
+      message:
+        "Check your email to confirm your account, then return here to complete payment.",
+    };
+  }
+
+  const orgResult = await createOrganizationForUser(
+    data.user.id,
+    parsed.workspaceName,
+  );
+
+  if (orgResult.error || !orgResult.data) {
+    return {
+      error:
+        orgResult.error ??
+        "Account created, but workspace setup failed. Try signing in again.",
+    };
+  }
+
+  await setActiveOrgCookie(orgResult.data.id);
+
+  return {
+    success: true as const,
+    orgId: orgResult.data.id,
+  };
+}
+
 export async function registerFreeAccount(input: RegisterFreeAccountInput) {
   const parsed = validateRegisterInput(input);
 

@@ -23,6 +23,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isProtectedPath(pathname) && !user) {
+    const checkoutMatch = pathname.match(/^\/checkout\/(starter|growth|scale)$/);
+
+    if (checkoutMatch) {
+      const signupUrl = request.nextUrl.clone();
+      signupUrl.pathname = `/signup/${checkoutMatch[1]}`;
+      signupUrl.search = "";
+      return NextResponse.redirect(signupUrl);
+    }
+
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", pathname);

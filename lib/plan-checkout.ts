@@ -91,7 +91,11 @@ export function isCheckoutPlan(value: string): value is CheckoutPlan {
 }
 
 export function getCheckoutSignupPath(plan: CheckoutPlan) {
-  return `/login?signup=1&next=${encodeURIComponent(`/checkout/${plan}`)}`;
+  return `/signup/${plan}`;
+}
+
+export function getPaidPlanSignupPath(plan: CheckoutPlan) {
+  return `/signup/${plan}`;
 }
 
 const PLAN_RANK: Record<OrgPlan, number> = {

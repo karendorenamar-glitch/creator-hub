@@ -102,7 +102,7 @@ export function PlanCheckoutSection({
       }
 
       showSuccess(
-        "Payment proof submitted. We will verify within 1 business day.",
+        "Payment proof submitted. Please wait — your account will be active after we verify your payment.",
       );
       router.refresh();
     } finally {
@@ -128,16 +128,27 @@ export function PlanCheckoutSection({
 
   if (pendingForPlan && latestSubmission) {
     return (
-      <div className="space-y-6">
+      <div className="mx-auto max-w-2xl space-y-6">
+        <div className="rounded-2xl border border-kefoo-200 bg-kefoo-50 px-6 py-8 text-center shadow-sm">
+          <p className="text-lg font-semibold text-slate-900">
+            Please wait — your account will be active
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+            We received your {formatCheckoutPlanLabel(plan)} payment proof and
+            are verifying your transfer. This usually takes up to 1 business day.
+            You&apos;ll get full access once payment is approved.
+          </p>
+        </div>
+
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
-          <p className="font-medium">Payment proof received</p>
+          <p className="font-medium">Payment status</p>
           <p className="mt-2 text-amber-900">
-            Status: {formatPaymentSubmissionStatus(latestSubmission.status)} ·{" "}
+            {formatPaymentSubmissionStatus(latestSubmission.status)} ·{" "}
             {formatCheckoutPlanLabel(plan)} · submitted{" "}
             {new Date(latestSubmission.created_at).toLocaleDateString("id-ID")}
           </p>
           <p className="mt-2 text-amber-900">
-            We will verify your transfer within 1 business day. Need help? Email{" "}
+            Need help? Email{" "}
             <a
               href="mailto:hello@kefoo.tech"
               className="font-medium underline underline-offset-2"
