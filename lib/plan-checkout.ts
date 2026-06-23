@@ -90,6 +90,10 @@ export function isCheckoutPlan(value: string): value is CheckoutPlan {
   return CHECKOUT_PLANS.includes(value as CheckoutPlan);
 }
 
+export function getCheckoutSignupPath(plan: CheckoutPlan) {
+  return `/login?signup=1&next=${encodeURIComponent(`/checkout/${plan}`)}`;
+}
+
 const PLAN_RANK: Record<OrgPlan, number> = {
   free_trial: 0,
   starter: 1,

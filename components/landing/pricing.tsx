@@ -16,6 +16,7 @@ import {
 import { motion } from "framer-motion";
 import { CONTAINER_CLASS, FadeIn } from "@/components/landing/landing-shared";
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
+import { getCheckoutSignupPath } from "@/lib/plan-checkout";
 import { cn } from "@/lib/utils";
 
 type ButtonVariant = "outline" | "secondary" | "gradient" | "dark";
@@ -64,7 +65,7 @@ const plans: PricingPlan[] = [
       "Basic Campaign Analytics",
     ],
     cta: "Get Started",
-    ctaHref: "/checkout/starter",
+    ctaHref: getCheckoutSignupPath("starter"),
     buttonVariant: "secondary",
   },
   {
@@ -82,7 +83,7 @@ const plans: PricingPlan[] = [
       "Advanced Performance Dashboard",
     ],
     cta: "Start Growing",
-    ctaHref: "/checkout/growth",
+    ctaHref: getCheckoutSignupPath("growth"),
     buttonVariant: "gradient",
     highlighted: true,
   },
@@ -103,7 +104,7 @@ const plans: PricingPlan[] = [
       "Priority Support",
     ],
     cta: "Start Scaling",
-    ctaHref: "/checkout/scale",
+    ctaHref: getCheckoutSignupPath("scale"),
     buttonVariant: "dark",
   },
 ];
