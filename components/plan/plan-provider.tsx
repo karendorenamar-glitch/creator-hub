@@ -19,6 +19,7 @@ import {
 } from "@/lib/plan-features";
 import {
   isFreeTrialPlan,
+  FREE_TRIAL_EXPIRED_MESSAGE,
   type PlanContext,
   UPGRADE_PLAN_MESSAGE,
 } from "@/lib/plan";
@@ -89,6 +90,10 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
     plan.isTrialExpired,
   );
 
+  const routeLockMessage = plan.isTrialExpired
+    ? FREE_TRIAL_EXPIRED_MESSAGE
+    : upgradeDescription;
+
   function handleCloseUpgrade() {
     setUpgradeOpen(false);
 
@@ -108,10 +113,10 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
           <button
             type="button"
             className="absolute inset-0 z-40 flex items-start justify-center bg-white/20 p-6 pt-28"
-            onClick={() => openUpgradeModal(upgradeDescription)}
+            onClick={() => openUpgradeModal(routeLockMessage)}
           >
             <span className="rounded-2xl border border-kefoo-200 bg-white px-5 py-3 text-sm font-medium text-slate-900 shadow-lg">
-              {upgradeDescription}
+              {routeLockMessage}
             </span>
           </button>
         ) : null}

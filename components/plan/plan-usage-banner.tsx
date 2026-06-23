@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePlan } from "@/components/plan/plan-provider";
 import { formatOrgPlanLabel } from "@/lib/plan-checkout";
 import type { OrgPlan, PlanResource } from "@/lib/plan";
+import { formatTrialDate, getTrialEndsInDays } from "@/lib/plan";
 import { cn } from "@/lib/utils";
 
 type UsageItem = {
@@ -105,13 +106,15 @@ export function PlanUsageBanner({
   className,
   showUpgradeLink = true,
 }: PlanUsageBannerProps) {
-  const { plan, limits, usage, isTrialExpired, isFreeTrial } = usePlan();
+  const { plan, limits, usage, isTrialExpired, isFreeTrial, trialEndsAt } =
+    usePlan();
 
   if (isTrialExpired) {
     return null;
   }
 
   const items = getUsageItems(plan, usage, limits);
+  const daysLeft = isFreeTrial ? getTrialEndsInDays(trialEndsAt) : null;
 
   if (items.length === 0) {
     return null;
@@ -131,7 +134,13 @@ export function PlanUsageBanner({
           <p className="text-sm font-semibold text-kefoo-900">
             {getPlanUsageTitle(plan)}
           </p>
-          {showMonthlyHint ? (
+          {isFreeTrial && trialEndsAt && daysLeft !== null ? (
+            <p className="mt-1 text-xs text-kefoo-800">
+              {daysLeft === 0
+                ? "Trial ends today"
+                : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left · ends ${formatTrialDate(trialEndsAt)}`}
+            </p>
+          ) : showMonthlyHint ? (
             <p className="mt-1 text-xs text-kefoo-800">Monthly allowance</p>
           ) : null}
         </div>

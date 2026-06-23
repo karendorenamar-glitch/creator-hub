@@ -1,4 +1,5 @@
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
+import { defaultTrialEndsAt } from "@/lib/org-plan-schema";
 
 export type OrgPlan = "free_trial" | "starter" | "growth" | "scale";
 
@@ -18,6 +19,7 @@ export type OrgUsage = {
 
 export type PlanContext = {
   plan: OrgPlan;
+  trialStartedAt: string | null;
   trialEndsAt: string | null;
   isFreeTrial: boolean;
   isTrialExpired: boolean;
@@ -48,6 +50,9 @@ export const FREE_TRIAL_LOCKED_NAV_HREFS = [
 
 export const UPGRADE_PLAN_MESSAGE = "Upgrade your plan to use this feature.";
 
+export const FREE_TRIAL_EXPIRED_MESSAGE =
+  "Your free trial has ended. Upgrade your plan to continue using Kefoo.";
+
 export function getDefaultAppPath(
   plan: OrgPlan,
   isTrialExpired = false,
@@ -67,15 +72,50 @@ export function isFreeTrialPlan(plan: OrgPlan) {
   return plan === "free_trial";
 }
 
+export function resolveTrialEndsAt(
+  plan: OrgPlan,
+  trialEndsAt: string | null | undefined,
+  trialStartedAt?: string | null,
+) {
+  if (!isFreeTrialPlan(plan)) {
+    return trialEndsAt ?? null;
+  }
+
+  if (trialEndsAt) {
+    return trialEndsAt;
+  }
+
+  if (trialStartedAt) {
+    return defaultTrialEndsAt(trialStartedAt);
+  }
+
+  return null;
+}
+
 export function isTrialExpired(
   plan: OrgPlan,
   trialEndsAt: string | null | undefined,
+  trialStartedAt?: string | null,
 ) {
-  if (!isFreeTrialPlan(plan) || !trialEndsAt) {
+  const resolvedEndsAt = resolveTrialEndsAt(plan, trialEndsAt, trialStartedAt);
+
+  if (!isFreeTrialPlan(plan) || !resolvedEndsAt) {
     return false;
   }
 
-  return new Date(trialEndsAt).getTime() < Date.now();
+  return new Date(resolvedEndsAt).getTime() < Date.now();
+}
+
+export function formatTrialDate(value: string | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+
+  return new Date(value).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export function isPathAllowedOnFreeTrial(pathname: string) {

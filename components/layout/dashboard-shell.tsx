@@ -3,6 +3,7 @@
 import { createContext, useContext, useState } from "react";
 import { Sidebar } from "@/components/layout/sidebar";
 import { PlanProvider } from "@/components/plan/plan-provider";
+import { TrialStatusBanner } from "@/components/plan/trial-status-banner";
 import type { PlanContext } from "@/lib/plan";
 
 type MobileMenuContextValue = {
@@ -37,7 +38,10 @@ export function DashboardShell({ children, plan }: DashboardShellProps) {
             mobileOpen={mobileOpen}
             onMobileClose={() => setMobileOpen(false)}
           />
-          <div className="flex min-w-0 flex-1 flex-col">{children}</div>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <TrialStatusBanner />
+            {children}
+          </div>
         </div>
       </MobileMenuContext.Provider>
     </PlanProvider>

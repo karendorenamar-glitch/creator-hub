@@ -8,8 +8,10 @@ import {
 import {
   formatPlanLimitMessage,
   getPlanLimit,
+  isFreeTrialPlan,
   isTrialExpired,
   PLAN_LIMITS,
+  resolveTrialEndsAt,
   type OrgPlan,
   type OrgUsage,
   type PlanContext,
@@ -42,17 +44,49 @@ export async function getOrgUsage(orgId: string): Promise<OrgUsage> {
   };
 }
 
+type OrgPlanRecord = Pick<
+  Organization,
+  "id" | "plan" | "trial_ends_at" | "created_at"
+>;
+
 function buildDefaultPlanRecord(
   orgId: string,
   createdAt?: string | null,
-): Pick<Organization, "id" | "plan" | "trial_ends_at"> {
+): OrgPlanRecord {
   const fallback = getFallbackOrgPlan(orgId, createdAt);
 
   return {
     id: orgId,
     plan: fallback.plan,
     trial_ends_at: fallback.trial_ends_at,
+    created_at: createdAt ?? new Date().toISOString(),
   };
+}
+
+async function persistTrialEndsAtIfMissing(
+  orgId: string,
+  record: OrgPlanRecord,
+  resolvedTrialEndsAt: string | null,
+) {
+  if (
+    !isFreeTrialPlan(record.plan as OrgPlan) ||
+    record.trial_ends_at ||
+    !record.created_at ||
+    !resolvedTrialEndsAt
+  ) {
+    return;
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("organizations")
+    .update({ trial_ends_at: resolvedTrialEndsAt })
+    .eq("id", orgId)
+    .eq("plan", "free_trial");
+
+  if (error && !isMissingPlanColumnError(error.message)) {
+    console.error("Failed to backfill trial end date:", error.message);
+  }
 }
 
 async function getVerifiedOrgMembership(orgId: string) {
@@ -75,9 +109,7 @@ async function getVerifiedOrgMembership(orgId: string) {
   return data?.org_id ?? null;
 }
 
-async function resolvePlanRecordWithOverrides(
-  record: Pick<Organization, "id" | "plan" | "trial_ends_at">,
-) {
+async function resolvePlanRecordWithOverrides(record: OrgPlanRecord) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -88,7 +120,7 @@ async function resolvePlanRecordWithOverrides(
 
 export async function getOrganizationPlanRecord(
   orgId: string,
-): Promise<Pick<Organization, "id" | "plan" | "trial_ends_at"> | null> {
+): Promise<OrgPlanRecord | null> {
   const supabase = await createClient();
 
   const { data: withPlan, error: withPlanError } = await supabase
@@ -102,6 +134,7 @@ export async function getOrganizationPlanRecord(
       id: withPlan.id,
       plan: (withPlan.plan ?? DEFAULT_FREE_TRIAL_PLAN) as Organization["plan"],
       trial_ends_at: withPlan.trial_ends_at,
+      created_at: withPlan.created_at,
     });
   }
 
@@ -148,13 +181,23 @@ export async function getPlanContext(orgId: string): Promise<PlanContext | null>
   }
 
   const plan = (org.plan ?? "free_trial") as OrgPlan;
+  const trialStartedAt = org.created_at ?? null;
+  const trialEndsAt = resolveTrialEndsAt(
+    plan,
+    org.trial_ends_at,
+    trialStartedAt,
+  );
+
+  await persistTrialEndsAtIfMissing(orgId, org, trialEndsAt);
+
   const usage = await getOrgUsage(orgId);
 
   return {
     plan,
-    trialEndsAt: org.trial_ends_at,
+    trialStartedAt,
+    trialEndsAt,
     isFreeTrial: plan === "free_trial",
-    isTrialExpired: isTrialExpired(plan, org.trial_ends_at),
+    isTrialExpired: isTrialExpired(plan, org.trial_ends_at, trialStartedAt),
     limits: PLAN_LIMITS[plan],
     usage,
   };
@@ -177,7 +220,7 @@ export async function assertCanCreateResource(
 
   const plan = (org.plan ?? "free_trial") as OrgPlan;
 
-  if (isTrialExpired(plan, org.trial_ends_at)) {
+  if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
     return {
       error: "Your free trial has ended. Upgrade your plan to continue.",
     };
@@ -209,7 +252,7 @@ export async function assertCanUseTikTokImport(orgId: string) {
 
   const plan = (org.plan ?? "free_trial") as OrgPlan;
 
-  if (isTrialExpired(plan, org.trial_ends_at)) {
+  if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
     return {
       error: "Your free trial has ended. Upgrade your plan to continue.",
     };

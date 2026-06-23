@@ -10,6 +10,7 @@ export async function getDashboardPlanContext(): Promise<PlanContext> {
   if (!orgId) {
     return {
       plan: "free_trial",
+      trialStartedAt: null,
       trialEndsAt: null,
       isFreeTrial: true,
       isTrialExpired: false,
@@ -23,6 +24,7 @@ export async function getDashboardPlanContext(): Promise<PlanContext> {
   if (!context) {
     return {
       plan: "free_trial",
+      trialStartedAt: null,
       trialEndsAt: null,
       isFreeTrial: true,
       isTrialExpired: false,

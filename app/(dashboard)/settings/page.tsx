@@ -7,7 +7,7 @@ import { getOrganizationSettings } from "@/app/actions/org";
 import {
   formatPaymentSubmissionStatus,
 } from "@/lib/plan-checkout";
-import { getTrialEndsInDays } from "@/lib/plan";
+import { getTrialEndsInDays, formatTrialDate } from "@/lib/plan";
 import { formatMoney } from "@/lib/format";
 
 export default async function SettingsPage() {
@@ -73,6 +73,20 @@ export default async function SettingsPage() {
 
             {plan.isFreeTrial || plan.isTrialExpired ? (
               <dl className="mt-4 space-y-3 text-sm">
+                <div>
+                  <dt className="font-medium text-slate-500">Trial started</dt>
+                  <dd className="mt-1 text-slate-900">
+                    {formatTrialDate(
+                      plan.trialStartedAt ?? organization?.created_at,
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">Trial ends</dt>
+                  <dd className="mt-1 text-slate-900">
+                    {formatTrialDate(plan.trialEndsAt)}
+                  </dd>
+                </div>
                 <div>
                   <dt className="font-medium text-slate-500">Usage</dt>
                   <dd className="mt-1 text-slate-900">
