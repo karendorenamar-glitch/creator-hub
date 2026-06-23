@@ -65,27 +65,19 @@ function validateRegisterInput(input: RegisterFreeAccountInput) {
   };
 }
 
-function workspaceNameFromEmail(email: string) {
-  const local = email.split("@")[0]?.trim() ?? "";
-  const cleaned = local.replace(/[^a-zA-Z0-9]+/g, " ").trim();
-
-  if (cleaned.length >= 2) {
-    return cleaned
-      .split(/\s+/)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-      .join(" ");
-  }
-
-  return "My Workspace";
-}
-
 export type RegisterPaidPlanAccountInput = {
+  name: string;
   email: string;
   password: string;
 };
 
 function validatePaidPlanRegisterInput(input: RegisterPaidPlanAccountInput) {
+  const name = input.name.trim();
   const email = input.email.trim();
+
+  if (!name) {
+    return { error: "Name is required." };
+  }
 
   if (!email) {
     return { error: "Email is required." };
@@ -100,9 +92,10 @@ function validatePaidPlanRegisterInput(input: RegisterPaidPlanAccountInput) {
   }
 
   return {
+    name,
     email,
     password: input.password,
-    workspaceName: workspaceNameFromEmail(email),
+    workspaceName: name,
   };
 }
 
@@ -120,6 +113,7 @@ export async function registerPaidPlanAccount(input: RegisterPaidPlanAccountInpu
     password: parsed.password,
     options: {
       data: {
+        full_name: parsed.name,
         workspace_name: parsed.workspaceName,
       },
     },

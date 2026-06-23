@@ -3,6 +3,7 @@ import { logCheckoutPlanView } from "@/app/actions/plan-checkout";
 import { getLatestPaymentSubmissionForOrg } from "@/app/actions/payment-submissions";
 import { getDashboardPlanContext } from "@/app/actions/plan";
 import { getOrganizationSettings } from "@/app/actions/org";
+import { getAuthUser } from "@/lib/org";
 import { PlanCheckoutSection } from "@/components/checkout/plan-checkout-section";
 import { Header } from "@/components/layout/header";
 import {
@@ -27,11 +28,13 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
 
   await logCheckoutPlanView(plan);
 
-  const [planContext, organizationResult, submissionResult] = await Promise.all([
-    getDashboardPlanContext(),
-    getOrganizationSettings(),
-    getLatestPaymentSubmissionForOrg(),
-  ]);
+  const [planContext, organizationResult, submissionResult, user] =
+    await Promise.all([
+      getDashboardPlanContext(),
+      getOrganizationSettings(),
+      getLatestPaymentSubmissionForOrg(),
+      getAuthUser(),
+    ]);
 
   const organization =
     "data" in organizationResult ? organizationResult.data : null;
@@ -43,11 +46,17 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const latestSubmission =
     ("data" in submissionResult ? submissionResult.data : null) ?? null;
 
+  const metadataName =
+    typeof user?.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name.trim()
+      : "";
+  const accountName = metadataName || organization.name;
+
   return (
     <>
       <Header
         title={`Upgrade to ${config.name}`}
-        description="Transfer the plan amount, then submit your payment proof for verification."
+        description={`Hi ${accountName}, please proceed your payment.`}
       />
 
       <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
@@ -57,6 +66,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             currentPlan={planContext.plan}
             orgId={organization.id}
             orgName={organization.name}
+            accountName={accountName}
             latestSubmission={latestSubmission}
           />
         </div>

@@ -22,6 +22,7 @@ type PaidPlanSignupPageProps = {
 export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
   const router = useRouter();
   const config = CHECKOUT_PLAN_CONFIG[plan];
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,13 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
     setError(null);
     setSuccess(null);
 
+    const trimmedName = name.trim();
     const trimmedEmail = email.trim();
+
+    if (!trimmedName) {
+      setError("Name is required.");
+      return;
+    }
 
     if (!isValidEmail(trimmedEmail)) {
       setError("Enter a valid email address.");
@@ -49,6 +56,7 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
 
     try {
       const result = await registerPaidPlanAccount({
+        name: trimmedName,
         email: trimmedEmail,
         password,
       });
@@ -99,6 +107,26 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
             <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
               <div>
                 <label
+                  htmlFor="paid-signup-name"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Name
+                </label>
+                <input
+                  id="paid-signup-name"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="Your name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  disabled={loading}
+                  required
+                  className={inputClassName}
+                />
+              </div>
+
+              <div>
+                <label
                   htmlFor="paid-signup-email"
                   className="mb-1.5 block text-sm font-medium text-slate-700"
                 >
@@ -108,7 +136,7 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
                   id="paid-signup-email"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@company.com"
+                  placeholder="Insert your valid mail"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   disabled={loading}

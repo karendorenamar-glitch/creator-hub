@@ -29,6 +29,7 @@ type PlanCheckoutSectionProps = {
   currentPlan: OrgPlan;
   orgId: string;
   orgName: string;
+  accountName: string;
   latestSubmission: PaymentSubmission | null;
 };
 
@@ -37,6 +38,7 @@ export function PlanCheckoutSection({
   currentPlan,
   orgId,
   orgName,
+  accountName,
   latestSubmission,
 }: PlanCheckoutSectionProps) {
   const router = useRouter();
@@ -171,6 +173,10 @@ export function PlanCheckoutSection({
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div className="space-y-6">
+        <p className="text-base font-medium text-slate-900">
+          Hi {accountName}, please proceed your payment.
+        </p>
+
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
             Plan summary
