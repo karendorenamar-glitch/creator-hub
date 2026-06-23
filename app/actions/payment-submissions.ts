@@ -18,12 +18,6 @@ export type SubmitPlanPaymentInput = {
   proofUrl: string;
 };
 
-function getJakartaDateString(date = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Jakarta",
-  }).format(date);
-}
-
 function parsePaymentDate(value: string) {
   const trimmed = value.trim();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
@@ -39,11 +33,6 @@ function parsePaymentDate(value: string) {
     parsed.getUTCDate() !== day
   ) {
     return { error: "Enter a valid payment date." };
-  }
-
-  const today = getJakartaDateString();
-  if (trimmed > today) {
-    return { error: "Payment date cannot be in the future." };
   }
 
   return { value: trimmed };
