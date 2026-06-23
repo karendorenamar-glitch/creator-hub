@@ -55,7 +55,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   return (
     <>
       <Header
-        title={`Upgrade to ${config.name}`}
+        title={`${config.name} plan payment`}
         description={`Hi ${accountName}, please proceed your payment.`}
       />
 

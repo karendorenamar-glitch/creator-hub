@@ -48,7 +48,7 @@ function buildPaymentNotificationEmail(context: PaymentNotificationContext) {
     `Email: ${customerEmail}`,
     `Workspace: ${orgName}`,
     `Payment date: ${submission.payment_date}`,
-    `Sender name: ${senderName}`,
+    `Name of Bank Account: ${senderName}`,
     `Submission ID: ${submission.id}`,
     `Org ID: ${submission.org_id}`,
     `Proof: ${proofUrl}`,
@@ -62,7 +62,7 @@ function buildPaymentNotificationEmail(context: PaymentNotificationContext) {
     <p><strong>Email:</strong> ${escapeHtml(customerEmail)}</p>
     <p><strong>Workspace:</strong> ${escapeHtml(orgName)}</p>
     <p><strong>Payment date:</strong> ${escapeHtml(submission.payment_date)}</p>
-    <p><strong>Sender name:</strong> ${escapeHtml(senderName)}</p>
+    <p><strong>Name of Bank Account:</strong> ${escapeHtml(senderName)}</p>
     <p><strong>Submission ID:</strong> ${escapeHtml(submission.id)}</p>
     <p><strong>Org ID:</strong> ${escapeHtml(submission.org_id)}</p>
     <p><strong>Proof:</strong> <a href="${escapeHtml(proofUrl)}">View payment proof</a></p>

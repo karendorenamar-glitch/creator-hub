@@ -8,6 +8,7 @@ export type CheckoutPlanConfig = {
   plan: CheckoutPlan;
   name: string;
   priceLabel: string;
+  originalPriceLabel?: string;
   amountIdr: number;
   periodLabel: string;
   cta: string;
@@ -19,6 +20,7 @@ export const CHECKOUT_PLAN_CONFIG: Record<CheckoutPlan, CheckoutPlanConfig> = {
     plan: "starter",
     name: "Starter",
     priceLabel: "IDR 529,000",
+    originalPriceLabel: "IDR 1,099,000",
     amountIdr: 529_000,
     periodLabel: "/month",
     cta: "Get Started",
@@ -34,6 +36,7 @@ export const CHECKOUT_PLAN_CONFIG: Record<CheckoutPlan, CheckoutPlanConfig> = {
     plan: "growth",
     name: "Growth",
     priceLabel: "IDR 1,499,000",
+    originalPriceLabel: "IDR 2,999,000",
     amountIdr: 1_499_000,
     periodLabel: "/month",
     cta: "Start Growing",
@@ -43,6 +46,7 @@ export const CHECKOUT_PLAN_CONFIG: Record<CheckoutPlan, CheckoutPlanConfig> = {
       "100 creators/month",
       "300 tracked contents/month",
       "Bulk uploads",
+      "Basic campaign analytics",
       "Advanced performance dashboard",
     ],
   },
@@ -50,6 +54,7 @@ export const CHECKOUT_PLAN_CONFIG: Record<CheckoutPlan, CheckoutPlanConfig> = {
     plan: "scale",
     name: "Scale",
     priceLabel: "IDR 2,599,000",
+    originalPriceLabel: "IDR 4,990,000",
     amountIdr: 2_599_000,
     periodLabel: "/month",
     cta: "Start Scaling",
@@ -59,6 +64,7 @@ export const CHECKOUT_PLAN_CONFIG: Record<CheckoutPlan, CheckoutPlanConfig> = {
       "500 creators/month",
       "1,500 tracked contents/month",
       "Bulk uploads",
+      "Content planner",
       "Payout management",
       "Custom reports",
       "Priority support",

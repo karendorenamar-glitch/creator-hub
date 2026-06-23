@@ -56,7 +56,7 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
 
   const senderName = input.senderName.trim();
   if (!senderName) {
-    return { error: "Sender name is required." };
+    return { error: "Name of Bank Account is required." };
   }
 
   const paymentDate = parsePaymentDate(input.paymentDate);

@@ -218,7 +218,7 @@ export function PlanCheckoutSection({
           </p>
           {latestSubmission.sender_name ? (
             <p className="mt-2 text-amber-900">
-              Sender name: {latestSubmission.sender_name}
+              Name of Bank Account: {latestSubmission.sender_name}
             </p>
           ) : null}
           <p className="mt-2 text-amber-900">
@@ -245,31 +245,40 @@ export function PlanCheckoutSection({
           Hi {accountName}, please proceed your payment.
         </p>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Plan summary
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-            {config.name}
-          </h2>
-          <div className="mt-4 flex flex-wrap items-baseline gap-x-2">
-            <span className="text-3xl font-semibold tracking-tight text-slate-900">
-              {config.priceLabel}
-            </span>
-            <span className="text-sm text-slate-500">{config.periodLabel}</span>
-          </div>
+        <section className="relative overflow-hidden rounded-2xl border border-kefoo-400/20 bg-white p-6 shadow-[0_0_48px_-16px_rgba(45,103,214,0.35)]">
+          <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-kefoo-500/[0.07] to-transparent" />
 
-          <ul className="mt-6 space-y-2.5 border-t border-slate-100 pt-5">
-            {config.features.map((feature) => (
-              <li
-                key={feature}
-                className="flex items-start gap-2.5 text-sm text-slate-600"
-              >
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-kefoo-500" />
-                {feature}
-              </li>
-            ))}
-          </ul>
+          <div className="relative">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Plan summary
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+              {config.name}
+            </h2>
+            <div className="mt-4 flex flex-wrap items-baseline gap-x-2">
+              {config.originalPriceLabel ? (
+                <span className="w-full text-sm text-slate-500 line-through decoration-slate-400">
+                  {config.originalPriceLabel}
+                </span>
+              ) : null}
+              <span className="text-3xl font-semibold tracking-tight text-slate-900">
+                {config.priceLabel}
+              </span>
+              <span className="text-sm text-slate-500">{config.periodLabel}</span>
+            </div>
+
+            <ul className="mt-6 space-y-2.5 border-t border-slate-100 pt-5">
+              {config.features.map((feature) => (
+                <li
+                  key={feature}
+                  className="flex items-start gap-2.5 text-sm text-slate-600"
+                >
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-kefoo-500" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -339,14 +348,14 @@ export function PlanCheckoutSection({
               />
             </FormField>
 
-            <FormField label="Sender name" htmlFor="sender-name" required>
+            <FormField label="Name of Bank Account" htmlFor="sender-name" required>
               <input
                 id="sender-name"
                 type="text"
                 value={senderName}
                 onChange={(event) => setSenderName(event.target.value)}
                 disabled={isSubmitting}
-                placeholder="Company or person who transferred"
+                placeholder="As shown on the transfer receipt"
                 required
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:opacity-60"
               />
