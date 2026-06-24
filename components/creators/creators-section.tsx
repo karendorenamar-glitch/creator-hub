@@ -8,14 +8,22 @@ import { CreatorsTable } from "@/components/creators/creators-table";
 import { FreeTrialUsageBanner } from "@/components/plan/plan-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
-import type { CampaignOption, CreatorListItem } from "@/types/database";
+import { canModifyOwnedResource } from "@/lib/org-team";
+import type { CampaignOption, CreatorListItem, OrgMemberRole } from "@/types/database";
 
 type CreatorsSectionProps = {
   creators: CreatorListItem[];
   campaigns: CampaignOption[];
+  currentUserId: string;
+  memberRole: OrgMemberRole;
 };
 
-export function CreatorsSection({ creators, campaigns }: CreatorsSectionProps) {
+export function CreatorsSection({
+  creators,
+  campaigns,
+  currentUserId,
+  memberRole,
+}: CreatorsSectionProps) {
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
   const [editingCreator, setEditingCreator] = useState<CreatorListItem | null>(
@@ -74,6 +82,8 @@ export function CreatorsSection({ creators, campaigns }: CreatorsSectionProps) {
 
       <CreatorsTable
         creators={creators}
+        currentUserId={currentUserId}
+        memberRole={memberRole}
         onEdit={openEdit}
         onDelete={setDeleteTarget}
       />

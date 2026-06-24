@@ -1,8 +1,9 @@
 "use server";
 
 import { assertCanCreateResource } from "@/lib/plan-enforcement";
+import { canEditCampaign } from "@/lib/org-team";
 import { createClient } from "@/lib/supabase/server";
-import { getOrgIdForAction } from "@/lib/org";
+import { getAuthUser, getOrgIdForAction, getOrgMembershipForAction } from "@/lib/org";
 import { revalidateCreatorHub } from "@/lib/revalidate";
 import {
   normalizeCampaignCreatorWorkflowStatus,
@@ -335,11 +336,50 @@ export async function syncCreatorCampaigns(
   return { success: true };
 }
 
+async function assertCanModifyCampaign(campaignId: string) {
+  const membership = await getOrgMembershipForAction();
+  if ("error" in membership) {
+    return { error: membership.error };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("campaigns")
+    .select("id, created_by")
+    .eq("id", campaignId)
+    .eq("org_id", membership.orgId)
+    .maybeSingle();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data) {
+    return { error: "Campaign not found." };
+  }
+
+  if (
+    !canEditCampaign({
+      role: membership.role,
+      userId: membership.userId,
+      createdBy: data.created_by,
+    })
+  ) {
+    return {
+      error: "You can only edit campaigns that you created.",
+    };
+  }
+
+  return { orgId: membership.orgId };
+}
+
 export async function createCampaign(input: CampaignInput) {
   const orgResult = await getOrgIdForAction();
   if ("error" in orgResult) {
     return { error: orgResult.error };
   }
+
+  const user = await getAuthUser();
 
   const limitCheck = await assertCanCreateResource(orgResult.orgId, "campaigns");
   if ("error" in limitCheck) {
@@ -353,6 +393,7 @@ export async function createCampaign(input: CampaignInput) {
     .insert({
       ...parseCampaignInput(input),
       org_id: orgResult.orgId,
+      created_by: user?.id ?? null,
     })
     .select()
     .single();
@@ -377,9 +418,9 @@ export async function createCampaign(input: CampaignInput) {
 }
 
 export async function updateCampaign(id: string, input: CampaignInput) {
-  const orgResult = await getOrgIdForAction();
-  if ("error" in orgResult) {
-    return { error: orgResult.error };
+  const access = await assertCanModifyCampaign(id);
+  if ("error" in access) {
+    return { error: access.error };
   }
 
   const supabase = await createClient();
@@ -388,7 +429,7 @@ export async function updateCampaign(id: string, input: CampaignInput) {
     .from("campaigns")
     .update(parseCampaignInput(input))
     .eq("id", id)
-    .eq("org_id", orgResult.orgId)
+    .eq("org_id", access.orgId)
     .select()
     .single();
 
@@ -411,9 +452,9 @@ export async function updateCampaign(id: string, input: CampaignInput) {
 }
 
 export async function deleteCampaign(id: string) {
-  const orgResult = await getOrgIdForAction();
-  if ("error" in orgResult) {
-    return { error: orgResult.error };
+  const access = await assertCanModifyCampaign(id);
+  if ("error" in access) {
+    return { error: access.error };
   }
 
   const supabase = await createClient();
@@ -422,7 +463,7 @@ export async function deleteCampaign(id: string) {
     .from("campaigns")
     .delete()
     .eq("id", id)
-    .eq("org_id", orgResult.orgId);
+    .eq("org_id", access.orgId);
 
   if (error) {
     return { error: error.message };

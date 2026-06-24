@@ -1,8 +1,9 @@
 "use client";
 
-import { Pencil, RefreshCw, Trash2 } from "lucide-react";
-import { cn, formatNumber } from "@/lib/utils";
-import type { VideoWithCreator } from "@/types/database";
+import { Pencil, Trash2 } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
+import { canModifyOwnedResource } from "@/lib/org-team";
+import type { OrgMemberRole, VideoWithCreator } from "@/types/database";
 import {
   DataTable,
   DataTableBody,
@@ -16,20 +17,18 @@ import {
 
 type VideosTableProps = {
   videos: VideoWithCreator[];
+  currentUserId: string;
+  memberRole: OrgMemberRole;
   onEdit: (video: VideoWithCreator) => void;
   onDelete: (video: VideoWithCreator) => void;
-  onRefresh: (video: VideoWithCreator) => void;
-  refreshingId: string | null;
-  isRefreshingAll: boolean;
 };
 
 export function VideosTable({
   videos,
+  currentUserId,
+  memberRole,
   onEdit,
   onDelete,
-  onRefresh,
-  refreshingId,
-  isRefreshingAll,
 }: VideosTableProps) {
   if (videos.length === 0) {
     return (
@@ -58,83 +57,75 @@ export function VideosTable({
           <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
         </DataTableHead>
         <DataTableBody>
-          {videos.map((video) => (
-            <DataTableRow key={video.id}>
-              <DataTableCell className="max-w-xs">
-                <a
-                  href={video.video_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
-                >
-                  {video.video_url}
-                </a>
-              </DataTableCell>
-              <DataTableCell>
-                <div>
-                  <p className="font-medium text-slate-900">
-                    {video.creators?.name ?? "Unknown"}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {video.creators?.platform ?? "—"}
-                  </p>
-                </div>
-              </DataTableCell>
-              <DataTableCell className="text-right">
-                {formatNumber(video.views)}
-              </DataTableCell>
-              <DataTableCell className="text-right">
-                {formatNumber(video.likes)}
-              </DataTableCell>
-              <DataTableCell className="text-right">
-                {formatNumber(video.comments)}
-              </DataTableCell>
-              <DataTableCell className="text-right">
-                {formatNumber(video.shares)}
-              </DataTableCell>
-              <DataTableCell className="text-right">
-                {formatNumber(video.saves)}
-              </DataTableCell>
-              <DataTableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onRefresh(video)}
-                    disabled={
-                      isRefreshingAll ||
-                      (refreshingId !== null && refreshingId !== video.id)
-                    }
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-emerald-50 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
-                    aria-label={`Refresh metrics for ${video.video_url}`}
+          {videos.map((video) => {
+            const canModify = canModifyOwnedResource({
+              role: memberRole,
+              userId: currentUserId,
+              createdBy: video.created_by,
+            });
+
+            return (
+              <DataTableRow key={video.id}>
+                <DataTableCell className="max-w-xs">
+                  <a
+                    href={video.video_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
                   >
-                    <RefreshCw
-                      className={cn(
-                        "h-4 w-4",
-                        (refreshingId === video.id || isRefreshingAll) &&
-                          "animate-spin",
-                      )}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onEdit(video)}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
-                    aria-label={`Edit ${video.video_url}`}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(video)}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                    aria-label={`Delete ${video.video_url}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </DataTableCell>
-            </DataTableRow>
-          ))}
+                    {video.video_url}
+                  </a>
+                </DataTableCell>
+                <DataTableCell>
+                  <div>
+                    <p className="font-medium text-slate-900">
+                      {video.creators?.name ?? "Unknown"}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {video.creators?.platform ?? "—"}
+                    </p>
+                  </div>
+                </DataTableCell>
+                <DataTableCell className="text-right">
+                  {formatNumber(video.views)}
+                </DataTableCell>
+                <DataTableCell className="text-right">
+                  {formatNumber(video.likes)}
+                </DataTableCell>
+                <DataTableCell className="text-right">
+                  {formatNumber(video.comments)}
+                </DataTableCell>
+                <DataTableCell className="text-right">
+                  {formatNumber(video.shares)}
+                </DataTableCell>
+                <DataTableCell className="text-right">
+                  {formatNumber(video.saves)}
+                </DataTableCell>
+                <DataTableCell className="text-right">
+                  {canModify ? (
+                    <div className="flex justify-end gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(video)}
+                        className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
+                        aria-label={`Edit ${video.video_url}`}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(video)}
+                        className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                        aria-label={`Delete ${video.video_url}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                </DataTableCell>
+              </DataTableRow>
+            );
+          })}
         </DataTableBody>
       </DataTableElement>
     </DataTable>

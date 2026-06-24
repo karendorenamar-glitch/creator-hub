@@ -7,7 +7,8 @@ import {
 } from "@/lib/plan-enforcement";
 import { fetchTikTokProfile } from "@/lib/apify";
 import { createClient } from "@/lib/supabase/server";
-import { getOrgIdForAction } from "@/lib/org";
+import { assertCanModifyOwnedResource, getAuthUser, getOrgIdForAction } from "@/lib/org";
+import { isMissingCreatedByColumnError } from "@/lib/org-plan-schema";
 import {
   CREATOR_ALREADY_EXISTS_ERROR,
   CREATOR_NAME_EXISTS_ERROR,
@@ -20,6 +21,11 @@ import {
 } from "@/lib/utils";
 import { revalidateCreatorDetail, revalidateCreatorHub } from "@/lib/revalidate";
 import type { Creator } from "@/types/database";
+
+async function getCurrentUserId() {
+  const user = await getAuthUser();
+  return user?.id ?? null;
+}
 
 export type CreatorInput = {
   name: string;
@@ -133,7 +139,36 @@ function mapCreatorRow(
 }
 
 const creatorSelect =
+  "id, org_id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_by, created_at";
+
+const creatorSelectFallback =
   "id, org_id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_at";
+
+async function insertCreatorRow(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  payload: Record<string, unknown>,
+) {
+  const withCreatedBy = {
+    ...payload,
+    created_by: await getCurrentUserId(),
+  };
+
+  let result = await supabase
+    .from("creators")
+    .insert(withCreatedBy as never)
+    .select("id")
+    .maybeSingle();
+
+  if (result.error && isMissingCreatedByColumnError(result.error.message)) {
+    result = await supabase
+      .from("creators")
+      .insert(payload as never)
+      .select("id")
+      .maybeSingle();
+  }
+
+  return result;
+}
 
 function isUniqueViolation(message: string, code?: string | null) {
   return (
@@ -530,11 +565,10 @@ export async function findOrCreateCreatorForTikTokUsername(
     fee: 0,
   };
 
-  const { data: created, error: insertError } = await supabase
-    .from("creators")
-    .insert(payload)
-    .select("id")
-    .maybeSingle();
+  const { data: created, error: insertError } = await insertCreatorRow(
+    supabase,
+    payload,
+  );
 
   if (insertError) {
     if (isUniqueViolation(insertError.message, insertError.code)) {
@@ -633,11 +667,10 @@ export async function findOrCreateCreatorForInstagramUsername(
     fee: 0,
   };
 
-  const { data: created, error: insertError } = await supabase
-    .from("creators")
-    .insert(payload)
-    .select("id")
-    .maybeSingle();
+  const { data: created, error: insertError } = await insertCreatorRow(
+    supabase,
+    payload,
+  );
 
   if (insertError) {
     if (isUniqueViolation(insertError.message, insertError.code)) {
@@ -709,14 +742,13 @@ export async function createCreator(input: CreatorInput) {
     return { error: limitCheck.error };
   }
 
-  const { data: created, error: insertError } = await supabase
-    .from("creators")
-    .insert({
+  const { data: created, error: insertError } = await insertCreatorRow(
+    supabase,
+    {
       ...parsed.payload,
       org_id: orgResult.orgId,
-    })
-    .select("id")
-    .maybeSingle();
+    },
+  );
 
   if (insertError) {
     if (isUniqueViolation(insertError.message, insertError.code)) {
@@ -762,6 +794,15 @@ export async function updateCreator(id: string, input: CreatorInput) {
   const orgResult = await getOrgIdForAction();
   if ("error" in orgResult) {
     return { error: orgResult.error };
+  }
+
+  const permission = await assertCanModifyOwnedResource(
+    "creators",
+    id,
+    orgResult.orgId,
+  );
+  if ("error" in permission) {
+    return { error: permission.error };
   }
 
   const supabase = await createClient();
@@ -844,6 +885,15 @@ export async function deleteCreator(id: string) {
   const orgResult = await getOrgIdForAction();
   if ("error" in orgResult) {
     return { error: orgResult.error };
+  }
+
+  const permission = await assertCanModifyOwnedResource(
+    "creators",
+    id,
+    orgResult.orgId,
+  );
+  if ("error" in permission) {
+    return { error: permission.error };
   }
 
   const supabase = await createClient();

@@ -18,6 +18,7 @@ import {
   ImportWaitNotice,
 } from "@/components/ui/import-wait-notice";
 import { useToast } from "@/components/ui/toast";
+import { useLanguage } from "@/components/i18n/language-provider";
 import {
   validateVideoUrlForPlatform,
   VIDEO_PLATFORMS,
@@ -53,6 +54,15 @@ const PLATFORM_URL_LABELS: Record<VideoPlatform, string> = {
   Instagram: "Reels URL",
 };
 
+function getAddVideoDescription(
+  platform: VideoPlatform,
+  t: (key: import("@/lib/i18n/messages").MessageKey) => string,
+) {
+  return platform === "Instagram"
+    ? t("pages.videos.addInstagramDescription")
+    : t("pages.videos.addVideoDescription");
+}
+
 export function VideoFormModal({
   open,
   onClose,
@@ -61,6 +71,7 @@ export function VideoFormModal({
 }: VideoFormModalProps) {
   const isEditing = Boolean(video);
   const { showSuccess, showError } = useToast();
+  const { t } = useLanguage();
   const [form, setForm] = useState<VideoInput>(emptyForm);
   const [platform, setPlatform] = useState<VideoPlatform>("TikTok");
   const [error, setError] = useState<string | null>(null);
@@ -194,11 +205,11 @@ export function VideoFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={isEditing ? "Edit Video" : "Add Video"}
+      title={isEditing ? t("pages.videos.editVideo") : t("pages.videos.addVideo")}
       description={
         isEditing
-          ? "Update video metrics and save changes."
-          : `Paste a ${platform} link. We'll detect the creator from the link automatically.`
+          ? t("pages.videos.editVideoDescription")
+          : getAddVideoDescription(platform, t)
       }
       loading={isPending || isImporting}
       size="lg"

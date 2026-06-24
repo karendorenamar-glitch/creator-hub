@@ -230,7 +230,7 @@ export function CampaignExecutionTrackerPanel({
 
       showSuccess(
         isFreeTrial
-          ? "Video linked. Use Refresh on the Videos page to import metrics."
+          ? "Video linked. Use Refresh videos in campaign details to import metrics."
           : "Video linked and metrics imported.",
       );
       router.refresh();

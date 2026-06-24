@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -22,6 +22,7 @@ import { deleteCampaign } from "@/app/actions/campaigns";
 import { CampaignCreatorsPanel } from "@/components/campaigns/campaign-creators-panel";
 import { CampaignExecutionTrackerPanel } from "@/components/campaigns/campaign-execution-tracker-panel";
 import { CampaignFormModal } from "@/components/campaigns/campaign-form-modal";
+import { CampaignRefreshVideosButton } from "@/components/campaigns/campaign-refresh-videos-button";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
@@ -42,6 +43,7 @@ type CampaignDetailSectionProps = {
   campaign: CampaignDetail;
   creators: Creator[];
   videos: VideoWithCreator[];
+  canEdit: boolean;
 };
 
 type CampaignDetailView = "performance" | "execution";
@@ -276,6 +278,7 @@ export function CampaignDetailSection({
   campaign,
   creators,
   videos,
+  canEdit,
 }: CampaignDetailSectionProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
@@ -333,24 +336,26 @@ export function CampaignDetailSection({
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setFormOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            <Pencil className="h-4 w-4" />
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => setDeleteOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </button>
-        </div>
+        {canEdit ? (
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <Pencil className="h-4 w-4" />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeleteOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <div className="mb-8 inline-flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
@@ -376,6 +381,13 @@ export function CampaignDetailSection({
 
       {activeView === "performance" ? (
         <>
+      <div className="mb-6 flex justify-end">
+        <CampaignRefreshVideosButton
+          campaignId={campaign.id}
+          videoCount={campaign.videos.length}
+        />
+      </div>
+
       <CampaignBudgetUsage campaign={campaign} />
 
       <section className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

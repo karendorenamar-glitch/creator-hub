@@ -1,6 +1,10 @@
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
 import type { OrgPlan } from "@/lib/plan";
-import { isFreeTrialPlan, isPathAllowedOnFreeTrial } from "@/lib/plan";
+import {
+  isFreeTrialPlan,
+  isPathAllowedOnFreeTrial,
+  normalizeOrgPlan,
+} from "@/lib/plan";
 import type { CheckoutPlan } from "@/lib/plan-checkout";
 
 export type PlanFeature =
@@ -36,12 +40,17 @@ export const FEATURE_UPGRADE_MESSAGES: Record<PlanFeature, string> = {
   content_planner: "Upgrade to Scale to use Content Planner.",
 };
 
-export function hasPlanFeature(plan: OrgPlan, feature: PlanFeature): boolean {
+export function hasPlanFeature(
+  plan: OrgPlan | string,
+  feature: PlanFeature,
+): boolean {
   if (feature === "content_planner" && !CONTENT_PLANNER_ENABLED) {
     return false;
   }
 
-  return PLAN_RANK[plan] >= PLAN_RANK[FEATURE_MIN_PLAN[feature]];
+  const normalizedPlan = normalizeOrgPlan(plan);
+
+  return PLAN_RANK[normalizedPlan] >= PLAN_RANK[FEATURE_MIN_PLAN[feature]];
 }
 
 export function getRequiredCheckoutPlan(feature: PlanFeature): CheckoutPlan {

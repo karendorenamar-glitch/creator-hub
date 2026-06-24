@@ -14,11 +14,12 @@ import {
   X,
 } from "lucide-react";
 import { KeffooLogo } from "@/components/login/kefoo-logo";
-import { SignOutButton } from "@/components/layout/sign-out-button";
+import { useLanguage } from "@/components/i18n/language-provider";
 import { usePlan } from "@/components/plan/plan-provider";
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
 import { FEATURE_UPGRADE_MESSAGES } from "@/lib/plan-features";
 import { UPGRADE_PLAN_MESSAGE } from "@/lib/plan";
+import type { MessageKey } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
 
 function getNavUpgradeMessage(href: string) {
@@ -37,15 +38,19 @@ function getNavUpgradeMessage(href: string) {
   return UPGRADE_PLAN_MESSAGE;
 }
 
-const navItems = [
-  { href: "/creators", label: "Creators", icon: Users },
-  { href: "/videos", label: "Videos", icon: Video },
-  { href: "/campaigns", label: "Campaigns", icon: Megaphone },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+const navItems: Array<{
+  href: string;
+  labelKey: MessageKey;
+  icon: typeof Users;
+}> = [
+  { href: "/creators", labelKey: "nav.creators", icon: Users },
+  { href: "/videos", labelKey: "nav.videos", icon: Video },
+  { href: "/campaigns", labelKey: "nav.campaigns", icon: Megaphone },
+  { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   ...(CONTENT_PLANNER_ENABLED
-    ? [{ href: "/planner", label: "Content Planner", icon: CalendarDays }]
+    ? [{ href: "/planner", labelKey: "nav.planner" as MessageKey, icon: CalendarDays }]
     : []),
-  { href: "/payouts", label: "Payouts", icon: Wallet },
+  { href: "/payouts", labelKey: "nav.payouts", icon: Wallet },
 ];
 
 function isNavActive(pathname: string, href: string) {
@@ -111,7 +116,24 @@ function SidebarNavItem({
 
 export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const { isNavLocked, openUpgradeModal } = usePlan();
+  const { t } = useLanguage();
+  const { isNavLocked, openUpgradeModal, hasFeature } = usePlan();
+
+  const visibleNavItems = navItems.filter(({ href }) => {
+    if (href === "/dashboard") {
+      return hasFeature("dashboard");
+    }
+
+    if (href === "/payouts") {
+      return hasFeature("payouts");
+    }
+
+    if (href === "/planner") {
+      return hasFeature("content_planner");
+    }
+
+    return true;
+  });
 
   const content = (
     <>
@@ -130,7 +152,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             type="button"
             onClick={onMobileClose}
             className="ml-auto rounded-lg p-2 text-slate-500 hover:bg-slate-50 hover:text-slate-900 lg:hidden"
-            aria-label="Close menu"
+            aria-label={t("header.closeMenu")}
           >
             <X className="h-5 w-5" />
           </button>
@@ -138,14 +160,14 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
       </div>
 
       <nav className="flex-1 space-y-1 p-4">
-        {navItems.map(({ href, label, icon }) => {
+        {visibleNavItems.map(({ href, labelKey, icon }) => {
           const locked = isNavLocked(href);
 
           return (
             <SidebarNavItem
               key={href}
               href={href}
-              label={label}
+              label={t(labelKey)}
               icon={icon}
               active={isNavActive(pathname, href)}
               locked={locked}
@@ -158,17 +180,16 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         })}
       </nav>
 
-      <div className="space-y-1 border-t border-slate-200 p-4">
+      <div className="border-t border-slate-200 p-4">
         <SidebarNavItem
           href="/settings"
-          label="Settings"
+          label={t("nav.settings")}
           icon={Settings}
           active={isNavActive(pathname, "/settings")}
           locked={false}
           onLockedClick={() => undefined}
           onNavigate={onMobileClose}
         />
-        <SignOutButton />
       </div>
     </>
   );
@@ -185,7 +206,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
             type="button"
             className="absolute inset-0 bg-slate-900/20 backdrop-blur-[2px]"
             onClick={onMobileClose}
-            aria-label="Close overlay"
+            aria-label={t("header.closeOverlay")}
           />
           <aside className="relative flex h-full w-72 max-w-[85vw] flex-col border-r border-slate-200 bg-white shadow-xl">
             {content}

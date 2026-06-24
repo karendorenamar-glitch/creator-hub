@@ -76,7 +76,7 @@ export function parseVideoUrls(text: string): {
   const seen = new Set<string>();
 
   for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.trim();
+    const line = rawLine.replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
     if (!line || line.startsWith("#")) continue;
 
     const candidate = (line.split(/[,\t]/)[0] ?? line).trim();
@@ -111,7 +111,7 @@ export function parseVideoUrlsForPlatform(
   const seen = new Set<string>();
 
   for (const rawLine of text.split(/\r?\n/)) {
-    const line = rawLine.trim();
+    const line = rawLine.replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
     if (!line || line.startsWith("#")) continue;
 
     const candidate = (line.split(/[,\t]/)[0] ?? line).trim();

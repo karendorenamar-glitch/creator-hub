@@ -1,4 +1,7 @@
-import type { Campaign, CampaignSummary, ContentPlannerAgency } from "@/types/database";
+import type { Campaign, CampaignStatus, CampaignSummary, ContentPlannerAgency } from "@/types/database";
+
+/** Dashboard metrics and filters include active and completed campaigns only. */
+export const DASHBOARD_CAMPAIGN_STATUSES: CampaignStatus[] = ["active", "completed"];
 
 export function getCampaignNameById(
   campaignId: string | null | undefined,

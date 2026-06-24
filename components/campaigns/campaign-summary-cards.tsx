@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { Lightbulb, Pencil, Trash2 } from "lucide-react";
+import { CampaignRowActions } from "@/components/campaigns/campaign-row-actions";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
+import { canEditCampaign } from "@/lib/org-team";
 import { formatCurrency } from "@/lib/utils";
-import type { CampaignSummary } from "@/types/database";
+import type { CampaignSummary, OrgMemberRole } from "@/types/database";
 
 type CampaignSummaryCardsProps = {
   campaigns: CampaignSummary[];
+  currentUserId: string;
+  memberRole: OrgMemberRole;
   onEdit: (campaign: CampaignSummary) => void;
   onDelete: (campaign: CampaignSummary) => void;
 };
@@ -23,6 +26,8 @@ function MetricBlock({ label, value }: { label: string; value: string }) {
 
 export function CampaignSummaryCards({
   campaigns,
+  currentUserId,
+  memberRole,
   onEdit,
   onDelete,
 }: CampaignSummaryCardsProps) {
@@ -74,31 +79,23 @@ export function CampaignSummaryCards({
             />
           </div>
 
-          <div className="mt-5 flex justify-end gap-1 border-t border-slate-100 pt-4">
-            <Link
-              href={`/campaigns/${campaign.id}`}
-              className="rounded-lg p-2 text-violet-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
-              aria-label={`Open ${campaign.name}`}
-            >
-              <Lightbulb className="h-4 w-4" />
-            </Link>
-            <button
-              type="button"
-              onClick={() => onEdit(campaign)}
-              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
-              aria-label={`Edit ${campaign.name}`}
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(campaign)}
-              className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-              aria-label={`Delete ${campaign.name}`}
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
+          <CampaignRowActions
+            campaignId={campaign.id}
+            campaignName={campaign.name}
+            onEdit={() => onEdit(campaign)}
+            onDelete={() => onDelete(campaign)}
+            canEdit={canEditCampaign({
+              role: memberRole,
+              userId: currentUserId,
+              createdBy: campaign.created_by,
+            })}
+            canDelete={canEditCampaign({
+              role: memberRole,
+              userId: currentUserId,
+              createdBy: campaign.created_by,
+            })}
+            className="mt-5 border-t border-slate-100 pt-4"
+          />
         </article>
       ))}
     </div>

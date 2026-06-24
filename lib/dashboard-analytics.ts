@@ -3,6 +3,8 @@ import {
   calculateEngagementRateFromTotals,
   formatIDRDecimal,
 } from "@/lib/utils";
+import { formatMonthLabel } from "@/lib/dashboard-month-filter";
+import { parseTeamFilterParam } from "@/lib/team-filter";
 import type { ContentPlannerAgency } from "@/types/database";
 
 export type DashboardVideoRecord = {
@@ -71,10 +73,16 @@ export type DashboardMonthlyRow = {
   engagementRate: number;
 };
 
+export type DashboardMonthlyCampaignComparison = {
+  monthId: string;
+  monthLabel: string;
+  campaigns: DashboardComparisonRow[];
+};
+
 export type DashboardWorkspaceAnalytics = {
   insights: DashboardInsightCards;
   campaignComparison: DashboardComparisonRow[];
-  monthlyComparison: DashboardMonthlyRow[];
+  monthlyCampaignComparison: DashboardMonthlyCampaignComparison[];
   creatorComparison: DashboardComparisonRow[];
   pillarComparison: DashboardPillarComparisonRow[];
 };
@@ -332,6 +340,37 @@ function buildMonthlyComparison(
     .sort((left, right) => left.id.localeCompare(right.id));
 }
 
+export function getVideoMonthKey(createdAt: string): string | null {
+  const date = new Date(createdAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export function buildMonthlyCampaignComparison(
+  campaigns: DashboardCampaignRecord[],
+  videos: DashboardVideoRecord[],
+  selectedMonths: string[],
+): DashboardMonthlyCampaignComparison[] {
+  return [...selectedMonths]
+    .sort((left, right) => left.localeCompare(right))
+    .map((monthKey) => {
+      const monthVideos = videos.filter((video) => {
+        const key = getVideoMonthKey(video.created_at);
+        return key === monthKey;
+      });
+
+      return {
+        monthId: monthKey,
+        monthLabel: formatMonthLabel(monthKey),
+        campaigns: aggregateCampaigns(campaigns, monthVideos),
+      };
+    });
+}
+
 function buildInsightCards(
   videos: DashboardVideoRecord[],
   creatorFees: Record<string, number>,
@@ -386,7 +425,6 @@ export function buildDashboardWorkspaceAnalytics(
   const campaignComparison = aggregateCampaigns(campaigns, videos);
   const creatorComparison = buildCreatorComparisonRows(videos, creatorFees);
   const pillarComparison = buildPillarComparisonRows(videos, plannerItems);
-  const monthlyComparison = buildMonthlyComparison(monthlyVideos);
 
   return {
     insights: buildInsightCards(
@@ -396,7 +434,7 @@ export function buildDashboardWorkspaceAnalytics(
       creatorComparison,
     ),
     campaignComparison,
-    monthlyComparison,
+    monthlyCampaignComparison: [],
     creatorComparison,
     pillarComparison,
   };
@@ -447,7 +485,7 @@ export const emptyDashboardWorkspaceAnalytics = (): DashboardWorkspaceAnalytics 
     bestPerformingCampaign: null,
   },
   campaignComparison: [],
-  monthlyComparison: [],
+  monthlyCampaignComparison: [],
   creatorComparison: [],
   pillarComparison: [],
 });
@@ -456,9 +494,55 @@ export function parseDashboardCampaignParam(
   value: string | undefined,
   validCampaignIds: Set<string>,
 ): string {
+  const campaigns = parseDashboardCampaignsParam(value, validCampaignIds);
+  return campaigns.length === 1 ? campaigns[0] : "all";
+}
+
+export function parseDashboardCampaignsParam(
+  value: string | null | undefined,
+  validCampaignIds: Set<string>,
+): string[] {
   if (!value || value === "all") {
-    return "all";
+    return [];
   }
 
-  return validCampaignIds.has(value) ? value : "all";
+  const parsed: string[] = [];
+
+  for (const part of value.split(",")) {
+    const trimmed = part.trim();
+    if (!trimmed || !validCampaignIds.has(trimmed)) {
+      continue;
+    }
+
+    if (!parsed.includes(trimmed)) {
+      parsed.push(trimmed);
+    }
+  }
+
+  return parsed;
+}
+
+export function formatCampaignsLabel(
+  campaignFilters: string[],
+  campaignOptions: Array<{ id: string; name: string }>,
+): string {
+  if (campaignFilters.length === 0) {
+    return "All campaigns";
+  }
+
+  if (campaignFilters.length === 1) {
+    return (
+      campaignOptions.find((campaign) => campaign.id === campaignFilters[0])
+        ?.name ?? "1 campaign"
+    );
+  }
+
+  return `${campaignFilters.length} campaigns`;
+}
+
+export function parseDashboardTeamParam(
+  value: string | undefined,
+  validMemberIds: Set<string>,
+): string {
+  return parseTeamFilterParam(value, validMemberIds);
 }

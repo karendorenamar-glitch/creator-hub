@@ -33,7 +33,7 @@ const emptyForm: CampaignInput = {
   start_date: "",
   end_date: "",
   budget: 0,
-  status: "draft",
+  status: "active",
   creator_ids: [],
   video_ids: [],
 };

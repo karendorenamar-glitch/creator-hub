@@ -2,6 +2,8 @@
 
 import { Menu } from "lucide-react";
 import { useMobileMenu } from "@/components/layout/dashboard-shell";
+import { UserMenu } from "@/components/layout/user-menu";
+import { useLanguage } from "@/components/i18n/language-provider";
 
 type HeaderProps = {
   title: string;
@@ -12,20 +14,21 @@ type HeaderProps = {
 
 export function Header({ title, description, titleAddon, actions }: HeaderProps) {
   const { openMobileMenu } = useMobileMenu();
+  const { t } = useLanguage();
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white backdrop-blur-md">
-      <div className="flex items-start justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-        <div className="flex items-start gap-3">
+      <div className="flex items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-start gap-3">
           <button
             type="button"
             onClick={openMobileMenu}
             className="mt-0.5 rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
-            aria-label="Open menu"
+            aria-label={t("header.openMenu")}
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
                 {title}
@@ -37,7 +40,10 @@ export function Header({ title, description, titleAddon, actions }: HeaderProps)
             )}
           </div>
         </div>
-        {actions && <div className="shrink-0">{actions}</div>}
+        <div className="flex shrink-0 items-center gap-3">
+          {actions}
+          <UserMenu />
+        </div>
       </div>
     </header>
   );

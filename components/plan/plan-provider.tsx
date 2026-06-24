@@ -131,18 +131,19 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
   );
 }
 
-export function FreeTrialUsageBanner() {
-  const { isFreeTrial, isTrialExpired, plan } = usePlan();
+export function PlanUsageLimitsBanner() {
+  const { isTrialExpired } = usePlan();
 
   if (isTrialExpired) {
     return null;
   }
 
-  if (!isFreeTrial && plan !== "starter") {
-    return null;
-  }
-
   return <PlanUsageBanner showUpgradeLink />;
+}
+
+/** @deprecated Use PlanUsageLimitsBanner */
+export function FreeTrialUsageBanner() {
+  return <PlanUsageLimitsBanner />;
 }
 
 export function useRequirePlanFeature(feature: PlanFeature) {

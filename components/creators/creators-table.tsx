@@ -8,7 +8,8 @@ import {
   formatOptionalIDR,
   formatOptionalNumber,
 } from "@/lib/utils";
-import type { CreatorListItem } from "@/types/database";
+import { canModifyOwnedResource } from "@/lib/org-team";
+import type { CreatorListItem, OrgMemberRole } from "@/types/database";
 import {
   DataTable,
   DataTableBody,
@@ -22,6 +23,8 @@ import {
 
 type CreatorsTableProps = {
   creators: CreatorListItem[];
+  currentUserId: string;
+  memberRole: OrgMemberRole;
   onEdit: (creator: CreatorListItem) => void;
   onDelete: (creator: CreatorListItem) => void;
 };
@@ -31,7 +34,13 @@ function formatCampaigns(creator: CreatorListItem): string {
   return creator.campaigns.map((campaign) => campaign.name).join(", ");
 }
 
-export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps) {
+export function CreatorsTable({
+  creators,
+  currentUserId,
+  memberRole,
+  onEdit,
+  onDelete,
+}: CreatorsTableProps) {
   if (creators.length === 0) {
     return (
       <DataTable>
@@ -58,7 +67,14 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
           <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
         </DataTableHead>
         <DataTableBody>
-          {creators.map((creator) => (
+          {creators.map((creator) => {
+            const canModify = canModifyOwnedResource({
+              role: memberRole,
+              userId: currentUserId,
+              createdBy: creator.created_by,
+            });
+
+            return (
             <DataTableRow key={creator.id}>
               <DataTableCell className="font-medium text-slate-900">
                 <Link
@@ -89,6 +105,7 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
                 {formatCampaigns(creator)}
               </DataTableCell>
               <DataTableCell className="text-right">
+                {canModify ? (
                 <div className="flex justify-end gap-1">
                   <button
                     type="button"
@@ -107,9 +124,13 @@ export function CreatorsTable({ creators, onEdit, onDelete }: CreatorsTableProps
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
+                ) : (
+                  <span className="text-xs text-slate-400">—</span>
+                )}
               </DataTableCell>
             </DataTableRow>
-          ))}
+            );
+          })}
         </DataTableBody>
       </DataTableElement>
     </DataTable>

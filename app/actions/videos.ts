@@ -8,15 +8,16 @@ import {
   syncCreatorInstagramProfile,
   syncCreatorTikTokProfile,
 } from "@/app/actions/creators";
-import { fetchVideoDataFromUrl, fetchVideoMetricsFromUrl } from "@/lib/apify";
+import { DASHBOARD_CAMPAIGN_STATUSES } from "@/lib/campaigns";
+import { fetchVideoDataFromUrl } from "@/lib/apify";
 import {
   assertCanCreateResource,
+  assertCanUseBulkUpload,
   assertCanUseTikTokImport,
-  getOrganizationPlanRecord,
 } from "@/lib/plan-enforcement";
-import { isFreeTrialPlan, type OrgPlan } from "@/lib/plan";
 import { createClient } from "@/lib/supabase/server";
-import { getOrgIdForAction } from "@/lib/org";
+import { assertCanModifyOwnedResource, getAuthUser, getOrgIdForAction } from "@/lib/org";
+import { isMissingCreatedByColumnError } from "@/lib/org-plan-schema";
 import { revalidateCreatorHub } from "@/lib/revalidate";
 import { extractInstagramUsernameFromUrl } from "@/lib/instagram-url";
 import { extractTikTokUsernameFromUrl } from "@/lib/tiktok-url";
@@ -145,15 +146,27 @@ export async function createVideo(
   }
 
   const supabase = await createClient();
+  const user = await getAuthUser();
+  const basePayload = {
+    ...parseVideoInput(input),
+    org_id: orgResult.orgId,
+  };
+  const payloadWithCreatedBy = {
+    ...basePayload,
+    created_by: user?.id ?? null,
+  };
 
-  const { data, error } = await supabase
+  let result = await supabase
     .from("videos")
-    .insert({
-      ...parseVideoInput(input),
-      org_id: orgResult.orgId,
-    })
+    .insert(payloadWithCreatedBy)
     .select()
     .single();
+
+  if (result.error && isMissingCreatedByColumnError(result.error.message)) {
+    result = await supabase.from("videos").insert(basePayload).select().single();
+  }
+
+  const { data, error } = result;
 
   if (error) {
     return { error: error.message };
@@ -179,8 +192,16 @@ async function assertCanFetchTikTokData(orgId: string, platform: VideoPlatform) 
   return assertCanUseTikTokImport(orgId);
 }
 
-const TIKTOK_FAST_PATH_ERROR =
-  "Could not read @username from this TikTok link. Use a full URL like https://www.tiktok.com/@creator/video/123 or click Import Metrics first.";
+export type ImportedVideoMetrics = {
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  authorUsername: string | null;
+  authorDisplayName: string | null;
+  authorFollowers: number;
+};
 
 export async function createVideoFromUrl(input: {
   creator_id?: string;
@@ -190,6 +211,7 @@ export async function createVideoFromUrl(input: {
   import_metrics?: boolean;
   auto_create_creator?: boolean;
   revalidate?: boolean;
+  from_bulk_upload?: boolean;
   metrics?: {
     views: number;
     likes: number;
@@ -222,10 +244,12 @@ export async function createVideoFromUrl(input: {
     return { error: orgResult.error };
   }
 
-  const orgPlan = await getOrganizationPlanRecord(orgResult.orgId);
-  const onFreeTrial = isFreeTrialPlan(
-    (orgPlan?.plan ?? "free_trial") as OrgPlan,
-  );
+  if (input.from_bulk_upload) {
+    const bulkCheck = await assertCanUseBulkUpload(orgResult.orgId);
+    if ("error" in bulkCheck) {
+      return { error: bulkCheck.error };
+    }
+  }
 
   let authorUsername: string | null = extractUsernameFromVideoUrl(
     trimmedUrl,
@@ -267,10 +291,6 @@ export async function createVideoFromUrl(input: {
       authorUsername ?? extractUsernameFromVideoUrl(trimmedUrl, detectedPlatform);
 
     if (!authorUsername) {
-      if (detectedPlatform === "TikTok" && onFreeTrial) {
-        return { error: TIKTOK_FAST_PATH_ERROR };
-      }
-
       const tikTokPlanCheck = await assertCanFetchTikTokData(
         orgResult.orgId,
         detectedPlatform,
@@ -378,6 +398,15 @@ export async function updateVideo(id: string, input: VideoInput) {
     return { error: orgResult.error };
   }
 
+  const permission = await assertCanModifyOwnedResource(
+    "videos",
+    id,
+    orgResult.orgId,
+  );
+  if ("error" in permission) {
+    return { error: permission.error };
+  }
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -432,8 +461,19 @@ export async function importVideoMetrics(
   }
 
   try {
-    const metrics = await fetchVideoMetricsFromUrl(trimmedUrl);
-    return { data: metrics };
+    const videoData = await fetchVideoDataFromUrl(trimmedUrl);
+    return {
+      data: {
+        views: videoData.views,
+        likes: videoData.likes,
+        comments: videoData.comments,
+        shares: videoData.shares,
+        saves: videoData.saves,
+        authorUsername: videoData.authorUsername,
+        authorDisplayName: videoData.authorDisplayName,
+        authorFollowers: videoData.authorFollowers,
+      } satisfies ImportedVideoMetrics,
+    };
   } catch (error) {
     return {
       error:
@@ -546,23 +586,17 @@ export async function refreshVideoMetrics(id: string) {
   }
 }
 
-export async function refreshAllVideoMetrics() {
-  const orgResult = await getOrgIdForAction();
-  if ("error" in orgResult) {
-    return { error: orgResult.error };
-  }
+type RefreshMetricsSummary = {
+  refreshed: number;
+  failed: number;
+  total: number;
+};
 
-  const supabase = await createClient();
-
-  const { data: videos, error } = await supabase
-    .from("videos")
-    .select("id, title");
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  if (!videos?.length) {
+async function refreshVideoRecords(
+  orgId: string,
+  videos: { id: string; title: string }[],
+): Promise<{ data: RefreshMetricsSummary } | { error: string }> {
+  if (!videos.length) {
     return { data: { refreshed: 0, failed: 0, total: 0 } };
   }
 
@@ -579,7 +613,7 @@ export async function refreshAllVideoMetrics() {
 
     const detectedPlatform = detectVideoPlatform(videoUrl)!;
     const tikTokPlanCheck = await assertCanFetchTikTokData(
-      orgResult.orgId,
+      orgId,
       detectedPlatform,
     );
     if ("error" in tikTokPlanCheck) {
@@ -609,10 +643,120 @@ export async function refreshAllVideoMetrics() {
   return { data: { refreshed, failed, total: videos.length } };
 }
 
+async function getVideosForCampaigns(
+  orgId: string,
+  campaignIds: string[],
+): Promise<{ id: string; title: string }[]> {
+  const supabase = await createClient();
+
+  let scopedCampaignIds = campaignIds;
+
+  if (scopedCampaignIds.length === 0) {
+    const { data: campaigns, error: campaignsError } = await supabase
+      .from("campaigns")
+      .select("id")
+      .eq("org_id", orgId)
+      .in("status", DASHBOARD_CAMPAIGN_STATUSES);
+
+    if (campaignsError) {
+      throw new Error(campaignsError.message);
+    }
+
+    scopedCampaignIds = (campaigns ?? []).map((campaign) => campaign.id);
+  } else {
+    const { data: campaigns, error: campaignsError } = await supabase
+      .from("campaigns")
+      .select("id")
+      .eq("org_id", orgId)
+      .in("id", scopedCampaignIds);
+
+    if (campaignsError) {
+      throw new Error(campaignsError.message);
+    }
+
+    scopedCampaignIds = (campaigns ?? []).map((campaign) => campaign.id);
+  }
+
+  if (!scopedCampaignIds.length) {
+    return [];
+  }
+
+  const { data: links, error: linksError } = await supabase
+    .from("campaign_videos")
+    .select("videos(id, title, org_id)")
+    .in("campaign_id", scopedCampaignIds);
+
+  if (linksError) {
+    throw new Error(linksError.message);
+  }
+
+  const seen = new Set<string>();
+  const videos: { id: string; title: string }[] = [];
+
+  for (const link of links ?? []) {
+    const video = link.videos as
+      | { id: string; title: string; org_id: string }
+      | null
+      | undefined;
+
+    if (!video || video.org_id !== orgId || seen.has(video.id)) {
+      continue;
+    }
+
+    seen.add(video.id);
+    videos.push({ id: video.id, title: video.title });
+  }
+
+  return videos;
+}
+
+export async function refreshCampaignVideoMetrics(campaignId: string) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
+  try {
+    const videos = await getVideosForCampaigns(orgResult.orgId, [campaignId]);
+    return await refreshVideoRecords(orgResult.orgId, videos);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to refresh metrics.",
+    };
+  }
+}
+
+export async function refreshDashboardVideoMetrics(campaignIds: string[] = []) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
+  try {
+    const videos = await getVideosForCampaigns(orgResult.orgId, campaignIds);
+    return await refreshVideoRecords(orgResult.orgId, videos);
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to refresh metrics.",
+    };
+  }
+}
+
 export async function deleteVideo(id: string) {
   const orgResult = await getOrgIdForAction();
   if ("error" in orgResult) {
     return { error: orgResult.error };
+  }
+
+  const permission = await assertCanModifyOwnedResource(
+    "videos",
+    id,
+    orgResult.orgId,
+  );
+  if ("error" in permission) {
+    return { error: permission.error };
   }
 
   const supabase = await createClient();

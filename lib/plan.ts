@@ -3,12 +3,25 @@ import { defaultTrialEndsAt } from "@/lib/org-plan-schema";
 
 export type OrgPlan = "free_trial" | "starter" | "growth" | "scale";
 
+const ORG_PLANS: OrgPlan[] = ["free_trial", "starter", "growth", "scale"];
+
+export function normalizeOrgPlan(value: string | null | undefined): OrgPlan {
+  const normalized = value?.trim().toLowerCase();
+
+  if (normalized && ORG_PLANS.includes(normalized as OrgPlan)) {
+    return normalized as OrgPlan;
+  }
+
+  return "free_trial";
+}
+
 export type PlanResource = "campaigns" | "creators" | "videos";
 
 export type PlanLimits = {
   campaigns: number | null;
   creators: number | null;
   videos: number | null;
+  members: number;
 };
 
 export type OrgUsage = {
@@ -28,10 +41,10 @@ export type PlanContext = {
 };
 
 export const PLAN_LIMITS: Record<OrgPlan, PlanLimits> = {
-  free_trial: { campaigns: 3, creators: 10, videos: 15 },
-  starter: { campaigns: 10, creators: 30, videos: 60 },
-  growth: { campaigns: null, creators: 100, videos: 300 },
-  scale: { campaigns: null, creators: 500, videos: 1500 },
+  free_trial: { campaigns: 3, creators: 10, videos: 15, members: 1 },
+  starter: { campaigns: 10, creators: 30, videos: 60, members: 1 },
+  growth: { campaigns: null, creators: 100, videos: 300, members: 3 },
+  scale: { campaigns: null, creators: 500, videos: 1500, members: 5 },
 };
 
 export const FREE_TRIAL_ALLOWED_PREFIXES = [
@@ -126,6 +139,10 @@ export function isPathAllowedOnFreeTrial(pathname: string) {
 
 export function getPlanLimit(plan: OrgPlan, resource: PlanResource) {
   return PLAN_LIMITS[plan][resource];
+}
+
+export function getPlanMemberLimit(plan: OrgPlan) {
+  return PLAN_LIMITS[plan].members;
 }
 
 export function formatPlanLimitMessage(

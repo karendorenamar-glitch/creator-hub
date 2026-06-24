@@ -7,13 +7,14 @@ import {
 } from "@/lib/campaign-analytics";
 import {
   buildDashboardWorkspaceAnalytics,
+  buildMonthlyCampaignComparison,
   emptyDashboardWorkspaceAnalytics,
+  getVideoMonthKey,
   parseDashboardVideo,
 } from "@/lib/dashboard-analytics";
 import {
   buildDashboardMonthOptions,
   getCurrentMonthKey,
-  getMonthDateRange,
   matchesDashboardPlatform,
   type DashboardMonthValue,
   type DashboardPlatformValue,
@@ -21,11 +22,13 @@ import {
 import { enrichPayout } from "@/lib/payouts";
 import { normalizeProofUrl } from "@/lib/payout-invoice";
 import { calculateEngagementRateFromTotals, parseIDRInput } from "@/lib/utils";
-import { buildCampaignSummaries } from "@/lib/campaigns";
+import { buildCampaignSummaries, DASHBOARD_CAMPAIGN_STATUSES } from "@/lib/campaigns";
 import {
   normalizeCampaignCreatorWorkflowStatus,
 } from "@/lib/campaign-creator-status";
 import { isMissingWorkflowStatusColumn } from "@/lib/campaign-creator-workflow-db";
+import { isMissingCreatedByColumnError } from "@/lib/org-plan-schema";
+import { matchesTeamResourceFilter } from "@/lib/team-filter";
 import type {
   CampaignDetail,
   CampaignListItem,
@@ -50,6 +53,12 @@ async function getOrgScopedSupabase() {
   return { orgId, supabase };
 }
 
+const creatorListSelect =
+  "id, org_id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_by, created_at";
+
+const creatorListSelectFallback =
+  "id, org_id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_at";
+
 function mapVideoRow(
   row: {
     id: string;
@@ -61,12 +70,13 @@ function mapVideoRow(
     comments: number;
     shares: number;
     saves: number;
+    created_by?: string | null;
     created_at: string;
     creators: Pick<Creator, "name" | "platform"> | null;
   },
 ): VideoWithCreator {
   const { title, ...video } = row;
-  return { ...video, video_url: title };
+  return { ...video, video_url: title, created_by: video.created_by ?? null };
 }
 
 function mapCreatorRow(
@@ -93,13 +103,23 @@ function mapCampaignCreator(
   };
 }
 
-export async function getCreators(search?: string): Promise<CreatorListItem[]> {
+export async function getCreators(
+  search?: string,
+  teamFilter: string = "all",
+): Promise<CreatorListItem[]> {
   const { orgId, supabase } = await getOrgScopedSupabase();
+  let selectFields = creatorListSelect;
+  let applyTeamFilter = teamFilter !== "all";
+
   let query = supabase
     .from("creators")
-    .select("id, org_id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_at")
+    .select(selectFields)
     .eq("org_id", orgId)
     .order("created_at", { ascending: false });
+
+  if (applyTeamFilter) {
+    query = query.eq("created_by", teamFilter);
+  }
 
   if (search?.trim()) {
     const term = search.trim();
@@ -108,14 +128,33 @@ export async function getCreators(search?: string): Promise<CreatorListItem[]> {
     );
   }
 
-  const { data, error } = await query;
+  let { data, error } = await query;
+
+  if (error && isMissingCreatedByColumnError(error.message)) {
+    selectFields = creatorListSelectFallback;
+    applyTeamFilter = false;
+    query = supabase
+      .from("creators")
+      .select(selectFields)
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: false });
+
+    if (search?.trim()) {
+      const term = search.trim();
+      query = query.or(
+        `name.ilike.%${term}%,contact.ilike.%${term}%,platform.ilike.%${term}%,tiktok_username.ilike.%${term}%,instagram_username.ilike.%${term}%,threads_username.ilike.%${term}%`,
+      );
+    }
+
+    ({ data, error } = await query);
+  }
 
   if (error) {
     console.error("Failed to fetch creators:", error.message);
     return [];
   }
 
-  const creators = (data ?? []).map(mapCreatorRow);
+  const creators = ((data ?? []) as unknown as Creator[]).map(mapCreatorRow);
 
   if (creators.length === 0) {
     return [];
@@ -152,15 +191,34 @@ export async function getCreators(search?: string): Promise<CreatorListItem[]> {
   }));
 }
 
-export async function getCreatorById(id: string): Promise<CreatorDetail | null> {
+export async function getCreatorById(
+  id: string,
+  createdByFilter?: string,
+): Promise<CreatorDetail | null> {
   const { orgId, supabase } = await getOrgScopedSupabase();
 
-  const { data: creator, error } = await supabase
+  let applyCreatedByFilter = Boolean(createdByFilter);
+  let creatorQuery = supabase
     .from("creators")
-    .select("id, org_id, name, tiktok_username, instagram_username, threads_username, contact, notes, platform, followers, fee, created_at")
+    .select(creatorListSelect)
     .eq("id", id)
-    .eq("org_id", orgId)
-    .maybeSingle();
+    .eq("org_id", orgId);
+
+  if (applyCreatedByFilter && createdByFilter) {
+    creatorQuery = creatorQuery.eq("created_by", createdByFilter);
+  }
+
+  let { data: creator, error } = await creatorQuery.maybeSingle();
+
+  if (error && isMissingCreatedByColumnError(error.message)) {
+    applyCreatedByFilter = false;
+    ({ data: creator, error } = await supabase
+      .from("creators")
+      .select(creatorListSelectFallback)
+      .eq("id", id)
+      .eq("org_id", orgId)
+      .maybeSingle());
+  }
 
   if (error) {
     console.error("Failed to fetch creator:", error.message);
@@ -171,19 +229,36 @@ export async function getCreatorById(id: string): Promise<CreatorDetail | null> 
     return null;
   }
 
-  const [videosResult, campaignsResult] = await Promise.all([
-    supabase
+  let videosQuery = supabase
+    .from("videos")
+    .select("*, creators(name, platform)")
+    .eq("creator_id", id)
+    .order("views", { ascending: false });
+
+  if (applyCreatedByFilter && createdByFilter) {
+    videosQuery = videosQuery.eq("created_by", createdByFilter);
+  }
+
+  let { data: videosResultData, error: videosResultError } = await videosQuery;
+  let campaignsResult = await supabase
+    .from("campaign_creators")
+    .select("campaigns(id, name, client_name, status)")
+    .eq("creator_id", id);
+
+  if (videosResultError && isMissingCreatedByColumnError(videosResultError.message)) {
+    videosQuery = supabase
       .from("videos")
       .select("*, creators(name, platform)")
       .eq("creator_id", id)
-      .order("views", { ascending: false }),
-    supabase
-      .from("campaign_creators")
-      .select("campaigns(id, name, client_name, status)")
-      .eq("creator_id", id),
-  ]);
+      .order("views", { ascending: false });
+    ({ data: videosResultData, error: videosResultError } = await videosQuery);
+  }
 
-  const videos = (videosResult.data ?? []).map(mapVideoRow);
+  if (videosResultError) {
+    console.error("Failed to fetch creator videos:", videosResultError.message);
+  }
+
+  const videos = (videosResultData ?? []).map(mapVideoRow);
 
   const campaigns = (campaignsResult.data ?? [])
     .map((row) => row.campaigns)
@@ -224,14 +299,30 @@ export async function getCreatorById(id: string): Promise<CreatorDetail | null> 
   };
 }
 
-export async function getVideos(): Promise<VideoWithCreator[]> {
+export async function getVideos(teamFilter: string = "all"): Promise<VideoWithCreator[]> {
   const { orgId, supabase } = await getOrgScopedSupabase();
 
-  const { data, error } = await supabase
+  let applyTeamFilter = teamFilter !== "all";
+  let query = supabase
     .from("videos")
     .select("*, creators(name, platform)")
     .eq("org_id", orgId)
     .order("created_at", { ascending: false });
+
+  if (applyTeamFilter) {
+    query = query.eq("created_by", teamFilter);
+  }
+
+  let { data, error } = await query;
+
+  if (error && isMissingCreatedByColumnError(error.message)) {
+    query = supabase
+      .from("videos")
+      .select("*, creators(name, platform)")
+      .eq("org_id", orgId)
+      .order("created_at", { ascending: false });
+    ({ data, error } = await query);
+  }
 
   if (error) {
     console.error("Failed to fetch videos:", error.message);
@@ -309,6 +400,7 @@ export async function getCampaigns(): Promise<CampaignListItem[]> {
 
 export async function getCampaignById(
   id: string,
+  teamFilter: string = "all",
 ): Promise<CampaignDetail | null> {
   const { orgId, supabase } = await getOrgScopedSupabase();
 
@@ -412,8 +504,22 @@ export async function getCampaignById(
     left.name.localeCompare(right.name),
   );
 
+  const scopedVideos =
+    teamFilter === "all"
+      ? videos
+      : videos.filter((video) =>
+          matchesTeamResourceFilter(video.created_by, teamFilter),
+        );
+
+  const scopedCreators =
+    teamFilter === "all"
+      ? creators
+      : creators.filter((creator) =>
+          matchesTeamResourceFilter(creator.created_by, teamFilter),
+        );
+
   const budget = Number(campaign.budget);
-  const videoMetrics = videos.map((video) => ({
+  const videoMetrics = scopedVideos.map((video) => ({
     views: video.views,
     likes: video.likes,
     comments: video.comments,
@@ -423,11 +529,11 @@ export async function getCampaignById(
     creators: video.creators,
   }));
   const creatorFees = Object.fromEntries(
-    creators
+    scopedCreators
       .map((creator) => [creator.id, creator.campaign_fee ?? creator.fee] as const)
       .filter(([, fee]) => fee > 0),
   );
-  const contentVideos = videos.map((video) => ({
+  const contentVideos = scopedVideos.map((video) => ({
     video_url: video.video_url,
     views: video.views,
     likes: video.likes,
@@ -446,8 +552,8 @@ export async function getCampaignById(
   return {
     ...campaign,
     budget,
-    creators,
-    videos,
+    creators: scopedCreators,
+    videos: scopedVideos,
     ...analytics,
   };
 }
@@ -469,14 +575,22 @@ export async function getCampaignOptions(): Promise<CampaignOption[]> {
   return data ?? [];
 }
 
-export async function getCampaignSummaries(): Promise<CampaignSummary[]> {
+export async function getCampaignSummaries(
+  teamFilter: string = "all",
+): Promise<CampaignSummary[]> {
   const { orgId, supabase } = await getOrgScopedSupabase();
 
-  const { data: campaigns, error } = await supabase
+  let query = supabase
     .from("campaigns")
     .select("*")
     .eq("org_id", orgId)
     .order("created_at", { ascending: false });
+
+  if (teamFilter !== "all") {
+    query = query.eq("created_by", teamFilter);
+  }
+
+  const { data: campaigns, error } = await query;
 
   if (error) {
     console.error("Failed to fetch campaigns:", error.message);
@@ -579,24 +693,17 @@ export async function getDashboardMonthOptions() {
   );
 }
 
-export async function getDashboardCampaignOptions(
-  monthFilter: DashboardMonthValue = getCurrentMonthKey(),
-): Promise<{ id: string; name: string }[]> {
+export async function getDashboardCampaignOptions(): Promise<
+  { id: string; name: string }[]
+> {
   const { orgId, supabase } = await getOrgScopedSupabase();
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("campaigns")
-    .select("id, name, start_date")
+    .select("id, name")
     .eq("org_id", orgId)
-    .eq("status", "active")
+    .in("status", DASHBOARD_CAMPAIGN_STATUSES)
     .order("name", { ascending: true });
-
-  if (monthFilter !== "all") {
-    const { start, end } = getMonthDateRange(monthFilter);
-    query = query.gte("start_date", start).lte("start_date", end);
-  }
-
-  const { data, error } = await query;
 
   if (error) {
     console.error("Failed to fetch dashboard campaign options:", error.message);
@@ -610,24 +717,25 @@ export async function getDashboardCampaignOptions(
 }
 
 export async function getDashboardStats(
-  monthFilter: DashboardMonthValue = getCurrentMonthKey(),
+  monthFilters: DashboardMonthValue[] = [getCurrentMonthKey()],
   platformFilter: DashboardPlatformValue = "all",
-  campaignFilter: string = "all",
+  campaignFilters: string[] = [],
+  teamFilter: string = "all",
 ): Promise<DashboardStats> {
   const { orgId, supabase } = await getOrgScopedSupabase();
 
   let campaignsQuery = supabase
     .from("campaigns")
-    .select("id, name, budget, start_date")
+    .select("id, name, budget, start_date, created_by")
     .eq("org_id", orgId)
-    .eq("status", "active");
+    .in("status", DASHBOARD_CAMPAIGN_STATUSES);
 
-  if (monthFilter !== "all") {
-    const { start, end } = getMonthDateRange(monthFilter);
-    campaignsQuery = campaignsQuery
-      .gte("start_date", start)
-      .lte("start_date", end);
+  if (teamFilter !== "all") {
+    campaignsQuery = campaignsQuery.eq("created_by", teamFilter);
   }
+
+  const scopedMonths = monthFilters.filter((month) => month !== "all");
+  const selectedMonthSet = new Set<string>(scopedMonths);
 
   const { data: campaigns, error: campaignsError } = await campaignsQuery;
 
@@ -712,9 +820,11 @@ export async function getDashboardStats(
   }
 
   const scopedCampaigns =
-    campaignFilter === "all"
-      ? filteredCampaigns
-      : filteredCampaigns.filter((campaign) => campaign.id === campaignFilter);
+    campaignFilters.length > 0
+      ? filteredCampaigns.filter((campaign) =>
+          campaignFilters.includes(campaign.id),
+        )
+      : filteredCampaigns;
 
   if (!scopedCampaigns.length) {
     return emptyDashboardStats();
@@ -724,12 +834,31 @@ export async function getDashboardStats(
     scopedCampaigns.map((campaign) => campaign.id),
   );
 
-  const campaignVideos = videosByCampaign
-    .filter((row) => scopedCampaignIds.has(row.campaignId))
-    .filter((row) =>
-      matchesDashboardPlatform(row.metrics.creators?.platform, platformFilter),
-    )
-    .map((row) => row.metrics);
+  const dashboardVideos = (videosResult.data ?? [])
+    .map((row) => parseDashboardVideo(row.campaign_id, row.videos))
+    .filter((video): video is NonNullable<typeof video> => Boolean(video))
+    .filter((video) => scopedCampaignIds.has(video.campaign_id))
+    .filter((video) =>
+      matchesDashboardPlatform(video.creators?.platform, platformFilter),
+    );
+
+  const monthScopedVideos =
+    scopedMonths.length > 0
+      ? dashboardVideos.filter((video) => {
+          const monthKey = getVideoMonthKey(video.created_at);
+          return monthKey != null && selectedMonthSet.has(monthKey);
+        })
+      : dashboardVideos;
+
+  const campaignVideos = monthScopedVideos.map((video) => ({
+    views: video.views,
+    likes: video.likes,
+    comments: video.comments,
+    shares: video.shares,
+    saves: video.saves,
+    creator_id: video.creator_id,
+    creators: video.creators,
+  }));
 
   const creatorFees = (creatorsResult.data ?? []).reduce<Record<string, number>>(
     (acc, row) => {
@@ -769,72 +898,26 @@ export async function getDashboardStats(
     creatorFees,
   );
 
-  const dashboardVideos = (videosResult.data ?? [])
-    .map((row) => parseDashboardVideo(row.campaign_id, row.videos))
-    .filter((video): video is NonNullable<typeof video> => Boolean(video))
-    .filter((video) => scopedCampaignIds.has(video.campaign_id))
-    .filter((video) =>
-      matchesDashboardPlatform(video.creators?.platform, platformFilter),
-    );
-
   const plannerItems = (plannerResult.data ?? []) as ContentPlannerAgency[];
 
-  const workspaceCampaigns =
-    campaignFilter === "all"
-      ? filteredCampaigns.map((campaign) => ({
-          id: campaign.id,
-          name: campaign.name,
-          budget: Number(campaign.budget),
-        }))
-      : scopedCampaigns.map((campaign) => ({
-          id: campaign.id,
-          name: campaign.name,
-          budget: Number(campaign.budget),
-        }));
+  const workspaceCampaigns = scopedCampaigns.map((campaign) => ({
+    id: campaign.id,
+    name: campaign.name,
+    budget: Number(campaign.budget),
+  }));
 
-  const campaignComparisonVideos =
-    campaignFilter === "all"
-      ? (videosResult.data ?? [])
-          .map((row) => parseDashboardVideo(row.campaign_id, row.videos))
-          .filter((video): video is NonNullable<typeof video> => Boolean(video))
-          .filter((video) => qualifyingCampaignIds.has(video.campaign_id))
-          .filter((video) =>
-            matchesDashboardPlatform(video.creators?.platform, platformFilter),
-          )
-      : dashboardVideos;
-
-  let monthlyComparisonVideos: typeof dashboardVideos = [];
-
-  if (campaignFilter !== "all") {
-    const { data: monthlyVideosResult, error: monthlyVideosError } =
-      await supabase
-        .from("campaign_videos")
-        .select(
-          "campaign_id, videos(id, title, views, likes, comments, shares, saves, creator_id, created_at, creators(name, platform))",
-        )
-        .eq("campaign_id", campaignFilter);
-
-    if (monthlyVideosError) {
-      console.error(
-        "Failed to fetch monthly campaign videos:",
-        monthlyVideosError.message,
-      );
-    } else {
-      monthlyComparisonVideos = (monthlyVideosResult ?? [])
-        .map((row) => parseDashboardVideo(row.campaign_id, row.videos))
-        .filter((video): video is NonNullable<typeof video> => Boolean(video))
-        .filter((video) =>
-          matchesDashboardPlatform(video.creators?.platform, platformFilter),
-        );
-    }
-  }
+  const monthlyCampaignComparison = buildMonthlyCampaignComparison(
+    workspaceCampaigns,
+    dashboardVideos,
+    scopedMonths,
+  );
 
   const workspace = buildDashboardWorkspaceAnalytics(
     workspaceCampaigns,
-    campaignFilter === "all" ? campaignComparisonVideos : dashboardVideos,
+    monthScopedVideos,
     creatorFees,
     plannerItems,
-    monthlyComparisonVideos,
+    dashboardVideos,
   );
 
   return {
@@ -864,7 +947,10 @@ export async function getDashboardStats(
           cpv: analytics.most_efficient_creator.cpv,
         }
       : null,
-    workspace,
+    workspace: {
+      ...workspace,
+      monthlyCampaignComparison,
+    },
   };
 }
 

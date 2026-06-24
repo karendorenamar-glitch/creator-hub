@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { LogOut } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
+import { useLanguage } from "@/components/i18n/language-provider";
 import { cn } from "@/lib/utils";
 
 type SignOutButtonProps = {
@@ -14,6 +15,7 @@ export function SignOutButton({
   className,
   variant = "sidebar",
 }: SignOutButtonProps) {
+  const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
   function handleSignOut() {
@@ -36,7 +38,7 @@ export function SignOutButton({
       )}
     >
       <LogOut className="h-5 w-5 shrink-0" />
-      {isPending ? "Signing out..." : "Sign out"}
+      {isPending ? t("user.signingOut") : t("user.signOut")}
     </button>
   );
 }

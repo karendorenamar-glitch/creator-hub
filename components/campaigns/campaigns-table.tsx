@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Lightbulb, Pencil, Trash2 } from "lucide-react";
 import { CampaignAnalyticsSummary } from "@/components/campaigns/campaign-analytics";
+import { CampaignRowActions } from "@/components/campaigns/campaign-row-actions";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import {
   formatCPV,
@@ -134,31 +134,12 @@ export function CampaignsTable({
                 )}
               </DataTableCell>
               <DataTableCell className="text-right">
-                <div className="flex justify-end gap-1">
-                  <Link
-                    href={`/campaigns/${campaign.id}`}
-                    className="rounded-lg p-2 text-violet-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
-                    aria-label={`Open ${campaign.name}`}
-                  >
-                    <Lightbulb className="h-4 w-4" />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => onEdit(campaign)}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
-                    aria-label={`Edit ${campaign.name}`}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(campaign)}
-                    className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                    aria-label={`Delete ${campaign.name}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
+                <CampaignRowActions
+                  campaignId={campaign.id}
+                  campaignName={campaign.name}
+                  onEdit={() => onEdit(campaign)}
+                  onDelete={() => onDelete(campaign)}
+                />
               </DataTableCell>
             </DataTableRow>
           ))}

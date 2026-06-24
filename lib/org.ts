@@ -9,10 +9,14 @@ import {
   getOrgPlanForNewOrganization,
   isDuplicateOrgSlugError,
   isLifetimeScaleEmail,
+  isMissingMemberLimitColumnError,
   isMissingPlanColumnError,
 } from "@/lib/org-plan-schema";
 import type { Organization } from "@/types/database";
 import type { OrgPlan } from "@/lib/plan";
+import { canModifyOwnedResource, normalizeOrgMemberRole } from "@/lib/org-team";
+import { isMissingCreatedByColumnError } from "@/lib/org-plan-schema";
+import type { OrgMemberRole } from "@/types/database";
 
 export { DEFAULT_ORG_ID } from "@/lib/org-plan-schema";
 
@@ -168,6 +172,19 @@ export async function requireActiveOrgId(): Promise<string> {
 export async function getOrgIdForAction(): Promise<
   { orgId: string } | { error: string }
 > {
+  const membership = await getOrgMembershipForAction();
+
+  if ("error" in membership) {
+    return { error: membership.error };
+  }
+
+  return { orgId: membership.orgId };
+}
+
+export async function getOrgMembershipForAction(): Promise<
+  | { orgId: string; userId: string; role: OrgMemberRole }
+  | { error: string }
+> {
   const user = await getAuthUser();
 
   if (!user) {
@@ -180,7 +197,70 @@ export async function getOrgIdForAction(): Promise<
     return { error: "No active organization." };
   }
 
-  return { orgId };
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_members")
+    .select("role")
+    .eq("org_id", orgId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return { error: "You are not a member of this workspace." };
+  }
+
+  return {
+    orgId,
+    userId: user.id,
+    role: normalizeOrgMemberRole(data.role),
+  };
+}
+
+export async function assertCanModifyOwnedResource(
+  resourceTable: "creators" | "videos",
+  resourceId: string,
+  orgId: string,
+): Promise<{ ok: true } | { error: string }> {
+  const membership = await getOrgMembershipForAction();
+
+  if ("error" in membership) {
+    return { error: membership.error };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from(resourceTable)
+    .select("created_by")
+    .eq("id", resourceId)
+    .eq("org_id", orgId)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingCreatedByColumnError(error.message)) {
+      return { ok: true as const };
+    }
+
+    return { error: error.message };
+  }
+
+  if (!data) {
+    return {
+      error:
+        resourceTable === "creators" ? "Creator not found." : "Video not found.",
+    };
+  }
+
+  if (
+    !canModifyOwnedResource({
+      role: membership.role,
+      userId: membership.userId,
+      createdBy: data.created_by ?? null,
+    })
+  ) {
+    return { error: "You can only edit items you created." };
+  }
+
+  return { ok: true as const };
 }
 
 export async function getActiveOrganization(): Promise<Organization | null> {
@@ -192,12 +272,30 @@ export async function getActiveOrganization(): Promise<Organization | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organizations")
-    .select("id, name, slug, plan, trial_ends_at, created_at")
+    .select("id, name, slug, plan, trial_ends_at, member_limit, created_at")
     .eq("id", orgId)
     .maybeSingle();
 
   if (!error && data) {
     return data as Organization;
+  }
+
+  if (error && isMissingMemberLimitColumnError(error.message)) {
+    const { data: fallback, error: fallbackError } = await supabase
+      .from("organizations")
+      .select("id, name, slug, plan, trial_ends_at, created_at")
+      .eq("id", orgId)
+      .maybeSingle();
+
+    if (fallbackError || !fallback) {
+      console.error("Failed to fetch active organization:", fallbackError?.message);
+      return null;
+    }
+
+    return {
+      ...(fallback as Organization),
+      member_limit: null,
+    };
   }
 
   if (error && isMissingPlanColumnError(error.message)) {
@@ -218,6 +316,7 @@ export async function getActiveOrganization(): Promise<Organization | null> {
       ...fallback,
       plan: planFallback.plan,
       trial_ends_at: planFallback.trial_ends_at,
+      member_limit: null,
     };
   }
 
@@ -255,7 +354,7 @@ export async function bootstrapDefaultOrgMembership(userId: string): Promise<str
   const { error } = await supabase.from("org_members").insert({
     org_id: defaultOrg.id,
     user_id: userId,
-    role: "owner",
+    role: "leader",
   });
 
   if (error && !error.message.toLowerCase().includes("duplicate")) {
@@ -472,7 +571,7 @@ async function createOrganizationWithMembershipFallback({
   const { error: memberError } = await supabase.from("org_members").insert({
     org_id: orgId,
     user_id: userId,
-    role: "owner",
+    role: "leader",
   });
 
   if (memberError) {
@@ -483,7 +582,7 @@ async function createOrganizationWithMembershipFallback({
   const selectResult = includePlanFields
     ? await supabase
         .from("organizations")
-        .select("id, name, slug, plan, trial_ends_at, created_at")
+        .select("id, name, slug, plan, trial_ends_at, member_limit, created_at")
         .eq("id", orgId)
         .single()
     : await supabase

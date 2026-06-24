@@ -23,6 +23,7 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
   const router = useRouter();
   const config = CHECKOUT_PLAN_CONFIG[plan];
   const [name, setName] = useState("");
+  const [workspaceName, setWorkspaceName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -35,10 +36,16 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
     setSuccess(null);
 
     const trimmedName = name.trim();
+    const trimmedWorkspaceName = workspaceName.trim();
     const trimmedEmail = email.trim();
 
     if (!trimmedName) {
       setError("Name is required.");
+      return;
+    }
+
+    if (!trimmedWorkspaceName) {
+      setError("Workspace name is required.");
       return;
     }
 
@@ -57,6 +64,7 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
     try {
       const result = await registerPaidPlanAccount({
         name: trimmedName,
+        workspaceName: trimmedWorkspaceName,
         email: trimmedEmail,
         password,
       });
@@ -105,6 +113,26 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
             </p>
 
             <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+              <div>
+                <label
+                  htmlFor="paid-signup-workspace"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
+                >
+                  Workspace name
+                </label>
+                <input
+                  id="paid-signup-workspace"
+                  type="text"
+                  autoComplete="organization"
+                  placeholder="e.g. PT Maju Jaya"
+                  value={workspaceName}
+                  onChange={(event) => setWorkspaceName(event.target.value)}
+                  disabled={loading}
+                  required
+                  className={inputClassName}
+                />
+              </div>
+
               <div>
                 <label
                   htmlFor="paid-signup-name"

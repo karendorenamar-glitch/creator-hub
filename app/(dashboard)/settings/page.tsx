@@ -1,31 +1,43 @@
 import Link from "next/link";
 import { Header } from "@/components/layout/header";
 import { SignOutButton } from "@/components/layout/sign-out-button";
+import { TeamSection } from "@/components/settings/team-section";
 import { getLatestPaymentSubmissionForOrg } from "@/app/actions/payment-submissions";
 import { getDashboardPlanContext } from "@/app/actions/plan";
 import { getOrganizationSettings } from "@/app/actions/org";
+import { getTeamWorkspaceContext } from "@/app/actions/team";
+import { getOrgMembershipForAction } from "@/lib/org";
 import {
   formatPaymentSubmissionStatus,
 } from "@/lib/plan-checkout";
 import { getTrialEndsInDays, formatTrialDate } from "@/lib/plan";
 import { formatMoney } from "@/lib/format";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getMessage } from "@/lib/i18n/messages";
 
 export default async function SettingsPage() {
-  const [result, plan, submissionResult] = await Promise.all([
-    getOrganizationSettings(),
-    getDashboardPlanContext(),
-    getLatestPaymentSubmissionForOrg(),
-  ]);
+  const locale = await getLocale();
+  const [result, plan, submissionResult, teamResult, membership] =
+    await Promise.all([
+      getOrganizationSettings(),
+      getDashboardPlanContext(),
+      getLatestPaymentSubmissionForOrg(),
+      getTeamWorkspaceContext(),
+      getOrgMembershipForAction(),
+    ]);
   const organization = "data" in result ? result.data : null;
   const latestSubmission =
     ("data" in submissionResult ? submissionResult.data : null) ?? null;
   const trialDaysLeft = getTrialEndsInDays(plan.trialEndsAt);
 
+  const teamContext = "data" in teamResult ? teamResult.data : null;
+  const teamError = "error" in teamResult ? teamResult.error : null;
+
   return (
     <>
       <Header
-        title="Settings"
-        description="Account and workspace preferences."
+        title={getMessage(locale, "pages.settings.title")}
+        description={getMessage(locale, "pages.settings.description")}
       />
 
       <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
@@ -43,14 +55,6 @@ export default async function SettingsPage() {
                   <dt className="font-medium text-slate-500">Organization name</dt>
                   <dd className="mt-1 text-slate-900">{organization.name}</dd>
                 </div>
-                {organization.slug ? (
-                  <div>
-                    <dt className="font-medium text-slate-500">Workspace slug</dt>
-                    <dd className="mt-1 font-mono text-slate-900">
-                      {organization.slug}
-                    </dd>
-                  </div>
-                ) : null}
               </dl>
             ) : (
               <p className="mt-4 text-sm text-red-600">
@@ -147,10 +151,31 @@ export default async function SettingsPage() {
             )}
           </section>
 
+          {teamContext && !("error" in membership) ? (
+            <TeamSection
+              initialContext={teamContext}
+              currentUserId={membership.userId}
+            />
+          ) : teamError ? (
+            <section className="rounded-xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+              <h2 className="text-base font-semibold text-amber-950">Team</h2>
+              <p className="mt-2 text-sm text-amber-900">{teamError}</p>
+              {teamError.includes("org-team.sql") ? (
+                <p className="mt-3 text-sm text-amber-800">
+                  Buka Supabase → SQL Editor, lalu jalankan file{" "}
+                  <code className="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-xs">
+                    supabase/org-team.sql
+                  </code>{" "}
+                  sekali. Setelah itu refresh halaman Settings.
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-slate-900">Account</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Sign out of Kefoo on this device.
+              {getMessage(locale, "pages.settings.signOutDescription")}
             </p>
             <div className="mt-4">
               <SignOutButton variant="settings" />

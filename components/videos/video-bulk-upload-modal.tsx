@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { createVideoFromUrl, revalidateAfterBulkUpload } from "@/app/actions/videos";
 import {
@@ -12,12 +12,15 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { runWithConcurrency } from "@/lib/async-pool";
 import {
+  detectVideoPlatform,
+  parseVideoUrls,
   parseVideoUrlsForPlatform,
   VIDEO_PLATFORMS,
   type VideoPlatform,
 } from "@/lib/video-url";
 import type { CampaignOption } from "@/types/database";
 
+const BULK_UPLOAD_FORM_ID = "bulk-upload-videos-form";
 const MAX_BULK_VIDEOS = 100;
 /** Apify scrapes run in parallel (up to this many at once). */
 const BULK_UPLOAD_CONCURRENCY = 5;
@@ -59,6 +62,7 @@ export function VideoBulkUploadModal({
   const [failures, setFailures] = useState<UploadFailure[]>([]);
   const [addedCount, setAddedCount] = useState(0);
   const [createdCreatorsCount, setCreatedCreatorsCount] = useState(0);
+  const previousLinksText = useRef("");
 
   useEffect(() => {
     if (!open) return;
@@ -73,7 +77,43 @@ export function VideoBulkUploadModal({
     setFailures([]);
     setAddedCount(0);
     setCreatedCreatorsCount(0);
+    previousLinksText.current = "";
   }, [open, campaigns]);
+
+  useEffect(() => {
+    if (!open || isUploading || linksText === previousLinksText.current) {
+      return;
+    }
+
+    previousLinksText.current = linksText;
+
+    if (!linksText.trim()) {
+      return;
+    }
+
+    const forCurrentPlatform = parseVideoUrlsForPlatform(linksText, platform);
+    if (forCurrentPlatform.valid.length > 0) {
+      return;
+    }
+
+    const allLinks = parseVideoUrls(linksText);
+    if (allLinks.valid.length === 0) {
+      return;
+    }
+
+    const detectedPlatforms = new Set(
+      allLinks.valid
+        .map((url) => detectVideoPlatform(url))
+        .filter((value): value is VideoPlatform => value !== null),
+    );
+
+    if (detectedPlatforms.size === 1) {
+      const [detectedPlatform] = detectedPlatforms;
+      if (detectedPlatform && detectedPlatform !== platform) {
+        setPlatform(detectedPlatform);
+      }
+    }
+  }, [linksText, open, isUploading, platform]);
 
   const parsedLinks = useMemo(
     () => parseVideoUrlsForPlatform(linksText, platform),
@@ -85,6 +125,24 @@ export function VideoBulkUploadModal({
   const exceedsLimit = validLinkCount > MAX_BULK_VIDEOS;
   const otherPlatform =
     platform === "TikTok" ? ("Instagram" as const) : ("TikTok" as const);
+
+  const submitBlockedReason = isUploading
+    ? null
+    : campaigns.length === 0
+      ? "Create a campaign first, then bulk upload videos to it."
+      : validLinkCount === 0 && linksText.trim()
+        ? parsedLinks.invalid.length > 0 || wrongPlatformCount > 0
+          ? `No valid ${platform} links found. Check the platform or link format.`
+          : `Add at least one valid ${platform} video link.`
+        : exceedsLimit
+          ? `Remove ${validLinkCount - MAX_BULK_VIDEOS} link${validLinkCount - MAX_BULK_VIDEOS === 1 ? "" : "s"} to stay within the ${MAX_BULK_VIDEOS}-video batch limit.`
+          : null;
+
+  const canSubmit =
+    !isUploading &&
+    campaigns.length > 0 &&
+    validLinkCount > 0 &&
+    !exceedsLimit;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -130,6 +188,7 @@ export function VideoBulkUploadModal({
             import_metrics: importMetrics,
             auto_create_creator: true,
             revalidate: false,
+            from_bulk_upload: true,
           }),
         (completed, total) => {
           setProgress({ current: completed, total });
@@ -189,10 +248,42 @@ export function VideoBulkUploadModal({
       onClose={onClose}
       title="Bulk Upload Videos"
       description={`Paste ${platform} links only, one per line (up to ${MAX_BULK_VIDEOS} per batch). Switch platform for a different batch.`}
-      loading={isUploading}
       size="xl"
+      footer={
+        <div className="space-y-3">
+          {submitBlockedReason && !isUploading ? (
+            <p className="text-sm text-amber-800">{submitBlockedReason}</p>
+          ) : null}
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isUploading}
+              className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+            >
+              {addedCount > 0 && failures.length > 0 ? "Close" : "Cancel"}
+            </button>
+            <button
+              type="submit"
+              form={BULK_UPLOAD_FORM_ID}
+              disabled={!canSubmit}
+              className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isUploading
+                ? `Saving (${progress.current}/${progress.total})...`
+                : validLinkCount > 0
+                  ? `Save ${validLinkCount} video${validLinkCount === 1 ? "" : "s"}`
+                  : "Save videos"}
+            </button>
+          </div>
+        </div>
+      }
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form
+        id={BULK_UPLOAD_FORM_ID}
+        onSubmit={handleSubmit}
+        className="space-y-4"
+      >
         <div
           role="alert"
           className="rounded-lg border-2 border-amber-400 bg-amber-50 px-4 py-3.5 text-amber-950"
@@ -388,31 +479,6 @@ export function VideoBulkUploadModal({
         ) : null}
 
         {error ? <FormError message={error} /> : null}
-
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isUploading}
-            className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-          >
-            {addedCount > 0 && failures.length > 0 ? "Close" : "Cancel"}
-          </button>
-          <button
-            type="submit"
-            disabled={
-              isUploading ||
-              campaigns.length === 0 ||
-              validLinkCount === 0 ||
-              exceedsLimit
-            }
-            className="rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300 disabled:opacity-60"
-          >
-            {isUploading
-              ? `Uploading (${progress.current}/${progress.total})...`
-              : `Upload ${validLinkCount || ""} Video${validLinkCount === 1 ? "" : "s"}`.trim()}
-          </button>
-        </div>
       </form>
     </Modal>
   );

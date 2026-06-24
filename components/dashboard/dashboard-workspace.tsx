@@ -19,19 +19,6 @@ export function DashboardWorkspace({
 
   return (
     <div className="mt-10 space-y-6">
-      <div className="rounded-2xl border border-kefoo-100 bg-gradient-to-r from-kefoo-50 via-white to-kefoo-50 p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-kefoo-600">
-          Intelligence Workspace
-        </p>
-        <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-          Creator Campaign Intelligence Center
-        </h2>
-        <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-600">
-          Compare campaigns and creators to decide where to invest next. Built
-          for quick answers — not spreadsheet reporting.
-        </p>
-      </div>
-
       <section>
         <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
           Key Insights

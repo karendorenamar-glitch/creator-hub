@@ -67,16 +67,22 @@ function validateRegisterInput(input: RegisterFreeAccountInput) {
 
 export type RegisterPaidPlanAccountInput = {
   name: string;
+  workspaceName: string;
   email: string;
   password: string;
 };
 
 function validatePaidPlanRegisterInput(input: RegisterPaidPlanAccountInput) {
   const name = input.name.trim();
+  const workspaceName = input.workspaceName.trim();
   const email = input.email.trim();
 
   if (!name) {
     return { error: "Name is required." };
+  }
+
+  if (!workspaceName) {
+    return { error: "Workspace name is required." };
   }
 
   if (!email) {
@@ -93,9 +99,9 @@ function validatePaidPlanRegisterInput(input: RegisterPaidPlanAccountInput) {
 
   return {
     name,
+    workspaceName,
     email,
     password: input.password,
-    workspaceName: name,
   };
 }
 

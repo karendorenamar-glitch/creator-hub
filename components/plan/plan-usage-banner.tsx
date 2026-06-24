@@ -48,7 +48,7 @@ function getUsageItems(
       ? null
       : {
           key: "videos",
-          label: "Tracked contents",
+          label: "Videos",
           used: usage.videos,
           limit: limits.videos,
         },
@@ -58,6 +58,7 @@ function getUsageItems(
 }
 
 function UsageMeter({ label, used, limit }: Omit<UsageItem, "key">) {
+  const remaining = Math.max(limit - used, 0);
   const percentage = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
   const atLimit = used >= limit;
   const nearLimit = !atLimit && percentage >= 80;
@@ -76,7 +77,7 @@ function UsageMeter({ label, used, limit }: Omit<UsageItem, "key">) {
                 : "text-slate-600",
           )}
         >
-          {used}/{limit}
+          {remaining} tersisa · {used}/{limit}
           {atLimit ? " · Full" : nearLimit ? " · Almost full" : ""}
         </span>
       </div>
@@ -121,6 +122,14 @@ export function PlanUsageBanner({
   }
 
   const showMonthlyHint = plan === "starter" || plan === "growth" || plan === "scale";
+  const upgradeHref =
+    plan === "free_trial"
+      ? "/checkout/starter"
+      : plan === "starter"
+        ? "/checkout/growth"
+        : plan === "growth"
+          ? "/checkout/scale"
+          : null;
 
   return (
     <div
@@ -144,17 +153,30 @@ export function PlanUsageBanner({
             <p className="mt-1 text-xs text-kefoo-800">Monthly allowance</p>
           ) : null}
         </div>
-        {showUpgradeLink && (isFreeTrial || plan === "starter") ? (
+        {showUpgradeLink && upgradeHref ? (
           <Link
-            href={plan === "starter" ? "/checkout/growth" : "/checkout/starter"}
+            href={upgradeHref}
             className="text-xs font-medium text-kefoo-700 underline-offset-2 hover:text-kefoo-600 hover:underline"
           >
-            {plan === "starter" ? "Upgrade to Growth" : "Upgrade plan"}
+            {plan === "starter"
+              ? "Upgrade to Growth"
+              : plan === "growth"
+                ? "Upgrade to Scale"
+                : "Upgrade plan"}
           </Link>
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <div
+        className={cn(
+          "mt-4 grid gap-4",
+          items.length === 1
+            ? "grid-cols-1"
+            : items.length === 2
+              ? "sm:grid-cols-2"
+              : "sm:grid-cols-3",
+        )}
+      >
         {items.map((item) => (
           <UsageMeter
             key={item.key}

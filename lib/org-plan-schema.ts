@@ -1,17 +1,31 @@
-export function isMissingPlanColumnError(message: string | undefined) {
+function isMissingSchemaColumnError(
+  message: string | undefined,
+  columns: string[],
+) {
   if (!message) {
     return false;
   }
 
   const lower = message.toLowerCase();
-  const mentionsPlanColumn =
-    lower.includes("plan") || lower.includes("trial_ends_at");
+  const mentionsColumn = columns.some((column) => lower.includes(column));
   const schemaIssue =
     lower.includes("schema cache") ||
     lower.includes("does not exist") ||
     lower.includes("could not find");
 
-  return mentionsPlanColumn && schemaIssue;
+  return mentionsColumn && schemaIssue;
+}
+
+export function isMissingPlanColumnError(message: string | undefined) {
+  return isMissingSchemaColumnError(message, ["plan", "trial_ends_at"]);
+}
+
+export function isMissingMemberLimitColumnError(message: string | undefined) {
+  return isMissingSchemaColumnError(message, ["member_limit"]);
+}
+
+export function isMissingCreatedByColumnError(message: string | undefined) {
+  return isMissingSchemaColumnError(message, ["created_by"]);
 }
 
 export function defaultTrialEndsAt(fromDate?: string | null) {

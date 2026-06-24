@@ -1,15 +1,23 @@
 import { Suspense } from "react";
 import { Header } from "@/components/layout/header";
-import { CampaignPerformanceSection } from "@/components/dashboard/campaign-performance-section";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardPlanUsage } from "@/components/dashboard/dashboard-plan-usage";
-import { DashboardScaleSection } from "@/components/dashboard/dashboard-scale-section";
+import { DashboardRefreshVideos } from "@/components/dashboard/dashboard-refresh-videos";
 import { DashboardWorkspace } from "@/components/dashboard/dashboard-workspace";
 import { MonthlyPerformanceSection } from "@/components/dashboard/monthly-performance-section";
 import { PlanUpgradePrompt } from "@/components/plan/plan-upgrade-prompt";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { getDashboardPlanContext } from "@/app/actions/plan";
-import { parseDashboardCampaignParam } from "@/lib/dashboard-analytics";
+import { getLeaderTeamFilterContext } from "@/app/actions/team";
+import { formatCampaignsLabel, parseDashboardCampaignsParam } from "@/lib/dashboard-analytics";
+import {
+  parseTeamFilterParam,
+  resolveTeamFilterForRole,
+  shouldShowTeamFilter,
+} from "@/lib/team-filter";
+import { getOrgMembershipForAction } from "@/lib/org";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { getMessage } from "@/lib/i18n/messages";
 import {
   getDashboardDescription,
   getDashboardTier,
@@ -22,9 +30,10 @@ import {
   getDashboardStats,
 } from "@/lib/data";
 import {
-  formatMonthLabel,
+  buildAvailableDashboardMonths,
+  formatMonthsLabel,
   formatPlatformLabel,
-  parseDashboardMonthParam,
+  parseDashboardMonthsParam,
   parseDashboardPlatformParam,
 } from "@/lib/dashboard-month-filter";
 import {
@@ -36,17 +45,25 @@ import {
 import { DollarSign, Eye, Megaphone, TrendingUp } from "lucide-react";
 
 type DashboardPageProps = {
-  searchParams: Promise<{ month?: string; platform?: string; campaign?: string }>;
+  searchParams: Promise<{
+    month?: string;
+    months?: string;
+    platform?: string;
+    campaign?: string;
+    campaigns?: string;
+    team?: string;
+  }>;
 };
 
 function buildFilterLabel(
-  monthFilter: ReturnType<typeof parseDashboardMonthParam>,
+  monthFilters: ReturnType<typeof parseDashboardMonthsParam>,
   platformFilter: ReturnType<typeof parseDashboardPlatformParam>,
-  campaignName: string | null,
+  campaignFilters: string[],
+  campaignOptions: Array<{ id: string; name: string }>,
 ) {
   const parts = [
-    monthFilter === "all" ? "All time" : formatMonthLabel(monthFilter),
-    campaignName ?? "All campaigns",
+    formatMonthsLabel(monthFilters),
+    formatCampaignsLabel(campaignFilters, campaignOptions),
     platformFilter === "all" ? null : formatPlatformLabel(platformFilter),
   ].filter(Boolean);
 
@@ -55,40 +72,62 @@ function buildFilterLabel(
 
 export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const params = await searchParams;
-  const monthFilter = parseDashboardMonthParam(params.month);
+  const locale = await getLocale();
   const platformFilter = parseDashboardPlatformParam(params.platform);
   const planContext = await getDashboardPlanContext();
   const tier = getDashboardTier(planContext.plan);
   const showAdvanced = hasPlanFeature(planContext.plan, "dashboard_advanced");
+  const showDashboardCampaigns = hasPlanFeature(planContext.plan, "dashboard");
+  const activeCampaignsNote = showDashboardCampaigns
+    ? getMessage(locale, "dashboard.activeCampaignsOnly")
+    : undefined;
 
-  const [monthOptions, campaignOptions] = await Promise.all([
-    getDashboardMonthOptions(),
-    getDashboardCampaignOptions(monthFilter),
-  ]);
-  const campaignFilter = parseDashboardCampaignParam(
-    params.campaign,
-    new Set(campaignOptions.map((campaign) => campaign.id)),
+  const [monthOptions, campaignOptions, teamContext, membership] =
+    await Promise.all([
+      getDashboardMonthOptions(),
+      getDashboardCampaignOptions(),
+      getLeaderTeamFilterContext(),
+      getOrgMembershipForAction(),
+    ]);
+
+  const availableMonths = buildAvailableDashboardMonths(monthOptions);
+  const availableMonthSet = new Set(availableMonths);
+  const monthFilters = parseDashboardMonthsParam(
+    params.months ?? params.month,
+    availableMonthSet,
   );
-  const selectedCampaignName =
-    campaignFilter === "all"
-      ? null
-      : (campaignOptions.find((campaign) => campaign.id === campaignFilter)
-          ?.name ?? null);
+  const memberIds = new Set(teamContext.members.map((member) => member.id));
+  const parsedTeamFilter = parseTeamFilterParam(params.team, memberIds);
+  const teamFilter = resolveTeamFilterForRole(
+    "error" in membership ? "team" : membership.role,
+    parsedTeamFilter,
+  );
+  const showTeamFilter = shouldShowTeamFilter(
+    teamContext.isLeader,
+    planContext.plan,
+  );
+  const campaignIdSet = new Set(campaignOptions.map((campaign) => campaign.id));
+  const campaignFilters = parseDashboardCampaignsParam(
+    params.campaigns ?? params.campaign,
+    campaignIdSet,
+  );
   const filterLabel = buildFilterLabel(
-    monthFilter,
+    monthFilters,
     platformFilter,
-    selectedCampaignName,
+    campaignFilters,
+    campaignOptions,
   );
   const stats = await getDashboardStats(
-    monthFilter,
+    monthFilters,
     platformFilter,
-    campaignFilter,
+    campaignFilters,
+    teamFilter,
   );
 
   return (
     <>
       <Header
-        title="Dashboard"
+        title={getMessage(locale, "pages.dashboard.title")}
         description={getDashboardDescription(tier)}
         titleAddon={
           tier !== "none" ? (
@@ -106,87 +145,104 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           }
         >
           <DashboardFilters
-            selectedMonth={monthFilter}
+            selectedMonths={monthFilters}
             selectedPlatform={platformFilter}
-            selectedCampaign={campaignFilter}
+            selectedCampaigns={campaignFilters}
+            selectedTeam={teamFilter}
             campaigns={campaignOptions}
+            campaignsNote={activeCampaignsNote}
+            teamMembers={teamContext.members}
+            showTeamFilter={showTeamFilter}
+            availableMonths={availableMonths}
             currentMonth={monthOptions.currentMonth}
-            previousMonths={monthOptions.previousMonths}
           />
         </Suspense>
 
+        {activeCampaignsNote ? (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            {activeCampaignsNote}
+          </div>
+        ) : null}
+
         <DashboardPlanUsage />
+
+        {showAdvanced ? (
+          <div className="mb-4 flex justify-end">
+            <DashboardRefreshVideos
+              campaignIds={campaignFilters}
+              hasVideos={stats.activeCampaigns > 0}
+            />
+          </div>
+        ) : null}
 
         <section>
           <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Campaign Overview · {filterLabel}
+            {getMessage(locale, "dashboard.campaignOverview")} · {filterLabel}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <StatCard
-              title="Active Campaigns"
+              title={getMessage(locale, "dashboard.activeCampaigns")}
               value={formatNumber(stats.activeCampaigns)}
               icon={Megaphone}
               accent="indigo"
             />
             <StatCard
-              title="Total Budget"
+              title={getMessage(locale, "dashboard.totalBudget")}
               value={formatCurrency(stats.totalBudget)}
               icon={DollarSign}
               accent="violet"
             />
             <StatCard
-              title="Total Views"
+              title={getMessage(locale, "dashboard.totalViews")}
               value={formatNumber(stats.totalCampaignViews)}
-              subtitle="Across campaign videos"
+              subtitle={getMessage(locale, "dashboard.totalViewsSubtitle")}
               icon={Eye}
               accent="emerald"
             />
             <StatCard
-              title="Average ER"
+              title={getMessage(locale, "dashboard.averageEr")}
               value={formatEngagementRate(stats.averageEngagementRate)}
-              subtitle="(likes + comments + shares + saves) / views"
+              subtitle={getMessage(locale, "dashboard.averageErSubtitle")}
               icon={TrendingUp}
               accent="amber"
             />
             <StatCard
-              title="CPV"
+              title={getMessage(locale, "dashboard.cpv")}
               value={formatCPV(stats.totalBudget, stats.totalCampaignViews)}
-              subtitle="Budget divided by views"
+              subtitle={getMessage(locale, "dashboard.cpvSubtitle")}
               icon={TrendingUp}
               accent="indigo"
             />
           </div>
         </section>
 
-        {campaignFilter === "all" ? (
-          <CampaignPerformanceSection
-            campaigns={stats.workspace.campaignComparison}
-          />
-        ) : showAdvanced ? (
-          <MonthlyPerformanceSection
-            months={stats.workspace.monthlyComparison}
-            campaignName={selectedCampaignName ?? "Selected campaign"}
-          />
-        ) : (
-          <CampaignPerformanceSection
-            campaigns={stats.workspace.campaignComparison}
-          />
-        )}
-
         {showAdvanced ? (
-          <>
-            <DashboardWorkspace workspace={stats.workspace} tier={tier} />
-
-            {tier === "scale" ? <DashboardScaleSection /> : null}
-          </>
+          <DashboardWorkspace workspace={stats.workspace} tier={tier} />
         ) : (
           <PlanUpgradePrompt
             feature="dashboard_advanced"
-            title="Advanced Performance Dashboard"
-            description="Compare creators, surface key insights, and track monthly trends with Growth."
+            title={getMessage(locale, "dashboard.advancedUpgradeTitle")}
+            description={getMessage(locale, "dashboard.advancedUpgradeDescription")}
             className="mt-8"
           />
         )}
+
+        <section className="mt-8">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              {getMessage(locale, "dashboard.performanceComparison")}
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {getMessage(locale, "dashboard.performanceComparisonDescription")}
+            </p>
+          </div>
+
+          <MonthlyPerformanceSection
+            monthlyComparisons={stats.workspace.monthlyCampaignComparison}
+            selectedMonthCount={monthFilters.length}
+            embedded
+          />
+        </section>
       </main>
     </>
   );

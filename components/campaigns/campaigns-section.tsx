@@ -11,6 +11,7 @@ import { useToast } from "@/components/ui/toast";
 import type {
   CampaignSummary,
   Creator,
+  OrgMemberRole,
   VideoWithCreator,
 } from "@/types/database";
 
@@ -18,12 +19,16 @@ type CampaignsSectionProps = {
   campaigns: CampaignSummary[];
   creators: Creator[];
   videos: VideoWithCreator[];
+  currentUserId: string;
+  memberRole: OrgMemberRole;
 };
 
 export function CampaignsSection({
   campaigns,
   creators,
   videos,
+  currentUserId,
+  memberRole,
 }: CampaignsSectionProps) {
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
@@ -81,6 +86,8 @@ export function CampaignsSection({
 
       <CampaignSummaryCards
         campaigns={campaigns}
+        currentUserId={currentUserId}
+        memberRole={memberRole}
         onEdit={openEdit}
         onDelete={setDeleteTarget}
       />

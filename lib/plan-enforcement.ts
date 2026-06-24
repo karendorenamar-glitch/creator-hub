@@ -10,6 +10,7 @@ import {
   getPlanLimit,
   isFreeTrialPlan,
   isTrialExpired,
+  normalizeOrgPlan,
   PLAN_LIMITS,
   resolveTrialEndsAt,
   type OrgPlan,
@@ -17,6 +18,10 @@ import {
   type PlanContext,
   type PlanResource,
 } from "@/lib/plan";
+import {
+  FEATURE_UPGRADE_MESSAGES,
+  hasPlanFeature,
+} from "@/lib/plan-features";
 import type { Organization } from "@/types/database";
 
 export async function getOrgUsage(orgId: string): Promise<OrgUsage> {
@@ -118,6 +123,46 @@ async function resolvePlanRecordWithOverrides(record: OrgPlanRecord) {
   return applyLifetimeScalePlanOverride(record, user?.email);
 }
 
+async function resolveEffectiveOrgPlan(
+  orgId: string,
+  record: OrgPlanRecord,
+): Promise<OrgPlan> {
+  const storedPlan = normalizeOrgPlan(record.plan);
+
+  if (storedPlan === "growth" || storedPlan === "scale") {
+    return storedPlan;
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("payment_submissions")
+    .select("plan")
+    .eq("org_id", orgId)
+    .eq("status", "approved")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!error && data?.plan) {
+    return normalizeOrgPlan(data.plan);
+  }
+
+  return storedPlan;
+}
+
+async function finalizePlanRecord(
+  orgId: string,
+  record: OrgPlanRecord,
+): Promise<OrgPlanRecord> {
+  const plan = await resolveEffectiveOrgPlan(orgId, record);
+
+  return {
+    ...record,
+    plan,
+    trial_ends_at: isFreeTrialPlan(plan) ? record.trial_ends_at : null,
+  };
+}
+
 export async function getOrganizationPlanRecord(
   orgId: string,
 ): Promise<OrgPlanRecord | null> {
@@ -130,12 +175,15 @@ export async function getOrganizationPlanRecord(
     .maybeSingle();
 
   if (!withPlanError && withPlan) {
-    return resolvePlanRecordWithOverrides({
-      id: withPlan.id,
-      plan: (withPlan.plan ?? DEFAULT_FREE_TRIAL_PLAN) as Organization["plan"],
-      trial_ends_at: withPlan.trial_ends_at,
-      created_at: withPlan.created_at,
-    });
+    return finalizePlanRecord(
+      orgId,
+      await resolvePlanRecordWithOverrides({
+        id: withPlan.id,
+        plan: normalizeOrgPlan(withPlan.plan),
+        trial_ends_at: withPlan.trial_ends_at,
+        created_at: withPlan.created_at,
+      }),
+    );
   }
 
   const withPlanErrorMessage = withPlanError?.message ?? null;
@@ -153,16 +201,22 @@ export async function getOrganizationPlanRecord(
       .maybeSingle();
 
     if (!basicError && basic) {
-      return resolvePlanRecordWithOverrides(
-        buildDefaultPlanRecord(basic.id, basic.created_at),
+      return finalizePlanRecord(
+        orgId,
+        await resolvePlanRecordWithOverrides(
+          buildDefaultPlanRecord(basic.id, basic.created_at),
+        ),
       );
     }
   }
 
   const membershipOrgId = await getVerifiedOrgMembership(orgId);
   if (membershipOrgId) {
-    return resolvePlanRecordWithOverrides(
-      buildDefaultPlanRecord(membershipOrgId),
+    return finalizePlanRecord(
+      orgId,
+      await resolvePlanRecordWithOverrides(
+        buildDefaultPlanRecord(membershipOrgId),
+      ),
     );
   }
 
@@ -180,7 +234,7 @@ export async function getPlanContext(orgId: string): Promise<PlanContext | null>
     return null;
   }
 
-  const plan = (org.plan ?? "free_trial") as OrgPlan;
+  const plan = normalizeOrgPlan(org.plan);
   const trialStartedAt = org.created_at ?? null;
   const trialEndsAt = resolveTrialEndsAt(
     plan,
@@ -218,7 +272,7 @@ export async function assertCanCreateResource(
     return { error: "Organization not found." };
   }
 
-  const plan = (org.plan ?? "free_trial") as OrgPlan;
+  const plan = normalizeOrgPlan(org.plan);
 
   if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
     return {
@@ -250,12 +304,34 @@ export async function assertCanUseTikTokImport(orgId: string) {
     return { error: "Organization not found." };
   }
 
-  const plan = (org.plan ?? "free_trial") as OrgPlan;
+  const plan = normalizeOrgPlan(org.plan);
 
   if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
     return {
       error: "Your free trial has ended. Upgrade your plan to continue.",
     };
+  }
+
+  return { ok: true as const };
+}
+
+export async function assertCanUseBulkUpload(orgId: string) {
+  const org = await getOrganizationPlanRecord(orgId);
+
+  if (!org) {
+    return { error: "Organization not found." };
+  }
+
+  const plan = normalizeOrgPlan(org.plan);
+
+  if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
+    return {
+      error: "Your free trial has ended. Upgrade your plan to continue.",
+    };
+  }
+
+  if (!hasPlanFeature(plan, "bulk_upload")) {
+    return { error: FEATURE_UPGRADE_MESSAGES.bulk_upload };
   }
 
   return { ok: true as const };

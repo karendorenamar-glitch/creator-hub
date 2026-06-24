@@ -11,7 +11,7 @@ export type CampaignCreatorWorkflowStatus =
   | "revision"
   | "posted";
 
-export type OrgMemberRole = "owner" | "member";
+export type OrgMemberRole = "leader" | "team";
 
 export type OrgPlan = "free_trial" | "starter" | "growth" | "scale";
 
@@ -21,6 +21,19 @@ export type Organization = {
   slug: string | null;
   plan: OrgPlan;
   trial_ends_at: string | null;
+  member_limit: number | null;
+  created_at: string;
+};
+
+export type OrgInvite = {
+  id: string;
+  org_id: string;
+  email: string;
+  role: OrgMemberRole;
+  token: string;
+  invited_by: string;
+  accepted_at: string | null;
+  expires_at: string;
   created_at: string;
 };
 
@@ -66,6 +79,7 @@ export type Creator = {
   platform: string;
   followers: number;
   fee: number;
+  created_by: string | null;
   created_at: string;
 };
 
@@ -83,6 +97,7 @@ export type Video = {
   comments: number;
   shares: number;
   saves: number;
+  created_by: string | null;
   created_at: string;
 };
 
@@ -115,6 +130,7 @@ export type Campaign = {
   budget: number;
   status: CampaignStatus;
   campaign_type: CampaignType;
+  created_by: string | null;
   created_at: string;
 };
 
@@ -276,15 +292,16 @@ export type Database = {
           slug?: string | null;
           plan?: OrgPlan;
           trial_ends_at?: string | null;
+          member_limit?: number | null;
           created_at?: string;
         };
         Update: {
           id?: string;
-          org_id?: string;
           name?: string;
           slug?: string | null;
           plan?: OrgPlan;
           trial_ends_at?: string | null;
+          member_limit?: number | null;
           created_at?: string;
         };
         Relationships: [];
@@ -306,6 +323,40 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "org_members_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      org_invites: {
+        Row: OrgInvite;
+        Insert: {
+          id?: string;
+          org_id: string;
+          email: string;
+          role?: OrgMemberRole;
+          token?: string;
+          invited_by: string;
+          accepted_at?: string | null;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          email?: string;
+          role?: OrgMemberRole;
+          token?: string;
+          invited_by?: string;
+          accepted_at?: string | null;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_invites_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";
@@ -389,6 +440,7 @@ export type Database = {
           platform?: string;
           followers?: number;
           fee?: number;
+          created_by?: string | null;
           created_at?: string;
         };
         Update: {
@@ -403,6 +455,7 @@ export type Database = {
           platform?: string;
           followers?: number;
           fee?: number;
+          created_by?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -418,6 +471,7 @@ export type Database = {
           comments: number;
           shares: number;
           saves: number;
+          created_by: string | null;
           created_at: string;
         };
         Insert: {
@@ -430,6 +484,7 @@ export type Database = {
           comments?: number;
           shares?: number;
           saves?: number;
+          created_by?: string | null;
           created_at?: string;
         };
         Update: {
@@ -442,6 +497,7 @@ export type Database = {
           comments?: number;
           shares?: number;
           saves?: number;
+          created_by?: string | null;
           created_at?: string;
         };
         Relationships: [
@@ -466,6 +522,7 @@ export type Database = {
           budget?: number;
           status?: CampaignStatus;
           campaign_type?: CampaignType;
+          created_by?: string | null;
           created_at?: string;
         };
         Update: {
@@ -478,6 +535,7 @@ export type Database = {
           budget?: number;
           status?: CampaignStatus;
           campaign_type?: CampaignType;
+          created_by?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -647,6 +705,49 @@ export type Database = {
           trial_ends_at: string | null;
           created_at: string;
         }[];
+      };
+      get_org_team_members: {
+        Args: {
+          p_org_id: string;
+        };
+        Returns: {
+          user_id: string;
+          role: string;
+          email: string;
+          full_name: string;
+          joined_at: string;
+        }[];
+      };
+      invite_org_member: {
+        Args: {
+          p_org_id: string;
+          p_email: string;
+          p_role?: string;
+        };
+        Returns: {
+          invite_id: string | null;
+          invite_token: string | null;
+          added_directly: boolean;
+        }[];
+      };
+      accept_org_invite: {
+        Args: {
+          p_token: string;
+        };
+        Returns: string;
+      };
+      remove_org_member: {
+        Args: {
+          p_org_id: string;
+          p_user_id: string;
+        };
+        Returns: undefined;
+      };
+      cancel_org_invite: {
+        Args: {
+          p_invite_id: string;
+        };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

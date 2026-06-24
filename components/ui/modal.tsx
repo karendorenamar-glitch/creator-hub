@@ -9,6 +9,7 @@ type ModalProps = {
   title: string;
   description?: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
   loading?: boolean;
   size?: "md" | "lg" | "xl";
 };
@@ -19,6 +20,7 @@ export function Modal({
   title,
   description,
   children,
+  footer,
   loading = false,
   size = "md",
 }: ModalProps) {
@@ -37,11 +39,11 @@ export function Modal({
         aria-modal="true"
         aria-labelledby="modal-title"
         className={cn(
-          "relative max-h-[90vh] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl",
+          "relative flex max-h-[90vh] w-full flex-col rounded-2xl border border-slate-200 bg-white shadow-2xl",
           size === "md" ? "max-w-md" : size === "lg" ? "max-w-lg" : "max-w-2xl",
         )}
       >
-        <div className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-100 bg-white px-6 py-5">
+        <div className="flex shrink-0 items-start justify-between border-b border-slate-100 px-6 py-5">
           <div>
             <h2
               id="modal-title"
@@ -64,14 +66,20 @@ export function Modal({
           </button>
         </div>
 
-        <div className="relative px-6 py-5">
+        <div className="relative min-h-0 flex-1 overflow-y-auto px-6 py-5">
           {loading && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center rounded-b-2xl bg-white/70">
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70">
               <Loader2 className="h-6 w-6 animate-spin text-kefoo-600" />
             </div>
           )}
           {children}
         </div>
+
+        {footer ? (
+          <div className="relative z-30 shrink-0 border-t border-slate-100 bg-white px-6 py-4">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   );

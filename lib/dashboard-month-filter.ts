@@ -43,18 +43,67 @@ export function getCurrentMonthKey(): DashboardMonthValue {
   return `${now.getFullYear()}-${month}`;
 }
 
+export const MAX_DASHBOARD_COMPARE_MONTHS = 3;
+
 export function parseDashboardMonthParam(
   param: string | null | undefined,
 ): DashboardMonthValue {
-  if (param === "all") {
-    return "all";
+  const months = parseDashboardMonthsParam(param);
+  return months[0] ?? getCurrentMonthKey();
+}
+
+export function parseDashboardMonthsParam(
+  param: string | null | undefined,
+  validMonths?: Set<DashboardMonthValue>,
+): DashboardMonthValue[] {
+  if (!param || param === "all") {
+    return [getCurrentMonthKey()];
   }
 
-  if (param && /^\d{4}-\d{2}$/.test(param)) {
-    return param as DashboardMonthValue;
+  const parsed: DashboardMonthValue[] = [];
+
+  for (const part of param.split(",")) {
+    const trimmed = part.trim();
+    if (!/^\d{4}-\d{2}$/.test(trimmed)) {
+      continue;
+    }
+
+    const month = trimmed as DashboardMonthValue;
+
+    if (validMonths && !validMonths.has(month)) {
+      continue;
+    }
+
+    if (!parsed.includes(month)) {
+      parsed.push(month);
+    }
+
+    if (parsed.length >= MAX_DASHBOARD_COMPARE_MONTHS) {
+      break;
+    }
   }
 
-  return getCurrentMonthKey();
+  return parsed.length > 0 ? parsed : [getCurrentMonthKey()];
+}
+
+export function buildAvailableDashboardMonths(options: {
+  currentMonth: DashboardMonthValue;
+  previousMonths: DashboardMonthValue[];
+}): DashboardMonthValue[] {
+  const months = [options.currentMonth, ...options.previousMonths];
+  return [...new Set(months)].filter((month) => month !== "all");
+}
+
+export function formatMonthsLabel(months: DashboardMonthValue[]): string {
+  if (months.length === 0) {
+    return formatMonthLabel(getCurrentMonthKey());
+  }
+
+  if (months.length === 1) {
+    return formatMonthLabel(months[0]);
+  }
+
+  return months.map((month) => formatMonthLabel(month)).join(", ");
 }
 
 export function getMonthDateRange(monthKey: string): { start: string; end: string } {
