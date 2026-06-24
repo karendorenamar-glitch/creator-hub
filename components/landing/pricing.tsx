@@ -120,8 +120,8 @@ const addOns: AddOn[] = [
   {
     icon: Users,
     title: "Additional User",
-    price: "Rp50.000",
-    description: "Add an extra team member to your workspace.",
+    price: "Rp79.000",
+    description: "Add 1 extra team member to your workspace.",
   },
   {
     icon: Calendar,
@@ -132,25 +132,25 @@ const addOns: AddOn[] = [
   {
     icon: UserPlus,
     title: "Additional Creators",
-    price: "Rp99.000",
-    description: "Add 5 creator profiles.",
+    price: "Rp149.000",
+    description: "Add 50 creator profiles.",
   },
   {
     icon: BarChart3,
     title: "Additional Tracked Contents",
-    price: "Rp149.000",
+    price: "Rp169.000",
     description: "Add 100 additional tracked contents.",
   },
   {
     icon: LineChart,
-    title: "Performance Dashboard",
-    price: "Rp150.000",
+    title: "Advanced Performance Dashboard",
+    price: "Rp149.000",
     description: "Unlock advanced performance reporting and analytics.",
   },
   {
     icon: Wallet,
     title: "Payout Tracking",
-    price: "Rp199.000",
+    price: "Rp149.000",
     description: "Manage creator payments and payout reminders.",
   },
 ];
