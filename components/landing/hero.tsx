@@ -110,9 +110,9 @@ export function Hero() {
               <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-kefoo-500/15 blur-3xl" />
 
               <div className="relative">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-kefoo-500/25 bg-kefoo-500/10 px-3 py-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-kefoo-300" />
-                  <span className="text-xs font-medium text-kefoo-200">
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-kefoo-400" />
+                  <span className="text-xs font-medium text-kefoo-400">
                     ✨ Insight Ready
                   </span>
                   <span className="text-xs text-slate-500">·</span>

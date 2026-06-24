@@ -33,7 +33,7 @@ function MetricBlock({
 export function DashboardPreviewCard({ className }: { className?: string }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_8px_40px_-24px_rgba(16,59,140,0.12)] backdrop-blur-sm transition-all duration-500 ease-out hover:-translate-y-0.5 hover:border-kefoo-200 hover:shadow-[0_12px_48px_-20px_rgba(45,103,214,0.18)] ${className ?? ""}`}
+      className={`group relative overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_8px_40px_-24px_rgba(74,74,74,0.12)] backdrop-blur-sm transition-all duration-500 ease-out hover:-translate-y-0.5 hover:border-kefoo-200 hover:shadow-[0_12px_48px_-20px_rgba(74,74,74,0.18)] ${className ?? ""}`}
     >
       <div
         className="pointer-events-none absolute inset-0 bg-gradient-to-br from-kefoo-50/80 via-white to-transparent"
@@ -64,7 +64,7 @@ export function DashboardPreviewCard({ className }: { className?: string }) {
             aria-valuemax={100}
             aria-label="Campaign progress"
           >
-            <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-kefoo-300 via-kefoo-500 to-kefoo-600 shadow-[0_0_12px_rgba(45,103,214,0.35)] transition-all duration-500 group-hover:w-[87%]" />
+            <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-kefoo-300 via-kefoo-500 to-kefoo-600 shadow-[0_0_12px_rgba(74,74,74,0.35)] transition-all duration-500 group-hover:w-[87%]" />
           </div>
         </div>
 

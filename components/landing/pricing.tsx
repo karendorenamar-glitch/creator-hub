@@ -226,7 +226,7 @@ function PricingButton({
           variant === "secondary" &&
             "border border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50",
           variant === "gradient" &&
-            "border border-kefoo-300/40 bg-gradient-to-r from-kefoo-200 via-kefoo-300 to-kefoo-400 text-white shadow-[0_4px_20px_-8px_rgba(45,103,214,0.35)] hover:shadow-[0_8px_28px_-8px_rgba(45,103,214,0.4)]",
+            "border border-kefoo-300/40 bg-gradient-to-r from-kefoo-200 via-kefoo-300 to-kefoo-400 text-white shadow-[0_4px_20px_-8px_rgba(74,74,74,0.35)] hover:shadow-[0_8px_28px_-8px_rgba(74,74,74,0.4)]",
           variant === "dark" &&
             "border border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 hover:bg-white/[0.08]",
         )}
@@ -275,7 +275,7 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
         className={cn(
           "relative flex h-full flex-col rounded-[20px] border bg-white/95 p-6 backdrop-blur-xl transition-shadow duration-300 sm:p-7",
           isHighlighted
-            ? "border-kefoo-400/20 shadow-[0_0_48px_-16px_rgba(45,103,214,0.35)] hover:shadow-[0_0_56px_-12px_rgba(45,103,214,0.42)] lg:scale-[1.02] lg:py-8"
+            ? "border-kefoo-400/20 shadow-[0_0_48px_-16px_rgba(74,74,74,0.35)] hover:shadow-[0_0_56px_-12px_rgba(74,74,74,0.42)] lg:scale-[1.02] lg:py-8"
             : "border-slate-200/80 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] hover:border-white/[0.1] hover:shadow-[0_12px_48px_-20px_rgba(0,0,0,0.55)]",
         )}
       >

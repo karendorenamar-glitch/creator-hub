@@ -3,23 +3,23 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0f172a;
-  --kefoo-primary: #103b8c;
-  --kefoo-accent: #2d67d6;
-  --kefoo-blue-light: #7ba3df;
-  --kefoo-blue: #2d67d6;
-  --kefoo-blue-deep: #103b8c;
+  --foreground: #103b8c;
+  --kefoo-primary: #4a4a4a;
+  --kefoo-accent: #4a4a4a;
+  --kefoo-blue-light: #9a9a9a;
+  --kefoo-blue: #4a4a4a;
+  --kefoo-blue-deep: #4a4a4a;
   --kefoo-gradient: linear-gradient(
     135deg,
-    #dce7f7 0%,
-    #7ba3df 45%,
-    #2d67d6 100%
+    #e8e8e8 0%,
+    #9a9a9a 45%,
+    #4a4a4a 100%
   );
   --kefoo-gradient-soft: linear-gradient(
     135deg,
-    rgba(220, 231, 247, 0.98) 0%,
-    rgba(123, 163, 223, 0.95) 48%,
-    rgba(45, 103, 214, 0.88) 100%
+    rgba(232, 232, 232, 0.98) 0%,
+    rgba(154, 154, 154, 0.95) 48%,
+    rgba(74, 74, 74, 0.92) 100%
   );
   --font-heading: "Satoshi", system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
@@ -38,16 +38,16 @@
   --radius-xl: var(--radius);
   --radius-2xl: var(--radius);
   --radius-3xl: var(--radius);
-  --color-kefoo-50: #eef3fb;
-  --color-kefoo-100: #dce7f7;
-  --color-kefoo-200: #b9cfef;
-  --color-kefoo-300: #7ba3df;
-  --color-kefoo-400: #2d67d6;
-  --color-kefoo-500: #2457b8;
+  --color-kefoo-50: #f4f4f4;
+  --color-kefoo-100: #e8e8e8;
+  --color-kefoo-200: #d1d1d1;
+  --color-kefoo-300: #9a9a9a;
+  --color-kefoo-400: #4a4a4a;
+  --color-kefoo-500: #3f3f3f;
   --color-kefoo-600: #103b8c;
   --color-kefoo-700: #0d3074;
-  --color-kefoo-800: #0a265c;
-  --color-kefoo-900: #081e48;
+  --color-kefoo-800: #2e2e2e;
+  --color-kefoo-900: #222222;
 }
 
 body {
@@ -64,6 +64,7 @@ h5,
 h6,
 .font-heading {
   font-family: var(--font-heading);
+  color: var(--foreground);
 }
 
 * {
@@ -214,13 +215,13 @@ button {
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
-  box-shadow: 0 8px 28px -10px rgba(45, 103, 214, 0.35);
+  box-shadow: 0 8px 28px -10px rgba(74, 74, 74, 0.35);
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .landing-btn-gradient:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 36px -10px rgba(45, 103, 214, 0.42);
+  box-shadow: 0 12px 36px -10px rgba(74, 74, 74, 0.42);
 }
 
 .landing-btn-gradient:disabled {
@@ -234,11 +235,20 @@ button {
 
 .landing-card-hover:hover {
   transform: translateY(-2px);
-  border-color: rgba(45, 103, 214, 0.25);
-  box-shadow: 0 16px 48px -20px rgba(16, 59, 140, 0.14);
+  border-color: rgba(74, 74, 74, 0.25);
+  box-shadow: 0 16px 48px -20px rgba(74, 74, 74, 0.14);
 }
 
 #features,
 #pricing {
   scroll-margin-top: 120px;
+}
+
+@layer utilities {
+  .text-slate-900,
+  .text-slate-800,
+  .text-slate-700,
+  .text-black {
+    color: #103b8c;
+  }
 }

@@ -202,7 +202,7 @@ export function KeffooBrandLockup({
       <div className="flex min-w-0 flex-col justify-center leading-tight">
         <p
           className={cn(
-            "font-bold tracking-[0.2em] text-kefoo-600",
+            "font-bold tracking-[0.2em] text-[#103b8c]",
             config.title,
           )}
         >

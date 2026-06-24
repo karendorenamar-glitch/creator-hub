@@ -111,8 +111,8 @@ export function GradientButton({
     "inline-flex items-center justify-center gap-2 rounded-2xl font-medium text-white transition-shadow",
     KEFOO_BUTTON_GRADIENT,
     size === "lg"
-      ? "px-8 py-4 text-base shadow-[0_8px_32px_-10px_rgba(45,103,214,0.35)] hover:shadow-[0_12px_40px_-10px_rgba(45,103,214,0.42)]"
-      : "px-5 py-2.5 text-sm shadow-[0_6px_24px_-10px_rgba(45,103,214,0.32)] hover:shadow-[0_10px_32px_-10px_rgba(45,103,214,0.38)]",
+      ? "px-8 py-4 text-base shadow-[0_8px_32px_-10px_rgba(74,74,74,0.35)] hover:shadow-[0_12px_40px_-10px_rgba(74,74,74,0.42)]"
+      : "px-5 py-2.5 text-sm shadow-[0_6px_24px_-10px_rgba(74,74,74,0.32)] hover:shadow-[0_10px_32px_-10px_rgba(74,74,74,0.38)]",
     className,
   );
 

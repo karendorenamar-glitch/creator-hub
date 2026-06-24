@@ -245,7 +245,7 @@ export function PlanCheckoutSection({
           Hi {accountName}, please proceed your payment.
         </p>
 
-        <section className="relative overflow-hidden rounded-2xl border border-kefoo-400/20 bg-white p-6 shadow-[0_0_48px_-16px_rgba(45,103,214,0.35)]">
+        <section className="relative overflow-hidden rounded-2xl border border-kefoo-400/20 bg-white p-6 shadow-[0_0_48px_-16px_rgba(74,74,74,0.35)]">
           <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-b from-kefoo-500/[0.07] to-transparent" />
 
           <div className="relative">

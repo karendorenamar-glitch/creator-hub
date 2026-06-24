@@ -30,7 +30,7 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-white font-sans text-slate-900">
+      <body className="min-h-full bg-white font-sans text-foreground">
         {children}
       </body>
     </html>
