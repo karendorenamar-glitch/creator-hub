@@ -13,7 +13,9 @@ export default async function InvitePage({ params }: InvitePageProps) {
   const user = await getAuthUser();
 
   if (!user) {
-    redirect(`/login?next=${encodeURIComponent(`/invite/${token}`)}`);
+    redirect(
+      `/login?signup=1&next=${encodeURIComponent(`/invite/${token}`)}`,
+    );
   }
 
   return (

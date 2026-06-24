@@ -172,6 +172,10 @@ export function TeamSection({ initialContext, currentUserId }: TeamSectionProps)
               <p className="mt-3 break-all rounded-lg bg-white/80 px-3 py-2 text-xs text-amber-950">
                 {inviteBaseUrl}/invite/{invite.token}
               </p>
+              <p className="mt-2 text-xs text-amber-800">
+                Teammates without a Kefoo account should open this link and create
+                an account with <span className="font-medium">{invite.email}</span>.
+              </p>
             </div>
           ))}
         </div>

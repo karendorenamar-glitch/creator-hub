@@ -218,3 +218,67 @@ export async function registerFreeAccount(input: RegisterFreeAccountInput) {
     orgId: orgResult.data.id,
   };
 }
+
+export type RegisterInvitedTeamMemberInput = {
+  email: string;
+  password: string;
+  confirmPassword: string;
+};
+
+function validateInvitedRegisterInput(input: RegisterInvitedTeamMemberInput) {
+  const email = input.email.trim();
+
+  if (!email) {
+    return { error: "Email is required." };
+  }
+
+  if (!isValidEmail(email)) {
+    return { error: "Enter a valid email address." };
+  }
+
+  if (input.password.length < 8) {
+    return { error: "Password must be at least 8 characters." };
+  }
+
+  if (input.password !== input.confirmPassword) {
+    return { error: "Passwords do not match." };
+  }
+
+  return { email, password: input.password };
+}
+
+/** Creates an auth account only — workspace is joined via invite accept. */
+export async function registerInvitedTeamMember(
+  input: RegisterInvitedTeamMemberInput,
+) {
+  const parsed = validateInvitedRegisterInput(input);
+
+  if ("error" in parsed) {
+    return { error: parsed.error };
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.auth.signUp({
+    email: parsed.email,
+    password: parsed.password,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data.user) {
+    return { error: "Could not create your account. Please try again." };
+  }
+
+  if (!data.session) {
+    return {
+      needsEmailConfirmation: true as const,
+      message:
+        "Check your email to confirm your account, then sign in with the same email as your invite.",
+    };
+  }
+
+  return { success: true as const };
+}

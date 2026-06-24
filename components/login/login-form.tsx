@@ -2,10 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
-import { registerFreeAccount } from "@/app/actions/auth";
+import { registerFreeAccount, registerInvitedTeamMember } from "@/app/actions/auth";
 import { resolveAuthSession } from "@/app/actions/org";
 import { KeffooBrandLockup } from "@/components/login/kefoo-logo";
 import { createClient } from "@/lib/supabase/client";
+import { isTeamInvitePath } from "@/lib/team-invite";
 import { cn, getSafeRedirectPath, isValidEmail, isValidPhoneNumber } from "@/lib/utils";
 
 const loginInputClassName =
@@ -37,7 +38,11 @@ export function LoginForm({
   redirectTo?: string;
 }) {
   const router = useRouter();
-  const [mode, setMode] = useState<AuthMode>(initialMode);
+  const inviteRedirect = getSafeRedirectPath(redirectTo);
+  const isInviteFlow = isTeamInvitePath(inviteRedirect);
+  const [mode, setMode] = useState<AuthMode>(
+    isInviteFlow ? "signup" : initialMode,
+  );
   const [workspaceName, setWorkspaceName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -48,8 +53,23 @@ export function LoginForm({
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    setMode(initialMode);
-  }, [initialMode]);
+    setMode(isInviteFlow ? "signup" : initialMode);
+  }, [initialMode, isInviteFlow]);
+
+  function redirectAfterAuth() {
+    if (inviteRedirect) {
+      router.push(inviteRedirect);
+      router.refresh();
+      return;
+    }
+
+    router.push("/campaigns");
+    router.refresh();
+  }
+
+  function isInvalidCredentialsMessage(message: string) {
+    return message.toLowerCase().includes("invalid login credentials");
+  }
 
   function switchMode(nextMode: AuthMode) {
     setMode(nextMode);
@@ -78,8 +98,18 @@ export function LoginForm({
     });
 
     if (signInError) {
-      setError(signInError.message);
+      setError(
+        isInviteFlow && isInvalidCredentialsMessage(signInError.message)
+          ? "No account found for this email. Create an account below using the same email address as your invite."
+          : signInError.message,
+      );
       setLoading(false);
+      return;
+    }
+
+    if (inviteRedirect) {
+      setLoading(false);
+      redirectAfterAuth();
       return;
     }
 
@@ -106,7 +136,49 @@ export function LoginForm({
     router.refresh();
   }
 
+  async function handleInviteSignUp(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const trimmedEmail = email.trim();
+
+    if (!isValidEmail(trimmedEmail)) {
+      setError("Enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+
+    const result = await registerInvitedTeamMember({
+      email: trimmedEmail,
+      password,
+      confirmPassword,
+    });
+
+    if ("error" in result && result.error) {
+      setError(result.error);
+      setLoading(false);
+      return;
+    }
+
+    if ("needsEmailConfirmation" in result && result.needsEmailConfirmation) {
+      setSuccess(result.message);
+      setLoading(false);
+      switchMode("signin");
+      return;
+    }
+
+    if ("success" in result && result.success) {
+      redirectAfterAuth();
+    }
+  }
+
   async function handleSignUp(event: FormEvent<HTMLFormElement>) {
+    if (isInviteFlow) {
+      return handleInviteSignUp(event);
+    }
+
     event.preventDefault();
     setError(null);
     setSuccess(null);
@@ -154,6 +226,9 @@ export function LoginForm({
   }
 
   const isSignUp = mode === "signup";
+  const inviteTitle = isSignUp ? "Create your account" : "Sign in to join";
+  const inviteDescription =
+    "Use the same email address that received the team invite, then accept the invite on the next screen.";
 
   return (
     <div className="flex h-full min-h-0 w-full flex-1 flex-col lg:w-1/2">
@@ -166,9 +241,17 @@ export function LoginForm({
           <div className="rounded-[20px] border border-slate-200/80 bg-white p-5 shadow-[0_8px_40px_-24px_rgba(15,23,42,0.08)] sm:p-6">
             <div className={cn("mb-4 text-center", isSignUp && "mb-3")}>
               <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-                {isSignUp ? "Start free" : "Welcome back 👋"}
+                {isInviteFlow
+                  ? inviteTitle
+                  : isSignUp
+                    ? "Start free"
+                    : "Welcome back 👋"}
               </h2>
-              {!isSignUp ? (
+              {isInviteFlow ? (
+                <p className="mx-auto mt-1.5 max-w-sm text-sm text-slate-600">
+                  {inviteDescription}
+                </p>
+              ) : !isSignUp ? (
                 <p className="mx-auto mt-1.5 max-w-sm text-sm text-slate-600">
                   Sign in to manage creators, campaigns, and video performance.
                 </p>
@@ -177,22 +260,24 @@ export function LoginForm({
 
           {isSignUp ? (
             <form className="space-y-2.5" onSubmit={handleSignUp}>
-              <div>
-                <label htmlFor="signup-workspace" className="sr-only">
-                  Workspace name
-                </label>
-                <input
-                  id="signup-workspace"
-                  type="text"
-                  placeholder="Workspace name (e.g. Acme Agency)"
-                  autoComplete="organization"
-                  value={workspaceName}
-                  onChange={(event) => setWorkspaceName(event.target.value)}
-                  disabled={loading}
-                  required
-                  className={loginInputClassName}
-                />
-              </div>
+              {!isInviteFlow ? (
+                <div>
+                  <label htmlFor="signup-workspace" className="sr-only">
+                    Workspace name
+                  </label>
+                  <input
+                    id="signup-workspace"
+                    type="text"
+                    placeholder="Workspace name (e.g. Acme Agency)"
+                    autoComplete="organization"
+                    value={workspaceName}
+                    onChange={(event) => setWorkspaceName(event.target.value)}
+                    disabled={loading}
+                    required
+                    className={loginInputClassName}
+                  />
+                </div>
+              ) : null}
 
               <div>
                 <label htmlFor="signup-email" className="sr-only">
@@ -211,23 +296,25 @@ export function LoginForm({
                 />
               </div>
 
-              <div>
-                <label htmlFor="signup-phone" className="sr-only">
-                  Phone number
-                </label>
-                <input
-                  id="signup-phone"
-                  type="tel"
-                  inputMode="tel"
-                  placeholder="Phone number"
-                  autoComplete="tel"
-                  value={phoneNumber}
-                  onChange={(event) => setPhoneNumber(event.target.value)}
-                  disabled={loading}
-                  required
-                  className={loginInputClassName}
-                />
-              </div>
+              {!isInviteFlow ? (
+                <div>
+                  <label htmlFor="signup-phone" className="sr-only">
+                    Phone number
+                  </label>
+                  <input
+                    id="signup-phone"
+                    type="tel"
+                    inputMode="tel"
+                    placeholder="Phone number"
+                    autoComplete="tel"
+                    value={phoneNumber}
+                    onChange={(event) => setPhoneNumber(event.target.value)}
+                    disabled={loading}
+                    required
+                    className={loginInputClassName}
+                  />
+                </div>
+              ) : null}
 
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <div>
@@ -270,6 +357,7 @@ export function LoginForm({
               </div>
 
               {error ? <AuthFormError message={error} /> : null}
+              {success ? <AuthFormSuccess message={success} /> : null}
 
               <button
                 type="submit"
@@ -279,7 +367,11 @@ export function LoginForm({
                   "disabled:cursor-not-allowed disabled:opacity-60",
                 )}
               >
-                {loading ? "Creating account..." : "Create free account"}
+                {loading
+                  ? "Creating account..."
+                  : isInviteFlow
+                    ? "Create account & continue"
+                    : "Create free account"}
               </button>
             </form>
           ) : (
@@ -337,7 +429,7 @@ export function LoginForm({
           <p className="mt-4 text-center text-sm text-slate-500">
             {isSignUp ? (
               <>
-                Already have an account?{" "}
+                {isInviteFlow ? "Already joined Kefoo? " : "Already have an account? "}
                 <button
                   type="button"
                   onClick={() => switchMode("signin")}
@@ -348,13 +440,13 @@ export function LoginForm({
               </>
             ) : (
               <>
-                Don&apos;t have an account?{" "}
+                {isInviteFlow ? "Need an account? " : "Don't have an account? "}
                 <button
                   type="button"
                   onClick={() => switchMode("signup")}
                   className="font-medium text-kefoo-600 transition-colors hover:text-kefoo-500"
                 >
-                  Try it for free now
+                  {isInviteFlow ? "Create account" : "Try it for free now"}
                 </button>
               </>
             )}
