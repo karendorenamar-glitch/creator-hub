@@ -317,21 +317,21 @@ export function Features() {
         <div className="grid gap-6 lg:grid-cols-2">
           <FadeIn delay={0.05}>
             <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left">
-              <h3 className="text-lg font-semibold text-slate-900">Campaign Analytics Overview</h3>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                Track campaign performance across all creators in real time.
-              </p>
-              <CampaignAnalyticsVisual />
-            </GlassCard>
-          </FadeIn>
-
-          <FadeIn delay={0.1}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left">
               <h3 className="text-lg font-semibold text-slate-900">Bulk Upload Videos</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Paste TikTok links, pick a campaign, and auto-create creators from @usernames.
               </p>
               <BulkUploadVisual />
+            </GlassCard>
+          </FadeIn>
+
+          <FadeIn delay={0.1}>
+            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left">
+              <h3 className="text-lg font-semibold text-slate-900">Campaign Analytics Overview</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Track campaign performance across all creators in real time.
+              </p>
+              <CampaignAnalyticsVisual />
             </GlassCard>
           </FadeIn>
         </div>

@@ -66,6 +66,25 @@ export function Payouts() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <FadeIn>
+            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:p-8 sm:text-left">
+              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+                Execution Tracker
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Track each creator from brief through upload inside every campaign.
+              </p>
+              <ExecutionTrackerVisual />
+              <Link
+                href="/login"
+                className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
+              >
+                See execution tracker
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </GlassCard>
+          </FadeIn>
+
+          <FadeIn delay={0.08}>
             <GlassCard hover={false} className="h-full overflow-hidden p-6 text-center sm:p-8 sm:text-left">
               <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
                 Payouts & Payments
@@ -140,25 +159,6 @@ export function Payouts() {
                 className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
               >
                 View all payouts
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </GlassCard>
-          </FadeIn>
-
-          <FadeIn delay={0.08}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:p-8 sm:text-left">
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
-                Execution Tracker
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                Track each creator from brief through upload inside every campaign.
-              </p>
-              <ExecutionTrackerVisual />
-              <Link
-                href="/login"
-                className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
-              >
-                See execution tracker
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </GlassCard>
