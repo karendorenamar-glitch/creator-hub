@@ -1,6 +1,4 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { acceptTeamInvite } from "@/app/actions/team";
 import { getAuthUser } from "@/lib/org";
 import { AcceptTeamInviteButton } from "@/components/settings/accept-team-invite-button";
 
@@ -32,10 +30,7 @@ export default async function InvitePage({ params }: InvitePageProps) {
         <AcceptTeamInviteButton token={token} />
 
         <p className="mt-5 text-center text-sm text-slate-500">
-          Signed in as {user.email}.{" "}
-          <Link href="/settings" className="font-medium text-kefoo-600 hover:text-kefoo-500">
-            Go to Settings
-          </Link>
+          Signed in as {user.email ?? "your account"}.
         </p>
       </div>
     </div>

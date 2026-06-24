@@ -310,9 +310,10 @@ export async function cancelTeamInvite(inviteId: string) {
 }
 
 export async function acceptTeamInvite(token: string) {
-  const membership = await getOrgMembershipForAction();
-  if ("error" in membership) {
-    return { error: membership.error };
+  const user = await getAuthUser();
+
+  if (!user) {
+    return { error: "You must be signed in to accept this invite." };
   }
 
   const supabase = await createClient();
