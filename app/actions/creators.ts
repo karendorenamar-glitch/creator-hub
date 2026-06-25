@@ -11,7 +11,6 @@ import { assertCanModifyOwnedResource, getAuthUser, getOrgIdForAction } from "@/
 import { isMissingCreatedByColumnError } from "@/lib/org-plan-schema";
 import {
   CREATOR_ALREADY_EXISTS_ERROR,
-  CREATOR_NAME_EXISTS_ERROR,
   getCreatorDisplayUsername,
   normalizeCreatorContact,
   normalizeCreatorName,
@@ -178,61 +177,55 @@ function isUniqueViolation(message: string, code?: string | null) {
   );
 }
 
-function duplicateCreatorError(contact: string | null) {
-  return contact ? CREATOR_ALREADY_EXISTS_ERROR : CREATOR_NAME_EXISTS_ERROR;
+function duplicateCreatorError() {
+  return CREATOR_ALREADY_EXISTS_ERROR;
 }
 
-async function findDuplicateCreator(
+function creatorHasUsername(
+  creator: {
+    tiktok_username: string | null;
+    instagram_username: string | null;
+    threads_username: string | null;
+  },
+  normalizedUsername: string,
+) {
+  return [
+    creator.tiktok_username,
+    creator.instagram_username,
+    creator.threads_username,
+  ].some(
+    (value) => normalizeCreatorPlatformUsername(value) === normalizedUsername,
+  );
+}
+
+async function findDuplicateCreatorByUsername(
   orgId: string,
-  name: string,
-  contact: string | null,
+  username: string | null,
   excludeId?: string,
 ) {
-  const supabase = await createClient();
+  const normalized = normalizeCreatorPlatformUsername(username);
 
-  if (contact) {
-    let query = supabase
-      .from("creators")
-      .select("id")
-      .eq("org_id", orgId)
-      .eq("name", name)
-      .eq("contact", contact);
-
-    if (excludeId) {
-      query = query.neq("id", excludeId);
-    }
-
-    const { data, error } = await query.maybeSingle();
-
-    if (error) {
-      return { error: error.message };
-    }
-
-    if (data) {
-      return { error: CREATOR_ALREADY_EXISTS_ERROR };
-    }
-
+  if (!normalized) {
     return {};
   }
 
-  let query = supabase
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("creators")
-    .select("id")
-    .eq("org_id", orgId)
-    .eq("name", name);
-
-  if (excludeId) {
-    query = query.neq("id", excludeId);
-  }
-
-  const { data, error } = await query.limit(1);
+    .select("id, tiktok_username, instagram_username, threads_username")
+    .eq("org_id", orgId);
 
   if (error) {
     return { error: error.message };
   }
 
-  if (data?.length) {
-    return { error: CREATOR_NAME_EXISTS_ERROR };
+  const existing = data?.find(
+    (creator) =>
+      creator.id !== excludeId && creatorHasUsername(creator, normalized),
+  );
+
+  if (existing) {
+    return { error: CREATOR_ALREADY_EXISTS_ERROR };
   }
 
   return {};
@@ -519,16 +512,15 @@ export async function findOrCreateCreatorForTikTokUsername(
   const supabase = await createClient();
   const { data: creators, error } = await supabase
     .from("creators")
-    .select("id, tiktok_username")
+    .select("id, tiktok_username, instagram_username, threads_username")
     .eq("org_id", orgResult.orgId);
 
   if (error) {
     return { error: error.message };
   }
 
-  const existing = creators?.find(
-    (creator) =>
-      normalizeCreatorPlatformUsername(creator.tiktok_username) === normalized,
+  const existing = creators?.find((creator) =>
+    creatorHasUsername(creator, normalized),
   );
 
   if (existing) {
@@ -572,10 +564,8 @@ export async function findOrCreateCreatorForTikTokUsername(
 
   if (insertError) {
     if (isUniqueViolation(insertError.message, insertError.code)) {
-      const retry = creators?.find(
-        (creator) =>
-          normalizeCreatorPlatformUsername(creator.tiktok_username) ===
-          normalized,
+      const retry = creators?.find((creator) =>
+        creatorHasUsername(creator, normalized),
       );
 
       if (retry) {
@@ -621,17 +611,15 @@ export async function findOrCreateCreatorForInstagramUsername(
   const supabase = await createClient();
   const { data: creators, error } = await supabase
     .from("creators")
-    .select("id, instagram_username")
+    .select("id, tiktok_username, instagram_username, threads_username")
     .eq("org_id", orgResult.orgId);
 
   if (error) {
     return { error: error.message };
   }
 
-  const existing = creators?.find(
-    (creator) =>
-      normalizeCreatorPlatformUsername(creator.instagram_username) ===
-      normalized,
+  const existing = creators?.find((creator) =>
+    creatorHasUsername(creator, normalized),
   );
 
   if (existing) {
@@ -674,10 +662,8 @@ export async function findOrCreateCreatorForInstagramUsername(
 
   if (insertError) {
     if (isUniqueViolation(insertError.message, insertError.code)) {
-      const retry = creators?.find(
-        (creator) =>
-          normalizeCreatorPlatformUsername(creator.instagram_username) ===
-          normalized,
+      const retry = creators?.find((creator) =>
+        creatorHasUsername(creator, normalized),
       );
 
       if (retry) {
@@ -727,10 +713,9 @@ export async function createCreator(input: CreatorInput) {
     return { error: parsed.error };
   }
 
-  const duplicate = await findDuplicateCreator(
+  const duplicate = await findDuplicateCreatorByUsername(
     orgResult.orgId,
-    parsed.payload.name,
-    parsed.payload.contact,
+    resolveCreatorUsername(input),
   );
 
   if (duplicate.error) {
@@ -752,7 +737,7 @@ export async function createCreator(input: CreatorInput) {
 
   if (insertError) {
     if (isUniqueViolation(insertError.message, insertError.code)) {
-      return { error: duplicateCreatorError(parsed.payload.contact) };
+      return { error: duplicateCreatorError() };
     }
 
     return { error: insertError.message };
@@ -814,10 +799,9 @@ export async function updateCreator(id: string, input: CreatorInput) {
 
   const payload = parsed.payload;
 
-  const duplicate = await findDuplicateCreator(
+  const duplicate = await findDuplicateCreatorByUsername(
     orgResult.orgId,
-    payload.name,
-    payload.contact,
+    resolveCreatorUsername(input),
     id,
   );
 
@@ -845,7 +829,7 @@ export async function updateCreator(id: string, input: CreatorInput) {
 
   if (updateError) {
     if (isUniqueViolation(updateError.message, updateError.code)) {
-      return { error: duplicateCreatorError(payload.contact) };
+      return { error: duplicateCreatorError() };
     }
 
     return { error: updateError.message };

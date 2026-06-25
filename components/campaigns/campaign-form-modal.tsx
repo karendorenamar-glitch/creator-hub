@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createCampaign,
@@ -52,11 +52,13 @@ export function CampaignFormModal({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [loadingRelations, setLoadingRelations] = useState(false);
+  const [focusedCreatorId, setFocusedCreatorId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
 
     setError(null);
+    setFocusedCreatorId(null);
 
     if (!campaign) {
       setForm(emptyForm);
@@ -66,6 +68,15 @@ export function CampaignFormModal({
     setLoadingRelations(true);
     getCampaignRelationIds(campaign.id)
       .then(({ creator_ids, video_ids }) => {
+        const creatorIdSet = new Set(creator_ids);
+
+        for (const videoId of video_ids) {
+          const video = videos.find((item) => item.id === videoId);
+          if (video?.creator_id) {
+            creatorIdSet.add(video.creator_id);
+          }
+        }
+
         setForm({
           name: campaign.name,
           client_name: campaign.client_name,
@@ -73,12 +84,12 @@ export function CampaignFormModal({
           end_date: campaign.end_date,
           budget: Number(campaign.budget),
           status: campaign.status,
-          creator_ids,
+          creator_ids: [...creatorIdSet],
           video_ids,
         });
       })
       .finally(() => setLoadingRelations(false));
-  }, [open, campaign]);
+  }, [open, campaign, videos]);
 
   function handleChange<K extends keyof CampaignInput>(
     field: K,
@@ -87,17 +98,74 @@ export function CampaignFormModal({
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  function toggleId(field: "creator_ids" | "video_ids", id: string) {
-    setForm((current) => {
-      const ids = current[field];
-      return {
+  function toggleCreatorId(creatorId: string) {
+    const isSelected = form.creator_ids.includes(creatorId);
+
+    if (isSelected) {
+      const creatorVideoIds = new Set(
+        videos
+          .filter((video) => video.creator_id === creatorId)
+          .map((video) => video.id),
+      );
+
+      if (focusedCreatorId === creatorId) {
+        setFocusedCreatorId(null);
+      }
+
+      setForm((current) => ({
         ...current,
-        [field]: ids.includes(id)
-          ? ids.filter((value) => value !== id)
-          : [...ids, id],
-      };
-    });
+        creator_ids: current.creator_ids.filter((id) => id !== creatorId),
+        video_ids: current.video_ids.filter((id) => !creatorVideoIds.has(id)),
+      }));
+      return;
+    }
+
+    setFocusedCreatorId(creatorId);
+    setForm((current) => ({
+      ...current,
+      creator_ids: [...current.creator_ids, creatorId],
+    }));
   }
+
+  function focusCreator(creatorId: string) {
+    if (!form.creator_ids.includes(creatorId)) {
+      toggleCreatorId(creatorId);
+      return;
+    }
+
+    setFocusedCreatorId((current) =>
+      current === creatorId ? null : creatorId,
+    );
+  }
+
+  function toggleVideoId(videoId: string) {
+    setForm((current) => ({
+      ...current,
+      video_ids: current.video_ids.includes(videoId)
+        ? current.video_ids.filter((id) => id !== videoId)
+        : [...current.video_ids, videoId],
+    }));
+  }
+
+  const visibleVideos = useMemo(() => {
+    const selectedCreatorIds = new Set(form.creator_ids);
+
+    return videos.filter((video) => {
+      if (!selectedCreatorIds.has(video.creator_id)) {
+        return false;
+      }
+
+      if (focusedCreatorId) {
+        return video.creator_id === focusedCreatorId;
+      }
+
+      return true;
+    });
+  }, [videos, form.creator_ids, focusedCreatorId]);
+
+  const focusedCreatorName = focusedCreatorId
+    ? creators.find((creator) => creator.id === focusedCreatorId)?.name
+    : null;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -231,35 +299,66 @@ export function CampaignFormModal({
             {creators.length === 0 ? (
               <p className="text-sm text-slate-500">No creators available.</p>
             ) : (
-              creators.map((creator) => (
-                <label
+              creators.map((creator) => {
+                const isChecked = form.creator_ids.includes(creator.id);
+                const isFocused = focusedCreatorId === creator.id;
+
+                return (
+                <div
                   key={creator.id}
-                  className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => focusCreator(creator.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      focusCreator(creator.id);
+                    }
+                  }}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 transition-colors hover:bg-slate-50",
+                    isFocused && "bg-kefoo-50 ring-1 ring-inset ring-kefoo-200",
+                  )}
                 >
                   <input
                     type="checkbox"
-                    checked={form.creator_ids.includes(creator.id)}
-                    onChange={() => toggleId("creator_ids", creator.id)}
+                    checked={isChecked}
+                    onChange={() => toggleCreatorId(creator.id)}
+                    onClick={(event) => event.stopPropagation()}
                     className="rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
                   />
                   <span className="text-sm text-slate-700">
                     {creator.name} · {creator.platform}
                   </span>
-                </label>
-              ))
+                </div>
+                );
+              })
             )}
           </div>
         </FormField>
 
         <FormField label="Videos" htmlFor="campaign-videos">
+          <p className="mb-2 text-xs leading-relaxed text-slate-500">
+            {form.creator_ids.length === 0
+              ? "Check a creator to see their videos."
+              : focusedCreatorName
+                ? `Showing videos for ${focusedCreatorName} only.`
+                : `Showing videos from ${form.creator_ids.length} selected creator${form.creator_ids.length === 1 ? "" : "s"}. Click a creator to narrow the list.`}
+          </p>
           <div
             id="campaign-videos"
             className="max-h-40 space-y-2 overflow-y-auto rounded-lg border border-slate-200 p-3"
           >
-            {videos.length === 0 ? (
-              <p className="text-sm text-slate-500">No videos available.</p>
+            {form.creator_ids.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                Select creators above to see their videos.
+              </p>
+            ) : visibleVideos.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                No videos available for the selected creators.
+              </p>
             ) : (
-              videos.map((video) => (
+              visibleVideos.map((video) => (
                 <label
                   key={video.id}
                   className={cn(
@@ -269,7 +368,7 @@ export function CampaignFormModal({
                   <input
                     type="checkbox"
                     checked={form.video_ids.includes(video.id)}
-                    onChange={() => toggleId("video_ids", video.id)}
+                    onChange={() => toggleVideoId(video.id)}
                     className="mt-0.5 rounded border-slate-300 text-kefoo-600 focus:ring-kefoo-500"
                   />
                   <span className="text-sm text-slate-700">

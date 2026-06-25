@@ -2,9 +2,8 @@ import { formatMoney, formatCompactFee, parseCompactFee } from "@/lib/format";
 
 export const MIN_CREATOR_FEE = 0;
 
-export const CREATOR_ALREADY_EXISTS_ERROR = "Creator already exists.";
-export const CREATOR_NAME_EXISTS_ERROR =
-  "A creator with this name already exists. Please add a contact number to differentiate.";
+export const CREATOR_ALREADY_EXISTS_ERROR = "This creator already exists.";
+export const CREATOR_NAME_EXISTS_ERROR = CREATOR_ALREADY_EXISTS_ERROR;
 
 export function normalizeCreatorName(value: string | null | undefined): string {
   return String(value ?? "").trim();
