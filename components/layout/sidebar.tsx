@@ -17,7 +17,7 @@ import { KeffooLogo } from "@/components/login/kefoo-logo";
 import { useLanguage } from "@/components/i18n/language-provider";
 import { usePlan } from "@/components/plan/plan-provider";
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
-import { FEATURE_UPGRADE_MESSAGES } from "@/lib/plan-features";
+import { FEATURE_UPGRADE_MESSAGES, getNavUpgradeCheckoutPlan } from "@/lib/plan-features";
 import { UPGRADE_PLAN_MESSAGE } from "@/lib/plan";
 import type { MessageKey } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
@@ -120,14 +120,6 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const { isNavLocked, openUpgradeModal, hasFeature } = usePlan();
 
   const visibleNavItems = navItems.filter(({ href }) => {
-    if (href === "/dashboard") {
-      return hasFeature("dashboard");
-    }
-
-    if (href === "/payouts") {
-      return hasFeature("payouts");
-    }
-
     if (href === "/planner") {
       return hasFeature("content_planner");
     }
@@ -172,7 +164,10 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
               active={isNavActive(pathname, href)}
               locked={locked}
               onLockedClick={() =>
-                openUpgradeModal(getNavUpgradeMessage(href))
+                openUpgradeModal(
+                  getNavUpgradeMessage(href),
+                  `/checkout/${getNavUpgradeCheckoutPlan(href)}`,
+                )
               }
               onNavigate={onMobileClose}
             />

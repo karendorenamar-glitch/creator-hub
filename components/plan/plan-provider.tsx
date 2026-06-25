@@ -12,6 +12,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { UpgradePlanModal } from "@/components/plan/upgrade-plan-modal";
 import {
   FEATURE_UPGRADE_MESSAGES,
+  getRequiredCheckoutPlan,
   hasPlanFeature,
   isPathAllowedForPlan,
   isNavHrefLocked,
@@ -26,7 +27,7 @@ import {
 import { PlanUsageBanner } from "@/components/plan/plan-usage-banner";
 
 type PlanContextValue = PlanContext & {
-  openUpgradeModal: (description?: string) => void;
+  openUpgradeModal: (description?: string, checkoutHref?: string) => void;
   isNavLocked: (href: string) => boolean;
   isFreePlan: boolean;
   hasFeature: (feature: PlanFeature) => boolean;
@@ -54,12 +55,14 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
   const pathname = usePathname();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeDescription, setUpgradeDescription] = useState(UPGRADE_PLAN_MESSAGE);
+  const [upgradeCheckoutHref, setUpgradeCheckoutHref] = useState("/checkout/growth");
 
   const isFreePlan =
     isFreeTrialPlan(plan.plan) || plan.isTrialExpired;
 
-  const openUpgradeModal = useCallback((description?: string) => {
+  const openUpgradeModal = useCallback((description?: string, checkoutHref?: string) => {
     setUpgradeDescription(description ?? UPGRADE_PLAN_MESSAGE);
+    setUpgradeCheckoutHref(checkoutHref ?? "/checkout/growth");
     setUpgradeOpen(true);
   }, []);
 
@@ -130,6 +133,7 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
         open={upgradeOpen}
         onClose={handleCloseUpgrade}
         description={upgradeDescription}
+        checkoutHref={upgradeCheckoutHref}
       />
     </PlanContext.Provider>
   );
@@ -156,7 +160,10 @@ export function useRequirePlanFeature(feature: PlanFeature) {
   return useCallback(
     (onAllowed: () => void) => {
       if (!hasFeature(feature)) {
-        openUpgradeModal(FEATURE_UPGRADE_MESSAGES[feature]);
+        openUpgradeModal(
+          FEATURE_UPGRADE_MESSAGES[feature],
+          `/checkout/${getRequiredCheckoutPlan(feature)}`,
+        );
         return;
       }
 

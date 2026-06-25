@@ -157,37 +157,39 @@ export default async function SettingsPage() {
               </dl>
             ) : null}
 
-            {plan.isAccessLocked ? (
+            {plan.isFreeTrial ? (
               <div className="mt-4 flex flex-wrap gap-3">
-                {plan.isFreeTrial ? (
-                  <>
-                    <Link
-                      href="/checkout/starter"
-                      className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      Upgrade to Starter
-                    </Link>
-                    <Link
-                      href="/checkout/growth"
-                      className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
-                    >
-                      Upgrade to Growth
-                    </Link>
-                    <Link
-                      href="/checkout/scale"
-                      className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                    >
-                      Upgrade to Scale
-                    </Link>
-                  </>
-                ) : (
-                  <Link
-                    href={`/checkout/${plan.plan}`}
-                    className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
-                  >
-                    Renew subscription
-                  </Link>
-                )}
+                <Link
+                  href="/checkout/starter"
+                  className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Upgrade to Starter
+                </Link>
+                <Link
+                  href="/checkout/growth"
+                  className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
+                >
+                  Upgrade to Growth
+                </Link>
+                <Link
+                  href="/checkout/scale"
+                  className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Upgrade to Scale
+                </Link>
+                <p className="w-full text-xs text-slate-500">
+                  Your campaigns, creators, and videos stay in this workspace after
+                  you upgrade.
+                </p>
+              </div>
+            ) : plan.isAccessLocked ? (
+              <div className="mt-4">
+                <Link
+                  href={`/checkout/${plan.plan}`}
+                  className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
+                >
+                  Renew subscription
+                </Link>
               </div>
             ) : null}
 

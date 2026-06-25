@@ -57,6 +57,18 @@ export function getRequiredCheckoutPlan(feature: PlanFeature): CheckoutPlan {
   return FEATURE_MIN_PLAN[feature] as CheckoutPlan;
 }
 
+export function getNavUpgradeCheckoutPlan(href: string): CheckoutPlan {
+  if (href === "/payouts" || href === "/planner") {
+    return "scale";
+  }
+
+  if (href === "/dashboard") {
+    return "growth";
+  }
+
+  return "growth";
+}
+
 export function getDashboardTier(plan: OrgPlan): DashboardTier {
   if (!hasPlanFeature(plan, "dashboard")) {
     return "none";

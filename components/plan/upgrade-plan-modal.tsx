@@ -9,6 +9,7 @@ type UpgradePlanModalProps = {
   onClose: () => void;
   title?: string;
   description?: string;
+  checkoutHref?: string;
 };
 
 export function UpgradePlanModal({
@@ -16,6 +17,7 @@ export function UpgradePlanModal({
   onClose,
   title = "Upgrade your plan",
   description = UPGRADE_PLAN_MESSAGE,
+  checkoutHref = "/checkout/growth",
 }: UpgradePlanModalProps) {
   return (
     <Modal open={open} onClose={onClose} title={title} description={description}>
@@ -33,7 +35,7 @@ export function UpgradePlanModal({
             Keep exploring
           </button>
           <Link
-            href="/checkout/growth"
+            href={checkoutHref}
             onClick={onClose}
             className="inline-flex items-center justify-center rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
           >
