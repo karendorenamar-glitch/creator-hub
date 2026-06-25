@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil, Trash2 } from "lucide-react";
-import { formatNumber } from "@/lib/utils";
+import { formatLastUpdatedAgo, formatNumber } from "@/lib/utils";
 import { canModifyOwnedResource } from "@/lib/org-team";
 import type { OrgMemberRole, VideoWithCreator } from "@/types/database";
 import {
@@ -76,6 +76,9 @@ export function VideosTable({
                   >
                     {video.video_url}
                   </a>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {formatLastUpdatedAgo(video.created_at)}
+                  </p>
                 </DataTableCell>
                 <DataTableCell>
                   <div>

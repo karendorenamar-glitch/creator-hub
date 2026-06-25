@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import type { Campaign, CampaignStatus, Creator, VideoWithCreator } from "@/types/database";
-import { cn } from "@/lib/utils";
+import { cn, formatUploadedAgo } from "@/lib/utils";
 
 type CampaignFormModalProps = {
   open: boolean;
@@ -150,17 +150,22 @@ export function CampaignFormModal({
   const visibleVideos = useMemo(() => {
     const selectedCreatorIds = new Set(form.creator_ids);
 
-    return videos.filter((video) => {
-      if (!selectedCreatorIds.has(video.creator_id)) {
-        return false;
-      }
+    return videos
+      .filter((video) => {
+        if (!selectedCreatorIds.has(video.creator_id)) {
+          return false;
+        }
 
-      if (focusedCreatorId) {
-        return video.creator_id === focusedCreatorId;
-      }
+        if (focusedCreatorId) {
+          return video.creator_id === focusedCreatorId;
+        }
 
-      return true;
-    });
+        return true;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
   }, [videos, form.creator_ids, focusedCreatorId]);
 
   const focusedCreatorName = focusedCreatorId
@@ -374,7 +379,7 @@ export function CampaignFormModal({
                   <span className="text-sm text-slate-700">
                     <span className="block truncate">{video.video_url}</span>
                     <span className="text-xs text-slate-500">
-                      {video.creators?.name ?? "Unknown"} ·{" "}
+                      {formatUploadedAgo(video.created_at)} ·{" "}
                       {video.views.toLocaleString()} views
                     </span>
                   </span>

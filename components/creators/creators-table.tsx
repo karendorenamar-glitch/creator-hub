@@ -5,6 +5,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import {
   formatCreatorDisplayName,
   formatCreatorListUsername,
+  formatLastUpdatedAgo,
   formatOptionalIDR,
   formatOptionalNumber,
 } from "@/lib/utils";
@@ -83,6 +84,9 @@ export function CreatorsTable({
                 >
                   {formatCreatorListUsername(creator)}
                 </Link>
+                <p className="mt-0.5 text-xs font-normal text-slate-500">
+                  {formatLastUpdatedAgo(creator.created_at)}
+                </p>
               </DataTableCell>
               <DataTableCell className="text-slate-700">
                 <Link
