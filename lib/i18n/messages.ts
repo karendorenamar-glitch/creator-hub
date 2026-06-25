@@ -20,46 +20,49 @@ const en = {
   "language.id": "Bahasa",
   "pages.creators.title": "Creators",
   "pages.creators.description":
-    "Manage creator profiles, fees, and campaign assignments.",
-  "pages.creators.descriptionShort": "Manage and search your creator roster.",
+    "Your creator roster — profiles, fees, and campaign assignments in one place.",
+  "pages.creators.descriptionShort":
+    "Search your roster and keep creator details up to date.",
   "pages.creatorDetails.title": "Creator Details",
   "pages.creatorDetails.description":
-    "Review creator performance, videos, and campaign participation.",
+    "Performance, linked videos, and campaign history for this creator.",
   "pages.videos.title": "Videos",
   "pages.videos.description":
-    "Track video performance and link content to campaigns.",
+    "Paste a link, pull metrics automatically, and tie content to campaigns.",
   "pages.videos.descriptionShort":
-    "Track views, likes, comments, shares, and saves across all content.",
+    "Live views, engagement, saves, and shares across every linked video.",
   "pages.videos.hacks":
-    "Creators are added automatically when you paste a TikTok or Instagram video link.",
-  "pages.videos.hacksLabel": "Hacks!",
+    "Paste a TikTok or Instagram link — we'll detect the creator and add them to your roster automatically.",
+  "pages.videos.hacksLabel": "Quick tip",
   "pages.videos.bulkUploadWarning":
-    "Create a campaign first to use Bulk Upload. Bulk upload links videos and creators to the campaign you select.",
+    "Create a campaign first, then bulk upload links. We'll attach each video and creator to the campaign you pick.",
   "pages.videos.addVideo": "Add Video",
   "pages.videos.editVideo": "Edit Video",
   "pages.videos.addVideoDescription":
-    "HOW TO USE IT : Paste a TikTok link -> CLICK Import Metrics -> we'll give you all the details automatically!",
+    "Paste a TikTok URL, hit Import Metrics, and we'll fill in the stats for you.",
   "pages.videos.addInstagramDescription":
-    "HOW TO USE IT : Paste an Instagram link -> CLICK Import Metrics -> we'll give you all the details automatically!",
-  "pages.videos.editVideoDescription": "Update video metrics and save changes.",
+    "Paste an Instagram URL, hit Import Metrics, and we'll fill in the stats for you.",
+  "pages.videos.editVideoDescription":
+    "Update metrics manually or re-import from the link.",
   "pages.videos.bulkUpload": "Bulk Upload",
   "pages.campaigns.title": "Campaigns",
   "pages.campaigns.description":
-    "Plan, track, and measure your creator campaigns.",
+    "Plan campaigns, link content, and see what's working.",
   "pages.campaigns.descriptionShort":
-    "Manage brand campaigns and track linked content and creators.",
+    "Organize brand partnerships with linked creators and content.",
   "pages.campaignDetails.title": "Campaign Details",
   "pages.campaignDetails.description":
-    "Executive performance summary for this campaign.",
+    "Live performance summary for this campaign.",
   "pages.dashboard.title": "Dashboard",
   "pages.payouts.title": "Payouts",
   "pages.payouts.description":
-    "Track creator payment deadlines with automatic due dates and status badges.",
+    "Track payment deadlines with auto-calculated due dates and status at a glance.",
   "pages.settings.title": "Settings",
-  "pages.settings.description": "Account and workspace preferences.",
+  "pages.settings.description": "Workspace settings and account preferences.",
   "pages.settings.signOutDescription": "Sign out of Kefoo on this device.",
   "dashboard.activeCampaigns": "Active & Completed Campaigns",
-  "dashboard.activeCampaignsOnly": "Showing active and completed campaigns only.",
+  "dashboard.activeCampaignsOnly":
+    "Includes active and completed campaigns — drafts and archived aren't shown here.",
   "dashboard.totalBudget": "Total Budget",
   "dashboard.totalViews": "Total Views",
   "dashboard.totalViewsSubtitle": "Across campaign videos",
@@ -68,19 +71,19 @@ const en = {
     "(likes + comments + shares + saves) / views",
   "dashboard.cpv": "CPV",
   "dashboard.cpvSubtitle": "Budget divided by views",
-  "dashboard.campaignOverview": "Campaign Overview",
-  "dashboard.performanceComparison": "Performance Comparison",
+  "dashboard.campaignOverview": "Campaign overview",
+  "dashboard.performanceComparison": "Performance comparison",
   "dashboard.performanceComparisonDescription":
-    "Compare campaigns within each selected month.",
+    "Compare campaigns month over month within your selected filters.",
   "dashboard.refreshVideos": "Refresh videos",
   "dashboard.refreshingVideos": "Refreshing...",
-  "dashboard.advancedUpgradeTitle": "Advanced Performance Dashboard",
+  "dashboard.advancedUpgradeTitle": "Advanced performance dashboard",
   "dashboard.advancedUpgradeDescription":
-    "Compare creators, surface key insights, and track monthly trends with Growth.",
+    "Unlock creator comparisons, live insights, and monthly trends with Growth.",
   "campaign.refreshVideos": "Refresh videos",
   "common.upgradePlan": "Upgrade plan",
   "trial.expired":
-    "Free trial ended{date}. Upgrade your plan to keep using campaigns, creators, and videos.",
+    "Your free trial has ended{date}. Upgrade to keep campaigns, creators, and videos in sync.",
   "trial.expiredDate": " on {date}",
 } as const;
 
@@ -104,48 +107,49 @@ const id: Record<keyof typeof en, string> = {
   "language.id": "Bahasa",
   "pages.creators.title": "Kreator",
   "pages.creators.description":
-    "Kelola profil kreator, fee, dan penugasan campaign.",
+    "Daftar kreator kamu — profil, fee, dan penugasan campaign dalam satu tempat.",
   "pages.creators.descriptionShort":
-    "Kelola dan cari daftar kreator kamu.",
+    "Cari di roster dan jaga detail kreator tetap up to date.",
   "pages.creatorDetails.title": "Detail Kreator",
   "pages.creatorDetails.description":
-    "Lihat performa kreator, video, dan partisipasi campaign.",
+    "Performa, video terhubung, dan riwayat campaign untuk kreator ini.",
   "pages.videos.title": "Video",
   "pages.videos.description":
-    "Pantau performa video dan hubungkan konten ke campaign.",
+    "Paste link, ambil metrik otomatis, dan hubungkan konten ke campaign.",
   "pages.videos.descriptionShort":
-    "Pantau views, likes, comments, shares, dan saves dari semua konten.",
+    "Views, engagement, saves, dan shares live dari setiap video terhubung.",
   "pages.videos.hacks":
-    "Kreator otomatis ditambahkan saat kamu paste link TikTok atau Instagram.",
-  "pages.videos.hacksLabel": "Hacks!",
+    "Paste link TikTok atau Instagram — kami deteksi kreatornya dan tambahkan ke roster kamu otomatis.",
+  "pages.videos.hacksLabel": "Tips cepat",
   "pages.videos.bulkUploadWarning":
-    "Buat campaign dulu untuk Bulk Upload. Bulk upload menghubungkan video dan kreator ke campaign yang kamu pilih.",
+    "Buat campaign dulu, lalu bulk upload link. Kami hubungkan setiap video dan kreator ke campaign yang kamu pilih.",
   "pages.videos.addVideo": "Tambah Video",
   "pages.videos.editVideo": "Edit Video",
   "pages.videos.addVideoDescription":
-    "CARA PAKAI : Paste link TikTok -> KLIK Import Metrics -> semua detail otomatis muncul!",
+    "Paste URL TikTok, klik Import Metrics, dan kami isi statistiknya untuk kamu.",
   "pages.videos.addInstagramDescription":
-    "CARA PAKAI : Paste link Instagram -> KLIK Import Metrics -> semua detail otomatis muncul!",
+    "Paste URL Instagram, klik Import Metrics, dan kami isi statistiknya untuk kamu.",
   "pages.videos.editVideoDescription":
-    "Perbarui metrik video dan simpan perubahan.",
+    "Perbarui metrik manual atau import ulang dari link.",
   "pages.videos.bulkUpload": "Bulk Upload",
   "pages.campaigns.title": "Campaign",
   "pages.campaigns.description":
-    "Rencanakan, lacak, dan ukur campaign kreator kamu.",
+    "Rencanakan campaign, hubungkan konten, dan lihat apa yang works.",
   "pages.campaigns.descriptionShort":
-    "Kelola campaign brand dan lacak konten serta kreator yang terhubung.",
+    "Organisir brand partnership dengan kreator dan konten terhubung.",
   "pages.campaignDetails.title": "Detail Campaign",
   "pages.campaignDetails.description":
-    "Ringkasan performa eksekutif untuk campaign ini.",
+    "Ringkasan performa live untuk campaign ini.",
   "pages.dashboard.title": "Dashboard",
   "pages.payouts.title": "Pembayaran",
   "pages.payouts.description":
-    "Lacak deadline pembayaran kreator dengan due date otomatis dan status badge.",
+    "Lacak deadline pembayaran dengan due date otomatis dan status sekilas pandang.",
   "pages.settings.title": "Pengaturan",
-  "pages.settings.description": "Preferensi akun dan workspace.",
+  "pages.settings.description": "Pengaturan workspace dan preferensi akun.",
   "pages.settings.signOutDescription": "Keluar dari Kefoo di perangkat ini.",
   "dashboard.activeCampaigns": "Campaign Aktif & Selesai",
-  "dashboard.activeCampaignsOnly": "Hanya menampilkan campaign aktif dan selesai.",
+  "dashboard.activeCampaignsOnly":
+    "Termasuk campaign aktif dan selesai — draft dan arsip tidak ditampilkan di sini.",
   "dashboard.totalBudget": "Total Budget",
   "dashboard.totalViews": "Total Views",
   "dashboard.totalViewsSubtitle": "Dari video campaign",
@@ -154,19 +158,19 @@ const id: Record<keyof typeof en, string> = {
     "(likes + comments + shares + saves) / views",
   "dashboard.cpv": "CPV",
   "dashboard.cpvSubtitle": "Budget dibagi views",
-  "dashboard.campaignOverview": "Ringkasan Campaign",
-  "dashboard.performanceComparison": "Perbandingan Performa",
+  "dashboard.campaignOverview": "Ringkasan campaign",
+  "dashboard.performanceComparison": "Perbandingan performa",
   "dashboard.performanceComparisonDescription":
-    "Bandingkan campaign di setiap bulan yang dipilih.",
+    "Bandingkan campaign bulan ke bulan sesuai filter yang kamu pilih.",
   "dashboard.refreshVideos": "Refresh video",
   "dashboard.refreshingVideos": "Sedang refresh...",
-  "dashboard.advancedUpgradeTitle": "Dashboard Performa Lanjutan",
+  "dashboard.advancedUpgradeTitle": "Dashboard performa lanjutan",
   "dashboard.advancedUpgradeDescription":
-    "Bandingkan kreator, lihat insight utama, dan lacak tren bulanan dengan Growth.",
+    "Buka perbandingan kreator, insight live, dan tren bulanan dengan Growth.",
   "campaign.refreshVideos": "Refresh video",
   "common.upgradePlan": "Upgrade plan",
   "trial.expired":
-    "Free trial berakhir{date}. Upgrade plan kamu untuk terus pakai campaign, kreator, dan video.",
+    "Free trial kamu sudah berakhir{date}. Upgrade untuk terus sinkronkan campaign, kreator, dan video.",
   "trial.expiredDate": " pada {date}",
 };
 

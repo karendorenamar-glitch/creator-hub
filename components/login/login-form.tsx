@@ -245,15 +245,15 @@ export function LoginForm({
                   ? inviteTitle
                   : isSignUp
                     ? "Start free"
-                    : "Welcome back 👋"}
+                    : "Welcome back"}
               </h2>
               {isInviteFlow ? (
                 <p className="mx-auto mt-1.5 max-w-sm text-sm text-slate-600">
                   {inviteDescription}
                 </p>
               ) : !isSignUp ? (
-                <p className="mx-auto mt-1.5 max-w-sm text-sm text-slate-600">
-                  Sign in to manage creators, campaigns, and video performance.
+                <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-slate-600">
+                  Sign in to pick up where you left off — creators, campaigns, and live metrics.
                 </p>
               ) : null}
             </div>

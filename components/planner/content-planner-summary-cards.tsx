@@ -28,10 +28,10 @@ export function ContentPlannerSummaryCards({
 
   return (
     <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <SummaryCard title="💡 Idea Bank" value={counts.ideaBank} />
-      <SummaryCard title="✍️ In Progress" value={counts.inProgress} />
-      <SummaryCard title="📅 Scheduled" value={counts.scheduled} />
-      <SummaryCard title="📤 Posted" value={counts.posted} />
+      <SummaryCard title="Idea bank" value={counts.ideaBank} />
+      <SummaryCard title="In progress" value={counts.inProgress} />
+      <SummaryCard title="Scheduled" value={counts.scheduled} />
+      <SummaryCard title="Posted" value={counts.posted} />
     </div>
   );
 }

@@ -16,23 +16,25 @@ export function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/85 backdrop-blur-xl"
+      className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/85 shadow-[0_8px_32px_-24px_rgba(15,23,42,0.12)] backdrop-blur-xl"
     >
       <div className={`${CONTAINER_CLASS} flex h-16 items-center justify-between gap-6`}>
         <Link href="/" className="shrink-0">
           <KeffooBrandLockup size="sm" />
         </Link>
 
-        <nav className="hidden flex-1 items-center justify-center gap-8 md:flex">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-sm text-slate-600 transition-colors hover:text-kefoo-600"
-            >
-              {link.label}
-            </Link>
-          ))}
+        <nav className="hidden flex-1 items-center justify-center md:flex">
+          <div className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/70 p-1 shadow-sm">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="rounded-full px-4 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-kefoo-600"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
         </nav>
 
         <div className="flex shrink-0 justify-end">

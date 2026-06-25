@@ -45,8 +45,8 @@ export function CreatorsTable({
     return (
       <DataTable>
         <EmptyState
-          title="No creators found"
-          description="Try a different search or add your first creator."
+          title="No creators match"
+          description="Try a different search, or paste a video link to add someone automatically."
         />
       </DataTable>
     );

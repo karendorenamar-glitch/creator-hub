@@ -275,7 +275,7 @@ function PricingCard({ plan, index }: { plan: PricingPlan; index: number }) {
         className={cn(
           "relative flex h-full flex-col rounded-[20px] border bg-white/95 p-6 backdrop-blur-xl transition-shadow duration-300 sm:p-7",
           isHighlighted
-            ? "border-kefoo-400/20 shadow-[0_0_48px_-16px_rgba(74,74,74,0.35)] hover:shadow-[0_0_56px_-12px_rgba(74,74,74,0.42)] lg:scale-[1.02] lg:py-8"
+            ? "landing-card-frame border-kefoo-400/20 shadow-[0_0_48px_-16px_rgba(74,74,74,0.35)] hover:shadow-[0_0_56px_-12px_rgba(74,74,74,0.42)] lg:scale-[1.02] lg:py-8"
             : "border-slate-200/80 shadow-[0_8px_40px_-24px_rgba(0,0,0,0.5)] hover:border-white/[0.1] hover:shadow-[0_12px_48px_-20px_rgba(0,0,0,0.55)]",
         )}
       >
@@ -476,11 +476,18 @@ function ComparisonTable() {
 export function Pricing() {
   return (
     <section id="pricing" className="relative py-28">
+      <div className="landing-section-muted pointer-events-none absolute inset-0 -z-10" />
+      <div className="pointer-events-none absolute left-1/2 top-16 h-72 w-72 -translate-x-1/2 rounded-full border border-slate-200/25" />
       <div className={CONTAINER_CLASS}>
         <FadeIn>
           <div className="mx-auto mb-16 max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Simple pricing for creator campaign teams
+            <div className="mb-5 flex items-center justify-center gap-3">
+              <span className="hidden h-px w-12 bg-gradient-to-r from-transparent to-slate-200 sm:block" />
+              <span className="h-1.5 w-1.5 rounded-full bg-kefoo-400/60" />
+              <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
+            </div>
+            <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+              Simple pricing for KOL Campaign teams
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-500 sm:text-lg">
               Track creators, analyze campaign performance, and manage influencer

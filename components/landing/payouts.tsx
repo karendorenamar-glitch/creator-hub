@@ -51,11 +51,17 @@ const summaryItems = [
 
 export function Payouts() {
   return (
-    <section className="py-28">
+    <section className="relative py-28">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200/80 to-transparent" />
       <div className={CONTAINER_CLASS}>
         <FadeIn>
           <div className="mx-auto mb-12 max-w-3xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            <div className="mb-5 flex items-center justify-center gap-3">
+              <span className="hidden h-px w-12 bg-gradient-to-r from-transparent to-slate-200 sm:block" />
+              <span className="h-1.5 w-1.5 rounded-full bg-kefoo-400/60" />
+              <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
+            </div>
+            <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
               Track execution and pay creators with confidence
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
@@ -64,9 +70,10 @@ export function Payouts() {
           </div>
         </FadeIn>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           <FadeIn>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:p-8 sm:text-left">
+            <GlassCard frame className="relative flex h-full min-h-[480px] flex-col overflow-hidden p-6 text-center sm:p-8 sm:text-left lg:translate-y-3">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-kefoo-500/10 via-kefoo-400/25 to-kefoo-500/10" />
               <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
                 Execution Tracker
               </h2>
@@ -85,7 +92,12 @@ export function Payouts() {
           </FadeIn>
 
           <FadeIn delay={0.08}>
-            <GlassCard hover={false} className="h-full overflow-hidden p-6 text-center sm:p-8 sm:text-left">
+            <GlassCard
+              hover={false}
+              frame
+              className="relative h-full overflow-hidden p-6 text-center sm:p-8 sm:text-left lg:-translate-y-3"
+            >
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-200 via-kefoo-500/15 to-slate-200" />
               <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
                 Payouts & Payments
               </h2>
@@ -93,7 +105,7 @@ export function Payouts() {
                 Track payments, due dates, and invoice status in one place.
               </p>
 
-              <div className="mt-8">
+              <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200/70 bg-slate-50/40 px-4 sm:px-5">
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-slate-200/70 text-[10px] font-medium uppercase tracking-wider text-slate-500">

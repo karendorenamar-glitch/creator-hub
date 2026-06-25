@@ -30,13 +30,13 @@ export function Header({ title, description, titleAddon, actions }: HeaderProps)
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+              <h1 className="font-heading text-2xl font-semibold tracking-tight text-slate-900">
                 {title}
               </h1>
               {titleAddon}
             </div>
             {description && (
-              <p className="mt-1 text-sm text-slate-500">{description}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-500">{description}</p>
             )}
           </div>
         </div>

@@ -195,19 +195,19 @@ export function formatCalendarCreatorLine(
   }
 
   if (names.length === 1) {
-    return `👤 ${names[0]}`;
+    return names[0];
   }
 
   if (names.length === 2) {
-    return `👥 ${names[0]} + ${names[1]}`;
+    return `${names[0]} + ${names[1]}`;
   }
 
-  return `👥 ${names.slice(0, 2).join(" + ")} + ${names.length - 2} more`;
+  return `${names.slice(0, 2).join(" + ")} + ${names.length - 2} more`;
 }
 
 export function formatCalendarItemTitle(contentIdea: string) {
   const trimmed = contentIdea.trim();
-  return trimmed ? `💡 ${trimmed}` : "💡 Untitled content";
+  return trimmed || "Untitled content";
 }
 
 export function toDateKey(year: number, month: number, day: number) {

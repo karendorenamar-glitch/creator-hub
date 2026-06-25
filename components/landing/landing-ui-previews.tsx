@@ -65,18 +65,18 @@ const plannerColumns = [
 export function WhatKefooDoesSection() {
   const cards = [
     {
-      title: "Creator Performance Intelligence",
-      description: "Identify top-performing creators automatically",
+      title: "Top creators, ranked",
+      description: "See who's delivering views, saves, and cost efficiency",
       icon: Users,
     },
     {
-      title: "Campaign Comparison System",
-      description: "Compare performance across campaigns & time periods",
+      title: "Campaign benchmarks",
+      description: "Compare results across campaigns and time periods",
       icon: LineChart,
     },
     {
-      title: "Cost Efficiency Insights",
-      description: "Understand which creators give best value per result",
+      title: "CPV & efficiency",
+      description: "Find the creators who stretch your budget furthest",
       icon: TrendingUp,
     },
   ];

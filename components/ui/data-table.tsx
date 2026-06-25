@@ -116,14 +116,23 @@ export function DataTableCell({
 export function EmptyState({
   title,
   description,
+  hint,
 }: {
   title: string;
   description: string;
+  hint?: string;
 }) {
   return (
     <div className="px-6 py-16 text-center">
-      <p className="text-sm font-medium text-slate-900">{title}</p>
-      <p className="mt-1 text-sm text-slate-500">{description}</p>
+      <p className="font-heading text-base font-semibold tracking-tight text-slate-900">
+        {title}
+      </p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-500">
+        {description}
+      </p>
+      {hint ? (
+        <p className="mt-3 font-mono text-xs text-slate-400">{hint}</p>
+      ) : null}
     </div>
   );
 }

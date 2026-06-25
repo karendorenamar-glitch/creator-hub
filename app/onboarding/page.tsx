@@ -30,11 +30,11 @@ export default async function OnboardingPage() {
           <KeffooWordmark className="text-[10px] tracking-[0.28em] text-slate-500" />
         </div>
 
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <h1 className="font-heading text-2xl font-bold tracking-tight text-slate-900">
           Set up your workspace
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Create an organization to start managing campaigns in Kefoo.
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          Name your organization and start linking creators and campaigns.
         </p>
 
         <div className="mt-6">

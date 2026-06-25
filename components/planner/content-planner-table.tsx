@@ -96,8 +96,8 @@ export function ContentPlannerTable({
     return (
       <DataTable>
         <EmptyState
-          title="No content planned yet."
-          description="Create your first content idea."
+          title="Content planner is empty"
+          description="Add your first idea to map pillars, creators, and publish dates."
         />
       </DataTable>
     );

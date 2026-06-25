@@ -145,7 +145,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900">KEFOO</p>
-          <p className="text-xs text-slate-500">Creator Campaign OS</p>
+          <p className="text-xs text-slate-500">Your campaign command center</p>
         </div>
         {onMobileClose && (
           <button

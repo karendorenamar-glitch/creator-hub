@@ -1,8 +1,9 @@
 "use client";
 
 import { ArrowRight, Sparkles, Zap, BarChart3, Target } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
+  AppWindowChrome,
   CONTAINER_CLASS,
   FadeIn,
   GlassCard,
@@ -17,18 +18,18 @@ import { cn } from "@/lib/utils";
 const benefits = [
   {
     icon: Zap,
-    title: "No manual work",
-    subtitle: "Everything automated",
+    title: "Paste a link",
+    subtitle: "Metrics import automatically",
   },
   {
     icon: BarChart3,
-    title: "Real-time insights",
-    subtitle: "Data in seconds",
+    title: "Live insights",
+    subtitle: "Data in seconds, not hours",
   },
   {
     icon: Target,
-    title: "Decision ready",
-    subtitle: "Actionable intelligence",
+    title: "Clear next steps",
+    subtitle: "Know who to rebook and why",
   },
 ];
 
@@ -43,26 +44,30 @@ const secondaryMetrics = [
   { label: "Engagement Rate", value: "11.4%", note: "Above average" },
   { label: "CPV", value: "Rp 3.87", note: "Low cost" },
   { label: "Saves Rate", value: "1.43%", note: "High intent" },
-  { label: "Performance", value: "🔥 Excellent", note: "Top performer" },
+  { label: "Performance", value: "Excellent", note: "Top performer" },
 ];
 
 export function Hero() {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <section className="relative pt-32 pb-28 sm:pt-36">
+    <section className="relative overflow-hidden pt-32 pb-28 sm:pt-36">
+      <div className="pointer-events-none absolute inset-0 landing-dot-grid opacity-40" />
+
       <div className={CONTAINER_CLASS}>
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          <div className="mx-auto w-full max-w-2xl text-center lg:mx-0 lg:max-w-none lg:text-left">
+          <div className="relative mx-auto w-full max-w-2xl text-center lg:mx-0 lg:max-w-none lg:text-left">
             <FadeIn>
-              <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
-                KOL Campaign Tracking and{" "}
-                <GradientText>Analytics</GradientText>
+              <h1 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
+                KOL Campaign tracking, powered by{" "}
+                <GradientText>live data</GradientText>
               </h1>
             </FadeIn>
 
             <FadeIn delay={0.1}>
               <p className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base lg:mx-0">
-                Bulk upload creator URLs and instantly track performance, campaign
-                results and reporting
+                Drop in video links. Kefoo pulls the metrics, maps creators, and
+                keeps your campaigns in one live workspace.
               </p>
             </FadeIn>
 
@@ -80,18 +85,20 @@ export function Hero() {
             </FadeIn>
 
             <FadeIn delay={0.2}>
-              <div className="mt-8 grid justify-items-center gap-4 sm:grid-cols-3 lg:justify-items-start">
+              <div className="mt-8 grid justify-items-stretch gap-3 sm:grid-cols-3">
                 {benefits.map((item) => (
                   <div
                     key={item.title}
-                    className="flex max-w-[12rem] items-start gap-3 sm:max-w-none"
+                    className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-3 text-left shadow-[0_8px_30px_-22px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-transform duration-300 hover:-translate-y-0.5"
                   >
-                    <div className="mt-0.5 rounded-xl bg-gradient-to-br from-kefoo-500/15 to-kefoo-500/15 p-2">
-                      <item.icon className="h-4 w-4 text-kefoo-300" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                      <p className="text-xs text-slate-500">{item.subtitle}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 rounded-xl bg-gradient-to-br from-kefoo-500/15 to-kefoo-500/15 p-2">
+                        <item.icon className="h-4 w-4 text-kefoo-300" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                        <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.subtitle}</p>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -104,19 +111,32 @@ export function Hero() {
             animate="visible"
             variants={fadeUpVariants}
             transition={{ delay: 0.25, duration: 0.7 }}
+            className="relative mx-auto w-full max-w-xl lg:max-w-none"
           >
-            <GlassCard glow className="relative overflow-hidden p-6 sm:p-8">
-              <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-kefoo-500/20 blur-3xl" />
-              <div className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-kefoo-500/15 blur-3xl" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200/40" />
+            <div className="pointer-events-none absolute left-1/2 top-1/2 -z-10 h-52 w-52 -translate-x-1/2 -translate-y-1/2 rounded-full border border-slate-200/25" />
 
-              <div className="relative">
+            <motion.div
+              animate={reduceMotion ? undefined : { y: [0, -10, 0] }}
+              transition={{
+                duration: 7,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="relative w-full"
+            >
+              <GlassCard glow hover={false} className="relative overflow-hidden p-6 sm:p-8">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(74,74,74,0.08)_0%,transparent_68%)]" />
+
+                <div className="relative">
+                <AppWindowChrome />
                 <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-100 px-3 py-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-kefoo-400" />
                   <span className="text-xs font-medium text-kefoo-400">
-                    ✨ Insight Ready
+                    Insight ready
                   </span>
                   <span className="text-xs text-slate-500">·</span>
-                  <span className="text-xs text-slate-600">Data pulled automatically</span>
+                  <span className="text-xs text-slate-600">Metrics synced from link</span>
                 </div>
 
                 <div className="mb-6 flex items-center gap-3">
@@ -163,8 +183,9 @@ export function Hero() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </GlassCard>
+                </div>
+              </GlassCard>
+            </motion.div>
           </motion.div>
         </div>
       </div>

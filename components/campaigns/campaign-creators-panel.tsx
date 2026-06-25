@@ -210,11 +210,11 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
       {campaign.creators.length === 0 ? (
         <DataTable>
           <EmptyState
-            title="No creators yet"
+            title="No creators linked yet"
             description={
               campaign.videos.length > 0
                 ? "Creators from linked videos will appear here automatically."
-                : "Link creators in Edit campaign, or bulk upload videos to this campaign."
+                : "Add creators in Edit campaign, or bulk upload videos to this campaign."
             }
           />
         </DataTable>

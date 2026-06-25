@@ -34,9 +34,9 @@ export function CampaignSummaryCards({
   if (campaigns.length === 0) {
     return (
       <div className="rounded-xl border border-slate-200 bg-white px-6 py-16 text-center shadow-sm">
-        <p className="text-sm font-medium text-slate-900">No campaigns yet.</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Create your first campaign to organize content and creators.
+        <p className="font-heading text-sm font-semibold tracking-tight text-slate-900">No campaigns yet.</p>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500">
+          Create your first campaign to organize creators, content, and results.
         </p>
       </div>
     );

@@ -272,8 +272,8 @@ export function CampaignExecutionTrackerPanel({
       {campaign.creators.length === 0 ? (
         <DataTable>
           <EmptyState
-            title="No creators yet"
-            description="Link creators in Edit campaign, or add videos to this campaign to start tracking execution."
+            title="No creators linked yet"
+            description="Add creators in Edit campaign, or upload videos to start tracking execution."
           />
         </DataTable>
       ) : (

@@ -39,7 +39,7 @@ export function CampaignsTable({
       <DataTable>
         <EmptyState
           title="No campaigns yet"
-          description="Create your first campaign to track brand partnerships."
+          description="Create a campaign to organize creators, content, and results in one place."
         />
       </DataTable>
     );

@@ -34,8 +34,9 @@ export function VideosTable({
     return (
       <DataTable>
         <EmptyState
-          title="No videos yet"
-          description="Add your first video to start tracking performance."
+          title="Your video library is empty"
+          description="Paste a TikTok or Instagram link to import metrics and start tracking."
+          hint="paste link → import metrics → done"
         />
       </DataTable>
     );

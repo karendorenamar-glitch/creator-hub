@@ -67,8 +67,8 @@ export function PayoutsTable({ payouts, onEdit, onDelete }: PayoutsTableProps) {
     return (
       <DataTable>
         <EmptyState
-          title="No payouts yet"
-          description="Create a payout to track creator payment deadlines."
+          title="No payouts scheduled"
+          description="Create a payout to track deadlines and payment status."
         />
       </DataTable>
     );

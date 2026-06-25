@@ -36,10 +36,13 @@ export const fadeUpVariants: Variants = {
 
 export function LandingBackground() {
   return (
-    <div
-      className="pointer-events-none fixed inset-0 -z-10 bg-white"
-      style={{ backgroundColor: LANDING_BG }}
-    />
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-white">
+      <div className="landing-dot-grid absolute inset-0 opacity-60" />
+      <div className="absolute -left-40 top-24 h-[28rem] w-[28rem] rounded-full bg-kefoo-500/[0.07] blur-3xl" />
+      <div className="absolute -right-32 top-[38%] h-80 w-80 rounded-full bg-kefoo-500/[0.05] blur-3xl" />
+      <div className="absolute bottom-0 left-1/4 h-72 w-72 rounded-full bg-slate-200/30 blur-3xl" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-200/80 to-transparent" />
+    </div>
   );
 }
 
@@ -74,11 +77,13 @@ export function GlassCard({
   className,
   hover = true,
   glow = false,
+  frame = false,
 }: {
   children: ReactNode;
   className?: string;
   hover?: boolean;
   glow?: boolean;
+  frame?: boolean;
 }) {
   return (
     <motion.div
@@ -86,6 +91,7 @@ export function GlassCard({
       className={cn(
         LANDING_SURFACE,
         "transition-shadow duration-300",
+        frame && "landing-card-frame",
         hover && "hover:shadow-[0_12px_48px_-20px_rgba(15,23,42,0.1)]",
         glow && "shadow-[0_12px_48px_-16px_rgba(15,23,42,0.12)]",
         className,
@@ -93,6 +99,22 @@ export function GlassCard({
     >
       {children}
     </motion.div>
+  );
+}
+
+export function AppWindowChrome({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn(
+        "mb-5 flex items-center gap-2 border-b border-slate-200/70 pb-4",
+        className,
+      )}
+    >
+      <span className="h-2.5 w-2.5 rounded-full bg-slate-200" />
+      <span className="h-2.5 w-2.5 rounded-full bg-slate-200/80" />
+      <span className="h-2.5 w-2.5 rounded-full bg-kefoo-500/20" />
+      <div className="ml-2 h-6 flex-1 rounded-lg border border-slate-200/70 bg-slate-50/80" />
+    </div>
   );
 }
 
@@ -158,7 +180,12 @@ export function SectionHeading({
 }) {
   return (
     <div className={cn("mx-auto mb-16 max-w-3xl text-center", className)}>
-      <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+      <div className="mb-5 flex items-center justify-center gap-3">
+        <span className="hidden h-px w-12 bg-gradient-to-r from-transparent to-slate-200 sm:block" />
+        <span className="h-1.5 w-1.5 rounded-full bg-kefoo-400/60" />
+        <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
+      </div>
+      <h2 className="font-heading text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
         {title}
       </h2>
       {subtitle ? (

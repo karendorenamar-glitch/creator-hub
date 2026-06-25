@@ -176,7 +176,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         ) : null}
 
         <section>
-          <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-4 text-sm font-semibold text-slate-600">
             {getMessage(locale, "dashboard.campaignOverview")} · {filterLabel}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -229,10 +229,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
         <section className="mt-8">
           <div className="mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="text-sm font-semibold text-slate-600">
               {getMessage(locale, "dashboard.performanceComparison")}
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm leading-relaxed text-slate-500">
               {getMessage(locale, "dashboard.performanceComparisonDescription")}
             </p>
           </div>

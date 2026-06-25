@@ -17,28 +17,28 @@ import {
 const valueProps = [
   {
     icon: BarChart3,
-    title: "Instant Intelligence",
-    description: "Paste link, get insights automatically",
+    title: "Link in, insights out",
+    description: "Paste a URL — metrics and creator info appear automatically",
   },
   {
     icon: Calendar,
-    title: "Plan Smarter",
-    description: "Organize content and never miss a post",
+    title: "Plan ahead",
+    description: "Organize content pillars and never miss a publish date",
   },
   {
     icon: GitCompare,
-    title: "Compare & Optimize",
-    description: "Find what works, scale what performs",
+    title: "Compare & decide",
+    description: "Spot top performers across views, ER, and CPV",
   },
   {
     icon: Wallet,
-    title: "Payouts Made Easy",
-    description: "Automate payments and track everything",
+    title: "Payouts on track",
+    description: "Due dates and status, calculated for you",
   },
   {
     icon: Shield,
-    title: "Secure & Reliable",
-    description: "Your data is safe and always up to date",
+    title: "Built to trust",
+    description: "Your campaign data stays secure and always current",
   },
 ];
 
@@ -47,7 +47,7 @@ export function ValueProps() {
     <section id="resources" className="border-y border-slate-200/70 bg-white/80 py-28">
       <div className={CONTAINER_CLASS}>
         <FadeIn>
-          <SectionHeading title="Built for KOL specialists who demand clarity and results" />
+          <SectionHeading title="Built for teams who run KOL Campaigns at scale" />
         </FadeIn>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">

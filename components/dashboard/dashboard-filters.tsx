@@ -298,7 +298,7 @@ export function DashboardFilters({
           <p className="px-1 pb-2 text-xs text-slate-500">{campaignsNote}</p>
         ) : null}
         {campaigns.length === 0 ? (
-          <p className="px-1 text-sm text-slate-500">No active or completed campaigns.</p>
+          <p className="px-1 text-sm text-slate-500">No active or completed campaigns yet.</p>
         ) : (
           campaigns.map((campaign) => (
             <label

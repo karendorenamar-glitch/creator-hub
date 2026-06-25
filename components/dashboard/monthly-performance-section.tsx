@@ -121,7 +121,7 @@ export function MonthlyPerformanceSection({
                   items={month.campaigns}
                   metrics={["views", "saves", "engagementRate", "cpv"]}
                   leaders={leaders}
-                  emptyMessage="No linked videos for these campaigns in this month."
+                  emptyMessage="No linked videos for the selected campaigns this month."
                 />
 
                 <div className="mt-5">

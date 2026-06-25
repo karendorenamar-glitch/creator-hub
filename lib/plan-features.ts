@@ -32,12 +32,12 @@ const FEATURE_MIN_PLAN: Record<PlanFeature, OrgPlan> = {
 };
 
 export const FEATURE_UPGRADE_MESSAGES: Record<PlanFeature, string> = {
-  dashboard: "Upgrade to Growth to unlock the dashboard.",
+  dashboard: "Growth unlocks the performance dashboard — campaign metrics in one view.",
   dashboard_advanced:
-    "Upgrade to Growth for advanced performance insights and creator comparisons.",
-  bulk_upload: "Upgrade to Growth to use bulk video upload.",
-  payouts: "Upgrade to Scale to manage creator payouts.",
-  content_planner: "Upgrade to Scale to use Content Planner.",
+    "Growth adds creator comparisons, live insights, and monthly trend tracking.",
+  bulk_upload: "Growth lets you paste multiple video links and import them in one go.",
+  payouts: "Scale adds payout tracking with due dates and payment status.",
+  content_planner: "Scale unlocks Content Planner for pillars, ideas, and publish dates.",
 };
 
 export function hasPlanFeature(
@@ -76,13 +76,13 @@ export function getDashboardTier(plan: OrgPlan): DashboardTier {
 export function getDashboardDescription(tier: DashboardTier) {
   switch (tier) {
     case "starter":
-      return "Basic campaign analytics across your active campaigns.";
+      return "Core campaign metrics across your active and completed campaigns.";
     case "growth":
-      return "Advanced performance insights across campaigns and creators.";
+      return "Creator comparisons, live insights, and monthly performance trends.";
     case "scale":
-      return "Full intelligence workspace with payouts and cross-campaign reporting.";
+      return "Full intelligence workspace — payouts, pillars, and cross-campaign reporting.";
     default:
-      return "Compare campaigns and creators to guide your next move.";
+      return "Compare campaigns and creators to decide where to invest next.";
   }
 }
 

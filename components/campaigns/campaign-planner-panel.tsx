@@ -52,8 +52,8 @@ export function CampaignPlannerPanel({
 
         {items.length === 0 ? (
           <p className="text-sm text-slate-500">
-            No content ideas linked yet. Assign this campaign when creating
-            content in the planner.
+            No content ideas linked yet. Assign this campaign when you create
+            ideas in Content Planner.
           </p>
         ) : (
           <div className="overflow-x-auto">

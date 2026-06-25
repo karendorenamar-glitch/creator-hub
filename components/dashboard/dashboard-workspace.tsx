@@ -20,8 +20,8 @@ export function DashboardWorkspace({
   return (
     <div className="mt-10 space-y-6">
       <section>
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Key Insights
+        <h2 className="mb-4 text-sm font-semibold text-slate-600">
+          Live insights
         </h2>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <InsightCard
@@ -29,7 +29,7 @@ export function DashboardWorkspace({
             name={insights.topPerformerCreator?.name ?? "—"}
             detail={
               insights.topPerformerCreator?.detail ??
-              "Link campaign videos to rank creators"
+              "Link campaign videos to surface your top creator"
             }
             meta={insights.topPerformerCreator?.platform}
           />
@@ -38,7 +38,7 @@ export function DashboardWorkspace({
             name={insights.mostValuableContent?.title ?? "—"}
             detail={
               insights.mostValuableContent?.detail ??
-              "Track saves on linked videos"
+              "Track saves on linked videos to find high-intent content"
             }
             meta={
               insights.mostValuableContent
@@ -51,7 +51,7 @@ export function DashboardWorkspace({
             name={insights.lowestCpvCreator?.name ?? "—"}
             detail={
               insights.lowestCpvCreator?.detail ??
-              "Add creator fees to compare CPV"
+              "Add creator fees to compare cost per view"
             }
             meta={insights.lowestCpvCreator?.platform}
           />
@@ -60,7 +60,7 @@ export function DashboardWorkspace({
             name={insights.bestPerformingCampaign?.name ?? "—"}
             detail={
               insights.bestPerformingCampaign?.detail ??
-              "Add active campaigns with video data"
+              "Active campaigns with linked videos will rank here"
             }
             meta={insights.bestPerformingCampaign?.platform}
           />
@@ -68,14 +68,14 @@ export function DashboardWorkspace({
       </section>
 
       <ComparisonSection
-        title="Creator Comparison"
-        description="Which creators should you hire again based on views, saves, ER, and CPV?"
+        title="Creator comparison"
+        description="Views, saves, ER, and CPV — ranked so you know who to rebook."
       >
         <ComparisonTable
           rows={creatorComparison}
           showCpv
           nameLabel="Creator"
-          emptyMessage="Link creators and videos to active campaigns to compare performance."
+          emptyMessage="Link creators and videos to active campaigns to unlock side-by-side rankings."
         />
       </ComparisonSection>
 
@@ -89,13 +89,13 @@ export function DashboardWorkspace({
 
       {tier === "scale" && CONTENT_PLANNER_ENABLED ? (
         <ComparisonSection
-          title="Content Pillar Comparison"
-          description="Which content pillars drive the best results across your campaigns?"
+          title="Content pillar comparison"
+          description="See which pillars drive the strongest results across campaigns."
         >
           <ComparisonTable
             rows={pillarComparison}
             nameLabel="Content Pillar"
-            emptyMessage="Assign content pillars in the Content Planner and link them to campaigns."
+            emptyMessage="Assign pillars in Content Planner and link them to campaigns to compare."
           />
         </ComparisonSection>
       ) : null}

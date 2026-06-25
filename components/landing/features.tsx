@@ -301,23 +301,34 @@ function CampaignAnalyticsVisual() {
 
 export function Features() {
   return (
-    <section id="features" className="py-28">
+    <section id="features" className="relative py-28">
+      <div className="landing-section-muted pointer-events-none absolute inset-0 -z-10" />
       <div className={CONTAINER_CLASS}>
         <FadeIn>
           <div className="mx-auto mb-12 max-w-3xl text-center">
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Everything you need to run creator campaigns
+            <div className="mb-5 flex items-center justify-center gap-3">
+              <span className="hidden h-px w-12 bg-gradient-to-r from-transparent to-slate-200 sm:block" />
+              <span className="h-1.5 w-1.5 rounded-full bg-kefoo-400/60" />
+              <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
+            </div>
+            <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+              One workspace for the full campaign loop
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
-              Analytics, bulk uploads, and campaign workflows in one platform.
+              Import links in bulk, track performance live, and see where to
+              invest next.
             </p>
           </div>
         </FadeIn>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           <FadeIn delay={0.05}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left">
-              <h3 className="text-lg font-semibold text-slate-900">Bulk Upload Videos</h3>
+            <GlassCard frame className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left lg:translate-y-2">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <span className="font-mono text-[11px] text-slate-400">01</span>
+                <span className="h-px flex-1 bg-gradient-to-r from-slate-200/80 to-transparent" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">Bulk upload videos</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
                 Paste TikTok links, pick a campaign, and auto-create creators from @usernames.
               </p>
@@ -326,10 +337,14 @@ export function Features() {
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <GlassCard className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left">
-              <h3 className="text-lg font-semibold text-slate-900">Campaign Analytics Overview</h3>
+            <GlassCard frame className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left lg:-translate-y-2">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <span className="font-mono text-[11px] text-slate-400">02</span>
+                <span className="h-px flex-1 bg-gradient-to-r from-slate-200/80 to-transparent" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">Campaign analytics at a glance</h3>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                Track campaign performance across all creators in real time.
+                Track views, engagement, and CPV across every creator in real time.
               </p>
               <CampaignAnalyticsVisual />
             </GlassCard>
