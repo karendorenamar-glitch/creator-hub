@@ -13,6 +13,7 @@ type PaymentNotificationContext = {
   customerEmail: string | null;
   customerName: string | null;
   orgName: string | null;
+  renewEarly?: boolean;
 };
 
 function escapeHtml(value: string) {
@@ -37,7 +38,9 @@ function buildPaymentNotificationEmail(context: PaymentNotificationContext) {
   const senderName = submission.sender_name?.trim() || "—";
   const proofUrl = submission.proof_url.trim();
 
-  const subject = `New ${planLabel} payment — ${customerName}`;
+  const subject = context.renewEarly
+    ? "RENEW EARLY"
+    : `New ${planLabel} payment — ${customerName}`;
 
   const text = [
     "New Kefoo payment submission",

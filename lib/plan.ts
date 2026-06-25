@@ -80,6 +80,8 @@ export const SUBSCRIPTION_EXPIRED_MESSAGE =
 
 export const SUBSCRIPTION_PERIOD_DAYS = 30;
 
+export const RENEW_EARLY_WINDOW_DAYS = 7;
+
 export function getDefaultAppPath(
   plan: OrgPlan,
   isAccessLocked = false,
@@ -255,4 +257,13 @@ export function getDaysUntilDate(value: string | null | undefined) {
 
   const diffMs = new Date(value).getTime() - Date.now();
   return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+export function isWithinRenewEarlyWindow(endsAt: string | null | undefined) {
+  const daysLeft = getDaysUntilDate(endsAt);
+  if (daysLeft === null) {
+    return false;
+  }
+
+  return daysLeft <= RENEW_EARLY_WINDOW_DAYS;
 }

@@ -10,7 +10,7 @@ import { getOrgMembershipForAction } from "@/lib/org";
 import {
   formatPaymentSubmissionStatus,
 } from "@/lib/plan-checkout";
-import { getTrialEndsInDays, formatTrialDate, getDaysUntilDate } from "@/lib/plan";
+import { getTrialEndsInDays, formatTrialDate, getDaysUntilDate, isWithinRenewEarlyWindow, RENEW_EARLY_WINDOW_DAYS } from "@/lib/plan";
 import { formatMoney } from "@/lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getMessage } from "@/lib/i18n/messages";
@@ -193,14 +193,17 @@ export default async function SettingsPage() {
               </div>
             ) : null}
 
-            {!plan.isAccessLocked && !plan.isFreeTrial ? (
+            {!plan.isAccessLocked && !plan.isFreeTrial && isWithinRenewEarlyWindow(plan.subscriptionEndsAt) ? (
               <div className="mt-4">
                 <Link
-                  href={`/checkout/${plan.plan}`}
+                  href={`/checkout/${plan.plan}?renew=early`}
                   className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Renew early
                 </Link>
+                <p className="mt-2 text-xs text-slate-500">
+                  Available within {RENEW_EARLY_WINDOW_DAYS} days of your subscription end date.
+                </p>
               </div>
             ) : null}
           </section>

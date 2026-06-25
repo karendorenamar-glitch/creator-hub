@@ -88,6 +88,7 @@ type PlanCheckoutSectionProps = {
   orgId: string;
   accountName: string;
   latestSubmission: PaymentSubmission | null;
+  renewEarly?: boolean;
 };
 
 export function PlanCheckoutSection({
@@ -96,6 +97,7 @@ export function PlanCheckoutSection({
   orgId,
   accountName,
   latestSubmission,
+  renewEarly = false,
 }: PlanCheckoutSectionProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
@@ -164,6 +166,7 @@ export function PlanCheckoutSection({
         paymentDate,
         senderName: senderName.trim(),
         proofUrl: uploadResult.proofUrl,
+        renewEarly,
       });
 
       if ("error" in result && result.error) {
@@ -180,7 +183,7 @@ export function PlanCheckoutSection({
     }
   }
 
-  if (isPlanAtLeast(currentPlan, plan)) {
+  if (isPlanAtLeast(currentPlan, plan) && !renewEarly) {
     const message = `Your workspace is already on the ${formatOrgPlanLabel(currentPlan)} plan.`;
 
     return (

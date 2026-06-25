@@ -4,6 +4,7 @@ import { getLatestPaymentSubmissionForOrg } from "@/app/actions/payment-submissi
 import { getDashboardPlanContext } from "@/app/actions/plan";
 import { getOrganizationSettings } from "@/app/actions/org";
 import { getAuthUser } from "@/lib/org";
+import { isWithinRenewEarlyWindow, normalizeOrgPlan } from "@/lib/plan";
 import { PlanCheckoutSection } from "@/components/checkout/plan-checkout-section";
 import { Header } from "@/components/layout/header";
 import {
@@ -11,13 +12,30 @@ import {
   isCheckoutPlan,
   type CheckoutPlan,
 } from "@/lib/plan-checkout";
+import type { PlanContext } from "@/lib/plan";
+
+function isPaidRenewalCheckout(
+  planContext: PlanContext,
+  checkoutPlan: CheckoutPlan,
+) {
+  return (
+    !planContext.isFreeTrial &&
+    normalizeOrgPlan(planContext.plan) === checkoutPlan
+  );
+}
 
 type CheckoutPageProps = {
   params: Promise<{ plan: string }>;
+  searchParams: Promise<{ renew?: string }>;
 };
 
-export default async function CheckoutPage({ params }: CheckoutPageProps) {
+export default async function CheckoutPage({
+  params,
+  searchParams,
+}: CheckoutPageProps) {
   const { plan: planParam } = await params;
+  const { renew } = await searchParams;
+  const renewEarly = renew === "early";
 
   if (!isCheckoutPlan(planParam)) {
     notFound();
@@ -46,6 +64,11 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const latestSubmission =
     ("data" in submissionResult ? submissionResult.data : null) ?? null;
 
+  const isRenewEarlyCheckout =
+    renewEarly &&
+    isPaidRenewalCheckout(planContext, plan) &&
+    isWithinRenewEarlyWindow(planContext.subscriptionEndsAt);
+
   const metadataName =
     typeof user?.user_metadata?.full_name === "string"
       ? user.user_metadata.full_name.trim()
@@ -55,7 +78,11 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   return (
     <>
       <Header
-        title={`${config.name} plan payment`}
+        title={
+          isRenewEarlyCheckout
+            ? `Renew your ${config.name} plan`
+            : `${config.name} plan payment`
+        }
         description={`Hi ${accountName}, please proceed your payment.`}
       />
 
@@ -67,6 +94,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             orgId={organization.id}
             accountName={accountName}
             latestSubmission={latestSubmission}
+            renewEarly={isRenewEarlyCheckout}
           />
         </div>
       </main>

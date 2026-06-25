@@ -13,6 +13,12 @@ import {
   resolveSubscriptionEndsDate,
 } from "@/lib/payment-dates";
 import { createClient } from "@/lib/supabase/server";
+import { getPlanContext } from "@/lib/plan-enforcement";
+import {
+  isPaidPlan,
+  isWithinRenewEarlyWindow,
+  normalizeOrgPlan,
+} from "@/lib/plan";
 import type { PaymentSubmission } from "@/types/database";
 
 export type SubmitPlanPaymentInput = {
@@ -20,6 +26,7 @@ export type SubmitPlanPaymentInput = {
   paymentDate: string;
   senderName: string;
   proofUrl: string;
+  renewEarly?: boolean;
 };
 
 export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
@@ -48,6 +55,22 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
   }
 
   const subscriptionEndsAt = resolveSubscriptionEndsDate(paymentDate.value);
+
+  if (input.renewEarly) {
+    const planContext = await getPlanContext(orgResult.orgId);
+
+    if (
+      !planContext ||
+      !isPaidPlan(planContext.plan) ||
+      normalizeOrgPlan(planContext.plan) !== input.plan ||
+      !isWithinRenewEarlyWindow(planContext.subscriptionEndsAt)
+    ) {
+      return {
+        error:
+          "Renew early is only available within 7 days of your subscription end date.",
+      };
+    }
+  }
 
   const supabase = await createClient();
 
@@ -88,7 +111,7 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
       payment_date: paymentDate.value,
       subscription_ends_at: subscriptionEndsAt,
       sender_name: senderName,
-      notes: null,
+      notes: input.renewEarly ? "renew_early" : null,
       proof_url: proofUrl,
       status: "pending",
     })
@@ -123,6 +146,7 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
         ? user.user_metadata.full_name
         : null,
     orgName: organization?.name ?? null,
+    renewEarly: input.renewEarly ?? false,
   }).catch((notificationError) => {
     console.error("Payment notification email failed:", notificationError);
   });
