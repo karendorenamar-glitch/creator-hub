@@ -6,7 +6,7 @@ import { deleteVideo } from "@/app/actions/videos";
 import { VideoBulkUploadModal } from "@/components/videos/video-bulk-upload-modal";
 import { VideoFormModal } from "@/components/videos/video-form-modal";
 import { VideosTable } from "@/components/videos/videos-table";
-import { FreeTrialUsageBanner } from "@/components/plan/plan-provider";
+import { FreeTrialUsageBanner, usePlan, useRequirePlanFeature } from "@/components/plan/plan-provider";
 import { useLanguage } from "@/components/i18n/language-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
@@ -23,7 +23,6 @@ type VideosSectionProps = {
   campaigns: CampaignOption[];
   currentUserId: string;
   memberRole: OrgMemberRole;
-  canUseBulkUpload: boolean;
 };
 
 export function VideosSection({
@@ -32,8 +31,10 @@ export function VideosSection({
   campaigns,
   currentUserId,
   memberRole,
-  canUseBulkUpload,
 }: VideosSectionProps) {
+  const { hasFeature } = usePlan();
+  const requireBulkUpload = useRequirePlanFeature("bulk_upload");
+  const canUseBulkUpload = hasFeature("bulk_upload");
   const { showSuccess, showError } = useToast();
   const { t } = useLanguage();
   const [formOpen, setFormOpen] = useState(false);
@@ -82,16 +83,14 @@ export function VideosSection({
       <FreeTrialUsageBanner />
 
       <div className="mb-6 flex flex-wrap items-center justify-end gap-3">
-        {canUseBulkUpload ? (
-          <button
-            type="button"
-            onClick={() => setBulkOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-          >
-            <Upload className="h-4 w-4" />
-            {t("pages.videos.bulkUpload")}
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => requireBulkUpload(() => setBulkOpen(true))}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
+        >
+          <Upload className="h-4 w-4" />
+          {t("pages.videos.bulkUpload")}
+        </button>
 
         <button
           type="button"

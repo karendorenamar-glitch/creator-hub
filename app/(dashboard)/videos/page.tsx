@@ -14,7 +14,6 @@ import {
 import { getOrgMembershipForAction } from "@/lib/org";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getMessage } from "@/lib/i18n/messages";
-import { hasPlanFeature } from "@/lib/plan-features";
 
 type VideosPageProps = {
   searchParams: Promise<{ team?: string }>;
@@ -78,7 +77,6 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
           campaigns={campaigns}
           currentUserId={userId}
           memberRole={role}
-          canUseBulkUpload={hasPlanFeature(planContext.plan, "bulk_upload")}
         />
       </main>
     </>
