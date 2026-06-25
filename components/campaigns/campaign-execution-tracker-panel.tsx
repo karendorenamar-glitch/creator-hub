@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, ExternalLink, Link2 } from "lucide-react";
+import { ClipboardList, ExternalLink, Lightbulb, Link2 } from "lucide-react";
 import {
   linkCreatorToCampaign,
   updateCampaignCreatorWorkflowStatus,
@@ -88,8 +88,8 @@ export function CampaignExecutionTrackerPanel({
   const [isAddingCreator, startAddCreatorTransition] = useTransition();
 
   const availableCreators = useMemo(() => {
-    const existing = new Set(campaign.creators.map((creator) => creator.id));
-    return creators.filter((creator) => !existing.has(creator.id));
+    const existing = new Set(campaign.creators.map((creator) => String(creator.id)));
+    return creators.filter((creator) => !existing.has(String(creator.id)));
   }, [campaign.creators, creators]);
 
   const videoByCreator = useMemo(() => {
@@ -266,6 +266,19 @@ export function CampaignExecutionTrackerPanel({
         <p className="mt-1 text-sm text-slate-500">
           Track each creator from brief through upload. Paste a video link when
           marked Uploaded to add it to this campaign.
+        </p>
+      </div>
+
+      <div className="mb-6 flex gap-2.5 rounded-xl border border-kefoo-200 bg-kefoo-50 px-4 py-3 text-sm leading-relaxed text-kefoo-950">
+        <Lightbulb
+          className="mt-0.5 h-4 w-4 shrink-0 text-kefoo-400"
+          aria-hidden
+        />
+        <p>
+          <span className="font-semibold">Quick tip:</span> Once you paste a
+          video link for a creator and mark them Uploaded, their video
+          automatically appears in Campaign performance and counts toward your
+          metrics.
         </p>
       </div>
 

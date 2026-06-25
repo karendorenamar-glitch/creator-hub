@@ -528,8 +528,10 @@ export async function getCampaignById(
     creator_id: video.creator_id,
     creators: video.creators,
   }));
+  const uploadedCreatorIds = new Set(scopedVideos.map((video) => video.creator_id));
   const creatorFees = Object.fromEntries(
     scopedCreators
+      .filter((creator) => uploadedCreatorIds.has(creator.id))
       .map((creator) => [creator.id, creator.campaign_fee ?? creator.fee] as const)
       .filter(([, fee]) => fee > 0),
   );
@@ -606,7 +608,7 @@ export async function getCampaignSummaries(
   const [creatorsResult, videosResult] = await Promise.all([
     supabase
       .from("campaign_creators")
-      .select("campaign_id")
+      .select("campaign_id, workflow_status")
       .in("campaign_id", campaignIds),
     supabase
       .from("campaign_videos")
@@ -614,8 +616,42 @@ export async function getCampaignSummaries(
       .in("campaign_id", campaignIds),
   ]);
 
-  const creatorCounts = (creatorsResult.data ?? []).reduce<Record<string, number>>(
+  let creatorCountRows = creatorsResult.data ?? [];
+
+  if (creatorsResult.error) {
+    if (isMissingWorkflowStatusColumn(creatorsResult.error)) {
+      const fallbackCreatorsResult = await supabase
+        .from("campaign_creators")
+        .select("campaign_id")
+        .in("campaign_id", campaignIds);
+
+      if (fallbackCreatorsResult.error) {
+        console.error(
+          "Failed to fetch campaign creators:",
+          fallbackCreatorsResult.error.message,
+        );
+        creatorCountRows = [];
+      } else {
+        creatorCountRows = (fallbackCreatorsResult.data ?? []).map((row) => ({
+          ...row,
+          workflow_status: null,
+        }));
+      }
+    } else {
+      console.error("Failed to fetch campaign creators:", creatorsResult.error.message);
+      creatorCountRows = [];
+    }
+  }
+
+  const creatorCounts = creatorCountRows.reduce<Record<string, number>>(
     (acc, row) => {
+      const status =
+        typeof row.workflow_status === "string" ? row.workflow_status : null;
+
+      if (status && status !== "posted") {
+        return acc;
+      }
+
       acc[row.campaign_id] = (acc[row.campaign_id] ?? 0) + 1;
       return acc;
     },

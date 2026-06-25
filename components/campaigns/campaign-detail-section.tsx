@@ -53,8 +53,8 @@ const detailViews: Array<{
   label: string;
   icon: typeof BarChart3;
 }> = [
-  { id: "performance", label: "Campaign performance", icon: BarChart3 },
   { id: "execution", label: "Execution tracker", icon: ClipboardList },
+  { id: "performance", label: "Campaign performance", icon: BarChart3 },
 ];
 
 function KpiCard({ label, value }: { label: string; value: string }) {
@@ -125,10 +125,15 @@ function getEffectiveCreatorFee(creator: CampaignCreator) {
   return creator.campaign_fee ?? creator.fee;
 }
 
-function CampaignBudgetUsage({ campaign }: { campaign: CampaignDetail }) {
+function CampaignBudgetUsage({
+  budget,
+  creators,
+}: {
+  budget: number;
+  creators: CampaignCreator[];
+}) {
   const budgetUsage = useMemo(() => {
-    const budget = campaign.budget;
-    const feesAssigned = campaign.creators.reduce(
+    const feesAssigned = creators.reduce(
       (sum, creator) => sum + getEffectiveCreatorFee(creator),
       0,
     );
@@ -139,20 +144,18 @@ function CampaignBudgetUsage({ campaign }: { campaign: CampaignDetail }) {
       budget > 0 ? Math.min((feesAssigned / budget) * 100, 100) : 0;
 
     return {
-      budget,
       feesAssigned,
       remaining: Math.max(remaining, 0),
       isOverBudget,
       overBy,
       percentUsed,
-      creatorsWithFees: campaign.creators.filter(
+      creatorsWithFees: creators.filter(
         (creator) => getEffectiveCreatorFee(creator) > 0,
       ).length,
     };
-  }, [campaign.budget, campaign.creators]);
+  }, [budget, creators]);
 
   const {
-    budget,
     feesAssigned,
     remaining,
     isOverBudget,
@@ -182,7 +185,7 @@ function CampaignBudgetUsage({ campaign }: { campaign: CampaignDetail }) {
           </div>
           <p className="mt-1 text-sm text-slate-500">
             Based on creator fees assigned to this campaign (
-            {creatorsWithFees} of {campaign.creators.length} creators).
+            {creatorsWithFees} of {creators.length} creators).
           </p>
         </div>
         {isOverBudget ? (
@@ -284,8 +287,18 @@ export function CampaignDetailSection({
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [activeView, setActiveView] = useState<CampaignDetailView>("performance");
+  const [activeView, setActiveView] = useState<CampaignDetailView>("execution");
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  const performanceCreatorIds = useMemo(
+    () => new Set(campaign.videos.map((video) => video.creator_id)),
+    [campaign.videos],
+  );
+  const performanceCreators = useMemo(
+    () =>
+      campaign.creators.filter((creator) => performanceCreatorIds.has(creator.id)),
+    [campaign.creators, performanceCreatorIds],
+  );
 
   const health = getCampaignHealth(campaign, campaign.videos.length);
   const healthStyle = healthStyles[health.status];
@@ -368,8 +381,12 @@ export function CampaignDetailSection({
               className={cn(
                 "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
                 activeView === id
-                  ? "bg-white text-slate-900 shadow-sm"
-                  : "text-slate-600 hover:text-slate-900",
+                  ? id === "performance"
+                    ? "bg-[#103b8c] text-white shadow-sm"
+                    : "bg-white text-slate-900 shadow-sm"
+                  : id === "performance"
+                    ? "text-[#103b8c] hover:bg-[#103b8c]/5"
+                    : "text-slate-600 hover:text-slate-900",
               )}
             >
               <Icon className="h-4 w-4" />
@@ -388,7 +405,7 @@ export function CampaignDetailSection({
         />
       </div>
 
-      <CampaignBudgetUsage campaign={campaign} />
+      <CampaignBudgetUsage budget={campaign.budget} creators={performanceCreators} />
 
       <section className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <KpiCard label="Total Views" value={formatNumber(campaign.total_views)} />
@@ -422,7 +439,7 @@ export function CampaignDetailSection({
         />
         <KpiCard
           label="Creators"
-          value={campaign.creators.length.toLocaleString("en-US")}
+          value={performanceCreators.length.toLocaleString("en-US")}
         />
         <KpiCard
           label="Videos"
@@ -430,7 +447,7 @@ export function CampaignDetailSection({
         />
       </section>
 
-      <CampaignCreatorsPanel campaign={campaign} />
+      <CampaignCreatorsPanel campaign={{ ...campaign, creators: performanceCreators }} />
 
       <section className="mb-8">
         <div className="mb-4">
