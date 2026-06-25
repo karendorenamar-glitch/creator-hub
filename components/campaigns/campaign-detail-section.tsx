@@ -546,7 +546,7 @@ export function CampaignDetailSection({
       </section>
         </>
       ) : (
-        <CampaignExecutionTrackerPanel campaign={campaign} />
+        <CampaignExecutionTrackerPanel campaign={campaign} creators={creators} />
       )}
 
       <CampaignFormModal

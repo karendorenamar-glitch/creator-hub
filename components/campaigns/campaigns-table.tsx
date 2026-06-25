@@ -25,13 +25,11 @@ import {
 
 type CampaignsTableProps = {
   campaigns: CampaignListItem[];
-  onEdit: (campaign: CampaignListItem) => void;
   onDelete: (campaign: CampaignListItem) => void;
 };
 
 export function CampaignsTable({
   campaigns,
-  onEdit,
   onDelete,
 }: CampaignsTableProps) {
   if (campaigns.length === 0) {
@@ -137,8 +135,8 @@ export function CampaignsTable({
                 <CampaignRowActions
                   campaignId={campaign.id}
                   campaignName={campaign.name}
-                  onEdit={() => onEdit(campaign)}
                   onDelete={() => onDelete(campaign)}
+                  canEdit={false}
                 />
               </DataTableCell>
             </DataTableRow>

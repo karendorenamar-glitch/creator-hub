@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardList, ExternalLink, Link2 } from "lucide-react";
-import { updateCampaignCreatorWorkflowStatus } from "@/app/actions/campaigns";
+import {
+  linkCreatorToCampaign,
+  updateCampaignCreatorWorkflowStatus,
+} from "@/app/actions/campaigns";
 import { createVideoFromUrl } from "@/app/actions/videos";
 import { usePlan } from "@/components/plan/plan-provider";
 import { useToast } from "@/components/ui/toast";
@@ -30,10 +33,11 @@ import {
   EmptyState,
 } from "@/components/ui/data-table";
 import { cn, formatCreatorListUsername } from "@/lib/utils";
-import type { CampaignCreator, CampaignDetail } from "@/types/database";
+import type { CampaignCreator, CampaignDetail, Creator } from "@/types/database";
 
 type CampaignExecutionTrackerPanelProps = {
   campaign: CampaignDetail;
+  creators: Creator[];
 };
 
 const STATUS_CLASS: Record<CampaignCreatorWorkflowStatus, string> = {
@@ -64,6 +68,7 @@ function creatorPlatform(creator: CampaignCreator): VideoPlatform | null {
 
 export function CampaignExecutionTrackerPanel({
   campaign,
+  creators,
 }: CampaignExecutionTrackerPanelProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
@@ -76,8 +81,16 @@ export function CampaignExecutionTrackerPanel({
   );
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
   const [linkingCreatorId, setLinkingCreatorId] = useState<string | null>(null);
+  const [addingCreatorId, setAddingCreatorId] = useState<string | null>(null);
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
   const [isSavingStatus, startStatusTransition] = useTransition();
   const [isLinkingVideo, startLinkVideoTransition] = useTransition();
+  const [isAddingCreator, startAddCreatorTransition] = useTransition();
+
+  const availableCreators = useMemo(() => {
+    const existing = new Set(campaign.creators.map((creator) => creator.id));
+    return creators.filter((creator) => !existing.has(creator.id));
+  }, [campaign.creators, creators]);
 
   const videoByCreator = useMemo(() => {
     const map = new Map<string, (typeof campaign.videos)[number]>();
@@ -89,29 +102,7 @@ export function CampaignExecutionTrackerPanel({
     }
 
     return map;
-  }, [campaign.videos]);
-
-  useEffect(() => {
-    setStatusByCreator(
-      Object.fromEntries(
-        campaign.creators.map((creator) => [
-          creator.id,
-          creator.workflow_status ?? "brief_sent",
-        ]),
-      ),
-    );
-  }, [campaign.creators]);
-
-  useEffect(() => {
-    setVideoUrlInputs(
-      Object.fromEntries(
-        campaign.creators.map((creator) => [
-          creator.id,
-          videoByCreator.get(creator.id)?.video_url ?? "",
-        ]),
-      ),
-    );
-  }, [campaign.creators, videoByCreator]);
+  }, [campaign]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<CampaignCreatorWorkflowStatus, number> = {
@@ -237,6 +228,32 @@ export function CampaignExecutionTrackerPanel({
     });
   }
 
+  function handleAddCreator() {
+    const creatorId = selectedCreatorId.trim();
+
+    if (!creatorId) {
+      showError("Select a creator first.");
+      return;
+    }
+
+    setAddingCreatorId(creatorId);
+
+    startAddCreatorTransition(async () => {
+      const result = await linkCreatorToCampaign(campaign.id, creatorId);
+
+      setAddingCreatorId(null);
+
+      if (result.error) {
+        showError(result.error);
+        return;
+      }
+
+      setSelectedCreatorId("");
+      showSuccess("Creator added to campaign.");
+      router.refresh();
+    });
+  }
+
   return (
     <section className="mb-8">
       <div className="mb-4">
@@ -250,6 +267,44 @@ export function CampaignExecutionTrackerPanel({
           Track each creator from brief through upload. Paste a video link when
           marked Uploaded to add it to this campaign.
         </p>
+      </div>
+
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+          <select
+            value={selectedCreatorId}
+            onChange={(event) => setSelectedCreatorId(event.target.value)}
+            disabled={isAddingCreator}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20 disabled:cursor-not-allowed disabled:opacity-60 sm:max-w-sm"
+            aria-label="Add creator to campaign"
+          >
+            <option value="">
+              {availableCreators.length === 0
+                ? "All creators already added"
+                : "Add a creator…"}
+            </option>
+            {availableCreators.map((creator) => (
+              <option key={creator.id} value={creator.id}>
+                {creator.name} · {formatCreatorListUsername(creator)}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleAddCreator}
+            disabled={
+              isAddingCreator ||
+              !selectedCreatorId ||
+              availableCreators.length === 0 ||
+              addingCreatorId === selectedCreatorId
+            }
+            className="inline-flex items-center justify-center rounded-lg bg-kefoo-400 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-300 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isAddingCreator && addingCreatorId === selectedCreatorId
+              ? "Adding..."
+              : "Add creator"}
+          </button>
+        </div>
       </div>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -293,7 +348,8 @@ export function CampaignExecutionTrackerPanel({
                   creator.workflow_status ??
                   "brief_sent";
                 const linkedVideo = videoByCreator.get(creator.id);
-                const videoInput = videoUrlInputs[creator.id] ?? "";
+                const videoInput =
+                  videoUrlInputs[creator.id] ?? linkedVideo?.video_url ?? "";
                 const isUploaded = workflowStatus === "posted";
                 const isLinking =
                   isLinkingVideo && linkingCreatorId === creator.id;

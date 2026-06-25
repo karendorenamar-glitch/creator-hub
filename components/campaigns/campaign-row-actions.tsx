@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 type CampaignRowActionsProps = {
   campaignId: string;
   campaignName: string;
-  onEdit: () => void;
+  onEdit?: () => void;
   onDelete: () => void;
   canEdit?: boolean;
   canDelete?: boolean;
@@ -33,7 +33,7 @@ export function CampaignRowActions({
         <Eye className="h-4 w-4" />
         View
       </Link>
-      {canEdit ? (
+      {canEdit && onEdit ? (
         <button
           type="button"
           onClick={onEdit}

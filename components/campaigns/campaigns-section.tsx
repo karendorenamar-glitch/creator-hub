@@ -32,25 +32,15 @@ export function CampaignsSection({
 }: CampaignsSectionProps) {
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
-  const [editingCampaign, setEditingCampaign] = useState<CampaignSummary | null>(
-    null,
-  );
   const [deleteTarget, setDeleteTarget] = useState<CampaignSummary | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
 
   function openCreate() {
-    setEditingCampaign(null);
-    setFormOpen(true);
-  }
-
-  function openEdit(campaign: CampaignSummary) {
-    setEditingCampaign(campaign);
     setFormOpen(true);
   }
 
   function closeForm() {
     setFormOpen(false);
-    setEditingCampaign(null);
   }
 
   function handleDelete() {
@@ -88,14 +78,13 @@ export function CampaignsSection({
         campaigns={campaigns}
         currentUserId={currentUserId}
         memberRole={memberRole}
-        onEdit={openEdit}
         onDelete={setDeleteTarget}
       />
 
       <CampaignFormModal
         open={formOpen}
         onClose={closeForm}
-        campaign={editingCampaign}
+        campaign={null}
         creators={creators}
         videos={videos}
       />

@@ -9,7 +9,6 @@ type CampaignSummaryCardsProps = {
   campaigns: CampaignSummary[];
   currentUserId: string;
   memberRole: OrgMemberRole;
-  onEdit: (campaign: CampaignSummary) => void;
   onDelete: (campaign: CampaignSummary) => void;
 };
 
@@ -28,7 +27,6 @@ export function CampaignSummaryCards({
   campaigns,
   currentUserId,
   memberRole,
-  onEdit,
   onDelete,
 }: CampaignSummaryCardsProps) {
   if (campaigns.length === 0) {
@@ -82,13 +80,8 @@ export function CampaignSummaryCards({
           <CampaignRowActions
             campaignId={campaign.id}
             campaignName={campaign.name}
-            onEdit={() => onEdit(campaign)}
             onDelete={() => onDelete(campaign)}
-            canEdit={canEditCampaign({
-              role: memberRole,
-              userId: currentUserId,
-              createdBy: campaign.created_by,
-            })}
+            canEdit={false}
             canDelete={canEditCampaign({
               role: memberRole,
               userId: currentUserId,
