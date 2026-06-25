@@ -17,9 +17,12 @@ import {
   EmptyState,
 } from "@/components/ui/data-table";
 import {
+  calculateEngagementRate,
   formatCompactFee,
   formatCreatorCPV,
+  formatCreatorCPE,
   formatCreatorListUsername,
+  formatEngagementRate,
   formatIDR,
   formatNumber,
   parseCompactFee,
@@ -43,6 +46,23 @@ function parseFeeInput(value: string) {
   return parseCompactFee(value);
 }
 
+type CreatorPerformanceStats = {
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+};
+
+function emptyCreatorStats(): CreatorPerformanceStats {
+  return {
+    views: 0,
+    likes: 0,
+    comments: 0,
+    shares: 0,
+    saves: 0,
+  };
+}
 function CreatorAvatar({ creator }: { creator: CampaignCreator }) {
   return (
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-kefoo-100 text-sm font-semibold text-kefoo-700">
@@ -69,18 +89,33 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
     );
   }, [campaign.creators]);
 
-  const viewsByCreator = useMemo(() => {
-    const map = new Map<string, number>();
+  const statsByCreator = useMemo(() => {
+    const map = new Map<string, CreatorPerformanceStats>();
 
     for (const video of campaign.videos) {
-      map.set(
-        video.creator_id,
-        (map.get(video.creator_id) ?? 0) + video.views,
-      );
+      const existing = map.get(video.creator_id) ?? emptyCreatorStats();
+
+      map.set(video.creator_id, {
+        views: existing.views + video.views,
+        likes: existing.likes + video.likes,
+        comments: existing.comments + video.comments,
+        shares: existing.shares + video.shares,
+        saves: existing.saves + video.saves,
+      });
     }
 
     return map;
   }, [campaign.videos]);
+
+  const sortedCreators = useMemo(
+    () =>
+      [...campaign.creators].sort(
+        (left, right) =>
+          (statsByCreator.get(right.id)?.views ?? 0) -
+          (statsByCreator.get(left.id)?.views ?? 0),
+      ),
+    [campaign.creators, statsByCreator],
+  );
 
   const hasFeeChanges = campaign.creators.some((creator) => {
     const input = feeInputs[creator.id] ?? campaignFeeInputValue(creator);
@@ -163,11 +198,13 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
         <div>
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-slate-400" />
-            <h3 className="text-lg font-semibold text-slate-900">Creators</h3>
+            <h3 className="text-lg font-semibold text-slate-900">
+              Creator performance
+            </h3>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Starts from each creator&apos;s default fee when unset. Campaign
-            fees can be edited here without changing the Creators page.
+            Per-creator views, engagement rate, CPV, and CPE for this campaign.
+            Campaign fees can be edited here without changing the Creators page.
           </p>
         </div>
 
@@ -225,23 +262,30 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
               <DataTableHeaderCell>Creator</DataTableHeaderCell>
               <DataTableHeaderCell>Profile</DataTableHeaderCell>
               <DataTableHeaderCell>Platform</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">
-                Campaign views
-              </DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">Views</DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">ER%</DataTableHeaderCell>
               <DataTableHeaderCell className="text-right">
                 Campaign fee
               </DataTableHeaderCell>
               <DataTableHeaderCell className="text-right">CPV</DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">CPE</DataTableHeaderCell>
             </DataTableHead>
             <DataTableBody>
-              {campaign.creators.map((creator) => {
-                const campaignViews = viewsByCreator.get(creator.id) ?? 0;
+              {sortedCreators.map((creator) => {
+                const stats = statsByCreator.get(creator.id) ?? emptyCreatorStats();
                 const feeInput =
                   feeInputs[creator.id] ?? campaignFeeInputValue(creator);
                 const parsedFee = feeInput.trim()
                   ? parseFeeInput(feeInput)
                   : null;
                 const displayFee = parsedFee ?? effectiveCampaignFee(creator);
+                const engagementRate = calculateEngagementRate(
+                  stats.views,
+                  stats.likes,
+                  stats.comments,
+                  stats.shares,
+                  stats.saves,
+                );
 
                 return (
                   <DataTableRow key={creator.id}>
@@ -265,7 +309,12 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
                       </span>
                     </DataTableCell>
                     <DataTableCell className="text-right text-slate-600">
-                      {formatNumber(campaignViews)}
+                      {formatNumber(stats.views)}
+                    </DataTableCell>
+                    <DataTableCell className="text-right text-slate-600">
+                      {stats.views > 0
+                        ? formatEngagementRate(engagementRate)
+                        : "—"}
                     </DataTableCell>
                     <DataTableCell className="text-right">
                       <input
@@ -295,7 +344,18 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
                     </DataTableCell>
                     <DataTableCell className="text-right text-slate-600">
                       {displayFee > 0
-                        ? formatCreatorCPV(displayFee, campaignViews)
+                        ? formatCreatorCPV(displayFee, stats.views)
+                        : "—"}
+                    </DataTableCell>
+                    <DataTableCell className="text-right text-slate-600">
+                      {displayFee > 0
+                        ? formatCreatorCPE(
+                            displayFee,
+                            stats.likes,
+                            stats.comments,
+                            stats.shares,
+                            stats.saves,
+                          )
                         : "—"}
                     </DataTableCell>
                   </DataTableRow>

@@ -228,6 +228,19 @@ export function formatCreatorCPV(fee: number, views: number): string {
   return formatIDRDecimal(fee / views);
 }
 
+export function formatCreatorCPE(
+  fee: number,
+  likes: number,
+  comments: number,
+  shares: number,
+  saves: number,
+): string {
+  const engagements = likes + comments + shares + saves;
+
+  if (engagements === 0) return "—";
+  return formatIDRDecimal(fee / engagements);
+}
+
 export function formatCreatorCPL(fee: number, likes: number): string {
   if (likes === 0) return "—";
   return formatIDRDecimal(fee / likes);

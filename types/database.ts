@@ -105,6 +105,13 @@ export type VideoWithCreator = Video & {
   creators: Pick<Creator, "name" | "platform"> | null;
 };
 
+export type CreatorCampaignDetail = Pick<
+  Campaign,
+  "id" | "name" | "client_name" | "status"
+> & {
+  videos: VideoWithCreator[];
+};
+
 export type CreatorDetail = Creator & {
   total_videos: number;
   total_views: number;
@@ -115,7 +122,7 @@ export type CreatorDetail = Creator & {
   average_engagement_rate: number;
   cpv: number;
   cpl: number;
-  campaigns: Pick<Campaign, "id" | "name" | "client_name" | "status">[];
+  campaigns: CreatorCampaignDetail[];
   top_performing_video: VideoWithCreator | null;
   videos: VideoWithCreator[];
 };

@@ -266,6 +266,49 @@ export async function getCreatorById(
       Boolean(campaign),
     );
 
+  const videoIds = videos.map((video) => video.id);
+  let campaignVideoRows: Array<{ campaign_id: string; video_id: string }> = [];
+
+  if (videoIds.length > 0) {
+    const { data: campaignVideosData, error: campaignVideosError } = await supabase
+      .from("campaign_videos")
+      .select("campaign_id, video_id")
+      .in("video_id", videoIds);
+
+    if (campaignVideosError) {
+      console.error(
+        "Failed to fetch creator campaign videos:",
+        campaignVideosError.message,
+      );
+    } else {
+      campaignVideoRows = campaignVideosData ?? [];
+    }
+  }
+
+  const videosById = new Map(videos.map((video) => [video.id, video]));
+  const videosByCampaignId = new Map<string, VideoWithCreator[]>();
+
+  for (const row of campaignVideoRows) {
+    const video = videosById.get(row.video_id);
+
+    if (!video) {
+      continue;
+    }
+
+    const existing = videosByCampaignId.get(row.campaign_id) ?? [];
+    existing.push(video);
+    videosByCampaignId.set(row.campaign_id, existing);
+  }
+
+  const campaignsWithVideos = campaigns
+    .map((campaign) => ({
+      ...campaign,
+      videos: [...(videosByCampaignId.get(campaign.id) ?? [])].sort(
+        (left, right) => right.views - left.views,
+      ),
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+
   const totals = videos.reduce(
     (acc, video) => ({
       views: acc.views + video.views,
@@ -293,7 +336,7 @@ export async function getCreatorById(
     average_engagement_rate,
     cpv: totals.views > 0 ? fee / totals.views : 0,
     cpl: totals.likes > 0 ? fee / totals.likes : 0,
-    campaigns,
+    campaigns: campaignsWithVideos,
     top_performing_video: videos[0] ?? null,
     videos,
   };

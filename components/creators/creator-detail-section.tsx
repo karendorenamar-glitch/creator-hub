@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
+import { CreatorCampaignsPanel } from "@/components/creators/creator-campaigns-panel";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
   formatCreatorCPL,
@@ -14,7 +14,6 @@ import {
   BarChart3,
   DollarSign,
   Heart,
-  Megaphone,
   MessageCircle,
   Share2,
   TrendingUp,
@@ -62,6 +61,8 @@ export function CreatorDetailSection({ creator }: CreatorDetailSectionProps) {
           </p>
         </div>
       </div>
+
+      <CreatorCampaignsPanel campaigns={creator.campaigns} />
 
       {creator.notes && (
         <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -149,12 +150,6 @@ export function CreatorDetailSection({ creator }: CreatorDetailSectionProps) {
             accent="violet"
           />
           <StatCard
-            title="Campaigns Joined"
-            value={formatNumber(creator.campaigns.length)}
-            icon={Megaphone}
-            accent="emerald"
-          />
-          <StatCard
             title="Top Performing Video"
             value={
               creator.top_performing_video
@@ -171,69 +166,6 @@ export function CreatorDetailSection({ creator }: CreatorDetailSectionProps) {
           />
         </div>
       </section>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900">Campaigns</h3>
-          {creator.campaigns.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">
-              This creator has not joined any campaigns yet.
-            </p>
-          ) : (
-            <ul className="mt-4 divide-y divide-slate-100">
-              {creator.campaigns.map((campaign) => (
-                <li key={campaign.id} className="py-3 first:pt-0 last:pb-0">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <Link
-                        href={`/campaigns/${campaign.id}`}
-                        className="font-medium text-kefoo-600 hover:text-kefoo-500"
-                      >
-                        {campaign.name}
-                      </Link>
-                      <p className="text-sm text-slate-500">
-                        {campaign.client_name}
-                      </p>
-                    </div>
-                    <CampaignStatusBadge status={campaign.status} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h3 className="text-lg font-semibold text-slate-900">Videos</h3>
-          {creator.videos.length === 0 ? (
-            <p className="mt-4 text-sm text-slate-500">
-              No videos linked to this creator yet.
-            </p>
-          ) : (
-            <ul className="mt-4 divide-y divide-slate-100">
-              {creator.videos.map((video) => (
-                <li key={video.id} className="py-3 first:pt-0 last:pb-0">
-                  <a
-                    href={video.video_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
-                  >
-                    {video.video_url}
-                  </a>
-                  <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
-                    <span>{formatNumber(video.views)} views</span>
-                    <span>{formatNumber(video.likes)} likes</span>
-                    <span>{formatNumber(video.comments)} comments</span>
-                    <span>{formatNumber(video.shares)} shares</span>
-                    <span>{formatNumber(video.saves)} saves</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
     </>
   );
 }
