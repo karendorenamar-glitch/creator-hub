@@ -10,7 +10,7 @@ import { getOrgMembershipForAction } from "@/lib/org";
 import {
   formatPaymentSubmissionStatus,
 } from "@/lib/plan-checkout";
-import { getTrialEndsInDays, formatTrialDate } from "@/lib/plan";
+import { getTrialEndsInDays, formatTrialDate, getDaysUntilDate } from "@/lib/plan";
 import { formatMoney } from "@/lib/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getMessage } from "@/lib/i18n/messages";
@@ -29,6 +29,7 @@ export default async function SettingsPage() {
   const latestSubmission =
     ("data" in submissionResult ? submissionResult.data : null) ?? null;
   const trialDaysLeft = getTrialEndsInDays(plan.trialEndsAt);
+  const subscriptionDaysLeft = getDaysUntilDate(plan.subscriptionEndsAt);
 
   const teamContext = "data" in teamResult ? teamResult.data : null;
   const teamError = "error" in teamResult ? teamResult.error : null;
@@ -66,16 +67,20 @@ export default async function SettingsPage() {
           <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-base font-semibold text-slate-900">Plan</h2>
             <p className="mt-1 text-sm text-slate-600">
-              {plan.isFreeTrial
-                ? plan.isTrialExpired
-                  ? "Your free trial has ended."
-                  : trialDaysLeft !== null
+              {plan.isAccessLocked
+                ? plan.isSubscriptionExpired
+                  ? "Your subscription has ended. Pay your next subscription to continue."
+                  : "Your free access has ended. Update your plan and pay your subscription to continue."
+                : plan.isFreeTrial
+                  ? trialDaysLeft !== null
                     ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your free trial.`
                     : "You are on the free trial."
-                : `Current plan: ${plan.plan.replace("_", " ")}.`}
+                  : subscriptionDaysLeft !== null
+                    ? `${subscriptionDaysLeft} day${subscriptionDaysLeft === 1 ? "" : "s"} left in your ${plan.plan.replace("_", " ")} subscription.`
+                    : `Current plan: ${plan.plan.replace("_", " ")}.`}
             </p>
 
-            {plan.isFreeTrial || plan.isTrialExpired ? (
+            {plan.isFreeTrial ? (
               <dl className="mt-4 space-y-3 text-sm">
                 <div>
                   <dt className="font-medium text-slate-500">Trial started</dt>
@@ -89,6 +94,31 @@ export default async function SettingsPage() {
                   <dt className="font-medium text-slate-500">Trial ends</dt>
                   <dd className="mt-1 text-slate-900">
                     {formatTrialDate(plan.trialEndsAt)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">Usage</dt>
+                  <dd className="mt-1 text-slate-900">
+                    {plan.usage.campaigns}/{plan.limits.campaigns ?? "∞"} campaigns ·{" "}
+                    {plan.usage.creators}/{plan.limits.creators ?? "∞"} creators ·{" "}
+                    {plan.usage.videos}/{plan.limits.videos ?? "∞"} videos
+                  </dd>
+                </div>
+              </dl>
+            ) : null}
+
+            {!plan.isFreeTrial && plan.subscriptionEndsAt ? (
+              <dl className="mt-4 space-y-3 text-sm">
+                <div>
+                  <dt className="font-medium text-slate-500">Last payment</dt>
+                  <dd className="mt-1 text-slate-900">
+                    {formatTrialDate(plan.subscriptionStartedAt)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="font-medium text-slate-500">Subscription ends</dt>
+                  <dd className="mt-1 text-slate-900">
+                    {formatTrialDate(plan.subscriptionEndsAt)}
                   </dd>
                 </div>
                 <div>
@@ -127,28 +157,50 @@ export default async function SettingsPage() {
               </dl>
             ) : null}
 
-            {(plan.isFreeTrial || plan.isTrialExpired) && (
+            {plan.isAccessLocked ? (
               <div className="mt-4 flex flex-wrap gap-3">
+                {plan.isFreeTrial ? (
+                  <>
+                    <Link
+                      href="/checkout/starter"
+                      className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Upgrade to Starter
+                    </Link>
+                    <Link
+                      href="/checkout/growth"
+                      className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
+                    >
+                      Upgrade to Growth
+                    </Link>
+                    <Link
+                      href="/checkout/scale"
+                      className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      Upgrade to Scale
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    href={`/checkout/${plan.plan}`}
+                    className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
+                  >
+                    Renew subscription
+                  </Link>
+                )}
+              </div>
+            ) : null}
+
+            {!plan.isAccessLocked && !plan.isFreeTrial ? (
+              <div className="mt-4">
                 <Link
-                  href="/checkout/starter"
+                  href={`/checkout/${plan.plan}`}
                   className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
-                  Upgrade to Starter
-                </Link>
-                <Link
-                  href="/checkout/growth"
-                  className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
-                >
-                  Upgrade to Growth
-                </Link>
-                <Link
-                  href="/checkout/scale"
-                  className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Upgrade to Scale
+                  Renew early
                 </Link>
               </div>
-            )}
+            ) : null}
           </section>
 
           {teamContext && !("error" in membership) ? (

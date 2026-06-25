@@ -1,17 +1,25 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   DEFAULT_FREE_TRIAL_PLAN,
+  DEFAULT_ORG_ID,
   applyLifetimeScalePlanOverride,
   getFallbackOrgPlan,
+  isLifetimeScaleEmail,
   isMissingPlanColumnError,
 } from "@/lib/org-plan-schema";
 import {
   formatPlanLimitMessage,
+  getAccessLockMessage,
   getPlanLimit,
+  isAccessLocked,
   isFreeTrialPlan,
+  isPaidPlan,
+  isSubscriptionExpired,
   isTrialExpired,
   normalizeOrgPlan,
   PLAN_LIMITS,
+  resolveSubscriptionEndsAt,
+  resolveSubscriptionEndsAtFromStoredDate,
   resolveTrialEndsAt,
   type OrgPlan,
   type OrgUsage,
@@ -51,7 +59,7 @@ export async function getOrgUsage(orgId: string): Promise<OrgUsage> {
 
 type OrgPlanRecord = Pick<
   Organization,
-  "id" | "plan" | "trial_ends_at" | "created_at"
+  "id" | "plan" | "trial_started_at" | "trial_ends_at" | "created_at"
 >;
 
 function buildDefaultPlanRecord(
@@ -63,6 +71,7 @@ function buildDefaultPlanRecord(
   return {
     id: orgId,
     plan: fallback.plan,
+    trial_started_at: null,
     trial_ends_at: fallback.trial_ends_at,
     created_at: createdAt ?? new Date().toISOString(),
   };
@@ -170,7 +179,7 @@ export async function getOrganizationPlanRecord(
 
   const { data: withPlan, error: withPlanError } = await supabase
     .from("organizations")
-    .select("id, plan, trial_ends_at, created_at")
+    .select("id, plan, trial_started_at, trial_ends_at, created_at")
     .eq("id", orgId)
     .maybeSingle();
 
@@ -180,6 +189,7 @@ export async function getOrganizationPlanRecord(
       await resolvePlanRecordWithOverrides({
         id: withPlan.id,
         plan: normalizeOrgPlan(withPlan.plan),
+        trial_started_at: withPlan.trial_started_at,
         trial_ends_at: withPlan.trial_ends_at,
         created_at: withPlan.created_at,
       }),
@@ -227,6 +237,79 @@ export async function getOrganizationPlanRecord(
   return null;
 }
 
+type ApprovedPayment = {
+  plan: string;
+  payment_date: string;
+  subscription_ends_at: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+};
+
+async function getLatestApprovedPayment(
+  orgId: string,
+): Promise<ApprovedPayment | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("payment_submissions")
+    .select("plan, payment_date, subscription_ends_at, reviewed_at, created_at")
+    .eq("org_id", orgId)
+    .eq("status", "approved")
+    .order("payment_date", { ascending: false })
+    .order("reviewed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to fetch approved payment:", error.message);
+    return null;
+  }
+
+  return data;
+}
+
+async function resolveSubscriptionState(
+  orgId: string,
+  plan: OrgPlan,
+  userEmail: string | null | undefined,
+) {
+  if (
+    !isPaidPlan(plan) ||
+    isLifetimeScaleEmail(userEmail) ||
+    orgId === DEFAULT_ORG_ID
+  ) {
+    return {
+      subscriptionStartedAt: null,
+      subscriptionEndsAt: null,
+      isSubscriptionExpired: false,
+    };
+  }
+
+  const payment = await getLatestApprovedPayment(orgId);
+
+  if (!payment?.payment_date) {
+    return {
+      subscriptionStartedAt: null,
+      subscriptionEndsAt: null,
+      isSubscriptionExpired: false,
+    };
+  }
+
+  const subscriptionEndsAt = resolveSubscriptionEndsAtFromStoredDate(
+    payment.payment_date,
+    payment.subscription_ends_at,
+  );
+
+  return {
+    subscriptionStartedAt: payment.payment_date,
+    subscriptionEndsAt,
+    isSubscriptionExpired: isSubscriptionExpired(
+      plan,
+      subscriptionEndsAt,
+      payment.subscription_ends_at,
+    ),
+  };
+}
+
 export async function getPlanContext(orgId: string): Promise<PlanContext | null> {
   const org = await getOrganizationPlanRecord(orgId);
 
@@ -234,8 +317,13 @@ export async function getPlanContext(orgId: string): Promise<PlanContext | null>
     return null;
   }
 
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const plan = normalizeOrgPlan(org.plan);
-  const trialStartedAt = org.created_at ?? null;
+  const trialStartedAt = org.trial_started_at ?? org.created_at ?? null;
   const trialEndsAt = resolveTrialEndsAt(
     plan,
     org.trial_ends_at,
@@ -244,6 +332,20 @@ export async function getPlanContext(orgId: string): Promise<PlanContext | null>
 
   await persistTrialEndsAtIfMissing(orgId, org, trialEndsAt);
 
+  const subscription = await resolveSubscriptionState(
+    orgId,
+    plan,
+    user?.email,
+  );
+  const isTrialExpiredValue = isTrialExpired(
+    plan,
+    org.trial_ends_at,
+    trialStartedAt,
+  );
+  const isAccessLockedValue = isAccessLocked(
+    isTrialExpiredValue,
+    subscription.isSubscriptionExpired,
+  );
   const usage = await getOrgUsage(orgId);
 
   return {
@@ -251,10 +353,34 @@ export async function getPlanContext(orgId: string): Promise<PlanContext | null>
     trialStartedAt,
     trialEndsAt,
     isFreeTrial: plan === "free_trial",
-    isTrialExpired: isTrialExpired(plan, org.trial_ends_at, trialStartedAt),
+    isTrialExpired: isTrialExpiredValue,
+    subscriptionStartedAt: subscription.subscriptionStartedAt,
+    subscriptionEndsAt: subscription.subscriptionEndsAt,
+    isSubscriptionExpired: subscription.isSubscriptionExpired,
+    isAccessLocked: isAccessLockedValue,
     limits: PLAN_LIMITS[plan],
     usage,
   };
+}
+
+async function assertWorkspaceAccess(orgId: string) {
+  const context = await getPlanContext(orgId);
+
+  if (!context) {
+    return { error: "Organization not found." };
+  }
+
+  if (context.isAccessLocked) {
+    return {
+      error: getAccessLockMessage(
+        context.plan,
+        context.isTrialExpired,
+        context.isSubscriptionExpired,
+      ),
+    };
+  }
+
+  return { ok: true as const, context };
 }
 
 function getUsageCount(usage: OrgUsage, resource: PlanResource) {
@@ -266,19 +392,13 @@ export async function assertCanCreateResource(
   resource: PlanResource,
   options?: { additionalCount?: number },
 ) {
-  const org = await getOrganizationPlanRecord(orgId);
+  const access = await assertWorkspaceAccess(orgId);
 
-  if (!org) {
-    return { error: "Organization not found." };
+  if ("error" in access) {
+    return { error: access.error };
   }
 
-  const plan = normalizeOrgPlan(org.plan);
-
-  if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
-    return {
-      error: "Your free trial has ended. Upgrade your plan to continue.",
-    };
-  }
+  const plan = access.context.plan;
 
   const limit = getPlanLimit(plan, resource);
 
@@ -298,37 +418,23 @@ export async function assertCanCreateResource(
 }
 
 export async function assertCanUseTikTokImport(orgId: string) {
-  const org = await getOrganizationPlanRecord(orgId);
+  const access = await assertWorkspaceAccess(orgId);
 
-  if (!org) {
-    return { error: "Organization not found." };
-  }
-
-  const plan = normalizeOrgPlan(org.plan);
-
-  if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
-    return {
-      error: "Your free trial has ended. Upgrade your plan to continue.",
-    };
+  if ("error" in access) {
+    return { error: access.error };
   }
 
   return { ok: true as const };
 }
 
 export async function assertCanUseBulkUpload(orgId: string) {
-  const org = await getOrganizationPlanRecord(orgId);
+  const access = await assertWorkspaceAccess(orgId);
 
-  if (!org) {
-    return { error: "Organization not found." };
+  if ("error" in access) {
+    return { error: access.error };
   }
 
-  const plan = normalizeOrgPlan(org.plan);
-
-  if (isTrialExpired(plan, org.trial_ends_at, org.created_at)) {
-    return {
-      error: "Your free trial has ended. Upgrade your plan to continue.",
-    };
-  }
+  const plan = access.context.plan;
 
   if (!hasPlanFeature(plan, "bulk_upload")) {
     return { error: FEATURE_UPGRADE_MESSAGES.bulk_upload };

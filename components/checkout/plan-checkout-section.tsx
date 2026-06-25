@@ -25,6 +25,7 @@ import {
   MAX_PAYMENT_PROOF_FILE_SIZE_BYTES,
 } from "@/lib/payment-proof";
 import { uploadPaymentProofFile } from "@/lib/payment-proof-storage";
+import { getTodayDateInJakarta } from "@/lib/payment-dates";
 import type { OrgPlan, PaymentSubmission } from "@/types/database";
 
 function SubmittedProofPreview({
@@ -101,7 +102,7 @@ export function PlanCheckoutSection({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const config = CHECKOUT_PLAN_CONFIG[plan];
 
-  const [paymentDate, setPaymentDate] = useState("");
+  const [paymentDate, setPaymentDate] = useState(() => getTodayDateInJakarta());
   const [senderName, setSenderName] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreviewUrl, setProofPreviewUrl] = useState<string | null>(null);
@@ -331,21 +332,25 @@ export function PlanCheckoutSection({
             Submit payment proof
           </p>
           <p className="mt-2 text-sm text-slate-600">
-            After transferring, fill in the details below and upload your receipt
-            or screenshot. All fields are required.
+            After transferring, fill in the payment date (WIB), your bank account
+            name, and upload your receipt or screenshot.
           </p>
 
           <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-            <FormField label="Payment date" htmlFor="payment-date" required>
+            <FormField label="Payment date (WIB)" htmlFor="payment-date" required>
               <input
                 id="payment-date"
                 type="date"
                 value={paymentDate}
+                max={getTodayDateInJakarta()}
                 onChange={(event) => setPaymentDate(event.target.value)}
                 disabled={isSubmitting}
                 required
                 className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-kefoo-400 focus:ring-2 focus:ring-kefoo-400/20 disabled:opacity-60"
               />
+              <p className="mt-1 text-xs text-slate-500">
+                Use the transfer date shown on your receipt (Indonesia time).
+              </p>
             </FormField>
 
             <FormField label="Name of Bank Account" htmlFor="sender-name" required>

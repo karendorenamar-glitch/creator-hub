@@ -177,15 +177,19 @@ export function VideoFormModal({
         : await createVideoFromUrl({
             video_url: form.video_url,
             platform,
-            import_metrics: false,
+            import_metrics: !metricsImported,
             auto_create_creator: true,
-            metrics: {
-              views: form.views,
-              likes: form.likes,
-              comments: form.comments,
-              shares: form.shares,
-              saves: form.saves,
-            },
+            ...(metricsImported
+              ? {
+                  metrics: {
+                    views: form.views,
+                    likes: form.likes,
+                    comments: form.comments,
+                    shares: form.shares,
+                    saves: form.saves,
+                  },
+                }
+              : {}),
           });
 
       if (result.error) {

@@ -18,8 +18,8 @@ import {
   type PlanFeature,
 } from "@/lib/plan-features";
 import {
+  getAccessLockMessage,
   isFreeTrialPlan,
-  FREE_TRIAL_EXPIRED_MESSAGE,
   type PlanContext,
   UPGRADE_PLAN_MESSAGE,
 } from "@/lib/plan";
@@ -69,8 +69,8 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
   );
 
   const isNavLocked = useCallback(
-    (href: string) => isNavHrefLocked(plan.plan, href, plan.isTrialExpired),
-    [plan.plan, plan.isTrialExpired],
+    (href: string) => isNavHrefLocked(plan.plan, href, plan.isAccessLocked),
+    [plan.plan, plan.isAccessLocked],
   );
 
   const value = useMemo(
@@ -87,11 +87,15 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
   const routeLocked = !isPathAllowedForPlan(
     plan.plan,
     pathname,
-    plan.isTrialExpired,
+    plan.isAccessLocked,
   );
 
-  const routeLockMessage = plan.isTrialExpired
-    ? FREE_TRIAL_EXPIRED_MESSAGE
+  const routeLockMessage = plan.isAccessLocked
+    ? getAccessLockMessage(
+        plan.plan,
+        plan.isTrialExpired,
+        plan.isSubscriptionExpired,
+      )
     : upgradeDescription;
 
   function handleCloseUpgrade() {
@@ -132,9 +136,9 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
 }
 
 export function PlanUsageLimitsBanner() {
-  const { isTrialExpired } = usePlan();
+  const { isAccessLocked } = usePlan();
 
-  if (isTrialExpired) {
+  if (isAccessLocked) {
     return null;
   }
 

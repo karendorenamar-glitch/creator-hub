@@ -272,7 +272,9 @@ export async function getActiveOrganization(): Promise<Organization | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("organizations")
-    .select("id, name, slug, plan, trial_ends_at, member_limit, created_at")
+    .select(
+      "id, name, slug, plan, trial_started_at, trial_ends_at, member_limit, created_at",
+    )
     .eq("id", orgId)
     .maybeSingle();
 
@@ -283,7 +285,7 @@ export async function getActiveOrganization(): Promise<Organization | null> {
   if (error && isMissingMemberLimitColumnError(error.message)) {
     const { data: fallback, error: fallbackError } = await supabase
       .from("organizations")
-      .select("id, name, slug, plan, trial_ends_at, created_at")
+      .select("id, name, slug, plan, trial_started_at, trial_ends_at, created_at")
       .eq("id", orgId)
       .maybeSingle();
 
@@ -315,6 +317,7 @@ export async function getActiveOrganization(): Promise<Organization | null> {
     return {
       ...fallback,
       plan: planFallback.plan,
+      trial_started_at: null,
       trial_ends_at: planFallback.trial_ends_at,
       member_limit: null,
     };
@@ -487,8 +490,32 @@ export async function createOrganizationForUser(userId: string, name: string) {
 
   const supabase = await createClient();
   const user = await getAuthUser();
-  const { plan: orgPlan, trial_ends_at: orgTrialEndsAt } =
+  const { plan: defaultOrgPlan, trial_ends_at: defaultOrgTrialEndsAt } =
     getOrgPlanForNewOrganization(user?.email);
+
+  let orgPlan = defaultOrgPlan;
+  let orgTrialEndsAt = defaultOrgTrialEndsAt;
+
+  // Prevent the same account from redeeming multiple free trials across workspaces.
+  if (orgPlan === "free_trial") {
+    const { data: memberships } = await supabase
+      .from("org_members")
+      .select("org_id, organizations(trial_started_at)")
+      .eq("user_id", userId);
+
+    const hasRedeemedTrial =
+      (memberships ?? []).some((row) => {
+        const org = row.organizations;
+        if (!org || Array.isArray(org)) {
+          return false;
+        }
+        return Boolean((org as { trial_started_at?: string | null }).trial_started_at);
+      });
+
+    if (hasRedeemedTrial) {
+      orgTrialEndsAt = new Date().toISOString();
+    }
+  }
   const slugCandidates = buildOrgSlugCandidates(trimmedName);
 
   for (const slug of slugCandidates) {
@@ -544,6 +571,7 @@ async function createOrganizationWithMembershipFallback({
     ? {
         ...basePayload,
         plan: orgPlan,
+        trial_started_at: orgPlan === "free_trial" ? new Date().toISOString() : null,
         trial_ends_at: orgTrialEndsAt,
       }
     : basePayload;
@@ -582,7 +610,9 @@ async function createOrganizationWithMembershipFallback({
   const selectResult = includePlanFields
     ? await supabase
         .from("organizations")
-        .select("id, name, slug, plan, trial_ends_at, member_limit, created_at")
+        .select(
+          "id, name, slug, plan, trial_started_at, trial_ends_at, member_limit, created_at",
+        )
         .eq("id", orgId)
         .single()
     : await supabase

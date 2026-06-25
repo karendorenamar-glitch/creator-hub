@@ -13,7 +13,7 @@ export default async function OnboardingPage() {
     redirect(
       getDefaultAppPath(
         planContext?.plan ?? "free_trial",
-        planContext?.isTrialExpired ?? false,
+        planContext?.isAccessLocked ?? false,
       ),
     );
   }

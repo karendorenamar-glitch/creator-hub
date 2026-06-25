@@ -48,7 +48,7 @@ export async function resolveAuthSession() {
     orgId,
     redirectTo: getDefaultAppPath(
       planContext?.plan ?? "free_trial",
-      planContext?.isTrialExpired ?? false,
+      planContext?.isAccessLocked ?? false,
     ),
   };
 }

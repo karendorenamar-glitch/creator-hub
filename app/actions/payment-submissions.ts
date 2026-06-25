@@ -8,6 +8,10 @@ import {
   type CheckoutPlan,
 } from "@/lib/plan-checkout";
 import { sendPaymentSubmissionNotification } from "@/lib/payment-notification-email";
+import {
+  parsePaymentDateInJakarta,
+  resolveSubscriptionEndsDate,
+} from "@/lib/payment-dates";
 import { createClient } from "@/lib/supabase/server";
 import type { PaymentSubmission } from "@/types/database";
 
@@ -17,26 +21,6 @@ export type SubmitPlanPaymentInput = {
   senderName: string;
   proofUrl: string;
 };
-
-function parsePaymentDate(value: string) {
-  const trimmed = value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-    return { error: "Enter a valid payment date." };
-  }
-
-  const [year, month, day] = trimmed.split("-").map(Number);
-  const parsed = new Date(Date.UTC(year, month - 1, day));
-
-  if (
-    parsed.getUTCFullYear() !== year ||
-    parsed.getUTCMonth() + 1 !== month ||
-    parsed.getUTCDate() !== day
-  ) {
-    return { error: "Enter a valid payment date." };
-  }
-
-  return { value: trimmed };
-}
 
 export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
   const orgResult = await getOrgIdForAction();
@@ -58,10 +42,12 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
     return { error: "Name of Bank Account is required." };
   }
 
-  const paymentDate = parsePaymentDate(input.paymentDate);
+  const paymentDate = parsePaymentDateInJakarta(input.paymentDate);
   if ("error" in paymentDate) {
     return { error: paymentDate.error };
   }
+
+  const subscriptionEndsAt = resolveSubscriptionEndsDate(paymentDate.value);
 
   const supabase = await createClient();
 
@@ -100,6 +86,7 @@ export async function submitPlanPayment(input: SubmitPlanPaymentInput) {
       plan: input.plan,
       amount_idr: config.amountIdr,
       payment_date: paymentDate.value,
+      subscription_ends_at: subscriptionEndsAt,
       sender_name: senderName,
       notes: null,
       proof_url: proofUrl,

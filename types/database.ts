@@ -20,6 +20,7 @@ export type Organization = {
   name: string;
   slug: string | null;
   plan: OrgPlan;
+  trial_started_at: string | null;
   trial_ends_at: string | null;
   member_limit: number | null;
   created_at: string;
@@ -45,6 +46,7 @@ export type PaymentSubmission = {
   plan: Extract<OrgPlan, "starter" | "growth" | "scale">;
   amount_idr: number;
   payment_date: string;
+  subscription_ends_at: string | null;
   sender_name: string | null;
   notes: string | null;
   proof_url: string;
@@ -379,6 +381,7 @@ export type Database = {
           plan: PaymentSubmission["plan"];
           amount_idr: number;
           payment_date: string;
+          subscription_ends_at?: string | null;
           sender_name?: string | null;
           notes?: string | null;
           proof_url: string;
@@ -392,6 +395,7 @@ export type Database = {
           plan?: PaymentSubmission["plan"];
           amount_idr?: number;
           payment_date?: string;
+          subscription_ends_at?: string | null;
           sender_name?: string | null;
           notes?: string | null;
           proof_url?: string;

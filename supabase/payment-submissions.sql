@@ -7,6 +7,7 @@ create table if not exists public.payment_submissions (
   plan text not null check (plan in ('starter', 'growth', 'scale')),
   amount_idr integer not null check (amount_idr > 0),
   payment_date date not null,
+  subscription_ends_at date,
   sender_name text,
   notes text,
   proof_url text not null,

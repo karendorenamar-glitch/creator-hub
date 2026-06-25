@@ -1,8 +1,43 @@
--- Run in Supabase → SQL Editor if signup fails with RLS on organizations.
--- Creates a secure workspace bootstrap function and ensures insert policies exist.
---
--- If you see "cannot change return type of existing function", run
--- supabase/trial-and-signup-migration.sql instead (it drops the old function first).
+-- Run once in Supabase → SQL Editor.
+-- Safe migration for trial tracking + updated signup function.
+-- Fixes: "cannot change return type of existing function"
+
+-- ---------------------------------------------------------------------------
+-- 1) Plan + trial columns
+-- ---------------------------------------------------------------------------
+
+alter table public.organizations
+  add column if not exists plan text not null default 'free_trial'
+    check (plan in ('free_trial', 'starter', 'growth', 'scale'));
+
+alter table public.organizations
+  add column if not exists trial_ends_at timestamptz;
+
+alter table public.organizations
+  add column if not exists trial_started_at timestamptz;
+
+alter table public.organizations
+  add column if not exists member_limit integer;
+
+-- Default workspace: no trial limits.
+update public.organizations
+set
+  plan = 'scale',
+  trial_ends_at = null,
+  trial_started_at = null
+where id = '11111111-1111-1111-1111-111111111111';
+
+-- Existing free-trial workspaces: backfill trial window.
+update public.organizations
+set
+  trial_started_at = coalesce(trial_started_at, created_at),
+  trial_ends_at = coalesce(trial_ends_at, now() + interval '30 days')
+where plan = 'free_trial'
+  and id <> '11111111-1111-1111-1111-111111111111';
+
+-- ---------------------------------------------------------------------------
+-- 2) Signup function (must drop first when return type changes)
+-- ---------------------------------------------------------------------------
 
 drop function if exists public.create_organization_for_user(text, text, text, timestamptz);
 
@@ -79,17 +114,5 @@ revoke all on function public.create_organization_for_user(text, text, text, tim
   from public;
 grant execute on function public.create_organization_for_user(text, text, text, timestamptz)
   to authenticated;
-
-drop policy if exists "Authenticated users can create organizations" on public.organizations;
-create policy "Authenticated users can create organizations"
-  on public.organizations for insert
-  to authenticated
-  with check (auth.uid() is not null);
-
-drop policy if exists "Users can insert own org membership" on public.org_members;
-create policy "Users can insert own org membership"
-  on public.org_members for insert
-  to authenticated
-  with check (auth.uid() = user_id);
 
 notify pgrst, 'reload schema';

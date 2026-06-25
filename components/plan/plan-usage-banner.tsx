@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePlan } from "@/components/plan/plan-provider";
 import { formatOrgPlanLabel } from "@/lib/plan-checkout";
 import type { OrgPlan, PlanResource } from "@/lib/plan";
-import { formatTrialDate, getTrialEndsInDays } from "@/lib/plan";
+import { formatTrialDate, getDaysUntilDate, getTrialEndsInDays } from "@/lib/plan";
 import { cn } from "@/lib/utils";
 
 type UsageItem = {
@@ -107,15 +107,25 @@ export function PlanUsageBanner({
   className,
   showUpgradeLink = true,
 }: PlanUsageBannerProps) {
-  const { plan, limits, usage, isTrialExpired, isFreeTrial, trialEndsAt } =
-    usePlan();
+  const {
+    plan,
+    limits,
+    usage,
+    isAccessLocked,
+    isFreeTrial,
+    trialEndsAt,
+    subscriptionEndsAt,
+  } = usePlan();
 
-  if (isTrialExpired) {
+  if (isAccessLocked) {
     return null;
   }
 
   const items = getUsageItems(plan, usage, limits);
-  const daysLeft = isFreeTrial ? getTrialEndsInDays(trialEndsAt) : null;
+  const daysLeft = isFreeTrial
+    ? getTrialEndsInDays(trialEndsAt)
+    : getDaysUntilDate(subscriptionEndsAt);
+  const periodEndsAt = isFreeTrial ? trialEndsAt : subscriptionEndsAt;
 
   if (items.length === 0) {
     return null;
@@ -129,7 +139,9 @@ export function PlanUsageBanner({
         ? "/checkout/growth"
         : plan === "growth"
           ? "/checkout/scale"
-          : null;
+          : subscriptionEndsAt
+            ? `/checkout/${plan}`
+            : null;
 
   return (
     <div
@@ -143,14 +155,16 @@ export function PlanUsageBanner({
           <p className="text-sm font-semibold text-kefoo-900">
             {getPlanUsageTitle(plan)}
           </p>
-          {isFreeTrial && trialEndsAt && daysLeft !== null ? (
+          {periodEndsAt && daysLeft !== null ? (
             <p className="mt-1 text-xs text-kefoo-800">
               {daysLeft === 0
-                ? "Trial ends today"
-                : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left · ends ${formatTrialDate(trialEndsAt)}`}
+                ? isFreeTrial
+                  ? "Trial ends today"
+                  : "Subscription ends today"
+                : `${daysLeft} day${daysLeft === 1 ? "" : "s"} left · ends ${formatTrialDate(periodEndsAt)}`}
             </p>
           ) : showMonthlyHint ? (
-            <p className="mt-1 text-xs text-kefoo-800">Monthly allowance</p>
+            <p className="mt-1 text-xs text-kefoo-800">Monthly subscription</p>
           ) : null}
         </div>
         {showUpgradeLink && upgradeHref ? (
@@ -162,7 +176,9 @@ export function PlanUsageBanner({
               ? "Upgrade to Growth"
               : plan === "growth"
                 ? "Upgrade to Scale"
-                : "Upgrade plan"}
+                : plan === "scale"
+                  ? "Renew subscription"
+                  : "Upgrade plan"}
           </Link>
         ) : null}
       </div>

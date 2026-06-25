@@ -82,9 +82,12 @@ const en = {
     "Unlock creator comparisons, live insights, and monthly trends with Growth.",
   "campaign.refreshVideos": "Refresh videos",
   "common.upgradePlan": "Upgrade plan",
+  "common.renewSubscription": "Renew subscription",
   "trial.expired":
-    "Your free trial has ended{date}. Upgrade to keep campaigns, creators, and videos in sync.",
+    "Your free access has ended{date}. Update your plan and pay your subscription to keep campaigns, creators, and videos in sync.",
   "trial.expiredDate": " on {date}",
+  "subscription.expired":
+    "Your subscription has ended{date}. Pay your next subscription to keep campaigns, creators, and videos in sync.",
 } as const;
 
 const id: Record<keyof typeof en, string> = {
@@ -169,9 +172,12 @@ const id: Record<keyof typeof en, string> = {
     "Buka perbandingan kreator, insight live, dan tren bulanan dengan Growth.",
   "campaign.refreshVideos": "Refresh video",
   "common.upgradePlan": "Upgrade plan",
+  "common.renewSubscription": "Perpanjang langganan",
   "trial.expired":
     "Free trial kamu sudah berakhir{date}. Upgrade untuk terus sinkronkan campaign, kreator, dan video.",
   "trial.expiredDate": " pada {date}",
+  "subscription.expired":
+    "Langganan kamu sudah berakhir{date}. Bayar langganan berikutnya untuk terus pakai campaign, kreator, dan video.",
 };
 
 export type MessageKey = keyof typeof en;

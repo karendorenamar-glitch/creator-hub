@@ -465,6 +465,8 @@ grant execute on function public.get_org_team_members(uuid) to authenticated;
 -- Update workspace bootstrap to use leader role + member_limit
 -- ---------------------------------------------------------------------------
 
+drop function if exists public.create_organization_for_user(text, text, text, timestamptz);
+
 create or replace function public.create_organization_for_user(
   org_name text,
   org_slug text,
@@ -476,6 +478,7 @@ returns table (
   name text,
   slug text,
   plan text,
+  trial_started_at timestamptz,
   trial_ends_at timestamptz,
   created_at timestamptz
 )
@@ -503,12 +506,17 @@ begin
     else 1
   end;
 
-  insert into public.organizations (name, slug, plan, trial_ends_at, member_limit)
+  insert into public.organizations (name, slug, plan, trial_started_at, trial_ends_at, member_limit)
   values (
     trim(org_name),
     nullif(trim(org_slug), ''),
     resolved_plan,
-    coalesce(org_trial_ends_at, now() + interval '30 days'),
+    case when resolved_plan = 'free_trial' then now() else null end,
+    case
+      when resolved_plan = 'free_trial'
+        then coalesce(org_trial_ends_at, now() + interval '30 days')
+      else null
+    end,
     resolved_limit
   )
   returning * into new_org;
@@ -522,6 +530,7 @@ begin
     new_org.name::text,
     new_org.slug::text,
     new_org.plan::text,
+    new_org.trial_started_at,
     new_org.trial_ends_at,
     new_org.created_at;
 end;

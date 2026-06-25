@@ -394,7 +394,9 @@ create policy "Org members can delete content planner rows"
   on public.content_planner_agency for delete
   using (public.is_org_member(org_id));
 
--- Signup: create workspace + owner membership atomically (bypasses RLS read-after-insert issue).
+-- Signup: create workspace + leader membership atomically (bypasses RLS read-after-insert issue).
+drop function if exists public.create_organization_for_user(text, text, text, timestamptz);
+
 create or replace function public.create_organization_for_user(
   org_name text,
   org_slug text,
@@ -406,6 +408,7 @@ returns table (
   name text,
   slug text,
   plan text,
+  trial_started_at timestamptz,
   trial_ends_at timestamptz,
   created_at timestamptz
 )
@@ -416,6 +419,8 @@ as $$
 declare
   caller uuid := auth.uid();
   new_org public.organizations%rowtype;
+  resolved_plan text := coalesce(nullif(trim(org_plan), ''), 'free_trial');
+  resolved_limit integer;
 begin
   if caller is null then
     raise exception 'Not authenticated';
@@ -425,24 +430,37 @@ begin
     raise exception 'Organization name is required';
   end if;
 
-  insert into public.organizations (name, slug, plan, trial_ends_at)
+  resolved_limit := case resolved_plan
+    when 'growth' then 3
+    when 'scale' then 5
+    else 1
+  end;
+
+  insert into public.organizations (name, slug, plan, trial_started_at, trial_ends_at, member_limit)
   values (
     trim(org_name),
     nullif(trim(org_slug), ''),
-    coalesce(nullif(trim(org_plan), ''), 'free_trial'),
-    coalesce(org_trial_ends_at, now() + interval '30 days')
+    resolved_plan,
+    case when resolved_plan = 'free_trial' then now() else null end,
+    case
+      when resolved_plan = 'free_trial'
+        then coalesce(org_trial_ends_at, now() + interval '30 days')
+      else null
+    end,
+    resolved_limit
   )
   returning * into new_org;
 
   insert into public.org_members (org_id, user_id, role)
-  values (new_org.id, caller, 'owner');
+  values (new_org.id, caller, 'leader');
 
   return query
   select
     new_org.id,
-    new_org.name,
-    new_org.slug,
-    new_org.plan,
+    new_org.name::text,
+    new_org.slug::text,
+    new_org.plan::text,
+    new_org.trial_started_at,
     new_org.trial_ends_at,
     new_org.created_at;
 end;

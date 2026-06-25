@@ -4,9 +4,9 @@ import { PlanUsageBanner } from "@/components/plan/plan-usage-banner";
 import { usePlan } from "@/components/plan/plan-provider";
 
 export function DashboardPlanUsage() {
-  const { plan, isTrialExpired } = usePlan();
+  const { plan, isAccessLocked } = usePlan();
 
-  if (isTrialExpired) {
+  if (isAccessLocked) {
     return null;
   }
 

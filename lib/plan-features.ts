@@ -89,15 +89,15 @@ export function getDashboardDescription(tier: DashboardTier) {
 export function isPathAllowedForPlan(
   plan: OrgPlan,
   pathname: string,
-  isTrialExpired: boolean,
+  isAccessLocked: boolean,
 ) {
-  if (isFreeTrialPlan(plan)) {
-    if (isTrialExpired) {
-      return (
-        pathname.startsWith("/settings") || pathname.startsWith("/checkout")
-      );
-    }
+  if (isAccessLocked) {
+    return (
+      pathname.startsWith("/settings") || pathname.startsWith("/checkout")
+    );
+  }
 
+  if (isFreeTrialPlan(plan)) {
     return isPathAllowedOnFreeTrial(pathname);
   }
 
@@ -119,7 +119,7 @@ export function isPathAllowedForPlan(
 export function isNavHrefLocked(
   plan: OrgPlan,
   href: string,
-  isTrialExpired: boolean,
+  isAccessLocked: boolean,
 ) {
-  return !isPathAllowedForPlan(plan, href, isTrialExpired);
+  return !isPathAllowedForPlan(plan, href, isAccessLocked);
 }

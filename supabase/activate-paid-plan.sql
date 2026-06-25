@@ -39,7 +39,13 @@ begin
 
   if target_submission_id is not null then
     update public.payment_submissions
-    set status = 'approved', reviewed_at = now()
+    set
+      status = 'approved',
+      reviewed_at = now(),
+      subscription_ends_at = coalesce(
+        subscription_ends_at,
+        (payment_date + interval '30 days')::date
+      )
     where id = target_submission_id;
   else
     raise notice 'No pending payment_submissions row — only updating organizations.plan';

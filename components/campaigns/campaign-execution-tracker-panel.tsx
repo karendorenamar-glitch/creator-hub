@@ -9,7 +9,6 @@ import {
   updateCampaignCreatorWorkflowStatus,
 } from "@/app/actions/campaigns";
 import { createVideoFromUrl } from "@/app/actions/videos";
-import { usePlan } from "@/components/plan/plan-provider";
 import { useToast } from "@/components/ui/toast";
 import {
   CAMPAIGN_CREATOR_WORKFLOW_STATUSES,
@@ -72,7 +71,6 @@ export function CampaignExecutionTrackerPanel({
 }: CampaignExecutionTrackerPanelProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
-  const { isFreeTrial } = usePlan();
   const [statusByCreator, setStatusByCreator] = useState<
     Record<string, CampaignCreatorWorkflowStatus>
   >({});
@@ -208,7 +206,7 @@ export function CampaignExecutionTrackerPanel({
         video_url: videoUrl,
         platform,
         campaign_id: campaign.id,
-        import_metrics: !isFreeTrial,
+        import_metrics: true,
         auto_create_creator: false,
       });
 
@@ -219,11 +217,7 @@ export function CampaignExecutionTrackerPanel({
         return;
       }
 
-      showSuccess(
-        isFreeTrial
-          ? "Video linked. Use Refresh videos in campaign details to import metrics."
-          : "Video linked and metrics imported.",
-      );
+      showSuccess("Video linked and metrics imported.");
       router.refresh();
     });
   }
