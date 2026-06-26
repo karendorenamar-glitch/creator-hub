@@ -11,9 +11,12 @@ import {
   formatOrgMemberRoleLabel,
   isLeaderRole,
   normalizeOrgMemberRole,
-  planAllowsTeamInvites,
-  resolveMemberLimit,
 } from "@/lib/org-team";
+import {
+  planAllowsTeamInvitesWithAddOns,
+  resolveEffectiveLimits,
+} from "@/lib/plan-add-ons";
+import { getOrgAddOns } from "@/lib/plan-enforcement";
 import { getUserGreetingName } from "@/lib/user-display";
 import { createClient } from "@/lib/supabase/server";
 import { purgeOrphanedAuthUser } from "@/lib/supabase/admin";
@@ -124,10 +127,12 @@ export async function getTeamWorkspaceContext(): Promise<
     invites = (inviteRows as OrgInvite[]).map(mapInvite);
   }
 
-  const memberLimit = resolveMemberLimit(
+  const addOns = await getOrgAddOns(membership.orgId);
+  const memberLimit = resolveEffectiveLimits(
     organization.plan,
     organization.member_limit,
-  );
+    addOns,
+  ).members;
   const seatUsage = members.length + invites.length;
 
   return {
@@ -135,7 +140,8 @@ export async function getTeamWorkspaceContext(): Promise<
       plan: organization.plan,
       memberLimit,
       seatUsage,
-      canInvite: isLeader && planAllowsTeamInvites(organization.plan),
+      canInvite:
+        isLeader && planAllowsTeamInvitesWithAddOns(organization.plan, addOns),
       isLeader,
       members,
       invites,

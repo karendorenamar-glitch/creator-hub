@@ -17,6 +17,8 @@ function createFallbackPlanContext(): PlanContext {
     isAccessLocked: false,
     limits: PLAN_LIMITS.free_trial,
     usage: { campaigns: 0, creators: 0, videos: 0 },
+    addOns: [],
+    addOnFeatures: [],
   };
 }
 

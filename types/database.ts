@@ -1,5 +1,6 @@
 import type { DashboardWorkspaceAnalytics } from "@/lib/dashboard-analytics";
 import type { PayoutTimingBadge } from "@/lib/payouts";
+import type { OrgAddOnRecord, OrgAddOnStatus, OrgAddOnType } from "@/lib/plan-add-ons";
 
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
 
@@ -14,6 +15,8 @@ export type CampaignCreatorWorkflowStatus =
 export type OrgMemberRole = "leader" | "team";
 
 export type OrgPlan = "free_trial" | "starter" | "growth" | "scale";
+
+export type { OrgAddOnRecord, OrgAddOnStatus, OrgAddOnType };
 
 export type Organization = {
   id: string;
@@ -366,6 +369,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "org_invites_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      org_add_ons: {
+        Row: OrgAddOnRecord;
+        Insert: {
+          id?: string;
+          org_id: string;
+          add_on_type: OrgAddOnType;
+          quantity?: number;
+          status?: OrgAddOnStatus;
+          notes?: string | null;
+          created_at?: string;
+          cancelled_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          org_id?: string;
+          add_on_type?: OrgAddOnType;
+          quantity?: number;
+          status?: OrgAddOnStatus;
+          notes?: string | null;
+          created_at?: string;
+          cancelled_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_add_ons_org_id_fkey";
             columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "organizations";

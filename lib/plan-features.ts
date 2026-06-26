@@ -43,9 +43,14 @@ export const FEATURE_UPGRADE_MESSAGES: Record<PlanFeature, string> = {
 export function hasPlanFeature(
   plan: OrgPlan | string,
   feature: PlanFeature,
+  addOnFeatures: PlanFeature[] = [],
 ): boolean {
   if (feature === "content_planner" && !CONTENT_PLANNER_ENABLED) {
     return false;
+  }
+
+  if (addOnFeatures.includes(feature)) {
+    return true;
   }
 
   const normalizedPlan = normalizeOrgPlan(plan);
@@ -69,16 +74,19 @@ export function getNavUpgradeCheckoutPlan(href: string): CheckoutPlan {
   return "growth";
 }
 
-export function getDashboardTier(plan: OrgPlan): DashboardTier {
-  if (!hasPlanFeature(plan, "dashboard")) {
+export function getDashboardTier(
+  plan: OrgPlan,
+  addOnFeatures: PlanFeature[] = [],
+): DashboardTier {
+  if (!hasPlanFeature(plan, "dashboard", addOnFeatures)) {
     return "none";
   }
 
-  if (hasPlanFeature(plan, "payouts")) {
+  if (hasPlanFeature(plan, "payouts", addOnFeatures)) {
     return "scale";
   }
 
-  if (hasPlanFeature(plan, "dashboard_advanced")) {
+  if (hasPlanFeature(plan, "dashboard_advanced", addOnFeatures)) {
     return "growth";
   }
 
@@ -102,6 +110,7 @@ export function isPathAllowedForPlan(
   plan: OrgPlan,
   pathname: string,
   isAccessLocked: boolean,
+  addOnFeatures: PlanFeature[] = [],
 ) {
   if (isAccessLocked) {
     return (
@@ -114,15 +123,15 @@ export function isPathAllowedForPlan(
   }
 
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
-    return hasPlanFeature(plan, "dashboard");
+    return hasPlanFeature(plan, "dashboard", addOnFeatures);
   }
 
   if (pathname === "/payouts" || pathname.startsWith("/payouts/")) {
-    return hasPlanFeature(plan, "payouts");
+    return hasPlanFeature(plan, "payouts", addOnFeatures);
   }
 
   if (pathname === "/planner" || pathname.startsWith("/planner/")) {
-    return hasPlanFeature(plan, "content_planner");
+    return hasPlanFeature(plan, "content_planner", addOnFeatures);
   }
 
   return true;
@@ -132,6 +141,7 @@ export function isNavHrefLocked(
   plan: OrgPlan,
   href: string,
   isAccessLocked: boolean,
+  addOnFeatures: PlanFeature[] = [],
 ) {
-  return !isPathAllowedForPlan(plan, href, isAccessLocked);
+  return !isPathAllowedForPlan(plan, href, isAccessLocked, addOnFeatures);
 }

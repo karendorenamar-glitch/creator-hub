@@ -67,13 +67,15 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
   }, []);
 
   const hasFeature = useCallback(
-    (feature: PlanFeature) => hasPlanFeature(plan.plan, feature),
-    [plan.plan],
+    (feature: PlanFeature) =>
+      hasPlanFeature(plan.plan, feature, plan.addOnFeatures),
+    [plan.plan, plan.addOnFeatures],
   );
 
   const isNavLocked = useCallback(
-    (href: string) => isNavHrefLocked(plan.plan, href, plan.isAccessLocked),
-    [plan.plan, plan.isAccessLocked],
+    (href: string) =>
+      isNavHrefLocked(plan.plan, href, plan.isAccessLocked, plan.addOnFeatures),
+    [plan.plan, plan.isAccessLocked, plan.addOnFeatures],
   );
 
   const value = useMemo(
@@ -91,6 +93,7 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
     plan.plan,
     pathname,
     plan.isAccessLocked,
+    plan.addOnFeatures,
   );
 
   const routeLockMessage = plan.isAccessLocked

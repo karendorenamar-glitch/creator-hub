@@ -75,9 +75,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const locale = await getLocale();
   const platformFilter = parseDashboardPlatformParam(params.platform);
   const planContext = await getDashboardPlanContext();
-  const tier = getDashboardTier(planContext.plan);
-  const showAdvanced = hasPlanFeature(planContext.plan, "dashboard_advanced");
-  const showDashboardCampaigns = hasPlanFeature(planContext.plan, "dashboard");
+  const tier = getDashboardTier(planContext.plan, planContext.addOnFeatures);
+  const showAdvanced = hasPlanFeature(
+    planContext.plan,
+    "dashboard_advanced",
+    planContext.addOnFeatures,
+  );
+  const showDashboardCampaigns = hasPlanFeature(
+    planContext.plan,
+    "dashboard",
+    planContext.addOnFeatures,
+  );
   const activeCampaignsNote = showDashboardCampaigns
     ? getMessage(locale, "dashboard.activeCampaignsOnly")
     : undefined;

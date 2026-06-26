@@ -10,14 +10,12 @@ import {
 import {
   formatPlanLimitMessage,
   getAccessLockMessage,
-  getPlanLimit,
   isAccessLocked,
   isFreeTrialPlan,
   isPaidPlan,
   isSubscriptionExpired,
   isTrialExpired,
   normalizeOrgPlan,
-  PLAN_LIMITS,
   resolveSubscriptionEndsAt,
   resolveSubscriptionEndsAtFromStoredDate,
   resolveTrialEndsAt,
@@ -30,6 +28,11 @@ import {
   FEATURE_UPGRADE_MESSAGES,
   hasPlanFeature,
 } from "@/lib/plan-features";
+import {
+  resolveAddOnFeatures,
+  resolveEffectiveLimits,
+  type OrgAddOnRecord,
+} from "@/lib/plan-add-ons";
 import type { Organization } from "@/types/database";
 
 export async function getOrgUsage(orgId: string): Promise<OrgUsage> {
@@ -267,6 +270,27 @@ async function getLatestApprovedPayment(
   return data;
 }
 
+export async function getOrgAddOns(orgId: string): Promise<OrgAddOnRecord[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("org_add_ons")
+    .select("id, org_id, add_on_type, quantity, status, notes, created_at, cancelled_at")
+    .eq("org_id", orgId)
+    .eq("status", "active")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    if (error.message.includes("org_add_ons")) {
+      return [];
+    }
+
+    console.error("Failed to fetch org add-ons:", error.message);
+    return [];
+  }
+
+  return (data ?? []) as OrgAddOnRecord[];
+}
+
 async function resolveSubscriptionState(
   orgId: string,
   plan: OrgPlan,
@@ -346,7 +370,18 @@ export async function getPlanContext(orgId: string): Promise<PlanContext | null>
     isTrialExpiredValue,
     subscription.isSubscriptionExpired,
   );
-  const usage = await getOrgUsage(orgId);
+  const [usage, addOns, orgSettingsResult] = await Promise.all([
+    getOrgUsage(orgId),
+    getOrgAddOns(orgId),
+    supabase
+      .from("organizations")
+      .select("member_limit")
+      .eq("id", orgId)
+      .maybeSingle(),
+  ]);
+  const memberLimit = orgSettingsResult.data?.member_limit ?? null;
+  const addOnFeatures = resolveAddOnFeatures(addOns);
+  const limits = resolveEffectiveLimits(plan, memberLimit, addOns);
 
   return {
     plan,
@@ -358,8 +393,10 @@ export async function getPlanContext(orgId: string): Promise<PlanContext | null>
     subscriptionEndsAt: subscription.subscriptionEndsAt,
     isSubscriptionExpired: subscription.isSubscriptionExpired,
     isAccessLocked: isAccessLockedValue,
-    limits: PLAN_LIMITS[plan],
+    limits,
     usage,
+    addOns,
+    addOnFeatures,
   };
 }
 
@@ -400,7 +437,12 @@ export async function assertCanCreateResource(
 
   const plan = access.context.plan;
 
-  const limit = getPlanLimit(plan, resource);
+  const limit =
+    resource === "campaigns"
+      ? access.context.limits.campaigns
+      : resource === "creators"
+        ? access.context.limits.creators
+        : access.context.limits.videos;
 
   if (limit === null) {
     return { ok: true as const };
@@ -436,7 +478,7 @@ export async function assertCanUseBulkUpload(orgId: string) {
 
   const plan = access.context.plan;
 
-  if (!hasPlanFeature(plan, "bulk_upload")) {
+  if (!hasPlanFeature(plan, "bulk_upload", access.context.addOnFeatures)) {
     return { error: FEATURE_UPGRADE_MESSAGES.bulk_upload };
   }
 

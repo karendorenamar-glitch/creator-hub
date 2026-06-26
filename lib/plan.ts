@@ -1,5 +1,7 @@
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
 import { defaultTrialEndsAt } from "@/lib/org-plan-schema";
+import type { OrgAddOnRecord } from "@/lib/plan-add-ons";
+import type { PlanFeature } from "@/lib/plan-features";
 import {
   isSubscriptionEndDatePassed,
   resolveSubscriptionEndsDate,
@@ -47,6 +49,8 @@ export type PlanContext = {
   isAccessLocked: boolean;
   limits: PlanLimits;
   usage: OrgUsage;
+  addOns: OrgAddOnRecord[];
+  addOnFeatures: PlanFeature[];
 };
 
 export const PLAN_LIMITS: Record<OrgPlan, PlanLimits> = {
