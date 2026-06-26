@@ -29,7 +29,7 @@ export const metadata: Metadata = {
   },
 
   description:
-    "Manage creators, track TikTok performance, monitor campaign analytics, and automate influencer reporting in one click.",
+    "KOL Campaign Tracker, All in One Campaign Dashboard",
 
   keywords: [
     "Creator CRM",
