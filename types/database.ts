@@ -12,6 +12,8 @@ export type CampaignCreatorWorkflowStatus =
   | "revision"
   | "posted";
 
+export type CampaignCreatorDealType = "paid" | "barter" | "voucher";
+
 export type OrgMemberRole = "leader" | "team";
 
 export type OrgPlan = "free_trial" | "starter" | "growth" | "scale";
@@ -182,7 +184,27 @@ export type CampaignListItem = Campaign & {
 
 export type CampaignCreator = Creator & {
   campaign_fee: number | null;
+  deal_type: CampaignCreatorDealType;
+  deal_value: number | null;
   workflow_status: CampaignCreatorWorkflowStatus | null;
+};
+
+export type CampaignCreatorPerformanceDetail = {
+  campaign: Pick<Campaign, "id" | "name" | "client_name" | "status">;
+  creator: CampaignCreator;
+  campaign_fee: number;
+  videos: VideoWithCreator[];
+  total_videos: number;
+  total_views: number;
+  total_likes: number;
+  total_comments: number;
+  total_shares: number;
+  total_saves: number;
+  average_engagement_rate: number;
+  cpv: number;
+  cpe: number;
+  cpl: number;
+  top_performing_video: VideoWithCreator | null;
 };
 
 export type CampaignDetail = Campaign & {
@@ -591,18 +613,24 @@ export type Database = {
           campaign_id: string;
           creator_id: string;
           fee: number | null;
+          deal_type: CampaignCreatorDealType;
+          deal_value: number | null;
           workflow_status: CampaignCreatorWorkflowStatus | null;
         };
         Insert: {
           campaign_id: string;
           creator_id: string;
           fee?: number | null;
+          deal_type?: CampaignCreatorDealType;
+          deal_value?: number | null;
           workflow_status?: CampaignCreatorWorkflowStatus | null;
         };
         Update: {
           campaign_id?: string;
           creator_id?: string;
           fee?: number | null;
+          deal_type?: CampaignCreatorDealType;
+          deal_value?: number | null;
           workflow_status?: CampaignCreatorWorkflowStatus | null;
         };
         Relationships: [

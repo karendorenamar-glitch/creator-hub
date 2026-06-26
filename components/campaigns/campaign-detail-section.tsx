@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -27,6 +27,7 @@ import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badg
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { getCampaignHealth } from "@/lib/campaign-analytics";
+import { getCampaignCreatorDealAmount } from "@/lib/campaign-creator-deal";
 import {
   formatCPE,
   formatCPV,
@@ -122,7 +123,7 @@ const healthStyles = {
 } as const;
 
 function getEffectiveCreatorFee(creator: CampaignCreator) {
-  return creator.campaign_fee ?? creator.fee;
+  return getCampaignCreatorDealAmount(creator);
 }
 
 function CampaignBudgetUsage({
@@ -284,11 +285,19 @@ export function CampaignDetailSection({
   canEdit,
 }: CampaignDetailSectionProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedView = searchParams.get("view");
+  const initialView: CampaignDetailView =
+    requestedView === "performance" ? "performance" : "execution";
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [activeView, setActiveView] = useState<CampaignDetailView>("execution");
+  const [activeView, setActiveView] = useState<CampaignDetailView>(initialView);
   const [isDeleting, startDeleteTransition] = useTransition();
+
+  useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
 
   const performanceCreatorIds = useMemo(
     () => new Set(campaign.videos.map((video) => video.creator_id)),

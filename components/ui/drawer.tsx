@@ -9,7 +9,14 @@ type DrawerProps = {
   title: string;
   description?: string;
   children: React.ReactNode;
+  size?: "md" | "lg" | "xl";
 };
+
+const sizeClasses = {
+  md: "max-w-md",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+} as const;
 
 export function Drawer({
   open,
@@ -17,6 +24,7 @@ export function Drawer({
   title,
   description,
   children,
+  size = "md",
 }: DrawerProps) {
   if (!open) return null;
 
@@ -32,7 +40,10 @@ export function Drawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
-        className="relative flex h-full w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-2xl"
+        className={cn(
+          "relative flex h-full w-full flex-col border-l border-slate-200 bg-white shadow-2xl",
+          sizeClasses[size],
+        )}
       >
         <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
           <div>

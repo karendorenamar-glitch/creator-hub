@@ -1,11 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Save, Users } from "lucide-react";
-import { bulkUpdateCampaignCreatorFees } from "@/app/actions/campaigns";
+import { Eye, Save, Users } from "lucide-react";
+import { bulkUpdateCampaignCreatorDeals } from "@/app/actions/campaigns";
+import { CampaignCreatorDetailSection } from "@/components/campaigns/campaign-creator-detail-section";
+import { Drawer } from "@/components/ui/drawer";
 import { useToast } from "@/components/ui/toast";
+import { buildCampaignCreatorPerformance } from "@/lib/campaign-creator-performance";
+import {
+  CAMPAIGN_CREATOR_DEAL_TYPES,
+  normalizeCampaignCreatorDealType,
+} from "@/lib/campaign-creator-deal";
 import {
   DataTable,
   DataTableBody,
@@ -19,30 +25,40 @@ import {
 import {
   calculateEngagementRate,
   formatCompactFee,
-  formatCreatorCPV,
-  formatCreatorCPE,
   formatCreatorListUsername,
   formatEngagementRate,
   formatIDR,
   formatNumber,
   parseCompactFee,
 } from "@/lib/utils";
-import type { CampaignCreator, CampaignDetail } from "@/types/database";
+import type { CampaignCreator, CampaignCreatorDealType, CampaignDetail } from "@/types/database";
 
 type CampaignCreatorsPanelProps = {
   campaign: CampaignDetail;
 };
 
-function effectiveCampaignFee(creator: CampaignCreator) {
+const DEAL_TYPE_LABELS: Record<CampaignCreatorDealType, string> = {
+  paid: "Paid",
+  barter: "Barter",
+  voucher: "Voucher",
+};
+
+function effectivePaidFee(creator: CampaignCreator) {
   return creator.campaign_fee ?? creator.fee;
 }
 
-function campaignFeeInputValue(creator: CampaignCreator) {
-  const fee = effectiveCampaignFee(creator);
+function paidFeeInputValue(creator: CampaignCreator) {
+  const fee = effectivePaidFee(creator);
   return fee > 0 ? formatCompactFee(fee) : "";
 }
 
-function parseFeeInput(value: string) {
+function valueInputValue(creator: CampaignCreator) {
+  return creator.deal_value && creator.deal_value > 0
+    ? formatCompactFee(creator.deal_value)
+    : "";
+}
+
+function parseAmountInput(value: string) {
   return parseCompactFee(value);
 }
 
@@ -63,6 +79,7 @@ function emptyCreatorStats(): CreatorPerformanceStats {
     saves: 0,
   };
 }
+
 function CreatorAvatar({ creator }: { creator: CampaignCreator }) {
   return (
     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-kefoo-100 text-sm font-semibold text-kefoo-700">
@@ -74,17 +91,40 @@ function CreatorAvatar({ creator }: { creator: CampaignCreator }) {
 export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
+  const [dealTypes, setDealTypes] = useState<Record<string, CampaignCreatorDealType>>(
+    {},
+  );
   const [feeInputs, setFeeInputs] = useState<Record<string, string>>({});
+  const [valueInputs, setValueInputs] = useState<Record<string, string>>({});
   const [bulkFeeInput, setBulkFeeInput] = useState("");
+  const [selectedCreatorId, setSelectedCreatorId] = useState<string | null>(null);
   const [isSaving, startSaveTransition] = useTransition();
 
+  const selectedCreatorDetail = useMemo(() => {
+    if (!selectedCreatorId) {
+      return null;
+    }
+
+    return buildCampaignCreatorPerformance(campaign, selectedCreatorId);
+  }, [campaign, selectedCreatorId]);
+
   useEffect(() => {
-    setFeeInputs(
+    setDealTypes(
       Object.fromEntries(
         campaign.creators.map((creator) => [
           creator.id,
-          campaignFeeInputValue(creator),
+          normalizeCampaignCreatorDealType(creator.deal_type),
         ]),
+      ),
+    );
+    setFeeInputs(
+      Object.fromEntries(
+        campaign.creators.map((creator) => [creator.id, paidFeeInputValue(creator)]),
+      ),
+    );
+    setValueInputs(
+      Object.fromEntries(
+        campaign.creators.map((creator) => [creator.id, valueInputValue(creator)]),
       ),
     );
   }, [campaign.creators]);
@@ -117,51 +157,161 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
     [campaign.creators, statsByCreator],
   );
 
-  const hasFeeChanges = campaign.creators.some((creator) => {
-    const input = feeInputs[creator.id] ?? campaignFeeInputValue(creator);
-    const parsed = input.trim() ? parseFeeInput(input) : 0;
-    const prefilled = effectiveCampaignFee(creator);
+  const hasPaidCreators = sortedCreators.some(
+    (creator) => (dealTypes[creator.id] ?? creator.deal_type) === "paid",
+  );
 
-    if (creator.campaign_fee != null) {
-      return parsed !== creator.campaign_fee;
+  const hasChanges = campaign.creators.some((creator) => {
+    const dealType =
+      dealTypes[creator.id] ?? normalizeCampaignCreatorDealType(creator.deal_type);
+    const savedDealType = normalizeCampaignCreatorDealType(creator.deal_type);
+
+    if (dealType !== savedDealType) {
+      return true;
     }
 
-    return parsed !== prefilled;
+    if (dealType === "paid") {
+      const input = feeInputs[creator.id] ?? paidFeeInputValue(creator);
+      const parsed = input.trim() ? parseAmountInput(input) : 0;
+      const savedFee = creator.campaign_fee ?? (creator.fee > 0 ? creator.fee : null);
+
+      if (savedFee == null) {
+        return parsed > 0;
+      }
+
+      return parsed !== savedFee;
+    }
+
+    const input = valueInputs[creator.id] ?? valueInputValue(creator);
+    const parsed = input.trim() ? parseAmountInput(input) : null;
+    const savedValue = creator.deal_value;
+
+    if (savedValue == null) {
+      return parsed != null && parsed > 0;
+    }
+
+    return parsed !== savedValue;
   });
 
+  function handleDealTypeChange(
+    creator: CampaignCreator,
+    nextDealType: CampaignCreatorDealType,
+  ) {
+    setDealTypes((current) => ({
+      ...current,
+      [creator.id]: nextDealType,
+    }));
+
+    if (nextDealType === "paid") {
+      setFeeInputs((current) => {
+        const existing = current[creator.id] ?? "";
+
+        if (existing.trim()) {
+          return current;
+        }
+
+        return {
+          ...current,
+          [creator.id]: paidFeeInputValue(creator),
+        };
+      });
+    }
+  }
+
   function applyBulkFee() {
-    const fee = parseFeeInput(bulkFeeInput);
+    const fee = parseAmountInput(bulkFeeInput);
 
     if (!bulkFeeInput.trim() || fee < 0) {
-      showError("Enter a valid fee to apply to all creators (e.g. 1.5M or 500K).");
+      showError("Enter a valid fee to apply (e.g. 1.5M or 500K).");
       return;
     }
 
-    setFeeInputs(
-      Object.fromEntries(
-        campaign.creators.map((creator) => [
-          creator.id,
-          formatCompactFee(fee),
-        ]),
-      ),
-    );
+    setFeeInputs((current) => {
+      const next = { ...current };
+
+      for (const creator of campaign.creators) {
+        const dealType =
+          dealTypes[creator.id] ?? normalizeCampaignCreatorDealType(creator.deal_type);
+
+        if (dealType === "paid") {
+          next[creator.id] = formatCompactFee(fee);
+        }
+      }
+
+      return next;
+    });
   }
 
-  function handleSaveFees() {
+  function handleSaveDeals() {
     const updates = campaign.creators.map((creator) => {
-      const raw = feeInputs[creator.id] ?? campaignFeeInputValue(creator);
+      const dealType =
+        dealTypes[creator.id] ?? normalizeCampaignCreatorDealType(creator.deal_type);
+
+      if (dealType === "paid") {
+        const raw = feeInputs[creator.id] ?? paidFeeInputValue(creator);
+
+        if (!raw.trim()) {
+          return {
+            creator_id: creator.id,
+            deal_type: dealType,
+            fee: null,
+            deal_value: null,
+            error: null,
+          };
+        }
+
+        const fee = parseAmountInput(raw);
+
+        if (fee < 0) {
+          return {
+            creator_id: creator.id,
+            deal_type: dealType,
+            fee: null,
+            deal_value: null,
+            error: "Invalid fee.",
+          };
+        }
+
+        return {
+          creator_id: creator.id,
+          deal_type: dealType,
+          fee,
+          deal_value: null,
+          error: null,
+        };
+      }
+
+      const raw = valueInputs[creator.id] ?? valueInputValue(creator);
 
       if (!raw.trim()) {
-        return { creator_id: creator.id, fee: null, error: null };
+        return {
+          creator_id: creator.id,
+          deal_type: dealType,
+          fee: null,
+          deal_value: null,
+          error: null,
+        };
       }
 
-      const fee = parseFeeInput(raw);
+      const dealValue = parseAmountInput(raw);
 
-      if (fee < 0) {
-        return { creator_id: creator.id, fee: null, error: "Invalid fee." };
+      if (dealValue < 0) {
+        return {
+          creator_id: creator.id,
+          deal_type: dealType,
+          fee: null,
+          deal_value: null,
+          error: "Invalid value.",
+        };
       }
 
-      return { creator_id: creator.id, fee, error: null };
+      return {
+        creator_id: creator.id,
+        deal_type: dealType,
+        fee: null,
+        deal_value: dealValue,
+        error: null,
+      };
     });
 
     for (const update of updates) {
@@ -175,9 +325,14 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
     }
 
     startSaveTransition(async () => {
-      const result = await bulkUpdateCampaignCreatorFees(
+      const result = await bulkUpdateCampaignCreatorDeals(
         campaign.id,
-        updates.map(({ creator_id, fee }) => ({ creator_id, fee })),
+        updates.map(({ creator_id, deal_type, fee, deal_value }) => ({
+          creator_id,
+          deal_type,
+          fee,
+          deal_value,
+        })),
       );
 
       if (result.error) {
@@ -186,7 +341,7 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
       }
 
       showSuccess(
-        `Updated campaign fees for ${result.updated} creator${result.updated === 1 ? "" : "s"}.`,
+        `Updated deals for ${result.updated} creator${result.updated === 1 ? "" : "s"}.`,
       );
       router.refresh();
     });
@@ -203,42 +358,44 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
             </h3>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            Per-creator views, engagement rate, CPV, and CPE for this campaign.
-            Campaign fees can be edited here without changing the Creators page.
+            Per-creator views, engagement rate, and deal terms for this campaign.
+            Use the view icon to open campaign-specific creator details.
           </p>
         </div>
 
         {campaign.creators.length > 0 && (
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="flex items-center gap-2">
-              <label htmlFor="bulk-creator-fee" className="sr-only">
-                Apply fee to all creators
-              </label>
-              <input
-                id="bulk-creator-fee"
-                type="text"
-                inputMode="decimal"
-                placeholder="e.g. 1.5M"
-                value={bulkFeeInput}
-                onChange={(event) => setBulkFeeInput(event.target.value)}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20 sm:w-40"
-              />
-              <button
-                type="button"
-                onClick={applyBulkFee}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                Apply to all
-              </button>
-            </div>
+            {hasPaidCreators ? (
+              <div className="flex items-center gap-2">
+                <label htmlFor="bulk-creator-fee" className="sr-only">
+                  Apply fee to all paid creators
+                </label>
+                <input
+                  id="bulk-creator-fee"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="e.g. 1.5M"
+                  value={bulkFeeInput}
+                  onChange={(event) => setBulkFeeInput(event.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20 sm:w-40"
+                />
+                <button
+                  type="button"
+                  onClick={applyBulkFee}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Apply to paid
+                </button>
+              </div>
+            ) : null}
             <button
               type="button"
-              onClick={handleSaveFees}
-              disabled={isSaving || !hasFeeChanges}
+              onClick={handleSaveDeals}
+              disabled={isSaving || !hasChanges}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-kefoo-400 px-4 py-2 text-sm font-medium text-white hover:bg-kefoo-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save className="h-4 w-4" />
-              {isSaving ? "Saving..." : "Save fees"}
+              {isSaving ? "Saving..." : "Save deals"}
             </button>
           </div>
         )}
@@ -260,25 +417,21 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
           <DataTableElement>
             <DataTableHead>
               <DataTableHeaderCell>Creator</DataTableHeaderCell>
-              <DataTableHeaderCell>Profile</DataTableHeaderCell>
+              <DataTableHeaderCell>Username</DataTableHeaderCell>
               <DataTableHeaderCell>Platform</DataTableHeaderCell>
               <DataTableHeaderCell className="text-right">Views</DataTableHeaderCell>
               <DataTableHeaderCell className="text-right">ER%</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">
-                Campaign fee
-              </DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">CPV</DataTableHeaderCell>
-              <DataTableHeaderCell className="text-right">CPE</DataTableHeaderCell>
+              <DataTableHeaderCell>Deal type</DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">Fee / Value</DataTableHeaderCell>
             </DataTableHead>
             <DataTableBody>
               {sortedCreators.map((creator) => {
                 const stats = statsByCreator.get(creator.id) ?? emptyCreatorStats();
-                const feeInput =
-                  feeInputs[creator.id] ?? campaignFeeInputValue(creator);
-                const parsedFee = feeInput.trim()
-                  ? parseFeeInput(feeInput)
-                  : null;
-                const displayFee = parsedFee ?? effectiveCampaignFee(creator);
+                const dealType =
+                  dealTypes[creator.id] ??
+                  normalizeCampaignCreatorDealType(creator.deal_type);
+                const feeInput = feeInputs[creator.id] ?? paidFeeInputValue(creator);
+                const valueInput = valueInputs[creator.id] ?? valueInputValue(creator);
                 const engagementRate = calculateEngagementRate(
                   stats.views,
                   stats.likes,
@@ -292,12 +445,18 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
                     <DataTableCell>
                       <div className="flex items-center gap-3">
                         <CreatorAvatar creator={creator} />
-                        <Link
-                          href={`/creators/${creator.id}`}
-                          className="font-medium text-kefoo-600 hover:text-kefoo-500"
-                        >
+                        <span className="font-medium text-slate-900">
                           {creator.name}
-                        </Link>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedCreatorId(creator.id)}
+                          className="inline-flex rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
+                          aria-label={`View ${creator.name} campaign details`}
+                          title="View creator details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
                       </div>
                     </DataTableCell>
                     <DataTableCell className="text-slate-600">
@@ -316,47 +475,77 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
                         ? formatEngagementRate(engagementRate)
                         : "—"}
                     </DataTableCell>
-                    <DataTableCell className="text-right">
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        value={feeInput}
-                        placeholder="e.g. 500K"
+                    <DataTableCell>
+                      <select
+                        value={dealType}
                         onChange={(event) =>
-                          setFeeInputs((current) => ({
-                            ...current,
-                            [creator.id]: event.target.value,
-                          }))
-                        }
-                        aria-label={`Campaign fee for ${creator.name}`}
-                        className="w-full min-w-[8rem] rounded-lg border border-slate-300 px-3 py-2 text-right text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20"
-                      />
-                      {creator.campaign_fee != null &&
-                      feeInput !== campaignFeeInputValue(creator) ? (
-                        <p className="mt-1 text-xs text-slate-400">
-                          Was {formatIDR(creator.campaign_fee)}
-                        </p>
-                      ) : creator.campaign_fee == null && creator.fee > 0 ? (
-                        <p className="mt-1 text-xs text-slate-400">
-                          From creator default
-                        </p>
-                      ) : null}
-                    </DataTableCell>
-                    <DataTableCell className="text-right text-slate-600">
-                      {displayFee > 0
-                        ? formatCreatorCPV(displayFee, stats.views)
-                        : "—"}
-                    </DataTableCell>
-                    <DataTableCell className="text-right text-slate-600">
-                      {displayFee > 0
-                        ? formatCreatorCPE(
-                            displayFee,
-                            stats.likes,
-                            stats.comments,
-                            stats.shares,
-                            stats.saves,
+                          handleDealTypeChange(
+                            creator,
+                            event.target.value as CampaignCreatorDealType,
                           )
-                        : "—"}
+                        }
+                        aria-label={`Deal type for ${creator.name}`}
+                        className="w-full min-w-[7rem] rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20"
+                      >
+                        {CAMPAIGN_CREATOR_DEAL_TYPES.map((type) => (
+                          <option key={type} value={type}>
+                            {DEAL_TYPE_LABELS[type]}
+                          </option>
+                        ))}
+                      </select>
+                    </DataTableCell>
+                    <DataTableCell className="text-right">
+                      {dealType === "paid" ? (
+                        <>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={feeInput}
+                            placeholder="e.g. 500K"
+                            onChange={(event) =>
+                              setFeeInputs((current) => ({
+                                ...current,
+                                [creator.id]: event.target.value,
+                              }))
+                            }
+                            aria-label={`Fee for ${creator.name}`}
+                            className="w-full min-w-[8rem] rounded-lg border border-slate-300 px-3 py-2 text-right text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20"
+                          />
+                          {creator.campaign_fee != null &&
+                          feeInput !== paidFeeInputValue(creator) ? (
+                            <p className="mt-1 text-xs text-slate-400">
+                              Was {formatIDR(creator.campaign_fee)}
+                            </p>
+                          ) : creator.campaign_fee == null && creator.fee > 0 ? (
+                            <p className="mt-1 text-xs text-slate-400">
+                              From creator default
+                            </p>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={valueInput}
+                            placeholder="Optional"
+                            onChange={(event) =>
+                              setValueInputs((current) => ({
+                                ...current,
+                                [creator.id]: event.target.value,
+                              }))
+                            }
+                            aria-label={`Value for ${creator.name}`}
+                            className="w-full min-w-[8rem] rounded-lg border border-slate-300 px-3 py-2 text-right text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20"
+                          />
+                          {creator.deal_value != null &&
+                          valueInput !== valueInputValue(creator) ? (
+                            <p className="mt-1 text-xs text-slate-400">
+                              Was {formatIDR(creator.deal_value)}
+                            </p>
+                          ) : null}
+                        </>
+                      )}
                     </DataTableCell>
                   </DataTableRow>
                 );
@@ -365,6 +554,29 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
           </DataTableElement>
         </DataTable>
       )}
+
+      <Drawer
+        open={selectedCreatorId !== null}
+        onClose={() => setSelectedCreatorId(null)}
+        size="xl"
+        title={selectedCreatorDetail?.creator.name ?? "Creator performance"}
+        description={
+          selectedCreatorDetail
+            ? `${selectedCreatorDetail.campaign.name} · campaign performance`
+            : undefined
+        }
+      >
+        {selectedCreatorDetail ? (
+          <CampaignCreatorDetailSection
+            detail={selectedCreatorDetail}
+            embedded
+          />
+        ) : (
+          <p className="text-sm text-slate-500">
+            No performance data found for this creator in this campaign.
+          </p>
+        )}
+      </Drawer>
     </section>
   );
 }

@@ -14,7 +14,11 @@ import {
   isMissingWorkflowStatusColumn,
   type CampaignCreatorLinkRow,
 } from "@/lib/campaign-creator-workflow-db";
-import type { CampaignStatus } from "@/types/database";
+import {
+  isMissingDealTypeColumn,
+  normalizeCampaignCreatorDealType,
+} from "@/lib/campaign-creator-deal";
+import type { CampaignCreatorDealType } from "@/types/database";
 
 export type CampaignInput = {
   name: string;
@@ -27,9 +31,13 @@ export type CampaignInput = {
   video_ids: string[];
 };
 
-export type CampaignCreatorFeeUpdate = {
+import type { CampaignStatus } from "@/types/database";
+
+export type CampaignCreatorDealUpdate = {
   creator_id: string;
+  deal_type: CampaignCreatorDealType;
   fee: number | null;
+  deal_value: number | null;
 };
 
 function parseCampaignInput(input: CampaignInput) {
@@ -473,16 +481,16 @@ export async function deleteCampaign(id: string) {
   return { success: true };
 }
 
-export async function bulkUpdateCampaignCreatorFees(
+export async function bulkUpdateCampaignCreatorDeals(
   campaignId: string,
-  updates: CampaignCreatorFeeUpdate[],
+  updates: CampaignCreatorDealUpdate[],
 ) {
   if (!campaignId) {
     return { error: "Campaign id is required." };
   }
 
   if (!updates.length) {
-    return { error: "No creator fees to update." };
+    return { error: "No creator deals to update." };
   }
 
   const supabase = await createClient();
@@ -491,6 +499,16 @@ export async function bulkUpdateCampaignCreatorFees(
     if (!update.creator_id) {
       return { error: "Creator id is required." };
     }
+
+    const dealType = normalizeCampaignCreatorDealType(update.deal_type);
+    const payload = {
+      campaign_id: campaignId,
+      creator_id: update.creator_id,
+      deal_type: dealType,
+      fee: dealType === "paid" ? update.fee : null,
+      deal_value:
+        dealType === "barter" || dealType === "voucher" ? update.deal_value : null,
+    };
 
     const { data: existing, error: existingError } = await supabase
       .from("campaign_creators")
@@ -502,16 +520,24 @@ export async function bulkUpdateCampaignCreatorFees(
     if (isMissingWorkflowStatusColumn(existingError)) {
       const { error: fallbackError } = await supabase
         .from("campaign_creators")
-        .upsert(
-          {
-            campaign_id: campaignId,
-            creator_id: update.creator_id,
-            fee: update.fee,
-          },
-          { onConflict: "campaign_id,creator_id" },
-        );
+        .upsert(payload, { onConflict: "campaign_id,creator_id" });
 
-      if (fallbackError) {
+      if (fallbackError && isMissingDealTypeColumn(fallbackError.message)) {
+        const { error: legacyError } = await supabase
+          .from("campaign_creators")
+          .upsert(
+            {
+              campaign_id: campaignId,
+              creator_id: update.creator_id,
+              fee: payload.fee,
+            },
+            { onConflict: "campaign_id,creator_id" },
+          );
+
+        if (legacyError) {
+          return { error: legacyError.message };
+        }
+      } else if (fallbackError) {
         return { error: fallbackError.message };
       }
 
@@ -520,9 +546,7 @@ export async function bulkUpdateCampaignCreatorFees(
 
     const { error } = await supabase.from("campaign_creators").upsert(
       {
-        campaign_id: campaignId,
-        creator_id: update.creator_id,
-        fee: update.fee,
+        ...payload,
         workflow_status: normalizeCampaignCreatorWorkflowStatus(
           existing?.workflow_status,
         ),
@@ -534,17 +558,47 @@ export async function bulkUpdateCampaignCreatorFees(
       if (isMissingWorkflowStatusColumn(error)) {
         const { error: fallbackError } = await supabase
           .from("campaign_creators")
+          .upsert(payload, { onConflict: "campaign_id,creator_id" });
+
+        if (fallbackError && isMissingDealTypeColumn(fallbackError.message)) {
+          const { error: legacyError } = await supabase
+            .from("campaign_creators")
+            .upsert(
+              {
+                campaign_id: campaignId,
+                creator_id: update.creator_id,
+                fee: payload.fee,
+              },
+              { onConflict: "campaign_id,creator_id" },
+            );
+
+          if (legacyError) {
+            return { error: legacyError.message };
+          }
+        } else if (fallbackError) {
+          return { error: fallbackError.message };
+        }
+
+        continue;
+      }
+
+      if (isMissingDealTypeColumn(error.message)) {
+        const { error: legacyError } = await supabase
+          .from("campaign_creators")
           .upsert(
             {
               campaign_id: campaignId,
               creator_id: update.creator_id,
-              fee: update.fee,
+              fee: payload.fee,
+              workflow_status: normalizeCampaignCreatorWorkflowStatus(
+                existing?.workflow_status,
+              ),
             },
             { onConflict: "campaign_id,creator_id" },
           );
 
-        if (fallbackError) {
-          return { error: fallbackError.message };
+        if (legacyError) {
+          return { error: legacyError.message };
         }
 
         continue;
@@ -556,6 +610,22 @@ export async function bulkUpdateCampaignCreatorFees(
 
   revalidateCreatorHub(campaignId);
   return { success: true, updated: updates.length };
+}
+
+/** @deprecated Use bulkUpdateCampaignCreatorDeals */
+export async function bulkUpdateCampaignCreatorFees(
+  campaignId: string,
+  updates: Array<{ creator_id: string; fee: number | null }>,
+) {
+  return bulkUpdateCampaignCreatorDeals(
+    campaignId,
+    updates.map((update) => ({
+      creator_id: update.creator_id,
+      deal_type: "paid",
+      fee: update.fee,
+      deal_value: null,
+    })),
+  );
 }
 
 export async function updateCampaignCreatorWorkflowStatus(

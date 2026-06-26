@@ -23,6 +23,12 @@ import { enrichPayout } from "@/lib/payouts";
 import { normalizeProofUrl } from "@/lib/payout-invoice";
 import { calculateEngagementRateFromTotals, parseIDRInput } from "@/lib/utils";
 import { buildCampaignSummaries, DASHBOARD_CAMPAIGN_STATUSES } from "@/lib/campaigns";
+import { buildCampaignCreatorPerformance } from "@/lib/campaign-creator-performance";
+import {
+  getCampaignCreatorDealAmount,
+  isMissingDealTypeColumn,
+  normalizeCampaignCreatorDealType,
+} from "@/lib/campaign-creator-deal";
 import {
   normalizeCampaignCreatorWorkflowStatus,
 } from "@/lib/campaign-creator-status";
@@ -36,6 +42,7 @@ import type {
   CampaignOption,
   CampaignSummary,
   CampaignCreator,
+  CampaignCreatorPerformanceDetail,
   ContentPlannerAgency,
   Creator,
   CreatorDetail,
@@ -92,6 +99,8 @@ function mapCampaignCreator(
   creator: Creator & { fee?: number | string | null },
   campaignFee: number | string | null | undefined,
   workflowStatus: string | null | undefined,
+  dealType: string | null | undefined,
+  dealValue: number | string | null | undefined,
 ): CampaignCreator {
   return {
     ...mapCreatorRow(creator),
@@ -99,6 +108,11 @@ function mapCampaignCreator(
       campaignFee == null || campaignFee === ""
         ? null
         : parseIDRInput(campaignFee),
+    deal_type: normalizeCampaignCreatorDealType(dealType),
+    deal_value:
+      dealValue == null || dealValue === ""
+        ? null
+        : parseIDRInput(dealValue),
     workflow_status: normalizeCampaignCreatorWorkflowStatus(workflowStatus),
   };
 }
@@ -462,7 +476,7 @@ export async function getCampaignById(
   const [creatorsResult, videosResult] = await Promise.all([
     supabase
       .from("campaign_creators")
-      .select("creator_id, fee, workflow_status, creators(*)")
+      .select("creator_id, fee, deal_type, deal_value, workflow_status, creators(*)")
       .eq("campaign_id", id),
     supabase
       .from("campaign_videos")
@@ -489,6 +503,27 @@ export async function getCampaignById(
         creatorRows = (fallbackCreatorsResult.data ?? []).map((row) => ({
           ...row,
           workflow_status: null,
+          deal_type: "paid",
+          deal_value: null,
+        }));
+      }
+    } else if (isMissingDealTypeColumn(creatorsResult.error.message)) {
+      const fallbackCreatorsResult = await supabase
+        .from("campaign_creators")
+        .select("creator_id, fee, workflow_status, creators(*)")
+        .eq("campaign_id", id);
+
+      if (fallbackCreatorsResult.error) {
+        console.error(
+          "Failed to fetch campaign creators:",
+          fallbackCreatorsResult.error.message,
+        );
+        creatorRows = [];
+      } else {
+        creatorRows = (fallbackCreatorsResult.data ?? []).map((row) => ({
+          ...row,
+          deal_type: "paid",
+          deal_value: null,
         }));
       }
     } else {
@@ -510,6 +545,8 @@ export async function getCampaignById(
         row.creators as Creator & { fee?: number | string | null },
         row.fee,
         row.workflow_status,
+        row.deal_type,
+        row.deal_value,
       ),
     );
   }
@@ -537,6 +574,8 @@ export async function getCampaignById(
         mapCampaignCreator(
           creator as Creator & { fee?: number | string | null },
           null,
+          null,
+          "paid",
           null,
         ),
       );
@@ -575,8 +614,8 @@ export async function getCampaignById(
   const creatorFees = Object.fromEntries(
     scopedCreators
       .filter((creator) => uploadedCreatorIds.has(creator.id))
-      .map((creator) => [creator.id, creator.campaign_fee ?? creator.fee] as const)
-      .filter(([, fee]) => fee > 0),
+      .map((creator) => [creator.id, getCampaignCreatorDealAmount(creator)] as const)
+      .filter(([, amount]) => amount > 0),
   );
   const contentVideos = scopedVideos.map((video) => ({
     video_url: video.video_url,
@@ -601,6 +640,20 @@ export async function getCampaignById(
     videos: scopedVideos,
     ...analytics,
   };
+}
+
+export async function getCampaignCreatorPerformance(
+  campaignId: string,
+  creatorId: string,
+  teamFilter: string = "all",
+): Promise<CampaignCreatorPerformanceDetail | null> {
+  const campaign = await getCampaignById(campaignId, teamFilter);
+
+  if (!campaign) {
+    return null;
+  }
+
+  return buildCampaignCreatorPerformance(campaign, creatorId);
 }
 
 export async function getCampaignOptions(): Promise<CampaignOption[]> {
