@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Header } from "@/components/layout/header";
+import { DashboardExportCsv } from "@/components/dashboard/dashboard-export-csv";
 import { DashboardFilters } from "@/components/dashboard/dashboard-filters";
 import { DashboardPlanUsage } from "@/components/dashboard/dashboard-plan-usage";
 import { DashboardRefreshVideos } from "@/components/dashboard/dashboard-refresh-videos";
@@ -175,7 +176,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <DashboardPlanUsage />
 
         {showAdvanced ? (
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex flex-wrap justify-end gap-2">
+            <DashboardExportCsv
+              stats={stats}
+              filterLabel={filterLabel}
+              includePillarComparison={tier === "scale"}
+            />
             <DashboardRefreshVideos
               campaignIds={campaignFilters}
               hasVideos={stats.activeCampaigns > 0}

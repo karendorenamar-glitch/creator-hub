@@ -12,7 +12,8 @@ export type PlanFeature =
   | "dashboard_advanced"
   | "bulk_upload"
   | "payouts"
-  | "content_planner";
+  | "content_planner"
+  | "export_csv";
 
 export type DashboardTier = "none" | "starter" | "growth" | "scale";
 
@@ -29,6 +30,7 @@ const FEATURE_MIN_PLAN: Record<PlanFeature, OrgPlan> = {
   bulk_upload: "growth",
   payouts: "scale",
   content_planner: "scale",
+  export_csv: "scale",
 };
 
 export const FEATURE_UPGRADE_MESSAGES: Record<PlanFeature, string> = {
@@ -38,6 +40,7 @@ export const FEATURE_UPGRADE_MESSAGES: Record<PlanFeature, string> = {
   bulk_upload: "Growth lets you paste multiple video links and import them in one go.",
   payouts: "Scale adds payout tracking with due dates and payment status.",
   content_planner: "Scale unlocks Content Planner for pillars, ideas, and publish dates.",
+  export_csv: "Scale lets you export campaign and dashboard performance data as CSV.",
 };
 
 export function hasPlanFeature(

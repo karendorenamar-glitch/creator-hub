@@ -25,9 +25,14 @@ import { CampaignFormModal } from "@/components/campaigns/campaign-form-modal";
 import { CampaignRefreshVideosButton } from "@/components/campaigns/campaign-refresh-videos-button";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ExportCsvButton } from "@/components/export/export-csv-button";
 import { useToast } from "@/components/ui/toast";
 import { getCampaignHealth } from "@/lib/campaign-analytics";
 import { getCampaignCreatorDealAmount } from "@/lib/campaign-creator-deal";
+import {
+  buildCampaignPerformanceCsv,
+  getCampaignPerformanceCsvFilename,
+} from "@/lib/csv-export";
 import {
   formatCPE,
   formatCPV,
@@ -407,7 +412,13 @@ export function CampaignDetailSection({
 
       {activeView === "performance" ? (
         <>
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex flex-wrap justify-end gap-2">
+        <ExportCsvButton
+          filename={getCampaignPerformanceCsvFilename(campaign.name)}
+          buildCsv={() =>
+            buildCampaignPerformanceCsv(campaign, performanceCreators)
+          }
+        />
         <CampaignRefreshVideosButton
           campaignId={campaign.id}
           videoCount={campaign.videos.length}

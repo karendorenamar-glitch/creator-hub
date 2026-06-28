@@ -67,6 +67,7 @@ export const CHECKOUT_PLAN_CONFIG: Record<CheckoutPlan, CheckoutPlanConfig> = {
       "Content planner",
       "Payout management",
       "Custom reports",
+      "Export CSV",
       "Priority support",
     ],
   },
