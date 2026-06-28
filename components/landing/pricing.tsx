@@ -100,6 +100,7 @@ const plans: PricingPlan[] = [
       "Bulk Uploads",
       "Content Planner",
       "Payout Management",
+      "Export CSV",
       "Custom Reports",
       "Priority Support",
     ],
@@ -178,6 +179,7 @@ const comparisonRows: { feature: string; values: ComparisonValue[] }[] = [
   },
   { feature: "Content Planner", values: [false, false, false, true] },
   { feature: "Payout Management", values: [false, false, false, true] },
+  { feature: "Export CSV", values: [false, false, false, true] },
   { feature: "Custom Reports", values: [false, false, false, true] },
   { feature: "Priority Support", values: [false, false, false, true] },
 ];
