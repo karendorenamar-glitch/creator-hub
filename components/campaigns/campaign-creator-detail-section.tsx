@@ -15,7 +15,6 @@ import {
 import {
   calculateEngagementRate,
   formatCreatorCPE,
-  formatCreatorCPL,
   formatCreatorCPV,
   formatCreatorListUsername,
   formatEngagementRate,
@@ -108,7 +107,7 @@ export function CampaignCreatorDetailSection({
         <h3 className="mb-4 text-lg font-semibold text-slate-900">
           Fee & Cost Metrics
         </h3>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <StatCard
             title={dealLabel}
             value={formatIDR(detail.campaign_fee)}
@@ -139,13 +138,6 @@ export function CampaignCreatorDetailSection({
             subtitle="Campaign fee divided by engagements"
             icon={TrendingUp}
             accent="emerald"
-          />
-          <StatCard
-            title="Cost Per Like"
-            value={formatCreatorCPL(detail.campaign_fee, detail.total_likes)}
-            subtitle="Campaign fee divided by likes"
-            icon={Heart}
-            accent="amber"
           />
         </div>
       </section>
