@@ -396,10 +396,10 @@ export function CampaignDetailSection({
                 "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
                 activeView === id
                   ? id === "performance"
-                    ? "bg-[#103b8c] text-white shadow-sm"
+                    ? "bg-kefoo-600 text-white shadow-sm"
                     : "bg-white text-slate-900 shadow-sm"
                   : id === "performance"
-                    ? "text-[#103b8c] hover:bg-[#103b8c]/5"
+                    ? "text-kefoo-600 hover:bg-violet-50"
                     : "text-slate-600 hover:text-slate-900",
               )}
             >

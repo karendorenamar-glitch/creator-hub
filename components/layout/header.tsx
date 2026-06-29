@@ -17,13 +17,13 @@ export function Header({ title, description, titleAddon, actions }: HeaderProps)
   const { t } = useLanguage();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-violet-100/90 bg-white/80 backdrop-blur-xl">
       <div className="flex items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-start gap-3">
           <button
             type="button"
             onClick={openMobileMenu}
-            className="mt-0.5 rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50 lg:hidden"
+            className="mt-0.5 rounded-xl border border-violet-100 bg-white p-2 text-slate-600 shadow-sm hover:bg-violet-50 lg:hidden"
             aria-label={t("header.openMenu")}
           >
             <Menu className="h-5 w-5" />

@@ -2,28 +2,28 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #103b8c;
-  --kefoo-primary: #4a4a4a;
-  --kefoo-accent: #4a4a4a;
-  --kefoo-blue-light: #9a9a9a;
-  --kefoo-blue: #4a4a4a;
-  --kefoo-blue-deep: #4a4a4a;
+  --background: #faf8ff;
+  --foreground: #57534e;
+  --kefoo-primary: #a855f7;
+  --kefoo-accent: #e9d5ff;
+  --kefoo-blue-light: #f3e8ff;
+  --kefoo-blue: #8b5cf6;
+  --kefoo-blue-deep: #6d28d9;
   --kefoo-gradient: linear-gradient(
     135deg,
-    #e8e8e8 0%,
-    #9a9a9a 45%,
-    #4a4a4a 100%
+    #f0abfc 0%,
+    #d8b4fe 42%,
+    #a855f7 100%
   );
   --kefoo-gradient-soft: linear-gradient(
     135deg,
-    rgba(232, 232, 232, 0.98) 0%,
-    rgba(154, 154, 154, 0.95) 48%,
-    rgba(74, 74, 74, 0.92) 100%
+    #f5d0fe 0%,
+    #d8b4fe 48%,
+    #9333ea 100%
   );
   --font-heading: "Satoshi", system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
-  --radius: 16px;
+  --radius: 20px;
 }
 
 @theme inline {
@@ -32,22 +32,22 @@
   --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-heading);
-  --radius-sm: var(--radius);
-  --radius-md: var(--radius);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
-  --radius-xl: var(--radius);
-  --radius-2xl: var(--radius);
-  --radius-3xl: var(--radius);
-  --color-kefoo-50: #f4f4f4;
-  --color-kefoo-100: #e8e8e8;
-  --color-kefoo-200: #d1d1d1;
-  --color-kefoo-300: #9a9a9a;
-  --color-kefoo-400: #4a4a4a;
-  --color-kefoo-500: #3f3f3f;
-  --color-kefoo-600: #103b8c;
-  --color-kefoo-700: #0d3074;
-  --color-kefoo-800: #2e2e2e;
-  --color-kefoo-900: #222222;
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
+  --color-kefoo-50: #faf5ff;
+  --color-kefoo-100: #f3e8ff;
+  --color-kefoo-200: #e9d5ff;
+  --color-kefoo-300: #d8b4fe;
+  --color-kefoo-400: #c084fc;
+  --color-kefoo-500: #a855f7;
+  --color-kefoo-600: #7c3aed;
+  --color-kefoo-700: #6d28d9;
+  --color-kefoo-800: #5b21b6;
+  --color-kefoo-900: #4c1d95;
 }
 
 body {
@@ -64,11 +64,25 @@ h5,
 h6,
 .font-heading {
   font-family: var(--font-heading);
-  color: var(--foreground);
+  color: #5b21b6;
 }
 
 * {
   box-sizing: border-box;
+}
+
+.app-page-bg {
+  background:
+    radial-gradient(circle at top left, rgba(216, 180, 254, 0.28), transparent 34%),
+    radial-gradient(circle at top right, rgba(244, 114, 182, 0.12), transparent 26%),
+    linear-gradient(180deg, #faf8ff 0%, #ffffff 45%, #f5f3ff 100%);
+}
+
+.app-card {
+  border-radius: 1.25rem;
+  border: 1px solid rgb(233 213 255 / 0.95);
+  background: rgb(255 255 255 / 0.92);
+  box-shadow: 0 14px 40px -30px rgba(109, 40, 217, 0.22);
 }
 
 @keyframes kefoo-blink {
@@ -105,19 +119,19 @@ h6,
 .landing-dot-grid {
   background-image: radial-gradient(
     circle,
-    rgba(148, 163, 184, 0.22) 1px,
+    rgba(192, 132, 252, 0.18) 1px,
     transparent 1px
   );
-  background-size: 22px 22px;
+  background-size: 24px 24px;
 }
 
 .landing-section-muted {
   background: linear-gradient(
     180deg,
-    rgba(248, 250, 252, 0) 0%,
-    rgba(248, 250, 252, 0.85) 18%,
-    rgba(248, 250, 252, 0.85) 82%,
-    rgba(248, 250, 252, 0) 100%
+    rgba(250, 245, 255, 0) 0%,
+    rgba(243, 232, 255, 0.8) 18%,
+    rgba(243, 232, 255, 0.8) 82%,
+    rgba(250, 245, 255, 0) 100%
   );
 }
 
@@ -133,9 +147,9 @@ h6,
   padding: 1px;
   background: linear-gradient(
     145deg,
-    rgba(148, 163, 184, 0.35),
-    rgba(74, 74, 74, 0.12) 45%,
-    rgba(148, 163, 184, 0.2)
+    rgba(216, 180, 254, 0.45),
+    rgba(168, 85, 247, 0.14) 45%,
+    rgba(244, 114, 182, 0.2)
   );
   -webkit-mask:
     linear-gradient(#fff 0 0) content-box,
@@ -273,19 +287,19 @@ button {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: var(--radius);
+  border-radius: 9999px;
   background: var(--kefoo-gradient-soft);
   padding: 0.875rem 1.75rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: white;
-  box-shadow: 0 8px 28px -10px rgba(74, 74, 74, 0.35);
+  box-shadow: 0 10px 32px -12px rgba(168, 85, 247, 0.45);
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .landing-btn-gradient:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 36px -10px rgba(74, 74, 74, 0.42);
+  box-shadow: 0 14px 36px -10px rgba(168, 85, 247, 0.5);
 }
 
 .landing-btn-gradient:disabled {
@@ -299,20 +313,11 @@ button {
 
 .landing-card-hover:hover {
   transform: translateY(-2px);
-  border-color: rgba(74, 74, 74, 0.25);
-  box-shadow: 0 16px 48px -20px rgba(74, 74, 74, 0.14);
+  border-color: rgba(192, 132, 252, 0.4);
+  box-shadow: 0 18px 48px -24px rgba(168, 85, 247, 0.24);
 }
 
 #features,
 #pricing {
   scroll-margin-top: 120px;
-}
-
-@layer utilities {
-  .text-slate-900,
-  .text-slate-800,
-  .text-slate-700,
-  .text-black {
-    color: #103b8c;
-  }
 }

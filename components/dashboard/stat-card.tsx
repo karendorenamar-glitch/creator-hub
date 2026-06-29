@@ -24,7 +24,7 @@ export function StatCard({
   accent = "indigo",
 }: StatCardProps) {
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="app-card p-5 transition-transform duration-200 hover:-translate-y-0.5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>
@@ -37,7 +37,7 @@ export function StatCard({
         </div>
         <div
           className={cn(
-            "flex h-11 w-11 items-center justify-center rounded-lg",
+            "flex h-11 w-11 items-center justify-center rounded-2xl",
             accentStyles[accent],
           )}
         >

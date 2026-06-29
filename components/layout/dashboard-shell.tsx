@@ -56,7 +56,7 @@ export function DashboardShell({
           <MobileMenuContext.Provider
             value={{ openMobileMenu: () => setMobileOpen(true) }}
           >
-            <div className="flex min-h-screen bg-white">
+            <div className="flex min-h-screen app-page-bg">
               <Sidebar
                 mobileOpen={mobileOpen}
                 onMobileClose={() => setMobileOpen(false)}

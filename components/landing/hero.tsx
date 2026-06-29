@@ -58,7 +58,14 @@ export function Hero() {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="relative mx-auto w-full max-w-2xl text-center lg:mx-0 lg:max-w-none lg:text-left">
             <FadeIn>
-              <h1 className="font-heading text-4xl font-bold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-[3.25rem]">
+              <span className="inline-flex items-center gap-2 rounded-full border border-violet-100 bg-violet-50/95 px-3.5 py-1.5 text-xs font-medium text-kefoo-600 shadow-sm">
+                <Sparkles className="h-3.5 w-3.5" />
+                30-day free trial · no card needed
+              </span>
+            </FadeIn>
+
+            <FadeIn delay={0.05}>
+              <h1 className="mt-5 font-heading text-4xl font-bold leading-[1.08] tracking-tight text-kefoo-800 sm:text-5xl lg:text-[3.25rem]">
                 KOL Campaign tracking, powered by{" "}
                 <GradientText>live data</GradientText>
               </h1>
@@ -89,11 +96,11 @@ export function Hero() {
                 {benefits.map((item) => (
                   <div
                     key={item.title}
-                    className="rounded-2xl border border-slate-200/80 bg-white/75 px-4 py-3 text-left shadow-[0_8px_30px_-22px_rgba(15,23,42,0.18)] backdrop-blur-sm transition-transform duration-300 hover:-translate-y-0.5"
+                    className="rounded-2xl border border-violet-100/90 bg-white/85 px-4 py-3 text-left shadow-[0_12px_32px_-24px_rgba(168,85,247,0.22)] backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="mt-0.5 rounded-xl bg-gradient-to-br from-kefoo-500/15 to-kefoo-500/15 p-2">
-                        <item.icon className="h-4 w-4 text-kefoo-300" />
+                      <div className="mt-0.5 rounded-2xl bg-gradient-to-br from-violet-50 to-fuchsia-100/70 p-2">
+                        <item.icon className="h-4 w-4 text-kefoo-500" />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{item.title}</p>

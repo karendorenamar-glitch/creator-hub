@@ -60,12 +60,12 @@ function isNavActive(pathname: string, href: string) {
 
 const navLinkClassName = (active: boolean, locked: boolean) =>
   cn(
-    "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-colors",
+    "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
     locked
-      ? "cursor-not-allowed text-slate-400 hover:bg-slate-50"
+      ? "cursor-not-allowed text-slate-400 hover:bg-slate-50/80"
       : active
-        ? "border border-slate-200 bg-white text-kefoo-600 shadow-sm"
-        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
+        ? "border border-violet-100 bg-violet-50/95 text-kefoo-600 shadow-[0_8px_24px_-20px_rgba(168,85,247,0.35)]"
+        : "text-slate-600 hover:bg-white/80 hover:text-kefoo-600",
   );
 
 type SidebarProps = {
@@ -129,15 +129,15 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
   const content = (
     <>
-      <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-6">
+      <div className="flex h-16 items-center gap-3 border-b border-violet-100/90 px-6">
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center">
           <div className="origin-center scale-[0.34]">
             <KeffooLogo />
           </div>
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-900">KEFOO</p>
-          <p className="text-xs text-slate-500">Your campaign command center</p>
+          <p className="text-sm font-semibold text-kefoo-800">KEFOO</p>
+          <p className="text-xs text-slate-500">Your cozy campaign HQ ✨</p>
         </div>
         {onMobileClose && (
           <button
@@ -175,7 +175,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
         })}
       </nav>
 
-      <div className="border-t border-slate-200 p-4">
+      <div className="border-t border-violet-100/90 p-4">
         <SidebarNavItem
           href="/settings"
           label={t("nav.settings")}
@@ -191,7 +191,7 @@ export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
 
   return (
     <>
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+      <aside className="hidden w-64 shrink-0 flex-col border-r border-violet-100/90 bg-white/75 backdrop-blur-md lg:flex">
         {content}
       </aside>
 

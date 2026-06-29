@@ -12,7 +12,7 @@ export function LoginPage({
   redirectTo?: string;
 }) {
   return (
-    <div className="relative h-dvh max-h-dvh overflow-hidden bg-white text-slate-900 antialiased">
+    <div className="relative h-dvh max-h-dvh overflow-hidden bg-[#fdfaff] text-slate-700 antialiased">
       <LandingBackground />
       <div className="relative flex h-full min-h-0">
         <LoginBranding />

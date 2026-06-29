@@ -85,7 +85,7 @@ export function CreatorCampaignsPanel({ campaigns }: CreatorCampaignsPanelProps)
           <p className="text-xs font-medium uppercase tracking-wide text-kefoo-700">
             Total joined
           </p>
-          <p className="mt-1 text-3xl font-semibold tabular-nums text-[#103b8c]">
+          <p className="mt-1 text-3xl font-semibold tabular-nums text-kefoo-800">
             {campaigns.length}
           </p>
         </div>
