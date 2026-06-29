@@ -19,11 +19,11 @@ export const SECTION_CLASS = "py-28";
 export const CONTAINER_CLASS =
   "mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10 xl:px-12";
 
-const SCHEDULE_DEMO_SUBJECT = "Schedule a Demo";
-const SCHEDULE_DEMO_BODY =
-  "Hi ! I would like to see your demo, can we schedule a meeting?";
+const SUPPORT_EMAIL = "hello@kefoo.tech";
 
-export const SCHEDULE_DEMO_MAILTO = `mailto:hello@kefoo.tech?subject=${encodeURIComponent(SCHEDULE_DEMO_SUBJECT)}&body=${encodeURIComponent(SCHEDULE_DEMO_BODY)}`;
+export const FREE_TRIAL_SIGNUP_HREF = "/login?signup=1";
+export const SIGN_IN_HREF = "/login";
+export const SUPPORT_MAILTO = `mailto:${SUPPORT_EMAIL}`;
 
 export const fadeUpVariants: Variants = {
   hidden: { opacity: 0, y: 28 },

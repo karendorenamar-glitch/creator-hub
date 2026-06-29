@@ -45,18 +45,48 @@ export function KarenAvatar({ className }: AvatarProps) {
 
 export function AlyaAvatar({ className }: AvatarProps) {
   return (
-    <AvatarFrame className={className} bg="#1e3a5f">
-      <ellipse cx="32" cy="58" rx="18" ry="10" fill="#0f172a" opacity="0.35" />
+    <AvatarFrame className={className} bg="#f5e8ff">
+      <ellipse cx="32" cy="58" rx="18" ry="10" fill="#e9d5ff" opacity="0.9" />
       <path
-        d="M14 36c3-11 11-17 18-17s15 6 18 17c-5 2-10 3-18 3s-13-1-18-3Z"
-        fill="#0c4a6e"
+        d="M12 37c4-12 12-18 20-18s16 6 20 18c-6 2-12 3-20 3s-14-1-20-3Z"
+        fill="#ddd6fe"
       />
-      <circle cx="32" cy="31" r="13" fill="#f5d0b5" />
-      <circle cx="27" cy="30" r="1.5" fill="#3f2a1d" />
-      <circle cx="37" cy="30" r="1.5" fill="#3f2a1d" />
-      <path d="M28 36q4 2 8 0" stroke="#b77957" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <path d="M18 22c3-5 8-8 14-8s11 3 14 8c-4 3-9 5-14 5s-10-2-14-5Z" fill="#075985" />
-      <path d="M22 18h20v8c0 0-4 6-10 6s-10-6-10-6V18Z" fill="#0284c7" opacity="0.55" />
+      <path
+        d="M14 30c4-11 10-16 18-16s14 5 18 16c-4 2-9 3-18 3s-14-1-18-3Z"
+        fill="#c4b5fd"
+      />
+      <path
+        d="M16 24c3-7 9-11 16-11s13 4 16 11c-4 2-9 3-16 3s-12-1-16-3Z"
+        fill="#a78bfa"
+      />
+      <circle cx="22" cy="22" r="5" fill="#f0abfc" opacity="0.85" />
+      <circle cx="42" cy="22" r="5" fill="#f0abfc" opacity="0.85" />
+      <circle cx="32" cy="32" r="14" fill="#ffe4d6" />
+      <circle cx="24" cy="40" r="3.2" fill="#fda4af" opacity="0.45" />
+      <circle cx="40" cy="40" r="3.2" fill="#fda4af" opacity="0.45" />
+      <ellipse cx="26.5" cy="31" rx="3.2" ry="3.8" fill="#1f2937" />
+      <ellipse cx="37.5" cy="31" rx="3.2" ry="3.8" fill="#1f2937" />
+      <circle cx="27.4" cy="29.6" r="1.2" fill="#ffffff" />
+      <circle cx="38.4" cy="29.6" r="1.2" fill="#ffffff" />
+      <circle cx="25.8" cy="32.2" r="0.55" fill="#ffffff" opacity="0.8" />
+      <circle cx="36.8" cy="32.2" r="0.55" fill="#ffffff" opacity="0.8" />
+      <path
+        d="M24 38.5q8 5 16 0"
+        stroke="#e879a9"
+        strokeWidth="2"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M28 40.2q4 1.5 8 0"
+        stroke="#f472b6"
+        strokeWidth="1.2"
+        fill="none"
+        strokeLinecap="round"
+        opacity="0.8"
+      />
+      <circle cx="44" cy="18" r="2.2" fill="#f9a8d4" />
+      <circle cx="44" cy="18" r="0.8" fill="#ffffff" opacity="0.9" />
     </AvatarFrame>
   );
 }

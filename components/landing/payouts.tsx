@@ -7,6 +7,7 @@ import {
   CONTAINER_CLASS,
   FadeIn,
   GlassCard,
+  FREE_TRIAL_SIGNUP_HREF,
 } from "@/components/landing/landing-shared";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/format";
@@ -62,10 +63,11 @@ export function Payouts() {
               <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
             </div>
             <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Track execution and pay creators with confidence
+              Track execution and payouts on your own
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
-              Execution tracking and payout management built for agency workflows.
+              Move creators from brief to payment without spreadsheets or
+              back-and-forth with a sales team.
             </p>
           </div>
         </FadeIn>
@@ -82,10 +84,10 @@ export function Payouts() {
               </p>
               <ExecutionTrackerVisual />
               <Link
-                href="/login"
+                href={FREE_TRIAL_SIGNUP_HREF}
                 className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
               >
-                See execution tracker
+                Try execution tracker free
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </GlassCard>
@@ -167,10 +169,10 @@ export function Payouts() {
               </div>
 
               <Link
-                href="/payouts"
+                href={FREE_TRIAL_SIGNUP_HREF}
                 className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-kefoo-300 transition-colors hover:text-kefoo-200"
               >
-                View all payouts
+                Start free trial
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </GlassCard>

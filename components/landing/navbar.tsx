@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { KeffooBrandLockup } from "@/components/login/kefoo-logo";
-import { GradientButton, CONTAINER_CLASS } from "@/components/landing/landing-shared";
+import { GradientButton, CONTAINER_CLASS, FREE_TRIAL_SIGNUP_HREF, SIGN_IN_HREF } from "@/components/landing/landing-shared";
 import { motion } from "framer-motion";
 
 const navLinks = [
@@ -37,8 +37,14 @@ export function Navbar() {
           </div>
         </nav>
 
-        <div className="flex shrink-0 justify-end">
-          <GradientButton href="/login">Sign In</GradientButton>
+        <div className="flex shrink-0 items-center justify-end gap-3">
+          <Link
+            href={SIGN_IN_HREF}
+            className="hidden text-sm font-medium text-slate-600 transition-colors hover:text-kefoo-600 sm:inline"
+          >
+            Sign in
+          </Link>
+          <GradientButton href={FREE_TRIAL_SIGNUP_HREF}>Start free trial</GradientButton>
         </div>
       </div>
     </motion.header>

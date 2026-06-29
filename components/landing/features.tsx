@@ -312,11 +312,11 @@ export function Features() {
               <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
             </div>
             <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              One workspace for the full campaign loop
+              Everything you need to run campaigns yourself
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
-              Import links in bulk, track performance live, and see where to
-              invest next.
+              Sign up, import links in bulk, and track performance live — all
+              from one self-serve workspace.
             </p>
           </div>
         </FadeIn>

@@ -8,7 +8,8 @@ import {
   FadeIn,
   GlassCard,
   GradientButton,
-  SCHEDULE_DEMO_MAILTO,
+  FREE_TRIAL_SIGNUP_HREF,
+  SIGN_IN_HREF,
 } from "@/components/landing/landing-shared";
 
 export function CTAFooter() {
@@ -29,17 +30,23 @@ export function CTAFooter() {
               <div className="pointer-events-none absolute left-1/2 top-1/2 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-[2.5rem] border border-slate-200/15" />
               <div className="relative mx-auto max-w-3xl">
                 <h2 className="font-heading text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-                  Built for the People Behind Every Campaign.
+                  Start tracking campaigns today.
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
-                  For the late nights, endless spreadsheets and everything in
-                  between.
+                  Create your workspace, add creators, and see live performance
+                  in minutes. No demo required.
                 </p>
-                <div className="mt-10 flex justify-center">
-                  <GradientButton href={SCHEDULE_DEMO_MAILTO} size="lg">
-                    Schedule a Demo
+                <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                  <GradientButton href={FREE_TRIAL_SIGNUP_HREF} size="lg">
+                    Start free trial
                     <ArrowRight className="h-5 w-5" />
                   </GradientButton>
+                  <Link
+                    href={SIGN_IN_HREF}
+                    className="text-sm font-medium text-slate-600 transition-colors hover:text-kefoo-600"
+                  >
+                    Sign in to your workspace
+                  </Link>
                 </div>
               </div>
             </GlassCard>
@@ -58,8 +65,14 @@ export function CTAFooter() {
               <Link href="#pricing" className="transition-colors hover:text-kefoo-600">
                 Pricing
               </Link>
-              <Link href="/login" className="transition-colors hover:text-kefoo-600">
-                Sign In
+              <Link href={SIGN_IN_HREF} className="transition-colors hover:text-kefoo-600">
+                Sign in
+              </Link>
+              <Link
+                href={FREE_TRIAL_SIGNUP_HREF}
+                className="transition-colors hover:text-kefoo-600"
+              >
+                Start free trial
               </Link>
             </div>
           </div>

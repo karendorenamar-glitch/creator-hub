@@ -9,27 +9,29 @@ import {
   GlassCard,
   GradientButton,
   GradientText,
-  SCHEDULE_DEMO_MAILTO,
+  FREE_TRIAL_SIGNUP_HREF,
+  SIGN_IN_HREF,
   fadeUpVariants,
 } from "@/components/landing/landing-shared";
+import Link from "next/link";
 import { CreatorAvatarGraphic, KarenAvatar } from "@/components/landing/creator-avatars";
 import { cn } from "@/lib/utils";
 
 const benefits = [
   {
     icon: Zap,
-    title: "Paste a link",
-    subtitle: "Metrics import automatically",
+    title: "Sign up in minutes",
+    subtitle: "No demo call or onboarding queue",
   },
   {
     icon: BarChart3,
-    title: "Live insights",
-    subtitle: "Data in seconds, not hours",
+    title: "Paste links yourself",
+    subtitle: "Metrics import automatically",
   },
   {
     icon: Target,
-    title: "Clear next steps",
-    subtitle: "Know who to rebook and why",
+    title: "Run campaigns solo",
+    subtitle: "Track, compare, and decide faster",
   },
 ];
 
@@ -60,34 +62,40 @@ export function Hero() {
             <FadeIn>
               <span className="inline-flex items-center gap-2 rounded-full border border-violet-100 bg-violet-50/95 px-3.5 py-1.5 text-xs font-medium text-kefoo-600 shadow-sm">
                 <Sparkles className="h-3.5 w-3.5" />
-                30-day free trial · no card needed
+                Self-serve · start in minutes · no card needed
               </span>
             </FadeIn>
 
             <FadeIn delay={0.05}>
               <h1 className="mt-5 font-heading text-4xl font-bold leading-[1.08] tracking-tight text-kefoo-800 sm:text-5xl lg:text-[3.25rem]">
-                KOL Campaign tracking, powered by{" "}
+                Run KOL campaigns yourself, with{" "}
                 <GradientText>live data</GradientText>
               </h1>
             </FadeIn>
 
             <FadeIn delay={0.1}>
               <p className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base lg:mx-0">
-                Drop in video links. Kefoo pulls the metrics, maps creators, and
-                keeps your campaigns in one live workspace.
+                Create a workspace, paste video links, and track creator
+                performance — no sales call, no waiting on a deck.
               </p>
             </FadeIn>
 
             <FadeIn delay={0.15}>
-              <div className="mt-8 flex justify-center lg:justify-start">
+              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
                 <GradientButton
-                  href={SCHEDULE_DEMO_MAILTO}
+                  href={FREE_TRIAL_SIGNUP_HREF}
                   size="lg"
                   className="px-8"
                 >
-                  Schedule a Demo
+                  Start free trial
                   <ArrowRight className="h-4 w-4" />
                 </GradientButton>
+                <Link
+                  href={SIGN_IN_HREF}
+                  className="text-sm font-medium text-slate-600 transition-colors hover:text-kefoo-600"
+                >
+                  Already have an account? Sign in
+                </Link>
               </div>
             </FadeIn>
 
