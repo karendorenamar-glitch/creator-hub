@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { LoginPage } from "@/components/login/login-page";
 
 export const metadata: Metadata = {
-  title: "Sign In — Kefoo",
-  description: "Sign in to your Kefoo Creator Intelligence OS workspace.",
+  title: "Sign In",
+  description:
+    "Sign in or start a free trial on Kefoo — the self-serve KOL campaign tracker for live creator analytics.",
 };
 
 type PageProps = {

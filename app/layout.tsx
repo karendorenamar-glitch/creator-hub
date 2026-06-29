@@ -13,39 +13,41 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteDescription =
+  "Self-serve KOL campaign tracker for brands and agencies. Paste TikTok & Instagram links, track live creator performance, and manage payouts. Free trial, no demo required.";
+
 const ogImage = {
   url: "/og-image.jpg",
   width: 831,
   height: 831,
-  alt: "Kefoo — KOL Campaign Management Platform",
+  alt: "Kefoo — self-serve KOL campaign tracker with live creator analytics",
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kefoo.tech"),
 
   title: {
-    default: "Kefoo | KOL Campaign Management Platform",
+    default: "Kefoo | Self-Serve KOL Campaign Tracker",
     template: "%s | Kefoo",
   },
 
-  description:
-    "KOL Campaign Tracker, All in One Campaign Dashboard",
+  description: siteDescription,
 
   keywords: [
-    "Creator CRM",
-    "Creator Campaign Management",
-    "Influencer Campaign Management",
-    "KOL Management",
-    "Creator Analytics",
-    "TikTok Analytics",
-    "Campaign Tracker",
-    "Influencer Reporting",
+    "KOL campaign tracker",
+    "influencer campaign management",
+    "creator analytics",
+    "TikTok campaign analytics",
+    "Instagram creator tracking",
+    "KOL management software",
+    "influencer reporting",
+    "campaign performance dashboard",
+    "self-serve influencer marketing",
   ],
 
   openGraph: {
-    title: "Kefoo",
-    description:
-      "Track KOL campaign, manage campaigns, and automate reporting.",
+    title: "Kefoo | Self-Serve KOL Campaign Tracker",
+    description: siteDescription,
     url: "https://kefoo.tech",
     siteName: "Kefoo",
     locale: "en_US",
@@ -55,14 +57,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Kefoo",
-    description:
-      "Track KOL campaign and manage influencer campaigns effortlessly.",
+    title: "Kefoo | Self-Serve KOL Campaign Tracker",
+    description: siteDescription,
     images: [ogImage.url],
-  },
-
-  alternates: {
-    canonical: "/",
   },
 };
 
