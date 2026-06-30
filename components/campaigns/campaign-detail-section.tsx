@@ -564,7 +564,11 @@ export function CampaignDetailSection({
       </div>
 
       {activeView === "content" ? (
-        <CampaignContentPanel campaign={campaign} creators={creators} />
+        <CampaignContentPanel
+          campaign={campaign}
+          creators={creators}
+          canEdit={canEdit}
+        />
       ) : null}
 
       {activeView === "discover" && canDiscover ? (

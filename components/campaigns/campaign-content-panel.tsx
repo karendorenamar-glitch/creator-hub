@@ -9,6 +9,7 @@ import type { CampaignDetail, Creator } from "@/types/database";
 type CampaignContentPanelProps = {
   campaign: CampaignDetail;
   creators: Creator[];
+  canEdit?: boolean;
 };
 
 const STEP_KEYS = [
@@ -20,6 +21,7 @@ const STEP_KEYS = [
 export function CampaignContentPanel({
   campaign,
   creators,
+  canEdit = true,
 }: CampaignContentPanelProps) {
   const { t } = useLanguage();
 
@@ -55,9 +57,10 @@ export function CampaignContentPanel({
         campaign={campaign}
         creators={creators}
         embedded
+        canEdit={canEdit}
       />
 
-      <CampaignVideosPanel campaign={campaign} embedded />
+      <CampaignVideosPanel campaign={campaign} embedded canEdit={canEdit} />
     </div>
   );
 }

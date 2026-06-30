@@ -1,21 +1,35 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
+import { unlinkVideoFromCampaign } from "@/app/actions/campaigns";
 import { createVideoFromUrl, revalidateAfterBulkUpload } from "@/app/actions/videos";
 import { useLanguage } from "@/components/i18n/language-provider";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { FormError, FormField, inputClassName } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableElement,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/ui/data-table";
 import { runWithConcurrency } from "@/lib/async-pool";
 import {
   parseVideoUrlsForPlatform,
   type VideoPlatform,
 } from "@/lib/video-url";
-import type { CampaignDetail } from "@/types/database";
+import { formatNumber } from "@/lib/utils";
+import type { CampaignDetail, VideoWithCreator } from "@/types/database";
 
 type CampaignVideosPanelProps = {
   campaign: CampaignDetail;
   embedded?: boolean;
+  canEdit?: boolean;
 };
 
 const MAX_PASTE_VIDEOS = 100;
@@ -27,6 +41,7 @@ const textareaClassName =
 export function CampaignVideosPanel({
   campaign,
   embedded = false,
+  canEdit = true,
 }: CampaignVideosPanelProps) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -36,6 +51,8 @@ export function CampaignVideosPanel({
   const [error, setError] = useState<string | null>(null);
   const [isPasting, setIsPasting] = useState(false);
   const [pasteProgress, setPasteProgress] = useState({ current: 0, total: 0 });
+  const [removeTarget, setRemoveTarget] = useState<VideoWithCreator | null>(null);
+  const [isRemovingVideo, startRemoveVideoTransition] = useTransition();
 
   const parsedLinks = useMemo(
     () => parseVideoUrlsForPlatform(linksText, platform),
@@ -107,6 +124,23 @@ export function CampaignVideosPanel({
     showSuccess(message);
     setLinksText("");
     router.refresh();
+  }
+
+  function handleRemoveVideo() {
+    if (!removeTarget) return;
+
+    startRemoveVideoTransition(async () => {
+      const result = await unlinkVideoFromCampaign(campaign.id, removeTarget.id);
+
+      if (result.error) {
+        showError(result.error);
+        return;
+      }
+
+      showSuccess("Video was removed from this campaign.");
+      setRemoveTarget(null);
+      router.refresh();
+    });
   }
 
   return (
@@ -191,6 +225,75 @@ export function CampaignVideosPanel({
           </div>
         </form>
       </section>
+
+      {campaign.videos.length > 0 ? (
+        <section className="space-y-3">
+          <div>
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Linked videos
+            </h4>
+            <p className="mt-1 text-sm text-slate-500">
+              Videos currently attached to this campaign.
+            </p>
+          </div>
+
+          <DataTable>
+            <DataTableElement>
+              <DataTableHead>
+                <DataTableHeaderCell>Video</DataTableHeaderCell>
+                <DataTableHeaderCell>Creator</DataTableHeaderCell>
+                <DataTableHeaderCell className="text-right">Views</DataTableHeaderCell>
+                {canEdit ? (
+                  <DataTableHeaderCell className="text-right">Remove</DataTableHeaderCell>
+                ) : null}
+              </DataTableHead>
+              <DataTableBody>
+                {campaign.videos.map((video) => (
+                  <DataTableRow key={video.id}>
+                    <DataTableCell className="max-w-xs">
+                      <a
+                        href={video.video_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
+                      >
+                        {video.video_url}
+                      </a>
+                    </DataTableCell>
+                    <DataTableCell className="text-slate-600">
+                      {video.creators?.name ?? "Unknown"}
+                    </DataTableCell>
+                    <DataTableCell className="text-right text-slate-600">
+                      {formatNumber(video.views)}
+                    </DataTableCell>
+                    {canEdit ? (
+                      <DataTableCell className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => setRemoveTarget(video)}
+                          className="inline-flex rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          aria-label="Remove video from campaign"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </DataTableCell>
+                    ) : null}
+                  </DataTableRow>
+                ))}
+              </DataTableBody>
+            </DataTableElement>
+          </DataTable>
+        </section>
+      ) : null}
+
+      <ConfirmDialog
+        open={Boolean(removeTarget)}
+        title="Remove video from campaign?"
+        description="This unlinks the video from this campaign. The video stays in your library."
+        loading={isRemovingVideo}
+        onConfirm={handleRemoveVideo}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </div>
   );
 }

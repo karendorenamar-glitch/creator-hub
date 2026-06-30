@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, ExternalLink } from "lucide-react";
+import { ClipboardList, ExternalLink, Trash2 } from "lucide-react";
 import {
   linkCreatorToCampaign,
+  unlinkCreatorFromCampaign,
   updateCampaignCreatorWorkflowStatus,
 } from "@/app/actions/campaigns";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import {
   CAMPAIGN_CREATOR_WORKFLOW_STATUSES,
@@ -32,6 +34,7 @@ type CampaignExecutionTrackerPanelProps = {
   campaign: CampaignDetail;
   creators: Creator[];
   embedded?: boolean;
+  canEdit?: boolean;
 };
 
 const STATUS_CLASS: Record<CampaignCreatorWorkflowStatus, string> = {
@@ -60,6 +63,7 @@ export function CampaignExecutionTrackerPanel({
   campaign,
   creators,
   embedded = false,
+  canEdit = true,
 }: CampaignExecutionTrackerPanelProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
@@ -69,8 +73,10 @@ export function CampaignExecutionTrackerPanel({
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
   const [addingCreatorId, setAddingCreatorId] = useState<string | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
+  const [removeTarget, setRemoveTarget] = useState<CampaignCreator | null>(null);
   const [isSavingStatus, startStatusTransition] = useTransition();
   const [isAddingCreator, startAddCreatorTransition] = useTransition();
+  const [isRemovingCreator, startRemoveCreatorTransition] = useTransition();
 
   const availableCreators = useMemo(() => {
     const existing = new Set(campaign.creators.map((creator) => String(creator.id)));
@@ -177,6 +183,26 @@ export function CampaignExecutionTrackerPanel({
     });
   }
 
+  function handleRemoveCreator() {
+    if (!removeTarget) return;
+
+    startRemoveCreatorTransition(async () => {
+      const result = await unlinkCreatorFromCampaign(
+        campaign.id,
+        removeTarget.id,
+      );
+
+      if (result.error) {
+        showError(result.error);
+        return;
+      }
+
+      showSuccess(`"${removeTarget.name}" was removed from this campaign.`);
+      setRemoveTarget(null);
+      router.refresh();
+    });
+  }
+
   return (
     <section className={embedded ? "" : "mb-8"}>
       {!embedded ? (
@@ -269,6 +295,9 @@ export function CampaignExecutionTrackerPanel({
               <DataTableHeaderCell>Platform</DataTableHeaderCell>
               <DataTableHeaderCell>Status</DataTableHeaderCell>
               <DataTableHeaderCell>Live video</DataTableHeaderCell>
+              {canEdit ? (
+                <DataTableHeaderCell className="text-right">Remove</DataTableHeaderCell>
+              ) : null}
             </DataTableHead>
             <DataTableBody>
               {campaign.creators.map((creator) => {
@@ -343,6 +372,18 @@ export function CampaignExecutionTrackerPanel({
                         </span>
                       )}
                     </DataTableCell>
+                    {canEdit ? (
+                      <DataTableCell className="text-right">
+                        <button
+                          type="button"
+                          onClick={() => setRemoveTarget(creator)}
+                          className="inline-flex rounded-lg p-2 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          aria-label={`Remove ${creator.name} from campaign`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </DataTableCell>
+                    ) : null}
                   </DataTableRow>
                 );
               })}
@@ -350,6 +391,15 @@ export function CampaignExecutionTrackerPanel({
           </DataTableElement>
         </DataTable>
       )}
+
+      <ConfirmDialog
+        open={Boolean(removeTarget)}
+        title="Remove creator from campaign?"
+        description={`This will remove "${removeTarget?.name ?? "this creator"}" from the tracker and unlink their videos from this campaign.`}
+        loading={isRemovingCreator}
+        onConfirm={handleRemoveCreator}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </section>
   );
 }

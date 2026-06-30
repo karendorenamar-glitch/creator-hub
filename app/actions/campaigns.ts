@@ -321,6 +321,116 @@ export async function linkCreatorToCampaign(
   return { success: true };
 }
 
+export async function unlinkCreatorFromCampaign(
+  campaignId: string,
+  creatorId: string,
+) {
+  if (!campaignId) {
+    return { error: "Campaign is required." };
+  }
+
+  if (!creatorId) {
+    return { error: "Creator is required." };
+  }
+
+  const access = await assertCanModifyCampaign(campaignId);
+  if ("error" in access) {
+    return { error: access.error };
+  }
+
+  const supabase = await createClient();
+
+  const { data: videos, error: videosError } = await supabase
+    .from("videos")
+    .select("id")
+    .eq("creator_id", creatorId)
+    .eq("org_id", access.orgId);
+
+  if (videosError) {
+    return { error: videosError.message };
+  }
+
+  const videoIds = (videos ?? []).map((video) => video.id);
+
+  if (videoIds.length > 0) {
+    const { error: unlinkVideosError } = await supabase
+      .from("campaign_videos")
+      .delete()
+      .eq("campaign_id", campaignId)
+      .in("video_id", videoIds);
+
+    if (unlinkVideosError) {
+      return { error: unlinkVideosError.message };
+    }
+  }
+
+  const { error: unlinkCreatorError } = await supabase
+    .from("campaign_creators")
+    .delete()
+    .eq("campaign_id", campaignId)
+    .eq("creator_id", creatorId);
+
+  if (unlinkCreatorError) {
+    return { error: unlinkCreatorError.message };
+  }
+
+  revalidateCreatorHub(campaignId);
+  return { success: true as const };
+}
+
+export async function unlinkVideoFromCampaign(
+  campaignId: string,
+  videoId: string,
+) {
+  if (!campaignId) {
+    return { error: "Campaign is required." };
+  }
+
+  if (!videoId) {
+    return { error: "Video is required." };
+  }
+
+  const access = await assertCanModifyCampaign(campaignId);
+  if ("error" in access) {
+    return { error: access.error };
+  }
+
+  const supabase = await createClient();
+
+  const { data: link, error: linkError } = await supabase
+    .from("campaign_videos")
+    .select("video_id, videos!inner(org_id)")
+    .eq("campaign_id", campaignId)
+    .eq("video_id", videoId)
+    .maybeSingle();
+
+  if (linkError) {
+    return { error: linkError.message };
+  }
+
+  if (!link) {
+    return { error: "Video is not linked to this campaign." };
+  }
+
+  const video = link.videos as { org_id: string } | null;
+  if (!video || video.org_id !== access.orgId) {
+    return { error: "Video not found." };
+  }
+
+  const { error } = await supabase
+    .from("campaign_videos")
+    .delete()
+    .eq("campaign_id", campaignId)
+    .eq("video_id", videoId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidateCreatorHub(campaignId);
+  return { success: true as const };
+}
+
 export async function syncCreatorCampaigns(
   creatorId: string,
   campaignIds: string[],
