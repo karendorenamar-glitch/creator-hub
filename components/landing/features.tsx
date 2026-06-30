@@ -599,7 +599,7 @@ export function Features() {
               <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
             </div>
             <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Everything you need to run campaigns yourself
+              Everything you need to run KOL campaigns effortlessly
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
               Paste links in bulk, track performance live — or skip the chase with{" "}

@@ -476,7 +476,7 @@ export function Pricing() {
               <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
             </div>
             <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-              Pick a plan and go live yourself
+              Pick a plan and launch effortlessly
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-500 sm:text-lg">
               Transparent pricing. Start on a free trial, upgrade when your team

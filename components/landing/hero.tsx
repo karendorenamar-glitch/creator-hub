@@ -76,7 +76,7 @@ export function Hero() {
 
             <FadeIn delay={0.05}>
               <h1 className="mt-5 font-heading text-4xl font-bold leading-[1.08] tracking-tight text-kefoo-800 sm:text-5xl lg:text-[3.25rem]">
-                Run KOL campaigns yourself, with{" "}
+                Run KOL campaigns effortlessly, with{" "}
                 <GradientText>live data</GradientText>
               </h1>
             </FadeIn>

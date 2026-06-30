@@ -3,7 +3,7 @@ import { LandingPage } from "@/components/landing/landing-page";
 
 const homeTitle = "Kefoo | Self-Serve KOL Campaign Tracker & Creator Analytics";
 const homeDescription =
-  "Run KOL campaigns yourself with live data. Create a workspace, paste video links, and track creator performance — free trial, no sales call required.";
+  "Run KOL campaigns effortlessly with live data. Create a workspace, paste video links, and track creator performance — free trial, no sales call required.";
 
 export const metadata: Metadata = {
   title: {
