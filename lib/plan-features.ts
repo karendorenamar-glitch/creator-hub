@@ -11,11 +11,12 @@ export type PlanFeature =
   | "dashboard"
   | "dashboard_advanced"
   | "bulk_upload"
+  | "discover_keywords"
   | "payouts"
   | "content_planner"
   | "export_csv";
 
-export type DashboardTier = "none" | "starter" | "growth" | "scale";
+export type DashboardTier = "none" | "scale";
 
 const PLAN_RANK: Record<OrgPlan, number> = {
   free_trial: 0,
@@ -25,22 +26,29 @@ const PLAN_RANK: Record<OrgPlan, number> = {
 };
 
 const FEATURE_MIN_PLAN: Record<PlanFeature, OrgPlan> = {
-  dashboard: "growth",
-  dashboard_advanced: "growth",
-  bulk_upload: "growth",
+  dashboard: "scale",
+  dashboard_advanced: "scale",
+  bulk_upload: "starter",
+  discover_keywords: "scale",
   payouts: "scale",
   content_planner: "scale",
   export_csv: "scale",
 };
 
 export const FEATURE_UPGRADE_MESSAGES: Record<PlanFeature, string> = {
-  dashboard: "Growth unlocks the performance dashboard — campaign metrics in one view.",
+  dashboard:
+    "Scale unlocks the performance dashboard — campaign metrics in one view.",
   dashboard_advanced:
-    "Growth adds creator comparisons, live insights, and monthly trend tracking.",
-  bulk_upload: "Growth lets you paste multiple video links and import them in one go.",
+    "Scale adds creator comparisons, live insights, and monthly trend tracking.",
+  bulk_upload:
+    "Starter lets you paste multiple video links and import them in one go.",
+  discover_keywords:
+    "Scale unlocks keyword scan — find matching videos from creator profiles (1 scan per week).",
   payouts: "Scale adds payout tracking with due dates and payment status.",
-  content_planner: "Scale unlocks Content Planner for pillars, ideas, and publish dates.",
-  export_csv: "Scale lets you export campaign and dashboard performance data as CSV.",
+  content_planner:
+    "Scale unlocks Content Planner for pillars, ideas, and publish dates.",
+  export_csv:
+    "Scale lets you export campaign and dashboard performance data as CSV.",
 };
 
 export function hasPlanFeature(
@@ -62,19 +70,16 @@ export function hasPlanFeature(
 }
 
 export function getRequiredCheckoutPlan(feature: PlanFeature): CheckoutPlan {
-  return FEATURE_MIN_PLAN[feature] as CheckoutPlan;
+  const minPlan = FEATURE_MIN_PLAN[feature];
+  return minPlan === "growth" ? "scale" : (minPlan as CheckoutPlan);
 }
 
 export function getNavUpgradeCheckoutPlan(href: string): CheckoutPlan {
-  if (href === "/payouts" || href === "/planner") {
+  if (href === "/payouts" || href === "/planner" || href === "/dashboard") {
     return "scale";
   }
 
-  if (href === "/dashboard") {
-    return "growth";
-  }
-
-  return "growth";
+  return "scale";
 }
 
 export function getDashboardTier(
@@ -85,25 +90,13 @@ export function getDashboardTier(
     return "none";
   }
 
-  if (hasPlanFeature(plan, "payouts", addOnFeatures)) {
-    return "scale";
-  }
-
-  if (hasPlanFeature(plan, "dashboard_advanced", addOnFeatures)) {
-    return "growth";
-  }
-
-  return "growth";
+  return "scale";
 }
 
 export function getDashboardDescription(tier: DashboardTier) {
   switch (tier) {
-    case "starter":
-      return "Core campaign metrics across your active and completed campaigns.";
-    case "growth":
-      return "Creator comparisons, live insights, and monthly performance trends.";
     case "scale":
-      return "Full intelligence workspace — payouts, pillars, and cross-campaign reporting.";
+      return "Creator comparisons, live insights, monthly trends, payouts, and cross-campaign reporting.";
     default:
       return "Compare campaigns and creators to decide where to invest next.";
   }

@@ -297,6 +297,7 @@ export async function getActiveOrganization(): Promise<Organization | null> {
     return {
       ...(fallback as Organization),
       member_limit: null,
+      discover_last_scan_at: null,
     };
   }
 
@@ -320,6 +321,7 @@ export async function getActiveOrganization(): Promise<Organization | null> {
       trial_started_at: null,
       trial_ends_at: planFallback.trial_ends_at,
       member_limit: null,
+      discover_last_scan_at: null,
     };
   }
 

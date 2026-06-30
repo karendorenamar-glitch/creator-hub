@@ -28,6 +28,7 @@ export type Organization = {
   trial_started_at: string | null;
   trial_ends_at: string | null;
   member_limit: number | null;
+  discover_last_scan_at: string | null;
   created_at: string;
 };
 
@@ -239,6 +240,7 @@ export type CampaignDetail = Campaign & {
     platform: string;
     metric_value: string;
     metric_label: string;
+    video_url: string;
   } | null;
   best_engagement_content: {
     title: string;
@@ -246,6 +248,7 @@ export type CampaignDetail = Campaign & {
     platform: string;
     metric_value: string;
     metric_label: string;
+    video_url: string;
   } | null;
 };
 
@@ -327,6 +330,7 @@ export type Database = {
           plan?: OrgPlan;
           trial_ends_at?: string | null;
           member_limit?: number | null;
+          discover_last_scan_at?: string | null;
           created_at?: string;
         };
         Update: {
@@ -336,6 +340,7 @@ export type Database = {
           plan?: OrgPlan;
           trial_ends_at?: string | null;
           member_limit?: number | null;
+          discover_last_scan_at?: string | null;
           created_at?: string;
         };
         Relationships: [];

@@ -23,15 +23,14 @@ export function isLeaderRole(role: string) {
 }
 
 export function planAllowsTeamInvites(plan: OrgPlan) {
-  return plan === "growth" || plan === "scale";
+  return plan === "scale";
 }
 
 export function getDefaultMemberLimitForPlan(plan: OrgPlan) {
   switch (plan) {
     case "growth":
-      return 3;
     case "scale":
-      return 5;
+      return 3;
     default:
       return 1;
   }

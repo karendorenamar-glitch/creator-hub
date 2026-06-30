@@ -27,8 +27,8 @@ export type CampaignInput = {
   end_date: string;
   budget: number;
   status: CampaignStatus;
-  creator_ids: string[];
-  video_ids: string[];
+  creator_ids?: string[];
+  video_ids?: string[];
 };
 
 import type { CampaignStatus } from "@/types/database";
@@ -236,20 +236,46 @@ export async function linkVideoToCampaign(
     return { error: videoError.message };
   }
 
-  const creatorResult = await insertCampaignCreatorRows(
-    [
-      {
-        campaign_id: campaignId,
-        creator_id: creatorId,
-        fee: null,
-        workflow_status: "brief_sent",
-      },
-    ],
-    true,
+  const { data: existingCreator, error: existingCreatorError } = await supabase
+    .from("campaign_creators")
+    .select("fee")
+    .eq("campaign_id", campaignId)
+    .eq("creator_id", creatorId)
+    .maybeSingle();
+
+  if (existingCreatorError && !isMissingWorkflowStatusColumn(existingCreatorError)) {
+    return { error: existingCreatorError.message };
+  }
+
+  const { error: creatorError } = await supabase.from("campaign_creators").upsert(
+    {
+      campaign_id: campaignId,
+      creator_id: creatorId,
+      fee: existingCreator?.fee ?? null,
+      workflow_status: "posted",
+    },
+    { onConflict: "campaign_id,creator_id" },
   );
 
-  if ("error" in creatorResult) {
-    return { error: creatorResult.error };
+  if (creatorError) {
+    if (isMissingWorkflowStatusColumn(creatorError)) {
+      const fallbackResult = await insertCampaignCreatorRows(
+        [
+          {
+            campaign_id: campaignId,
+            creator_id: creatorId,
+            fee: existingCreator?.fee ?? null,
+          },
+        ],
+        false,
+      );
+
+      if ("error" in fallbackResult) {
+        return { error: fallbackResult.error };
+      }
+    } else {
+      return { error: creatorError.message };
+    }
   }
 
   if (options?.revalidate !== false) {
@@ -412,8 +438,8 @@ export async function createCampaign(input: CampaignInput) {
 
   const syncResult = await syncCampaignRelations(
     data.id,
-    input.creator_ids,
-    input.video_ids,
+    input.creator_ids ?? [],
+    input.video_ids ?? [],
   );
 
   if (syncResult.error) {
@@ -445,14 +471,16 @@ export async function updateCampaign(id: string, input: CampaignInput) {
     return { error: error.message };
   }
 
-  const syncResult = await syncCampaignRelations(
-    id,
-    input.creator_ids,
-    input.video_ids,
-  );
+  if (input.creator_ids !== undefined && input.video_ids !== undefined) {
+    const syncResult = await syncCampaignRelations(
+      id,
+      input.creator_ids,
+      input.video_ids,
+    );
 
-  if (syncResult.error) {
-    return { error: syncResult.error };
+    if (syncResult.error) {
+      return { error: syncResult.error };
+    }
   }
 
   revalidateCreatorHub(id);

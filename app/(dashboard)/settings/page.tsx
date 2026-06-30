@@ -166,14 +166,8 @@ export default async function SettingsPage() {
                   Upgrade to Starter
                 </Link>
                 <Link
-                  href="/checkout/growth"
-                  className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
-                >
-                  Upgrade to Growth
-                </Link>
-                <Link
                   href="/checkout/scale"
-                  className="inline-flex rounded-2xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
                 >
                   Upgrade to Scale
                 </Link>

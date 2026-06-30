@@ -408,7 +408,7 @@ export function CampaignCreatorsPanel({ campaign }: CampaignCreatorsPanelProps) 
             description={
               campaign.videos.length > 0
                 ? "Creators from linked videos will appear here automatically."
-                : "Add creators in Edit campaign, or bulk upload videos to this campaign."
+                : "Add creators and videos from the Content tab."
             }
           />
         </DataTable>

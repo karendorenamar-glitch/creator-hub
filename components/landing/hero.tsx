@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Sparkles, Zap, BarChart3, Target } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, BarChart3, Search } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import {
   AppWindowChrome,
@@ -21,17 +21,17 @@ const benefits = [
   {
     icon: Zap,
     title: "Sign up in minutes",
-    subtitle: "No demo call or onboarding queue",
+    subtitle: "No demo call needed",
+  },
+  {
+    icon: Search,
+    title: "Search by keywords",
+    subtitle: "Creators + hashtags",
   },
   {
     icon: BarChart3,
-    title: "Paste links yourself",
-    subtitle: "Metrics import automatically",
-  },
-  {
-    icon: Target,
-    title: "Run campaigns solo",
-    subtitle: "Track, compare, and decide faster",
+    title: "Live metrics",
+    subtitle: "Paste links, track CPV & ER",
   },
 ];
 
@@ -60,9 +60,17 @@ export function Hero() {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="relative mx-auto w-full max-w-2xl text-center lg:mx-0 lg:max-w-none lg:text-left">
             <FadeIn>
-              <span className="inline-flex items-center gap-2 rounded-full border border-violet-100 bg-violet-50/95 px-3.5 py-1.5 text-xs font-medium text-kefoo-600 shadow-sm">
-                <Sparkles className="h-3.5 w-3.5" />
-                Self-serve · start in minutes · no card needed
+              <span className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-violet-100 bg-violet-50/95 px-3.5 py-1.5 text-xs font-medium text-kefoo-600 shadow-sm lg:justify-start">
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span>Self-serve</span>
+                <span className="text-violet-300" aria-hidden>
+                  ·
+                </span>
+                <span>Free trial</span>
+                <span className="text-violet-300" aria-hidden>
+                  ·
+                </span>
+                <span>No card needed</span>
               </span>
             </FadeIn>
 
@@ -75,8 +83,9 @@ export function Hero() {
 
             <FadeIn delay={0.1}>
               <p className="mx-auto mt-6 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base lg:mx-0">
-                Create a workspace, paste video links, and track creator
-                performance — no sales call, no waiting on a deck.
+                Search campaign videos by keyword, paste TikTok & Instagram
+                links, and track creator performance — self-serve, no sales
+                call.
               </p>
             </FadeIn>
 
@@ -100,21 +109,21 @@ export function Hero() {
             </FadeIn>
 
             <FadeIn delay={0.2}>
-              <div className="mt-8 grid justify-items-stretch gap-3 sm:grid-cols-3">
+              <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                 {benefits.map((item) => (
                   <div
                     key={item.title}
-                    className="rounded-2xl border border-violet-100/90 bg-white/85 px-4 py-3 text-left shadow-[0_12px_32px_-24px_rgba(168,85,247,0.22)] backdrop-blur-sm transition-transform duration-300 hover:-translate-y-1"
+                    className="min-w-0 rounded-2xl border border-violet-100/90 bg-white/85 px-4 py-3.5 text-left shadow-[0_12px_32px_-24px_rgba(168,85,247,0.22)] backdrop-blur-sm"
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5 rounded-2xl bg-gradient-to-br from-violet-50 to-fuchsia-100/70 p-2">
-                        <item.icon className="h-4 w-4 text-kefoo-500" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-slate-900">{item.title}</p>
-                        <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{item.subtitle}</p>
-                      </div>
+                    <div className="inline-flex rounded-2xl bg-gradient-to-br from-violet-50 to-fuchsia-100/70 p-2">
+                      <item.icon className="h-4 w-4 text-kefoo-500" />
                     </div>
+                    <p className="mt-3 text-sm font-semibold leading-snug text-slate-900">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-xs leading-snug text-slate-500">
+                      {item.subtitle}
+                    </p>
                   </div>
                 ))}
               </div>

@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList, ExternalLink, Lightbulb, Link2 } from "lucide-react";
+import { ClipboardList, ExternalLink } from "lucide-react";
 import {
   linkCreatorToCampaign,
   updateCampaignCreatorWorkflowStatus,
 } from "@/app/actions/campaigns";
-import { createVideoFromUrl } from "@/app/actions/videos";
 import { useToast } from "@/components/ui/toast";
 import {
   CAMPAIGN_CREATOR_WORKFLOW_STATUSES,
@@ -16,11 +15,6 @@ import {
   EXECUTION_TRACKER_STATUS_SUMMARY,
   type CampaignCreatorWorkflowStatus,
 } from "@/lib/campaign-creator-status";
-import {
-  normalizeVideoPlatform,
-  validateVideoUrlForPlatform,
-  type VideoPlatform,
-} from "@/lib/video-url";
 import {
   DataTable,
   DataTableBody,
@@ -37,6 +31,7 @@ import type { CampaignCreator, CampaignDetail, Creator } from "@/types/database"
 type CampaignExecutionTrackerPanelProps = {
   campaign: CampaignDetail;
   creators: Creator[];
+  embedded?: boolean;
 };
 
 const STATUS_CLASS: Record<CampaignCreatorWorkflowStatus, string> = {
@@ -61,28 +56,20 @@ function CreatorAvatar({ name }: { name: string }) {
   );
 }
 
-function creatorPlatform(creator: CampaignCreator): VideoPlatform | null {
-  return normalizeVideoPlatform(creator.platform);
-}
-
 export function CampaignExecutionTrackerPanel({
   campaign,
   creators,
+  embedded = false,
 }: CampaignExecutionTrackerPanelProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
   const [statusByCreator, setStatusByCreator] = useState<
     Record<string, CampaignCreatorWorkflowStatus>
   >({});
-  const [videoUrlInputs, setVideoUrlInputs] = useState<Record<string, string>>(
-    {},
-  );
   const [savingStatusId, setSavingStatusId] = useState<string | null>(null);
-  const [linkingCreatorId, setLinkingCreatorId] = useState<string | null>(null);
   const [addingCreatorId, setAddingCreatorId] = useState<string | null>(null);
   const [selectedCreatorId, setSelectedCreatorId] = useState<string>("");
   const [isSavingStatus, startStatusTransition] = useTransition();
-  const [isLinkingVideo, startLinkVideoTransition] = useTransition();
   const [isAddingCreator, startAddCreatorTransition] = useTransition();
 
   const availableCreators = useMemo(() => {
@@ -111,21 +98,33 @@ export function CampaignExecutionTrackerPanel({
     };
 
     for (const creator of campaign.creators) {
+      const linkedVideo = videoByCreator.get(creator.id);
       const status =
-        statusByCreator[creator.id] ??
-        creator.workflow_status ??
-        "brief_sent";
+        linkedVideo
+          ? "posted"
+          : (statusByCreator[creator.id] ??
+            creator.workflow_status ??
+            "brief_sent");
       counts[status] += 1;
     }
 
     return counts;
-  }, [campaign.creators, statusByCreator]);
+  }, [campaign.creators, statusByCreator, videoByCreator]);
 
   function handleStatusChange(
     creatorId: string,
     status: CampaignCreatorWorkflowStatus,
   ) {
-    const previous = statusByCreator[creatorId] ?? "brief_sent";
+    if (videoByCreator.has(creatorId)) {
+      showError("Status is locked to Uploaded while a video is linked.");
+      return;
+    }
+
+    const previous =
+      statusByCreator[creatorId] ??
+      campaign.creators.find((creator) => creator.id === creatorId)
+        ?.workflow_status ??
+      "brief_sent";
     setStatusByCreator((current) => ({ ...current, [creatorId]: status }));
     setSavingStatusId(creatorId);
 
@@ -148,76 +147,6 @@ export function CampaignExecutionTrackerPanel({
       }
 
       showSuccess("Creator status updated.");
-      router.refresh();
-    });
-  }
-
-  function handleLinkVideo(creator: CampaignCreator) {
-    const platform = creatorPlatform(creator);
-
-    if (!platform) {
-      showError("This creator's platform must be TikTok or Instagram.");
-      return;
-    }
-
-    const videoUrl = (videoUrlInputs[creator.id] ?? "").trim();
-
-    if (!videoUrl) {
-      showError("Paste a video link before saving.");
-      return;
-    }
-
-    const platformError = validateVideoUrlForPlatform(videoUrl, platform);
-
-    if (platformError) {
-      showError(platformError);
-      return;
-    }
-
-    setLinkingCreatorId(creator.id);
-
-    startLinkVideoTransition(async () => {
-      const currentStatus =
-        statusByCreator[creator.id] ??
-        creator.workflow_status ??
-        "brief_sent";
-
-      if (currentStatus !== "posted") {
-        const statusResult = await updateCampaignCreatorWorkflowStatus(
-          campaign.id,
-          creator.id,
-          "posted",
-        );
-
-        if (statusResult.error) {
-          setLinkingCreatorId(null);
-          showError(statusResult.error);
-          return;
-        }
-
-        setStatusByCreator((current) => ({
-          ...current,
-          [creator.id]: "posted",
-        }));
-      }
-
-      const result = await createVideoFromUrl({
-        creator_id: creator.id,
-        video_url: videoUrl,
-        platform,
-        campaign_id: campaign.id,
-        import_metrics: true,
-        auto_create_creator: false,
-      });
-
-      setLinkingCreatorId(null);
-
-      if (result.error) {
-        showError(result.error);
-        return;
-      }
-
-      showSuccess("Video linked and metrics imported.");
       router.refresh();
     });
   }
@@ -249,32 +178,25 @@ export function CampaignExecutionTrackerPanel({
   }
 
   return (
-    <section className="mb-8">
-      <div className="mb-4">
-        <div className="flex items-center gap-2">
-          <ClipboardList className="h-5 w-5 text-slate-400" />
-          <h3 className="text-lg font-semibold text-slate-900">
-            Execution tracker
-          </h3>
+    <section className={embedded ? "" : "mb-8"}>
+      {!embedded ? (
+        <div className="mb-4">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-slate-400" />
+            <h3 className="text-lg font-semibold text-slate-900">Progress</h3>
+          </div>
+          <p className="mt-1 text-sm text-slate-500">
+            Track each creator from brief through upload. Paste video links below
+            when they go live.
+          </p>
         </div>
-        <p className="mt-1 text-sm text-slate-500">
-          Track each creator from brief through upload. Paste a video link when
-          marked Uploaded to add it to this campaign.
-        </p>
-      </div>
-
-      <div className="mb-6 flex gap-2.5 rounded-xl border border-kefoo-200 bg-kefoo-50 px-4 py-3 text-sm leading-relaxed text-kefoo-950">
-        <Lightbulb
-          className="mt-0.5 h-4 w-4 shrink-0 text-kefoo-400"
-          aria-hidden
-        />
-        <p>
-          <span className="font-semibold">Quick tip:</span> Once you paste a
-          video link for a creator and mark them Uploaded, their video
-          automatically appears in Campaign performance and counts toward your
-          metrics.
-        </p>
-      </div>
+      ) : (
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            Creator progress
+          </h4>
+        </div>
+      )}
 
       <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
@@ -309,7 +231,7 @@ export function CampaignExecutionTrackerPanel({
           >
             {isAddingCreator && addingCreatorId === selectedCreatorId
               ? "Adding..."
-              : "Add creator"}
+              : "Add to tracker"}
           </button>
         </div>
       </div>
@@ -334,8 +256,8 @@ export function CampaignExecutionTrackerPanel({
       {campaign.creators.length === 0 ? (
         <DataTable>
           <EmptyState
-            title="No creators linked yet"
-            description="Add creators in Edit campaign, or upload videos to start tracking execution."
+            title="No creators in tracker yet"
+            description="Add creators above, then paste their video links in the section below."
           />
         </DataTable>
       ) : (
@@ -346,21 +268,16 @@ export function CampaignExecutionTrackerPanel({
               <DataTableHeaderCell>Profile</DataTableHeaderCell>
               <DataTableHeaderCell>Platform</DataTableHeaderCell>
               <DataTableHeaderCell>Status</DataTableHeaderCell>
-              <DataTableHeaderCell>Video link</DataTableHeaderCell>
+              <DataTableHeaderCell>Live video</DataTableHeaderCell>
             </DataTableHead>
             <DataTableBody>
               {campaign.creators.map((creator) => {
-                const workflowStatus =
-                  statusByCreator[creator.id] ??
-                  creator.workflow_status ??
-                  "brief_sent";
                 const linkedVideo = videoByCreator.get(creator.id);
-                const videoInput =
-                  videoUrlInputs[creator.id] ?? linkedVideo?.video_url ?? "";
-                const isUploaded = workflowStatus === "posted";
-                const isLinking =
-                  isLinkingVideo && linkingCreatorId === creator.id;
-                const platform = creatorPlatform(creator);
+                const workflowStatus = linkedVideo
+                  ? "posted"
+                  : (statusByCreator[creator.id] ??
+                    creator.workflow_status ??
+                    "brief_sent");
 
                 return (
                   <DataTableRow key={creator.id}>
@@ -387,7 +304,8 @@ export function CampaignExecutionTrackerPanel({
                       <select
                         value={workflowStatus}
                         disabled={
-                          isSavingStatus && savingStatusId === creator.id
+                          Boolean(linkedVideo) ||
+                          (isSavingStatus && savingStatusId === creator.id)
                         }
                         onChange={(event) =>
                           handleStatusChange(
@@ -395,9 +313,9 @@ export function CampaignExecutionTrackerPanel({
                             event.target.value as CampaignCreatorWorkflowStatus,
                           )
                         }
-                        aria-label={`Execution status for ${creator.name}`}
+                        aria-label={`Status for ${creator.name}`}
                         className={cn(
-                          "w-full min-w-[10rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-kefoo-500/20 disabled:cursor-wait disabled:opacity-60",
+                          "w-full min-w-[10rem] rounded-lg border px-3 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-kefoo-500/20 disabled:cursor-not-allowed disabled:opacity-60",
                           STATUS_CLASS[workflowStatus],
                         )}
                       >
@@ -409,53 +327,7 @@ export function CampaignExecutionTrackerPanel({
                       </select>
                     </DataTableCell>
                     <DataTableCell>
-                      {isUploaded ? (
-                        <div className="flex min-w-[16rem] flex-col gap-2">
-                          <input
-                            type="url"
-                            value={videoInput}
-                            placeholder={
-                              platform === "Instagram"
-                                ? "Paste Reels URL"
-                                : "Paste TikTok video URL"
-                            }
-                            onChange={(event) =>
-                              setVideoUrlInputs((current) => ({
-                                ...current,
-                                [creator.id]: event.target.value,
-                              }))
-                            }
-                            aria-label={`Video link for ${creator.name}`}
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-kefoo-500 focus:ring-2 focus:ring-kefoo-500/20"
-                          />
-                          <div className="flex flex-wrap items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleLinkVideo(creator)}
-                              disabled={isLinking || !videoInput.trim()}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-kefoo-400 px-3 py-1.5 text-xs font-medium text-white hover:bg-kefoo-300 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <Link2 className="h-3.5 w-3.5" />
-                              {isLinking
-                                ? "Importing..."
-                                : linkedVideo
-                                  ? "Update video"
-                                  : "Add & import"}
-                            </button>
-                            {linkedVideo ? (
-                              <a
-                                href={linkedVideo.video_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-medium text-kefoo-600 hover:text-kefoo-500"
-                              >
-                                Open linked video
-                                <ExternalLink className="h-3.5 w-3.5" />
-                              </a>
-                            ) : null}
-                          </div>
-                        </div>
-                      ) : linkedVideo ? (
+                      {linkedVideo ? (
                         <a
                           href={linkedVideo.video_url}
                           target="_blank"
@@ -467,7 +339,7 @@ export function CampaignExecutionTrackerPanel({
                         </a>
                       ) : (
                         <span className="text-sm text-slate-400">
-                          Set status to Uploaded
+                          Paste link below
                         </span>
                       )}
                     </DataTableCell>

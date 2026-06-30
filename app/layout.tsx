@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 const siteDescription =
-  "Self-serve KOL campaign tracker for brands and agencies. Paste TikTok & Instagram links, track live creator performance, and manage payouts. Free trial, no demo required.";
+  "Self-serve KOL campaign tracker for brands and agencies. Search campaign videos by keyword, paste TikTok & Instagram links, track live creator performance, and manage payouts. Free trial, no demo required.";
 
 const ogImage = {
   url: "/og-image.jpg",

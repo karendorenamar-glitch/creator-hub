@@ -27,6 +27,7 @@ export type CampaignContentInsight = {
   platform: string;
   metric_value: string;
   metric_label: string;
+  video_url: string;
 };
 
 export type CampaignHealth = {
@@ -113,6 +114,7 @@ function calculateContentInsights(videos: CampaignVideoInsightInput[]) {
           platform: mostValuable.creators?.platform ?? "—",
           metric_label: "Saves",
           metric_value: mostValuable.saves.toLocaleString("en-US"),
+          video_url: mostValuable.video_url,
         }
       : null,
     best_engagement_content: bestEngagement
@@ -122,6 +124,7 @@ function calculateContentInsights(videos: CampaignVideoInsightInput[]) {
           platform: bestEngagement.video.creators?.platform ?? "—",
           metric_label: "Engagement rate",
           metric_value: `${bestEngagement.engagement_rate.toFixed(1)}%`,
+          video_url: bestEngagement.video.video_url,
         }
       : null,
   };

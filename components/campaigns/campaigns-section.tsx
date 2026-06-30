@@ -5,43 +5,32 @@ import { Plus } from "lucide-react";
 import { deleteCampaign } from "@/app/actions/campaigns";
 import { CampaignFormModal } from "@/components/campaigns/campaign-form-modal";
 import { CampaignSummaryCards } from "@/components/campaigns/campaign-summary-cards";
+import { WorkspaceTutorial } from "@/components/onboarding/workspace-tutorial";
 import { FreeTrialUsageBanner } from "@/components/plan/plan-provider";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
-import type {
-  CampaignSummary,
-  Creator,
-  OrgMemberRole,
-  VideoWithCreator,
-} from "@/types/database";
+import type { WorkspaceTutorialUsage } from "@/lib/workspace-tutorial";
+import type { CampaignSummary, OrgMemberRole } from "@/types/database";
 
 type CampaignsSectionProps = {
   campaigns: CampaignSummary[];
-  creators: Creator[];
-  videos: VideoWithCreator[];
   currentUserId: string;
   memberRole: OrgMemberRole;
+  orgId: string;
+  usage: WorkspaceTutorialUsage;
 };
 
 export function CampaignsSection({
   campaigns,
-  creators,
-  videos,
   currentUserId,
   memberRole,
+  orgId,
+  usage,
 }: CampaignsSectionProps) {
   const { showSuccess, showError } = useToast();
   const [formOpen, setFormOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<CampaignSummary | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
-
-  function openCreate() {
-    setFormOpen(true);
-  }
-
-  function closeForm() {
-    setFormOpen(false);
-  }
 
   function handleDelete() {
     if (!deleteTarget) return;
@@ -59,14 +48,23 @@ export function CampaignsSection({
     });
   }
 
+  const firstCampaignId = campaigns[0]?.id ?? null;
+
   return (
     <>
       <FreeTrialUsageBanner />
 
+      <WorkspaceTutorial
+        orgId={orgId}
+        usage={usage}
+        firstCampaignId={firstCampaignId}
+        onCreateCampaign={() => setFormOpen(true)}
+      />
+
       <div className="mb-6 flex justify-end">
         <button
           type="button"
-          onClick={openCreate}
+          onClick={() => setFormOpen(true)}
           className="inline-flex items-center gap-2 rounded-lg bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-kefoo-300"
         >
           <Plus className="h-4 w-4" />
@@ -81,13 +79,7 @@ export function CampaignsSection({
         onDelete={setDeleteTarget}
       />
 
-      <CampaignFormModal
-        open={formOpen}
-        onClose={closeForm}
-        campaign={null}
-        creators={creators}
-        videos={videos}
-      />
+      <CampaignFormModal open={formOpen} onClose={() => setFormOpen(false)} />
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

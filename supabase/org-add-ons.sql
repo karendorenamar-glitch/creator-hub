@@ -103,7 +103,7 @@ begin
   else
     base_limit := case org_record.plan
       when 'growth' then 3
-      when 'scale' then 5
+      when 'scale' then 3
       else 1
     end;
   end if;

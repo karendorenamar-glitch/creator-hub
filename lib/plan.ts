@@ -15,6 +15,10 @@ const ORG_PLANS: OrgPlan[] = ["free_trial", "starter", "growth", "scale"];
 export function normalizeOrgPlan(value: string | null | undefined): OrgPlan {
   const normalized = value?.trim().toLowerCase();
 
+  if (normalized === "growth") {
+    return "scale";
+  }
+
   if (normalized && ORG_PLANS.includes(normalized as OrgPlan)) {
     return normalized as OrgPlan;
   }
@@ -57,12 +61,12 @@ export const PLAN_LIMITS: Record<OrgPlan, PlanLimits> = {
   free_trial: { campaigns: 3, creators: 10, videos: 15, members: 1 },
   starter: { campaigns: 10, creators: 30, videos: 60, members: 1 },
   growth: { campaigns: null, creators: 100, videos: 300, members: 3 },
-  scale: { campaigns: null, creators: 500, videos: 1500, members: 5 },
+  scale: { campaigns: null, creators: 100, videos: 300, members: 3 },
 };
 
 export const FREE_TRIAL_ALLOWED_PREFIXES = [
-  "/campaigns",
   "/creators",
+  "/campaigns",
   "/videos",
   "/settings",
   "/checkout",

@@ -141,7 +141,7 @@ async function resolveEffectiveOrgPlan(
 ): Promise<OrgPlan> {
   const storedPlan = normalizeOrgPlan(record.plan);
 
-  if (storedPlan === "growth" || storedPlan === "scale") {
+  if (storedPlan === "scale") {
     return storedPlan;
   }
 
@@ -464,6 +464,24 @@ export async function assertCanUseTikTokImport(orgId: string) {
 
   if ("error" in access) {
     return { error: access.error };
+  }
+
+  return { ok: true as const };
+}
+
+export async function assertCanUseDiscoverKeywords(orgId: string) {
+  const access = await assertWorkspaceAccess(orgId);
+
+  if ("error" in access) {
+    return { error: access.error };
+  }
+
+  const plan = access.context.plan;
+
+  if (
+    !hasPlanFeature(plan, "discover_keywords", access.context.addOnFeatures)
+  ) {
+    return { error: FEATURE_UPGRADE_MESSAGES.discover_keywords };
   }
 
   return { ok: true as const };

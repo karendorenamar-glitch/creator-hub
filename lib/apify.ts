@@ -28,6 +28,17 @@ export type TikTokProfileData = {
   name: string | null;
 };
 
+export type TikTokProfileVideo = {
+  videoUrl: string;
+  caption: string;
+  postedAt: string | null;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+};
+
 function getApifyToken(): string {
   const token = process.env.APIFY_TOKEN?.trim();
 
@@ -387,5 +398,183 @@ export async function fetchTikTokProfile(
       authorMeta.fans ?? authorMeta.followerCount ?? authorMeta.followers,
     ),
     name: nickName || name || null,
+  };
+}
+
+function getNestedNumber(
+  item: Record<string, unknown>,
+  key: string,
+): number {
+  const stats = item.stats;
+  if (stats && typeof stats === "object") {
+    return numberOrZero((stats as Record<string, unknown>)[key]);
+  }
+
+  return 0;
+}
+
+function getCaptionFromVideoItem(item: Record<string, unknown>): string {
+  const text =
+    typeof item.text === "string"
+      ? item.text.trim()
+      : typeof item.desc === "string"
+        ? item.desc.trim()
+        : typeof item.description === "string"
+          ? item.description.trim()
+          : "";
+
+  const hashtagParts: string[] = [];
+  if (Array.isArray(item.hashtags)) {
+    for (const tag of item.hashtags) {
+      if (tag && typeof tag === "object") {
+        const name = (tag as Record<string, unknown>).name;
+        if (typeof name === "string" && name.trim()) {
+          hashtagParts.push(`#${name.trim().toLowerCase()}`);
+        }
+      }
+    }
+  }
+
+  return [text, ...hashtagParts].filter(Boolean).join(" ").trim();
+}
+
+function getVideoUrlFromItem(
+  item: Record<string, unknown>,
+  fallbackUsername?: string,
+): string | null {
+  const direct =
+    typeof item.webVideoUrl === "string"
+      ? item.webVideoUrl.trim()
+      : typeof item.videoUrl === "string"
+        ? item.videoUrl.trim()
+        : typeof item.url === "string"
+          ? item.url.trim()
+          : null;
+
+  if (direct) return direct;
+
+  const id = item.id != null ? String(item.id).trim() : "";
+  if (!id) return null;
+
+  const authorMeta = getAuthorMeta(item);
+  const username =
+    (typeof authorMeta?.uniqueId === "string" && authorMeta.uniqueId.trim()) ||
+    (typeof authorMeta?.name === "string" && authorMeta.name.trim()) ||
+    fallbackUsername ||
+    "";
+
+  if (!username) return null;
+
+  return `https://www.tiktok.com/@${username.replace(/^@+/, "")}/video/${id}`;
+}
+
+function parseTikTokProfileVideoItem(
+  item: Record<string, unknown>,
+  fallbackUsername?: string,
+): TikTokProfileVideo | null {
+  const videoUrl = getVideoUrlFromItem(item, fallbackUsername);
+  if (!videoUrl) return null;
+
+  const caption = getCaptionFromVideoItem(item);
+
+  let postedAt: string | null = null;
+  if (typeof item.createTimeISO === "string" && item.createTimeISO.trim()) {
+    postedAt = item.createTimeISO;
+  } else if (typeof item.createTime === "number" && Number.isFinite(item.createTime)) {
+    postedAt = new Date(item.createTime * 1000).toISOString();
+  }
+
+  return {
+    videoUrl,
+    caption,
+    postedAt,
+    views: numberOrZero(item.playCount) || getNestedNumber(item, "playCount"),
+    likes: numberOrZero(item.diggCount) || getNestedNumber(item, "diggCount"),
+    comments: numberOrZero(item.commentCount) || getNestedNumber(item, "commentCount"),
+    shares: numberOrZero(item.shareCount) || getNestedNumber(item, "shareCount"),
+    saves: numberOrZero(item.collectCount) || getNestedNumber(item, "collectCount"),
+  };
+}
+
+async function runTikTokProfileScraper(
+  normalizedUsername: string,
+  resultsPerPage: number,
+): Promise<Array<Record<string, unknown>>> {
+  const token = getApifyToken();
+  const response = await fetch(
+    `${APIFY_BASE_URL}/acts/${TIKTOK_PROFILE_ACTOR}/run-sync-get-dataset-items`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        profiles: [normalizedUsername],
+        resultsPerPage,
+        shouldDownloadVideos: false,
+        shouldDownloadCovers: false,
+        shouldDownloadSlideshowImages: false,
+        shouldDownloadSubtitles: false,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(parseApifyError(response.status, body));
+  }
+
+  const items = (await response.json()) as Array<Record<string, unknown>>;
+
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("TikTok profile not found.");
+  }
+
+  for (const item of items) {
+    if (item.errorCode || item.error) {
+      throw new Error(getTikTokProfileErrorMessage(item));
+    }
+  }
+
+  return items;
+}
+
+export async function fetchTikTokProfileVideos(
+  username: string,
+  options?: { limit?: number },
+): Promise<{
+  videos: TikTokProfileVideo[];
+  displayName: string | null;
+  followers: number;
+}> {
+  const normalizedUsername = username.replace(/^@+/, "").trim().toLowerCase();
+
+  if (!normalizedUsername) {
+    throw new Error("TikTok username is required.");
+  }
+
+  const limit = Math.min(Math.max(options?.limit ?? 30, 1), 50);
+  const items = await runTikTokProfileScraper(normalizedUsername, limit);
+
+  const authorMeta = items
+    .map((item) => getAuthorMeta(item))
+    .find((meta) => meta != null);
+
+  const nickName =
+    typeof authorMeta?.nickName === "string" ? authorMeta.nickName.trim() : "";
+  const name =
+    typeof authorMeta?.name === "string" ? authorMeta.name.trim() : "";
+
+  const videos = items
+    .map((item) => parseTikTokProfileVideoItem(item, normalizedUsername))
+    .filter((video): video is TikTokProfileVideo => video != null);
+
+  return {
+    videos,
+    displayName: nickName || name || null,
+    followers: numberOrZero(
+      authorMeta?.fans ?? authorMeta?.followerCount ?? authorMeta?.followers,
+    ),
   };
 }

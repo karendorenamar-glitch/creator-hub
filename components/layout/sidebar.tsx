@@ -44,8 +44,8 @@ const navItems: Array<{
   icon: typeof Users;
 }> = [
   { href: "/creators", labelKey: "nav.creators", icon: Users },
-  { href: "/videos", labelKey: "nav.videos", icon: Video },
   { href: "/campaigns", labelKey: "nav.campaigns", icon: Megaphone },
+  { href: "/videos", labelKey: "nav.videos", icon: Video },
   { href: "/dashboard", labelKey: "nav.dashboard", icon: LayoutDashboard },
   ...(CONTENT_PLANNER_ENABLED
     ? [{ href: "/planner", labelKey: "nav.planner" as MessageKey, icon: CalendarDays }]
@@ -117,15 +117,9 @@ function SidebarNavItem({
 export function Sidebar({ mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { t } = useLanguage();
-  const { isNavLocked, openUpgradeModal, hasFeature } = usePlan();
+  const { isNavLocked, openUpgradeModal } = usePlan();
 
-  const visibleNavItems = navItems.filter(({ href }) => {
-    if (href === "/planner") {
-      return hasFeature("content_planner");
-    }
-
-    return true;
-  });
+  const visibleNavItems = navItems;
 
   const content = (
     <>

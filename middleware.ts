@@ -22,8 +22,14 @@ export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
+  if (pathname === "/checkout/growth" || pathname === "/signup/growth") {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = redirectUrl.pathname.replace("/growth", "/scale");
+    return NextResponse.redirect(redirectUrl);
+  }
+
   if (isProtectedPath(pathname) && !user) {
-    const checkoutMatch = pathname.match(/^\/checkout\/(starter|growth|scale)$/);
+    const checkoutMatch = pathname.match(/^\/checkout\/(starter|scale)$/);
 
     if (checkoutMatch) {
       const signupUrl = request.nextUrl.clone();

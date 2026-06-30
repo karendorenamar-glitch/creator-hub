@@ -31,6 +31,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PaidPlanSignupRoute({ params }: PageProps) {
   const { plan: planParam } = await params;
 
+  if (planParam === "growth") {
+    redirect("/signup/scale");
+  }
+
   if (!isCheckoutPlan(planParam)) {
     notFound();
   }

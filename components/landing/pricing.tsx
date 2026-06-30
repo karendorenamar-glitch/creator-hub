@@ -55,13 +55,14 @@ const plans: PricingPlan[] = [
   {
     name: "Starter",
     originalPrice: "IDR 1,099,000",
-    price: "IDR 529,000",
+    price: "IDR 815,000",
     period: "/month",
     features: [
       "1 User",
       "10 Campaigns/month",
       "30 Creators/month",
-      "60 Tracked Contents/month",
+      "60 Live Content/month",
+      "Bulk Uploads",
       "Basic Campaign Analytics",
     ],
     cta: "Get Started",
@@ -69,44 +70,28 @@ const plans: PricingPlan[] = [
     buttonVariant: "secondary",
   },
   {
-    name: "Growth",
+    name: "Scale",
+    badge: "Most Popular",
+    badgeStyle: "popular",
     originalPrice: "IDR 2,999,000",
-    price: "IDR 1,499,000",
+    price: "IDR 1,799,000",
     period: "/month",
     features: [
       "3 Users",
       "Unlimited Campaigns",
       "100 Creators/month",
-      "300 Tracked Contents/month",
+      "300 Live Content/month",
       "Bulk Uploads",
+      "Discover video via keywords",
       "Basic Campaign Analytics",
       "Advanced Performance Dashboard",
-    ],
-    cta: "Start Growing",
-    ctaHref: getPaidPlanSignupPath("growth"),
-    buttonVariant: "gradient",
-    highlighted: true,
-  },
-  {
-    name: "Scale",
-    originalPrice: "IDR 4,990,000",
-    price: "IDR 2,599,000",
-    period: "/month",
-    features: [
-      "5 Users",
-      "Unlimited Campaigns",
-      "500 Creators/month",
-      "1,500 Tracked Contents/month",
-      "Bulk Uploads",
-      "Content Planner",
       "Payout Management",
       "Export CSV",
-      "Custom Reports",
-      "Priority Support",
     ],
     cta: "Start Scaling",
     ctaHref: getPaidPlanSignupPath("scale"),
-    buttonVariant: "dark",
+    buttonVariant: "gradient",
+    highlighted: true,
   },
 ];
 
@@ -158,30 +143,32 @@ const addOns: AddOn[] = [
 
 type ComparisonValue = string | boolean;
 
-const planColumns = ["Free Trial", "Starter", "Growth", "Scale"] as const;
+const planColumns = ["Free Trial", "Starter", "Scale"] as const;
 
 const comparisonRows: { feature: string; values: ComparisonValue[] }[] = [
-  { feature: "Users", values: ["1", "1", "3", "5"] },
-  { feature: "Campaigns/month", values: ["3", "10", "Unlimited", "Unlimited"] },
-  { feature: "Creators/month", values: ["10", "30", "100", "500"] },
+  { feature: "Users", values: ["1", "1", "3"] },
+  { feature: "Campaigns/month", values: ["3", "10", "Unlimited"] },
+  { feature: "Creators/month", values: ["10", "30", "100"] },
   {
-    feature: "Tracked Contents/month",
-    values: ["15", "90", "300", "1,500"],
+    feature: "Live Content/month",
+    values: ["15", "60", "300"],
   },
-  { feature: "Bulk Uploads", values: [false, false, true, true] },
+  { feature: "Bulk Uploads", values: [false, true, true] },
   {
     feature: "Basic Campaign Analytics",
-    values: [true, true, true, true],
+    values: [true, true, true],
+  },
+  {
+    feature: "Discover video via keywords",
+    values: [false, false, true],
   },
   {
     feature: "Advanced Performance Dashboard",
-    values: [false, false, true, true],
+    values: [false, false, true],
   },
-  { feature: "Content Planner", values: [false, false, false, true] },
-  { feature: "Payout Management", values: [false, false, false, true] },
-  { feature: "Export CSV", values: [false, false, false, true] },
-  { feature: "Custom Reports", values: [false, false, false, true] },
-  { feature: "Priority Support", values: [false, false, false, true] },
+  { feature: "Content Planner", values: [false, false, false] },
+  { feature: "Payout Management", values: [false, false, true] },
+  { feature: "Export CSV", values: [false, false, true] },
 ];
 
 function PlanBadge({
@@ -498,7 +485,7 @@ export function Pricing() {
           </div>
         </FadeIn>
 
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 xl:items-stretch xl:gap-4">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 xl:items-stretch xl:gap-4">
           {plans.map((plan, index) => (
             <PricingCard
               key={plan.name}

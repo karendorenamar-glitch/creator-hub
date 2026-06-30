@@ -19,14 +19,16 @@ type VideosTableProps = {
   videos: VideoWithCreator[];
   currentUserId: string;
   memberRole: OrgMemberRole;
-  onEdit: (video: VideoWithCreator) => void;
-  onDelete: (video: VideoWithCreator) => void;
+  readOnly?: boolean;
+  onEdit?: (video: VideoWithCreator) => void;
+  onDelete?: (video: VideoWithCreator) => void;
 };
 
 export function VideosTable({
   videos,
   currentUserId,
   memberRole,
+  readOnly = false,
   onEdit,
   onDelete,
 }: VideosTableProps) {
@@ -35,8 +37,8 @@ export function VideosTable({
       <DataTable>
         <EmptyState
           title="Your video library is empty"
-          description="Paste a TikTok or Instagram link to import metrics and start tracking."
-          hint="paste link → import metrics → done"
+          description="Add videos from a campaign — paste links in Videos or use Discover on Scale."
+          hint="Campaign → Videos tab → paste links"
         />
       </DataTable>
     );
@@ -55,7 +57,9 @@ export function VideosTable({
           </DataTableHeaderCell>
           <DataTableHeaderCell className="text-right">Shares</DataTableHeaderCell>
           <DataTableHeaderCell className="text-right">Saves</DataTableHeaderCell>
-          <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+          {!readOnly ? (
+            <DataTableHeaderCell className="text-right">Actions</DataTableHeaderCell>
+          ) : null}
         </DataTableHead>
         <DataTableBody>
           {videos.map((video) => {
@@ -105,28 +109,30 @@ export function VideosTable({
                 <DataTableCell className="text-right">
                   {formatNumber(video.saves)}
                 </DataTableCell>
-                <DataTableCell className="text-right">
-                  {canModify ? (
-                    <div className="flex justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={() => onEdit(video)}
-                        className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
-                        aria-label={`Edit ${video.video_url}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(video)}
-                        className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
-                        aria-label={`Delete ${video.video_url}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : null}
-                </DataTableCell>
+                {!readOnly && onEdit && onDelete ? (
+                  <DataTableCell className="text-right">
+                    {canModify ? (
+                      <div className="flex justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => onEdit(video)}
+                          className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-kefoo-50 hover:text-kefoo-600"
+                          aria-label={`Edit ${video.video_url}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(video)}
+                          className="rounded-lg p-2 text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                          aria-label={`Delete ${video.video_url}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : null}
+                  </DataTableCell>
+                ) : null}
               </DataTableRow>
             );
           })}

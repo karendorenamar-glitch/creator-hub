@@ -57,7 +57,7 @@ begin
     trial_ends_at = null,
     member_limit = case paid_plan
       when 'growth' then 3
-      when 'scale' then 5
+      when 'scale' then 3
       else 1
     end
   where id = target_org_id;

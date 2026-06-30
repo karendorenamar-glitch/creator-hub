@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { logCheckoutPlanView } from "@/app/actions/plan-checkout";
 import { getLatestPaymentSubmissionForOrg } from "@/app/actions/payment-submissions";
 import { getDashboardPlanContext } from "@/app/actions/plan";
@@ -36,6 +36,11 @@ export default async function CheckoutPage({
   const { plan: planParam } = await params;
   const { renew } = await searchParams;
   const renewEarly = renew === "early";
+
+  if (planParam === "growth") {
+    const renewSuffix = renewEarly ? "?renew=early" : "";
+    redirect(`/checkout/scale${renewSuffix}`);
+  }
 
   if (!isCheckoutPlan(planParam)) {
     notFound();

@@ -55,14 +55,14 @@ export function PlanProvider({ plan, children }: PlanProviderProps) {
   const pathname = usePathname();
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [upgradeDescription, setUpgradeDescription] = useState(UPGRADE_PLAN_MESSAGE);
-  const [upgradeCheckoutHref, setUpgradeCheckoutHref] = useState("/checkout/growth");
+  const [upgradeCheckoutHref, setUpgradeCheckoutHref] = useState("/checkout/scale");
 
   const isFreePlan =
     isFreeTrialPlan(plan.plan) || plan.isTrialExpired;
 
   const openUpgradeModal = useCallback((description?: string, checkoutHref?: string) => {
     setUpgradeDescription(description ?? UPGRADE_PLAN_MESSAGE);
-    setUpgradeCheckoutHref(checkoutHref ?? "/checkout/growth");
+    setUpgradeCheckoutHref(checkoutHref ?? "/checkout/scale");
     setUpgradeOpen(true);
   }, []);
 

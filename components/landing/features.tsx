@@ -1,6 +1,8 @@
 "use client";
 
-import { type ComponentType } from "react";
+import { type ComponentType, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence, useInView, useReducedMotion } from "framer-motion";
+import { Loader2, Search, Sparkles } from "lucide-react";
 import {
   analyticsCreatorAvatars,
   CreatorAvatarGraphic,
@@ -64,6 +66,289 @@ const executionRows: Array<{
     status: "brief_sent",
   },
 ];
+
+function KeywordDiscoverVisual() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(containerRef, { once: false, margin: "-40px" });
+  const reduceMotion = useReducedMotion();
+  const [phase, setPhase] = useState<"idle" | "scanning" | "results">("idle");
+  const [visibleMatches, setVisibleMatches] = useState(0);
+
+  const creators = ["@karendorena", "@alyaputri", "@bimaaditya"];
+  const keywords = ["#TwinDate66", "date night"];
+  const matches = [
+    {
+      creator: "Karen Dorena",
+      caption: "GRWM for #TwinDate66 ✨",
+      saves: "842",
+    },
+    {
+      creator: "Alya Putri",
+      caption: "Date night fit check #TwinDate66",
+      saves: "611",
+    },
+    {
+      creator: "Bima Aditya",
+      caption: "POV: #TwinDate66 makeup look",
+      saves: "418",
+    },
+  ];
+
+  useEffect(() => {
+    if (!inView) {
+      return;
+    }
+
+    if (reduceMotion) {
+      setPhase("results");
+      setVisibleMatches(matches.length);
+      return;
+    }
+
+    let cancelled = false;
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+
+    function schedule(fn: () => void, ms: number) {
+      timeouts.push(
+        setTimeout(() => {
+          if (!cancelled) {
+            fn();
+          }
+        }, ms),
+      );
+    }
+
+    function runCycle() {
+      setPhase("idle");
+      setVisibleMatches(0);
+
+      schedule(() => setPhase("scanning"), 600);
+
+      schedule(() => {
+        setPhase("results");
+        setVisibleMatches(1);
+      }, 2000);
+
+      schedule(() => setVisibleMatches(2), 2600);
+      schedule(() => setVisibleMatches(3), 3200);
+      schedule(() => runCycle(), 7200);
+    }
+
+    runCycle();
+
+    return () => {
+      cancelled = true;
+      timeouts.forEach(clearTimeout);
+    };
+  }, [inView, reduceMotion, matches.length]);
+
+  const isScanning = phase === "scanning";
+  const showResults = phase === "results";
+  const matchCount = reduceMotion ? matches.length : visibleMatches;
+
+  return (
+    <div ref={containerRef} className="mt-5 flex flex-1 flex-col gap-3">
+      <div
+        className={cn(
+          "rounded-xl border bg-white/85 p-3 transition-colors duration-300",
+          isScanning
+            ? "border-kefoo-400/40 bg-kefoo-50/50"
+            : "border-slate-200/70",
+        )}
+      >
+        <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          Creator handles
+        </p>
+        <div className="relative mt-2 space-y-1 overflow-hidden font-mono text-[9px] text-slate-600">
+          {creators.map((handle, index) => (
+            <motion.p
+              key={handle}
+              animate={
+                isScanning
+                  ? { opacity: [0.55, 1, 0.55], x: [0, 1, 0] }
+                  : { opacity: 1, x: 0 }
+              }
+              transition={{
+                duration: 1.1,
+                repeat: isScanning ? Infinity : 0,
+                delay: index * 0.2,
+                ease: "easeInOut",
+              }}
+            >
+              {handle}
+            </motion.p>
+          ))}
+          {isScanning ? (
+            <motion.div
+              className="pointer-events-none absolute inset-x-0 top-0 h-4 bg-gradient-to-b from-kefoo-400/25 to-transparent"
+              animate={{ y: [0, 52, 0] }}
+              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+            />
+          ) : null}
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "rounded-xl border bg-white/85 p-3 transition-colors duration-300",
+          isScanning
+            ? "border-kefoo-400/40 shadow-[0_0_24px_-12px_rgba(168,85,247,0.45)]"
+            : "border-slate-200/70",
+        )}
+      >
+        <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+          Campaign keywords
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {keywords.map((keyword, index) => (
+            <motion.span
+              key={keyword}
+              animate={
+                isScanning
+                  ? { scale: [1, 1.06, 1], boxShadow: ["0 0 0 rgba(168,85,247,0)", "0 0 12px rgba(168,85,247,0.35)", "0 0 0 rgba(168,85,247,0)"] }
+                  : { scale: 1 }
+              }
+              transition={{
+                duration: 1.2,
+                repeat: isScanning ? Infinity : 0,
+                delay: index * 0.25,
+              }}
+              className="rounded-full border border-kefoo-500/25 bg-kefoo-500/10 px-2 py-0.5 text-[9px] font-medium text-kefoo-700"
+            >
+              {keyword}
+            </motion.span>
+          ))}
+        </div>
+      </div>
+
+      <AnimatePresence mode="wait">
+        {isScanning ? (
+          <motion.div
+            key="scanning"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="rounded-xl border border-kefoo-400/30 bg-gradient-to-r from-kefoo-50/90 to-violet-50/80 px-3 py-2.5"
+          >
+            <div className="flex items-center gap-2 text-[10px] font-medium text-kefoo-700">
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              <span>Scanning 3 creators · 10 recent videos each</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/80">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-kefoo-400 to-violet-500"
+                initial={{ width: "8%" }}
+                animate={{ width: "92%" }}
+                transition={{ duration: 1.35, ease: "easeInOut" }}
+              />
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <div className="flex flex-1 flex-col rounded-xl border border-slate-200/70 bg-white/85 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+            Matching videos
+          </p>
+          <motion.span
+            key={matchCount}
+            initial={{ scale: 0.85, opacity: 0.5 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="text-[10px] font-semibold text-emerald-700"
+          >
+            {matchCount > 0 ? `${matchCount} found` : "—"}
+          </motion.span>
+        </div>
+        <div className="space-y-2">
+          {matches.map((match, index) => (
+            <AnimatePresence key={match.creator}>
+              {(showResults || reduceMotion) && index < visibleMatches ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="rounded-lg border border-emerald-500/15 bg-white/90 px-2.5 py-2 text-left shadow-[0_8px_20px_-16px_rgba(16,185,129,0.55)]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-[10px] font-medium text-slate-900">
+                      {match.creator}
+                    </p>
+                    <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide text-emerald-700">
+                      Match
+                    </span>
+                  </div>
+                  <p className="mt-0.5 truncate text-[9px] text-slate-500">
+                    {match.caption}
+                  </p>
+                  <p className="mt-1 text-[9px] font-medium text-kefoo-600">
+                    {match.saves} saves
+                  </p>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          ))}
+          {!showResults && !reduceMotion && visibleMatches === 0 ? (
+            <p className="rounded-lg border border-dashed border-slate-200/80 px-2.5 py-6 text-center text-[9px] text-slate-400">
+              Matches appear after keyword scan
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      <motion.button
+        type="button"
+        animate={
+          showResults && matchCount > 0
+            ? { scale: [1, 1.02, 1] }
+            : { scale: 1 }
+        }
+        transition={{
+          duration: 2,
+          repeat: showResults && matchCount > 0 ? Infinity : 0,
+          ease: "easeInOut",
+        }}
+        className="landing-btn-gradient w-full rounded-xl px-4 py-2.5 text-[11px] font-medium text-white shadow-[0_10px_28px_-12px_rgba(168,85,247,0.5)]"
+      >
+        Add to campaign
+      </motion.button>
+    </div>
+  );
+}
+
+function DiscoverHighlightCard() {
+  return (
+    <>
+      <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-gradient-to-b from-kefoo-400/20 via-violet-400/10 to-transparent blur-2xl" />
+      <GlassCard
+        glow
+        frame
+        hover={false}
+        className="relative flex h-full min-h-[520px] flex-col border-kefoo-400/25 p-6 text-center shadow-[0_0_56px_-16px_rgba(168,85,247,0.4)] sm:text-left lg:scale-[1.04]"
+      >
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-kefoo-400/30 bg-kefoo-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-kefoo-700">
+            <Sparkles className="h-3 w-3" />
+            FAVORITE FEATURE FOR YOU
+          </span>
+          <span className="font-mono text-[11px] text-kefoo-500/80">02</span>
+        </div>
+        <div className="mb-1 flex items-center justify-center gap-2 sm:justify-start">
+          <Search className="h-5 w-5 text-kefoo-500" />
+          <h3 className="text-xl font-semibold tracking-tight text-slate-900">
+            Discover by keywords
+          </h3>
+        </div>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">
+          Drop @handles + campaign hashtags. Kefoo scans recent TikTok posts and
+          surfaces matches posted during your campaign dates — no more chasing
+          links in DMs.
+        </p>
+        <KeywordDiscoverVisual />
+      </GlassCard>
+    </>
+  );
+}
 
 function BulkUploadVisual() {
   const sampleLinks = [
@@ -300,6 +585,8 @@ function CampaignAnalyticsVisual() {
 }
 
 export function Features() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <section id="features" className="relative py-28">
       <div className="landing-section-muted pointer-events-none absolute inset-0 -z-10" />
@@ -315,15 +602,16 @@ export function Features() {
               Everything you need to run campaigns yourself
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
-              Sign up, import links in bulk, and track performance live — all
-              from one self-serve workspace.
+              Paste links in bulk, track performance live — or skip the chase with{" "}
+              <span className="font-medium text-kefoo-700">keyword scan</span> built
+              for KOL teams.
             </p>
           </div>
         </FadeIn>
 
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="grid gap-6 lg:grid-cols-3 lg:items-stretch">
           <FadeIn delay={0.05}>
-            <GlassCard frame className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left lg:translate-y-2">
+            <GlassCard frame className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left lg:translate-y-3">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <span className="font-mono text-[11px] text-slate-400">01</span>
                 <span className="h-px flex-1 bg-gradient-to-r from-slate-200/80 to-transparent" />
@@ -336,10 +624,30 @@ export function Features() {
             </GlassCard>
           </FadeIn>
 
-          <FadeIn delay={0.1}>
-            <GlassCard frame className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left lg:-translate-y-2">
+          <FadeIn delay={0.1} className="lg:z-10">
+            {reduceMotion ? (
+              <div className="relative h-full">
+                <DiscoverHighlightCard />
+              </div>
+            ) : (
+              <motion.div
+                className="relative h-full"
+                animate={{ y: [0, -5, 0] }}
+                transition={{
+                  duration: 5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <DiscoverHighlightCard />
+              </motion.div>
+            )}
+          </FadeIn>
+
+          <FadeIn delay={0.15}>
+            <GlassCard frame className="flex h-full min-h-[480px] flex-col p-6 text-center sm:text-left lg:translate-y-3">
               <div className="mb-4 flex items-center justify-between gap-3">
-                <span className="font-mono text-[11px] text-slate-400">02</span>
+                <span className="font-mono text-[11px] text-slate-400">03</span>
                 <span className="h-px flex-1 bg-gradient-to-r from-slate-200/80 to-transparent" />
               </div>
               <h3 className="text-lg font-semibold text-slate-900">Campaign analytics at a glance</h3>

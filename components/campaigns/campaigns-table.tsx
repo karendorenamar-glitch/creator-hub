@@ -77,10 +77,6 @@ export function CampaignsTable({
                   {formatDate(campaign.start_date)} –{" "}
                   {formatDate(campaign.end_date)}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  {campaign.creator_count} creators · {campaign.video_count}{" "}
-                  videos
-                </p>
                 <div className="lg:hidden">
                   <CampaignAnalyticsSummary
                     analytics={campaign}
@@ -133,7 +129,6 @@ export function CampaignsTable({
               </DataTableCell>
               <DataTableCell className="text-right">
                 <CampaignRowActions
-                  campaignId={campaign.id}
                   campaignName={campaign.name}
                   onDelete={() => onDelete(campaign)}
                   canEdit={false}

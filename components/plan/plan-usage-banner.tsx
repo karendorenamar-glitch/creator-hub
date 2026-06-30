@@ -131,17 +131,16 @@ export function PlanUsageBanner({
     return null;
   }
 
-  const showMonthlyHint = plan === "starter" || plan === "growth" || plan === "scale";
+  const showMonthlyHint =
+    plan === "starter" || plan === "scale";
   const upgradeHref =
     plan === "free_trial"
       ? "/checkout/starter"
       : plan === "starter"
-        ? "/checkout/growth"
-        : plan === "growth"
-          ? "/checkout/scale"
-          : subscriptionEndsAt
-            ? `/checkout/${plan}`
-            : null;
+        ? "/checkout/scale"
+        : subscriptionEndsAt
+          ? `/checkout/${plan}`
+          : null;
 
   return (
     <div
@@ -173,12 +172,10 @@ export function PlanUsageBanner({
             className="text-xs font-medium text-kefoo-700 underline-offset-2 hover:text-kefoo-600 hover:underline"
           >
             {plan === "starter"
-              ? "Upgrade to Growth"
-              : plan === "growth"
-                ? "Upgrade to Scale"
-                : plan === "scale"
-                  ? "Renew subscription"
-                  : "Upgrade plan"}
+              ? "Upgrade to Scale"
+              : plan === "scale"
+                ? "Renew subscription"
+                : "Upgrade plan"}
           </Link>
         ) : null}
       </div>

@@ -111,7 +111,7 @@ export function planAllowsTeamInvitesWithAddOns(
   plan: OrgPlan,
   addOns: OrgAddOnRecord[],
 ) {
-  if (plan === "growth" || plan === "scale") {
+  if (plan === "scale") {
     return true;
   }
 

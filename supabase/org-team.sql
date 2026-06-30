@@ -33,7 +33,7 @@ alter table public.organizations
 update public.organizations
 set member_limit = case plan
   when 'growth' then 3
-  when 'scale' then 5
+  when 'scale' then 3
   else 1
 end
 where member_limit is null;
@@ -118,7 +118,7 @@ begin
 
   return case org_record.plan
     when 'growth' then 3
-    when 'scale' then 5
+    when 'scale' then 3
     else 1
   end;
 end;
@@ -194,7 +194,7 @@ begin
   end if;
 
   if not public.org_allows_team_invites(p_org_id) then
-    raise exception 'Team invites are available on Growth and Scale plans only';
+    raise exception 'Team invites are available on the Scale plan only';
   end if;
 
   if normalized_email = '' or normalized_email !~ '^[^@]+@[^@]+\.[^@]+$' then
@@ -502,7 +502,7 @@ begin
 
   resolved_limit := case resolved_plan
     when 'growth' then 3
-    when 'scale' then 5
+    when 'scale' then 3
     else 1
   end;
 
@@ -541,6 +541,7 @@ $$;
 -- ---------------------------------------------------------------------------
 
 drop policy if exists "Org owners can update organizations" on public.organizations;
+drop policy if exists "Org leaders can update organizations" on public.organizations;
 create policy "Org leaders can update organizations"
   on public.organizations for update
   using (public.is_org_leader(id))
@@ -587,6 +588,9 @@ create policy "Leaders can delete org members"
   );
 
 drop policy if exists "Leaders can manage org invites" on public.org_invites;
+drop policy if exists "Leaders can read org invites" on public.org_invites;
+drop policy if exists "Leaders can insert org invites" on public.org_invites;
+drop policy if exists "Leaders can delete org invites" on public.org_invites;
 create policy "Leaders can read org invites"
   on public.org_invites for select
   using (public.is_org_leader(org_id));
@@ -598,5 +602,11 @@ create policy "Leaders can insert org invites"
 create policy "Leaders can delete org invites"
   on public.org_invites for delete
   using (public.is_org_leader(org_id));
+
+-- Align legacy Scale workspaces with the 3-user plan limit.
+update public.organizations
+set member_limit = 3
+where plan in ('growth', 'scale')
+  and member_limit = 5;
 
 notify pgrst, 'reload schema';

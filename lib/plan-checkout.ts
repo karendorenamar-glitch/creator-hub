@@ -1,8 +1,8 @@
 import type { OrgPlan } from "@/lib/plan";
 
-export type CheckoutPlan = Extract<OrgPlan, "starter" | "growth" | "scale">;
+export type CheckoutPlan = Extract<OrgPlan, "starter" | "scale">;
 
-export const CHECKOUT_PLANS: CheckoutPlan[] = ["starter", "growth", "scale"];
+export const CHECKOUT_PLANS: CheckoutPlan[] = ["starter", "scale"];
 
 export type CheckoutPlanConfig = {
   plan: CheckoutPlan;
@@ -19,56 +19,39 @@ export const CHECKOUT_PLAN_CONFIG: Record<CheckoutPlan, CheckoutPlanConfig> = {
   starter: {
     plan: "starter",
     name: "Starter",
-    priceLabel: "IDR 529,000",
+    priceLabel: "IDR 815,000",
     originalPriceLabel: "IDR 1,099,000",
-    amountIdr: 529_000,
+    amountIdr: 815_000,
     periodLabel: "/month",
     cta: "Get Started",
     features: [
       "1 user",
       "10 campaigns/month",
       "30 creators/month",
-      "60 tracked contents/month",
-      "Basic campaign analytics",
-    ],
-  },
-  growth: {
-    plan: "growth",
-    name: "Growth",
-    priceLabel: "IDR 1,499,000",
-    originalPriceLabel: "IDR 2,999,000",
-    amountIdr: 1_499_000,
-    periodLabel: "/month",
-    cta: "Start Growing",
-    features: [
-      "3 users",
-      "Unlimited campaigns",
-      "100 creators/month",
-      "300 tracked contents/month",
+      "60 live content/month",
       "Bulk uploads",
       "Basic campaign analytics",
-      "Advanced performance dashboard",
     ],
   },
   scale: {
     plan: "scale",
     name: "Scale",
-    priceLabel: "IDR 2,599,000",
-    originalPriceLabel: "IDR 4,990,000",
-    amountIdr: 2_599_000,
+    priceLabel: "IDR 1,799,000",
+    originalPriceLabel: "IDR 2,999,000",
+    amountIdr: 1_799_000,
     periodLabel: "/month",
     cta: "Start Scaling",
     features: [
-      "5 users",
+      "3 users",
       "Unlimited campaigns",
-      "500 creators/month",
-      "1,500 tracked contents/month",
+      "100 creators/month",
+      "300 live content/month",
       "Bulk uploads",
-      "Content planner",
+      "Discover via keywords (1×/week)",
+      "Basic campaign analytics",
+      "Advanced performance dashboard",
       "Payout management",
-      "Custom reports",
       "Export CSV",
-      "Priority support",
     ],
   },
 };
@@ -94,6 +77,10 @@ export function getPaymentQrUrl() {
 }
 
 export function isCheckoutPlan(value: string): value is CheckoutPlan {
+  if (value === "growth") {
+    return false;
+  }
+
   return CHECKOUT_PLANS.includes(value as CheckoutPlan);
 }
 
@@ -120,7 +107,7 @@ export function formatOrgPlanLabel(plan: OrgPlan) {
   const labels: Record<OrgPlan, string> = {
     free_trial: "Free Trial",
     starter: "Starter",
-    growth: "Growth",
+    growth: "Scale",
     scale: "Scale",
   };
 

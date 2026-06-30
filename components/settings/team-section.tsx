@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, UserPlus, X } from "lucide-react";
@@ -11,6 +10,7 @@ import {
   type TeamWorkspaceContext,
 } from "@/app/actions/team";
 import { useToast } from "@/components/ui/toast";
+import { usePlan } from "@/components/plan/plan-provider";
 import { formatOrgMemberRoleLabel } from "@/lib/org-team";
 import type { OrgMemberRole } from "@/types/database";
 
@@ -22,6 +22,7 @@ type TeamSectionProps = {
 export function TeamSection({ initialContext, currentUserId }: TeamSectionProps) {
   const router = useRouter();
   const { showSuccess, showError } = useToast();
+  const { openUpgradeModal } = usePlan();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<OrgMemberRole>("team");
   const [isSubmitting, startSubmitTransition] = useTransition();
@@ -107,7 +108,7 @@ export function TeamSection({ initialContext, currentUserId }: TeamSectionProps)
               ? "Invite teammates to your workspace. Leaders see the full team; Team members can view performance but only edit their own campaigns."
               : initialContext.plan === "free_trial"
                 ? "This plan is for 1 user only. Upgrade to invite teammates and unlock more features."
-                : "Team invites are available on Growth (3 users) and Scale (5 users) plans."}
+                : "Team invites are available on the Scale plan (3 users)."}
           </p>
         </div>
         <p className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
@@ -117,16 +118,22 @@ export function TeamSection({ initialContext, currentUserId }: TeamSectionProps)
 
       {!initialContext.canInvite ? (
         <div className="mt-4">
-          <Link
-            href={
-              initialContext.plan === "free_trial"
-                ? "/checkout/starter"
-                : "/checkout/growth"
+          <button
+            type="button"
+            onClick={() =>
+              openUpgradeModal(
+                initialContext.plan === "free_trial"
+                  ? "Upgrade to Starter or Scale to invite teammates and unlock more features."
+                  : "Team invites are available on the Scale plan (3 users).",
+                initialContext.plan === "free_trial"
+                  ? "/checkout/starter"
+                  : "/checkout/scale",
+              )
             }
             className="inline-flex rounded-2xl bg-kefoo-400 px-4 py-2.5 text-sm font-medium text-white hover:bg-kefoo-300"
           >
             Upgrade plan
-          </Link>
+          </button>
         </div>
       ) : null}
 

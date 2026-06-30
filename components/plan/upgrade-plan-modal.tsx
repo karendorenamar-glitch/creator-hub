@@ -17,7 +17,7 @@ export function UpgradePlanModal({
   onClose,
   title = "Upgrade your plan",
   description = UPGRADE_PLAN_MESSAGE,
-  checkoutHref = "/checkout/growth",
+  checkoutHref = "/checkout/scale",
 }: UpgradePlanModalProps) {
   return (
     <Modal open={open} onClose={onClose} title={title} description={description}>

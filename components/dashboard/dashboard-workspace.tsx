@@ -1,7 +1,6 @@
 import { ComparisonSection } from "@/components/dashboard/comparison-section";
 import { ComparisonTable } from "@/components/dashboard/comparison-table";
 import { InsightCard } from "@/components/dashboard/insight-card";
-import { PlanUpgradePrompt } from "@/components/plan/plan-upgrade-prompt";
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
 import type { DashboardTier } from "@/lib/plan-features";
 import type { DashboardWorkspaceAnalytics } from "@/lib/dashboard-analytics";
@@ -78,14 +77,6 @@ export function DashboardWorkspace({
           emptyMessage="Link creators and videos to active campaigns to unlock side-by-side rankings."
         />
       </ComparisonSection>
-
-      {tier === "growth" ? (
-        <PlanUpgradePrompt
-          feature="payouts"
-          title="Scale reporting and payouts"
-          description="Move to Scale for payout management, custom reports, and priority support."
-        />
-      ) : null}
 
       {tier === "scale" && CONTENT_PLANNER_ENABLED ? (
         <ComparisonSection

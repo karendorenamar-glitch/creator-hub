@@ -4,7 +4,7 @@ import { TeamFilterSelect } from "@/components/layout/team-filter-select";
 import { VideosSection } from "@/components/videos/videos-section";
 import { getDashboardPlanContext } from "@/app/actions/plan";
 import { getLeaderTeamFilterContext } from "@/app/actions/team";
-import { getCampaignOptions, getCreators, getVideos } from "@/lib/data";
+import { getVideos } from "@/lib/data";
 import {
   parseTeamFilterParam,
   resolveResourceScopeFilter,
@@ -38,11 +38,7 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
     planContext.plan,
   );
 
-  const [videos, creators, campaigns] = await Promise.all([
-    getVideos(scopeFilter),
-    getCreators(undefined, scopeFilter),
-    getCampaignOptions(),
-  ]);
+  const [videos] = await Promise.all([getVideos(scopeFilter)]);
 
   return (
     <>
@@ -69,12 +65,6 @@ export default async function VideosPage({ searchParams }: VideosPageProps) {
 
         <VideosSection
           videos={videos}
-          creators={creators.map(({ id, name, platform }) => ({
-            id,
-            name,
-            platform,
-          }))}
-          campaigns={campaigns}
           currentUserId={userId}
           memberRole={role}
         />

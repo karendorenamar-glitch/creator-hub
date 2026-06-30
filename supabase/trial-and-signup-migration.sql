@@ -76,7 +76,7 @@ begin
 
   resolved_limit := case resolved_plan
     when 'growth' then 3
-    when 'scale' then 5
+    when 'scale' then 3
     else 1
   end;
 

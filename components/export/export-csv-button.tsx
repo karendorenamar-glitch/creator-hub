@@ -1,7 +1,7 @@
 "use client";
 
-import { Download } from "lucide-react";
-import { useRequirePlanFeature } from "@/components/plan/plan-provider";
+import { Download, Lock } from "lucide-react";
+import { usePlan, useRequirePlanFeature } from "@/components/plan/plan-provider";
 import { downloadCsv } from "@/lib/csv-export";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +18,9 @@ export function ExportCsvButton({
   label = "Export CSV",
   className,
 }: ExportCsvButtonProps) {
+  const { hasFeature } = usePlan();
   const requireExport = useRequirePlanFeature("export_csv");
+  const canExport = hasFeature("export_csv");
 
   function handleClick() {
     requireExport(() => {
@@ -37,6 +39,7 @@ export function ExportCsvButton({
     >
       <Download className="h-4 w-4" />
       {label}
+      {!canExport ? <Lock className="h-3.5 w-3.5 opacity-60" /> : null}
     </button>
   );
 }

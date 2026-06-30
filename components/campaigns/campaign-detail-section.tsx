@@ -1,32 +1,39 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
   AlertTriangle,
   BarChart3,
   ClipboardList,
-  Heart,
-  MessageCircle,
+  Lock,
   Pencil,
-  Share2,
+  Sparkles,
   Trash2,
   TrendingUp,
   Users,
   Video,
   Wallet,
+  Heart,
+  MessageCircle,
+  Share2,
+  ExternalLink,
 } from "lucide-react";
 import { deleteCampaign } from "@/app/actions/campaigns";
+import { CampaignContentPanel } from "@/components/campaigns/campaign-content-panel";
+import { CampaignDiscoverPanel } from "@/components/campaigns/campaign-discover-panel";
 import { CampaignCreatorsPanel } from "@/components/campaigns/campaign-creators-panel";
-import { CampaignExecutionTrackerPanel } from "@/components/campaigns/campaign-execution-tracker-panel";
 import { CampaignFormModal } from "@/components/campaigns/campaign-form-modal";
 import { CampaignRefreshVideosButton } from "@/components/campaigns/campaign-refresh-videos-button";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { ExportCsvButton } from "@/components/export/export-csv-button";
+import { usePlan, useRequirePlanFeature } from "@/components/plan/plan-provider";
 import { useToast } from "@/components/ui/toast";
+import { FEATURE_UPGRADE_MESSAGES } from "@/lib/plan-features";
+import { markTutorialPerformanceViewed } from "@/lib/workspace-tutorial";
 import { getCampaignHealth } from "@/lib/campaign-analytics";
 import { getCampaignCreatorDealAmount } from "@/lib/campaign-creator-deal";
 import {
@@ -43,25 +50,40 @@ import {
   formatNumber,
   cn,
 } from "@/lib/utils";
-import type { CampaignCreator, CampaignDetail, Creator, VideoWithCreator } from "@/types/database";
+import type { CampaignCreator, CampaignDetail, Creator } from "@/types/database";
 
 type CampaignDetailSectionProps = {
   campaign: CampaignDetail;
   creators: Creator[];
-  videos: VideoWithCreator[];
   canEdit: boolean;
+  orgId: string;
 };
 
-type CampaignDetailView = "performance" | "execution";
+type CampaignDetailView = "content" | "discover" | "performance";
 
-const detailViews: Array<{
-  id: CampaignDetailView;
+const workflowViews: Array<{
+  id: Extract<CampaignDetailView, "content">;
   label: string;
-  icon: typeof BarChart3;
-}> = [
-  { id: "execution", label: "Execution tracker", icon: ClipboardList },
-  { id: "performance", label: "Campaign performance", icon: BarChart3 },
-];
+  icon: typeof ClipboardList;
+}> = [{ id: "content", label: "Content", icon: ClipboardList }];
+
+function parseCampaignView(
+  view: string | null,
+  content: string | null,
+): CampaignDetailView {
+  if (view === "performance") return "performance";
+  if (view === "discover") return "discover";
+  if (
+    view === "content" ||
+    view === "execution" ||
+    view === "videos" ||
+    content === "creators" ||
+    content === "paste"
+  ) {
+    return "content";
+  }
+  return "content";
+}
 
 function KpiCard({ label, value }: { label: string; value: string }) {
   return (
@@ -80,15 +102,17 @@ function InsightCard({
   name,
   detail,
   metric,
+  href,
 }: {
   title: string;
   subtitle: string;
   name: string;
   detail: string;
   metric: string;
+  href?: string;
 }) {
-  return (
-    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{title}</p>
@@ -98,8 +122,40 @@ function InsightCard({
           {metric}
         </span>
       </div>
-      <p className="mt-4 truncate text-lg font-semibold text-slate-900">{name}</p>
-      <p className="mt-1 truncate text-sm text-slate-500">{detail}</p>
+      <p
+        className={cn(
+          "mt-4 truncate text-lg font-semibold",
+          href ? "text-kefoo-700 group-hover:text-kefoo-600" : "text-slate-900",
+        )}
+      >
+        {name}
+      </p>
+      <p className="mt-1 flex items-center gap-1.5 truncate text-sm text-slate-500">
+        <span className="truncate">{detail}</span>
+        {href ? (
+          <ExternalLink className="h-3.5 w-3.5 shrink-0 text-kefoo-500 opacity-0 transition-opacity group-hover:opacity-100" />
+        ) : null}
+      </p>
+    </>
+  );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group block rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-kefoo-200 hover:bg-kefoo-50/40"
+        aria-label={`Open video: ${name}`}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      {content}
     </article>
   );
 }
@@ -286,23 +342,73 @@ function CampaignBudgetUsage({
 export function CampaignDetailSection({
   campaign,
   creators,
-  videos,
   canEdit,
+  orgId,
 }: CampaignDetailSectionProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const requestedView = searchParams.get("view");
-  const initialView: CampaignDetailView =
-    requestedView === "performance" ? "performance" : "execution";
+  const requestedContent = searchParams.get("content");
+  const initialView = parseCampaignView(requestedView, requestedContent);
   const { showSuccess, showError } = useToast();
+  const { hasFeature, openUpgradeModal } = usePlan();
+  const requireDiscover = useRequirePlanFeature("discover_keywords");
+  const canDiscover = hasFeature("discover_keywords");
   const [formOpen, setFormOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [activeView, setActiveView] = useState<CampaignDetailView>(initialView);
   const [isDeleting, startDeleteTransition] = useTransition();
 
   useEffect(() => {
-    setActiveView(initialView);
-  }, [initialView]);
+    const nextView = parseCampaignView(requestedView, requestedContent);
+
+    if (nextView === "discover" && !canDiscover) {
+      openUpgradeModal(
+        FEATURE_UPGRADE_MESSAGES.discover_keywords,
+        "/checkout/scale",
+      );
+      setActiveView("content");
+      if (requestedView || requestedContent) {
+        router.replace(pathname, { scroll: false });
+      }
+      return;
+    }
+
+    setActiveView(nextView);
+  }, [requestedView, requestedContent, canDiscover, openUpgradeModal, pathname, router]);
+
+  useEffect(() => {
+    if (activeView === "performance") {
+      markTutorialPerformanceViewed(orgId);
+    }
+  }, [activeView, orgId]);
+
+  function updateUrl(view: CampaignDetailView) {
+    const params = new URLSearchParams();
+    if (view === "performance") {
+      params.set("view", "performance");
+    } else if (view === "discover") {
+      params.set("view", "discover");
+    } else if (view === "content") {
+      params.delete("view");
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  function goToView(view: CampaignDetailView) {
+    if (view === "discover") {
+      requireDiscover(() => {
+        setActiveView(view);
+        updateUrl(view);
+      });
+      return;
+    }
+
+    setActiveView(view);
+    updateUrl(view);
+  }
 
   const performanceCreatorIds = useMemo(
     () => new Set(campaign.videos.map((video) => video.creator_id)),
@@ -363,8 +469,9 @@ export function CampaignDetailSection({
           </div>
         </div>
 
-        {canEdit ? (
-          <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          {canEdit ? (
+            <>
             <button
               type="button"
               onClick={() => setFormOpen(true)}
@@ -381,34 +488,88 @@ export function CampaignDetailSection({
               <Trash2 className="h-4 w-4" />
               Delete
             </button>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="mb-8 inline-flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-        <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1">
-          {detailViews.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveView(id)}
-              className={cn(
-                "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
-                activeView === id
-                  ? id === "performance"
-                    ? "bg-kefoo-600 text-white shadow-sm"
-                    : "bg-white text-slate-900 shadow-sm"
-                  : id === "performance"
-                    ? "text-kefoo-600 hover:bg-violet-50"
-                    : "text-slate-600 hover:text-slate-900",
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
+            </>
+          ) : null}
         </div>
       </div>
+
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+            Workflow
+          </p>
+          <div className="-mx-1 overflow-x-auto px-1">
+            <div className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1">
+              {workflowViews.map(({ id, label, icon: Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => goToView(id)}
+                  className={cn(
+                    "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
+                    activeView === id
+                      ? "bg-kefoo-600 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-violet-50 hover:text-kefoo-600",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+            Shortcuts
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => goToView("discover")}
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors",
+                !canDiscover && "cursor-not-allowed opacity-80",
+                activeView === "discover"
+                  ? "border-amber-400 bg-amber-50 text-amber-950 shadow-sm"
+                  : "border-dashed border-amber-300/80 bg-amber-50/40 text-amber-900 hover:border-amber-400 hover:bg-amber-50",
+              )}
+            >
+              <Sparkles className="h-4 w-4" />
+              <span>Discover</span>
+              {!canDiscover ? (
+                <Lock className="h-3.5 w-3.5 shrink-0 opacity-60" />
+              ) : (
+                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                  Shortcut
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => goToView("performance")}
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors",
+                activeView === "performance"
+                  ? "border-kefoo-600 bg-kefoo-600 text-white shadow-sm"
+                  : "border-slate-200 bg-white text-slate-700 shadow-sm hover:border-kefoo-200 hover:text-kefoo-600",
+              )}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Performance
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {activeView === "content" ? (
+        <CampaignContentPanel campaign={campaign} creators={creators} />
+      ) : null}
+
+      {activeView === "discover" && canDiscover ? (
+        <CampaignDiscoverPanel campaign={campaign} />
+      ) : null}
 
       {activeView === "performance" ? (
         <>
@@ -503,6 +664,7 @@ export function CampaignDetailSection({
                 : "Link videos with save data to rank content value."
             }
             metric={campaign.most_valuable_content?.metric_value ?? "—"}
+            href={campaign.most_valuable_content?.video_url}
           />
           <InsightCard
             title="Best Engagement Content"
@@ -514,6 +676,7 @@ export function CampaignDetailSection({
                 : "Link videos with views to rank engagement."
             }
             metric={campaign.best_engagement_content?.metric_value ?? "—"}
+            href={campaign.best_engagement_content?.video_url}
           />
           <InsightCard
             title="Most Cost Efficient Creator"
@@ -582,16 +745,12 @@ export function CampaignDetailSection({
         </div>
       </section>
         </>
-      ) : (
-        <CampaignExecutionTrackerPanel campaign={campaign} creators={creators} />
-      )}
+      ) : null}
 
       <CampaignFormModal
         open={formOpen}
         onClose={() => setFormOpen(false)}
         campaign={campaign}
-        creators={creators}
-        videos={videos}
       />
 
       <ConfirmDialog

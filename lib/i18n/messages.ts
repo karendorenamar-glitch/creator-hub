@@ -2,7 +2,7 @@ import type { AppLocale } from "@/lib/i18n/types";
 
 const en = {
   "nav.creators": "Creators",
-  "nav.videos": "Videos",
+  "nav.videos": "Video library",
   "nav.campaigns": "Campaigns",
   "nav.dashboard": "Dashboard",
   "nav.planner": "Content Planner",
@@ -26,11 +26,14 @@ const en = {
   "pages.creatorDetails.title": "Creator Details",
   "pages.creatorDetails.description":
     "Performance, linked videos, and campaign history for this creator.",
-  "pages.videos.title": "Videos",
+  "pages.videos.title": "Video library",
   "pages.videos.description":
     "Paste a link, pull metrics automatically, and tie content to campaigns.",
   "pages.videos.descriptionShort":
-    "Live views, engagement, saves, and shares across every linked video.",
+    "Browse every linked video and live metrics across your workspace.",
+  "pages.videos.libraryHint":
+    "This is your video library. To add or bulk-upload links, open a campaign",
+  "pages.videos.libraryHintLink": "Go to campaigns",
   "pages.videos.hacks":
     "Paste a TikTok or Instagram link — we'll detect the creator and add them to your roster automatically.",
   "pages.videos.hacksLabel": "Quick tip",
@@ -50,6 +53,39 @@ const en = {
     "Plan campaigns, link content, and see what's working.",
   "pages.campaigns.descriptionShort":
     "Organize brand partnerships with linked creators and content.",
+  "tutorial.title": "Getting started",
+  "tutorial.description":
+    "Follow these three steps to set up your first campaign and see live performance.",
+  "tutorial.progress": "{done}/{total} done",
+  "tutorial.stepCampaignTitle": "Create your first campaign",
+  "tutorial.stepCampaignDescription":
+    "Name the brand partnership and set campaign dates so your team has a home base.",
+  "tutorial.stepContentTitle": "Add creators or paste video links",
+  "tutorial.stepContentDescription":
+    "Open Content on the campaign, add creators to the tracker, then paste links when they go live.",
+  "tutorial.stepPerformanceTitle": "Check live performance",
+  "tutorial.stepPerformanceDescription":
+    "Open Performance on the campaign to see views, engagement, CPV, and budget usage.",
+  "tutorial.stepDone": "Done",
+  "tutorial.actionCreateCampaign": "Create campaign",
+  "tutorial.actionNeedsCampaign": "Create a campaign first",
+  "tutorial.actionOpenExecution": "Open Content",
+  "tutorial.actionOpenPerformance": "Open Performance",
+  "tutorial.dismiss": "Dismiss tutorial",
+  "tutorial.hide": "Hide this guide",
+  "campaign.content.title": "Content",
+  "campaign.content.description":
+    "Track creator progress and paste video links in one place.",
+  "campaign.content.howItWorks": "How it works",
+  "campaign.content.step1":
+    "Add creators to your tracker — pick from your roster or they’ll appear when you paste a link.",
+  "campaign.content.step2":
+    "Update status as you work: Brief → Waiting content → Revision.",
+  "campaign.content.step3":
+    "When a creator posts, paste their video link below (single or bulk). Status becomes Uploaded automatically.",
+  "campaign.content.pasteTitle": "Paste video links",
+  "campaign.content.pasteDescription":
+    "When a creator goes live, paste their TikTok or Instagram link here — one or many at once. Status updates to Uploaded automatically.",
   "pages.campaignDetails.title": "Campaign Details",
   "pages.campaignDetails.description":
     "Live performance summary for this campaign.",
@@ -79,7 +115,7 @@ const en = {
   "dashboard.refreshingVideos": "Refreshing...",
   "dashboard.advancedUpgradeTitle": "Advanced performance dashboard",
   "dashboard.advancedUpgradeDescription":
-    "Unlock creator comparisons, live insights, and monthly trends with Growth.",
+    "Unlock creator comparisons, live insights, and monthly trends with Scale.",
   "campaign.refreshVideos": "Refresh videos",
   "common.upgradePlan": "Upgrade plan",
   "common.renewSubscription": "Renew subscription",
@@ -92,7 +128,7 @@ const en = {
 
 const id: Record<keyof typeof en, string> = {
   "nav.creators": "Kreator",
-  "nav.videos": "Video",
+  "nav.videos": "Library video",
   "nav.campaigns": "Campaign",
   "nav.dashboard": "Dashboard",
   "nav.planner": "Content Planner",
@@ -116,11 +152,14 @@ const id: Record<keyof typeof en, string> = {
   "pages.creatorDetails.title": "Detail Kreator",
   "pages.creatorDetails.description":
     "Performa, video terhubung, dan riwayat campaign untuk kreator ini.",
-  "pages.videos.title": "Video",
+  "pages.videos.title": "Library video",
   "pages.videos.description":
     "Paste link, ambil metrik otomatis, dan hubungkan konten ke campaign.",
   "pages.videos.descriptionShort":
-    "Views, engagement, saves, dan shares live dari setiap video terhubung.",
+    "Lihat semua video terhubung dan metrik live di workspace kamu.",
+  "pages.videos.libraryHint":
+    "Ini library video kamu. Untuk tambah atau bulk upload link, buka campaign",
+  "pages.videos.libraryHintLink": "Ke campaigns",
   "pages.videos.hacks":
     "Paste link TikTok atau Instagram — kami deteksi kreatornya dan tambahkan ke roster kamu otomatis.",
   "pages.videos.hacksLabel": "Tips cepat",
@@ -140,6 +179,39 @@ const id: Record<keyof typeof en, string> = {
     "Rencanakan campaign, hubungkan konten, dan lihat apa yang works.",
   "pages.campaigns.descriptionShort":
     "Organisir brand partnership dengan kreator dan konten terhubung.",
+  "tutorial.title": "Mulai pakai Kefoo",
+  "tutorial.description":
+    "Ikuti 3 langkah ini untuk setup campaign pertama dan lihat performa live.",
+  "tutorial.progress": "{done}/{total} selesai",
+  "tutorial.stepCampaignTitle": "Buat campaign pertama",
+  "tutorial.stepCampaignDescription":
+    "Isi nama brand partnership dan tanggal campaign supaya tim punya home base.",
+  "tutorial.stepContentTitle": "Tambah kreator atau paste link video",
+  "tutorial.stepContentDescription":
+    "Buka Content di campaign, tambah kreator ke tracker, lalu paste link saat sudah live.",
+  "tutorial.stepPerformanceTitle": "Cek performa live",
+  "tutorial.stepPerformanceDescription":
+    "Buka Performance di campaign untuk lihat views, engagement, CPV, dan pemakaian budget.",
+  "tutorial.stepDone": "Selesai",
+  "tutorial.actionCreateCampaign": "Buat campaign",
+  "tutorial.actionNeedsCampaign": "Buat campaign dulu",
+  "tutorial.actionOpenExecution": "Buka Content",
+  "tutorial.actionOpenPerformance": "Buka Performance",
+  "tutorial.dismiss": "Tutup tutorial",
+  "tutorial.hide": "Sembunyikan panduan ini",
+  "campaign.content.title": "Konten",
+  "campaign.content.description":
+    "Lacak progress kreator dan paste link video di satu tempat.",
+  "campaign.content.howItWorks": "Cara pakai",
+  "campaign.content.step1":
+    "Tambah kreator ke tracker — pilih dari roster atau mereka muncul otomatis saat kamu paste link.",
+  "campaign.content.step2":
+    "Update status sambil jalan: Brief → Waiting content → Revision.",
+  "campaign.content.step3":
+    "Saat kreator sudah posting, paste link videonya di bawah (satu atau bulk). Status otomatis jadi Uploaded.",
+  "campaign.content.pasteTitle": "Paste link video",
+  "campaign.content.pasteDescription":
+    "Saat kreator sudah live, paste link TikTok atau Instagram di sini — satu atau banyak sekaligus. Status otomatis jadi Uploaded.",
   "pages.campaignDetails.title": "Detail Campaign",
   "pages.campaignDetails.description":
     "Ringkasan performa live untuk campaign ini.",
@@ -169,7 +241,7 @@ const id: Record<keyof typeof en, string> = {
   "dashboard.refreshingVideos": "Sedang refresh...",
   "dashboard.advancedUpgradeTitle": "Dashboard performa lanjutan",
   "dashboard.advancedUpgradeDescription":
-    "Buka perbandingan kreator, insight live, dan tren bulanan dengan Growth.",
+    "Buka perbandingan kreator, insight live, dan tren bulanan dengan Scale.",
   "campaign.refreshVideos": "Refresh video",
   "common.upgradePlan": "Upgrade plan",
   "common.renewSubscription": "Perpanjang langganan",

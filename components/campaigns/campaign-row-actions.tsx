@@ -1,11 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type CampaignRowActionsProps = {
-  campaignId: string;
   campaignName: string;
   onEdit?: () => void;
   onDelete: () => void;
@@ -15,7 +13,6 @@ type CampaignRowActionsProps = {
 };
 
 export function CampaignRowActions({
-  campaignId,
   campaignName,
   onEdit,
   onDelete,
@@ -23,16 +20,12 @@ export function CampaignRowActions({
   canDelete = true,
   className,
 }: CampaignRowActionsProps) {
+  if (!canEdit && !canDelete) {
+    return null;
+  }
+
   return (
     <div className={cn("flex flex-wrap justify-end gap-2", className)}>
-      <Link
-        href={`/campaigns/${campaignId}`}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-kefoo-200 bg-kefoo-50 px-3 py-2 text-sm font-medium text-kefoo-700 transition-colors hover:bg-kefoo-100"
-        aria-label={`View ${campaignName}`}
-      >
-        <Eye className="h-4 w-4" />
-        View
-      </Link>
       {canEdit && onEdit ? (
         <button
           type="button"

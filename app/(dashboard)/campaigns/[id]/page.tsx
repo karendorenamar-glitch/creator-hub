@@ -4,7 +4,7 @@ import { CampaignDetailSection } from "@/components/campaigns/campaign-detail-se
 import { canEditCampaign } from "@/lib/org-team";
 import { getOrgMembershipForAction } from "@/lib/org";
 import { resolveResourceScopeFilter } from "@/lib/team-filter";
-import { getCampaignById, getCreators, getVideos } from "@/lib/data";
+import { getCampaignById, getCreators } from "@/lib/data";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getMessage } from "@/lib/i18n/messages";
 
@@ -31,10 +31,9 @@ export default async function CampaignDetailPage({
   const performanceTeamFilter =
     membership.role === "team" ? membership.userId : "all";
 
-  const [campaign, creators, videos] = await Promise.all([
+  const [campaign, creators] = await Promise.all([
     getCampaignById(id, performanceTeamFilter),
     getCreators(undefined, resourceScope),
-    getVideos(resourceScope),
   ]);
 
   if (!campaign) {
@@ -58,8 +57,8 @@ export default async function CampaignDetailPage({
         <CampaignDetailSection
           campaign={campaign}
           creators={creators}
-          videos={videos}
           canEdit={canEdit}
+          orgId={membership.orgId}
         />
       </main>
     </>
