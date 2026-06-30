@@ -45,7 +45,7 @@ const plans: PricingPlan[] = [
       "1 User",
       "3 Campaigns/month",
       "10 Creators/month",
-      "15 Tracked Contents/month",
+      "15 Live Content/month",
       "Basic Campaign Analytics",
     ],
     cta: "Start Free Trial",
@@ -123,9 +123,9 @@ const addOns: AddOn[] = [
   },
   {
     icon: BarChart3,
-    title: "Additional Tracked Contents",
+    title: "Additional Live Content",
     price: "Rp169.000",
-    description: "Add 100 additional tracked contents.",
+    description: "Add 100 additional live content.",
   },
   {
     icon: LineChart,
