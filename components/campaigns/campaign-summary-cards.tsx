@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { ChevronRight, Users, Video } from "lucide-react";
 import { CampaignRowActions } from "@/components/campaigns/campaign-row-actions";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import { canEditCampaign } from "@/lib/org-team";
-import { formatCurrency } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import type { CampaignSummary, OrgMemberRole } from "@/types/database";
 
 type CampaignSummaryCardsProps = {
@@ -42,7 +43,7 @@ export function CampaignSummaryCards({
         return (
           <article
             key={campaign.id}
-            className="group relative rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-colors hover:border-kefoo-200 hover:bg-kefoo-50/30"
+            className="group relative cursor-pointer rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-kefoo-300 hover:shadow-md active:translate-y-0"
           >
             <Link
               href={`/campaigns/${campaign.id}`}
@@ -53,7 +54,7 @@ export function CampaignSummaryCards({
             <div className="pointer-events-none relative z-[1]">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="truncate text-lg font-semibold tracking-tight text-slate-900 group-hover:text-kefoo-700">
+                  <h3 className="truncate text-lg font-semibold tracking-tight text-slate-900 transition-colors group-hover:text-kefoo-700">
                     {campaign.name}
                   </h3>
                   <p className="mt-1 truncate text-sm text-slate-500">
@@ -63,10 +64,30 @@ export function CampaignSummaryCards({
                 <CampaignStatusBadge status={campaign.status} />
               </div>
 
-              <p className="mt-4 text-sm font-medium text-slate-900">
-                {formatCurrency(campaign.budget)}
+              <p className="mt-4 text-sm text-slate-600">
+                {formatDate(campaign.start_date)} – {formatDate(campaign.end_date)}
               </p>
-              <p className="mt-1 text-xs text-slate-500">Campaign budget</p>
+
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                <span className="inline-flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5" aria-hidden />
+                  {campaign.creator_count} creator
+                  {campaign.creator_count === 1 ? "" : "s"}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Video className="h-3.5 w-3.5" aria-hidden />
+                  {campaign.video_count} video
+                  {campaign.video_count === 1 ? "" : "s"}
+                </span>
+              </div>
+
+              <div className="mt-4 flex items-center gap-1 text-sm font-medium text-kefoo-600 transition-colors group-hover:text-kefoo-500">
+                <span>Open campaign</span>
+                <ChevronRight
+                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                  aria-hidden
+                />
+              </div>
             </div>
 
             {canDelete ? (
