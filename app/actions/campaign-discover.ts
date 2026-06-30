@@ -17,12 +17,13 @@ import {
   DISCOVER_SCAN_CONCURRENCY,
   estimateDiscoverScanSeconds,
   formatDiscoverScanCooldownMessage,
+  hasUnlimitedDiscoverScans,
   resolveDiscoverScanAvailability,
   DISCOVER_WEEKLY_LIMIT_NOTICE,
   type DiscoverScanAvailability,
 } from "@/lib/discover-scan-limit";
 import { assertCanUseDiscoverKeywords } from "@/lib/plan-enforcement";
-import { getOrgIdForAction } from "@/lib/org";
+import { getAuthUser, getOrgIdForAction } from "@/lib/org";
 import { createClient } from "@/lib/supabase/server";
 
 function isMissingDiscoverScanColumnError(message: string) {
@@ -63,10 +64,16 @@ async function recordDiscoverScan(orgId: string) {
   return scannedAt;
 }
 
+async function isDiscoverUnlimitedForCurrentUser() {
+  const user = await getAuthUser();
+  return hasUnlimitedDiscoverScans(user?.email);
+}
+
 export async function getDiscoverScanStatus(): Promise<
   | {
       availability: DiscoverScanAvailability;
       weeklyLimitNotice: string;
+      unlimitedScans: boolean;
     }
   | { error: string }
 > {
@@ -80,11 +87,13 @@ export async function getDiscoverScanStatus(): Promise<
     return { error: discoverCheck.error };
   }
 
+  const unlimitedScans = await isDiscoverUnlimitedForCurrentUser();
   const lastScanAt = await getDiscoverLastScanAt(orgResult.orgId);
 
   return {
-    availability: resolveDiscoverScanAvailability(lastScanAt),
-    weeklyLimitNotice: DISCOVER_WEEKLY_LIMIT_NOTICE,
+    availability: resolveDiscoverScanAvailability(lastScanAt, { unlimited: unlimitedScans }),
+    weeklyLimitNotice: unlimitedScans ? "" : DISCOVER_WEEKLY_LIMIT_NOTICE,
+    unlimitedScans,
   };
 }
 
@@ -165,8 +174,11 @@ export async function scanCampaignCreatorsByKeywords(input: {
     };
   }
 
+  const unlimitedScans = await isDiscoverUnlimitedForCurrentUser();
   const lastScanAt = await getDiscoverLastScanAt(access.orgId);
-  const availability = resolveDiscoverScanAvailability(lastScanAt);
+  const availability = resolveDiscoverScanAvailability(lastScanAt, {
+    unlimited: unlimitedScans,
+  });
 
   if (!availability.canScan) {
     return {
@@ -239,8 +251,12 @@ export async function scanCampaignCreatorsByKeywords(input: {
     error: "Invalid TikTok handle.",
   }));
 
-  const scannedAt = await recordDiscoverScan(access.orgId);
-  const nextAvailability = resolveDiscoverScanAvailability(scannedAt);
+  const scannedAt = unlimitedScans
+    ? null
+    : await recordDiscoverScan(access.orgId);
+  const nextAvailability = resolveDiscoverScanAvailability(scannedAt, {
+    unlimited: unlimitedScans,
+  });
 
   return {
     results: [...scanResults, ...invalidCreators],

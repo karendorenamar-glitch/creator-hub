@@ -92,6 +92,10 @@ export function CampaignDiscoverPanel({ campaign }: CampaignDiscoverPanelProps) 
   const [availability, setAvailability] = useState<DiscoverScanAvailability | null>(
     null,
   );
+  const [weeklyLimitNotice, setWeeklyLimitNotice] = useState(
+    DISCOVER_WEEKLY_LIMIT_NOTICE,
+  );
+  const [unlimitedScans, setUnlimitedScans] = useState(false);
   const [nextScanAt, setNextScanAt] = useState<string | null>(null);
 
   const campaignCreatorHandles = useMemo(
@@ -104,6 +108,8 @@ export function CampaignDiscoverPanel({ campaign }: CampaignDiscoverPanelProps) 
     if ("availability" in status) {
       setAvailability(status.availability);
       setNextScanAt(status.availability.nextScanAt);
+      setWeeklyLimitNotice(status.weeklyLimitNotice);
+      setUnlimitedScans(status.unlimitedScans);
     }
   }
 
@@ -310,19 +316,25 @@ export function CampaignDiscoverPanel({ campaign }: CampaignDiscoverPanelProps) 
         videos in one go. Use Content when you already have links.
       </div>
 
-      <div className="rounded-xl border border-kefoo-200 bg-kefoo-50/80 px-4 py-3 text-sm text-kefoo-900">
-        <p className="font-medium">{DISCOVER_WEEKLY_LIMIT_NOTICE}</p>
-        {nextScanAt && !canScan ? (
-          <p className="mt-1 text-kefoo-800">
-            Next scan available on {formatNextScanDate(nextScanAt)} (
-            {formatDiscoverScanWaitDuration(availability?.waitSeconds ?? 0)} left).
-          </p>
-        ) : nextScanAt && results.length > 0 ? (
-          <p className="mt-1 text-kefoo-800">
-            Next scan available on {formatNextScanDate(nextScanAt)}.
-          </p>
-        ) : null}
-      </div>
+      {weeklyLimitNotice ? (
+        <div className="rounded-xl border border-kefoo-200 bg-kefoo-50/80 px-4 py-3 text-sm text-kefoo-900">
+          <p className="font-medium">{weeklyLimitNotice}</p>
+          {nextScanAt && !canScan ? (
+            <p className="mt-1 text-kefoo-800">
+              Next scan available on {formatNextScanDate(nextScanAt)} (
+              {formatDiscoverScanWaitDuration(availability?.waitSeconds ?? 0)} left).
+            </p>
+          ) : nextScanAt && results.length > 0 ? (
+            <p className="mt-1 text-kefoo-800">
+              Next scan available on {formatNextScanDate(nextScanAt)}.
+            </p>
+          ) : null}
+        </div>
+      ) : unlimitedScans ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-medium">Unlimited keyword scans enabled for this demo account.</p>
+        </div>
+      ) : null}
 
       <div>
         <h3 className="text-lg font-semibold text-slate-900">Discover</h3>

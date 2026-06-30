@@ -2,6 +2,24 @@ export const DISCOVER_SCAN_COOLDOWN_DAYS = 7;
 export const DISCOVER_SCAN_COOLDOWN_MS =
   DISCOVER_SCAN_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
 
+/** Demo accounts bypass the weekly scan cooldown in production. */
+export const DISCOVER_UNLIMITED_DEMO_EMAILS = [
+  "karendorenamar@gmail.com",
+] as const;
+
+export function hasUnlimitedDiscoverScans(
+  email: string | null | undefined,
+): boolean {
+  if (!email) {
+    return false;
+  }
+
+  const normalized = email.trim().toLowerCase();
+  return DISCOVER_UNLIMITED_DEMO_EMAILS.some(
+    (allowed) => allowed === normalized,
+  );
+}
+
 export const DISCOVER_SCAN_CONCURRENCY = 3;
 export const DISCOVER_SCAN_SECONDS_PER_BATCH = 12;
 
@@ -20,8 +38,19 @@ export function estimateDiscoverScanSeconds(creatorCount: number): number {
 
 export function resolveDiscoverScanAvailability(
   lastScanAt: string | null | undefined,
+  options?: { unlimited?: boolean },
   nowMs: number = Date.now(),
 ): DiscoverScanAvailability {
+  if (options?.unlimited) {
+    return {
+      canScan: true,
+      lastScanAt: lastScanAt ?? null,
+      nextScanAt: null,
+      waitMs: 0,
+      waitSeconds: 0,
+    };
+  }
+
   if (!lastScanAt) {
     return {
       canScan: true,
