@@ -32,7 +32,7 @@ export function KarenAvatar({ className }: AvatarProps) {
       />
       <path
         d="M18 28c3-10 8-14 14-14s11 4 14 14c-3 1-7 2-14 2s-11-1-14-2Z"
-        fill="#6d28d9"
+        fill="#b887f8"
       />
       <circle cx="32" cy="30" r="13" fill="#fcd9bd" />
       <circle cx="27" cy="29" r="1.6" fill="#3f2a1d" />

@@ -16,7 +16,7 @@ export function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed inset-x-0 top-0 z-50 border-b border-violet-100/90 bg-white/80 shadow-[0_10px_40px_-28px_rgba(168,85,247,0.22)] backdrop-blur-xl"
+      className="fixed inset-x-0 top-0 z-50 border-b border-kefoo-200/80 bg-white/80 shadow-[0_10px_40px_-28px_rgba(184,135,248,0.18)] backdrop-blur-xl"
     >
       <div className={`${CONTAINER_CLASS} flex h-16 items-center justify-between gap-6`}>
         <Link href="/" className="shrink-0">
@@ -24,12 +24,12 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden flex-1 items-center justify-center md:flex">
-          <div className="inline-flex items-center gap-1 rounded-full border border-violet-100/90 bg-white/80 p-1 shadow-sm">
+          <div className="inline-flex items-center gap-1 rounded-full border border-kefoo-200/80 bg-white/80 p-1 shadow-sm">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="rounded-full px-4 py-1.5 text-sm text-slate-600 transition-colors hover:bg-violet-50 hover:text-kefoo-600"
+                className="rounded-full px-4 py-1.5 text-sm text-slate-600 transition-colors hover:bg-baby-50 hover:text-kefoo-600"
               >
                 {link.label}
               </Link>

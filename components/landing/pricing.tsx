@@ -14,7 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { CONTAINER_CLASS, FadeIn } from "@/components/landing/landing-shared";
+import { CONTAINER_CLASS, FadeIn, LANDING_HEADLINE_CLASS } from "@/components/landing/landing-shared";
 import { CONTENT_PLANNER_ENABLED } from "@/lib/features";
 import { getPaidPlanSignupPath } from "@/lib/plan-checkout";
 import { cn } from "@/lib/utils";
@@ -475,7 +475,12 @@ export function Pricing() {
               <span className="h-1.5 w-1.5 rounded-full bg-kefoo-400/60" />
               <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
             </div>
-            <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            <h2
+              className={cn(
+                "font-heading text-3xl font-semibold tracking-tight sm:text-4xl",
+                LANDING_HEADLINE_CLASS,
+              )}
+            >
               Pick a plan and launch effortlessly
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-500 sm:text-lg">

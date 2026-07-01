@@ -7,6 +7,7 @@ import {
   CONTAINER_CLASS,
   FadeIn,
   GlassCard,
+  LANDING_HEADLINE_CLASS,
   FREE_TRIAL_SIGNUP_HREF,
 } from "@/components/landing/landing-shared";
 import { cn } from "@/lib/utils";
@@ -62,7 +63,12 @@ export function Payouts() {
               <span className="h-1.5 w-1.5 rounded-full bg-kefoo-400/60" />
               <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
             </div>
-            <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            <h2
+              className={cn(
+                "font-heading text-3xl font-semibold tracking-tight sm:text-4xl",
+                LANDING_HEADLINE_CLASS,
+              )}
+            >
               Track execution and payouts on your own
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">
@@ -76,7 +82,7 @@ export function Payouts() {
           <FadeIn>
             <GlassCard frame className="relative flex h-full min-h-[480px] flex-col overflow-hidden p-6 text-center sm:p-8 sm:text-left lg:translate-y-3">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-kefoo-500/10 via-kefoo-400/25 to-kefoo-500/10" />
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+              <h2 className={cn("text-2xl font-bold sm:text-3xl", LANDING_HEADLINE_CLASS)}>
                 Execution Tracker
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -100,7 +106,7 @@ export function Payouts() {
               className="relative h-full overflow-hidden p-6 text-center sm:p-8 sm:text-left lg:-translate-y-3"
             >
               <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-slate-200 via-kefoo-500/15 to-slate-200" />
-              <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+              <h2 className={cn("text-2xl font-bold sm:text-3xl", LANDING_HEADLINE_CLASS)}>
                 Payouts & Payments
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">

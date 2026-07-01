@@ -1,19 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { CampaignCreatorVideosTable } from "@/components/campaigns/campaign-creator-videos-table";
 import { CampaignStatusBadge } from "@/components/campaigns/campaign-status-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableElement,
-  DataTableHead,
-  DataTableHeaderCell,
-  DataTableRow,
-  EmptyState,
-} from "@/components/ui/data-table";
-import {
-  calculateEngagementRate,
   formatCreatorCPE,
   formatCreatorCPV,
   formatCreatorListUsername,
@@ -61,6 +51,7 @@ export function CampaignCreatorDetailSection({
       : dealType === "barter"
         ? "Barter Value"
         : "Voucher Value";
+  const allowManualMetrics = creator.platform === "Instagram";
 
   return (
     <>
@@ -218,72 +209,11 @@ export function CampaignCreatorDetailSection({
         <h3 className="mb-4 text-lg font-semibold text-slate-900">
           Videos in this campaign
         </h3>
-        {detail.videos.length === 0 ? (
-          <DataTable>
-            <EmptyState
-              title="No videos yet"
-              description="Videos linked to this campaign from this creator will appear here."
-            />
-          </DataTable>
-        ) : (
-          <DataTable>
-            <DataTableElement>
-              <DataTableHead>
-                <DataTableHeaderCell>Video</DataTableHeaderCell>
-                <DataTableHeaderCell className="text-right">Views</DataTableHeaderCell>
-                <DataTableHeaderCell className="text-right">Likes</DataTableHeaderCell>
-                <DataTableHeaderCell className="text-right">Comments</DataTableHeaderCell>
-                <DataTableHeaderCell className="text-right">Shares</DataTableHeaderCell>
-                <DataTableHeaderCell className="text-right">Saves</DataTableHeaderCell>
-                <DataTableHeaderCell className="text-right">ER%</DataTableHeaderCell>
-              </DataTableHead>
-              <DataTableBody>
-                {detail.videos.map((video) => (
-                  <DataTableRow key={video.id}>
-                    <DataTableCell className="max-w-xs">
-                      <a
-                        href={video.video_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block truncate font-medium text-kefoo-600 hover:text-kefoo-500"
-                      >
-                        {video.video_url}
-                      </a>
-                    </DataTableCell>
-                    <DataTableCell className="text-right">
-                      {formatNumber(video.views)}
-                    </DataTableCell>
-                    <DataTableCell className="text-right">
-                      {formatNumber(video.likes)}
-                    </DataTableCell>
-                    <DataTableCell className="text-right">
-                      {formatNumber(video.comments)}
-                    </DataTableCell>
-                    <DataTableCell className="text-right">
-                      {formatNumber(video.shares)}
-                    </DataTableCell>
-                    <DataTableCell className="text-right">
-                      {formatNumber(video.saves)}
-                    </DataTableCell>
-                    <DataTableCell className="text-right">
-                      {video.views > 0
-                        ? formatEngagementRate(
-                            calculateEngagementRate(
-                              video.views,
-                              video.likes,
-                              video.comments,
-                              video.shares,
-                              video.saves,
-                            ),
-                          )
-                        : "—"}
-                    </DataTableCell>
-                  </DataTableRow>
-                ))}
-              </DataTableBody>
-            </DataTableElement>
-          </DataTable>
-        )}
+        <CampaignCreatorVideosTable
+          videos={detail.videos}
+          creatorPlatform={creator.platform}
+          allowManualMetrics={allowManualMetrics}
+        />
       </section>
     </>
   );

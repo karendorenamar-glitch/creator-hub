@@ -6,15 +6,16 @@ import { motion, useInView, type Variants } from "framer-motion";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
-export const LANDING_BG = "#ffffff";
+export const LANDING_HEADLINE_CLASS = "text-kefoo-400";
+export const LANDING_HEADLINE_ACCENT_CLASS = "text-baby-500";
 export const LANDING_SURFACE =
-  "rounded-3xl border border-violet-100/90 bg-white/90 shadow-[0_16px_48px_-28px_rgba(168,85,247,0.22)] backdrop-blur-sm";
+  "rounded-3xl border border-kefoo-200/80 bg-white/90 shadow-[0_16px_48px_-28px_rgba(184,135,248,0.18)] backdrop-blur-sm";
 export const LANDING_SURFACE_SUBTLE =
-  "rounded-2xl border border-violet-100/80 bg-white/95 backdrop-blur-sm";
+  "rounded-2xl border border-baby-200/80 bg-white/95 backdrop-blur-sm";
 export const KEFOO_BUTTON_GRADIENT =
-  "bg-gradient-to-r from-[#f0abfc] via-[#d8b4fe] to-[#a855f7]";
+  "bg-gradient-to-r from-baby-300 via-kefoo-400 to-kefoo-500";
 export const KEFOO_TEXT_GRADIENT =
-  "bg-gradient-to-r from-[#e879f9] via-[#c084fc] to-[#9333ea] bg-clip-text text-transparent";
+  "bg-gradient-to-r from-baby-500 via-kefoo-400 to-kefoo-500 bg-clip-text text-transparent";
 export const SECTION_CLASS = "py-28";
 export const CONTAINER_CLASS =
   "mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10 xl:px-12";
@@ -36,13 +37,13 @@ export const fadeUpVariants: Variants = {
 
 export function LandingBackground() {
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#fdfaff]">
+    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-[#f8fbff]">
       <div className="landing-dot-grid absolute inset-0 opacity-70" />
-      <div className="absolute -left-32 top-20 h-[30rem] w-[30rem] rounded-full bg-[#e9d5ff]/55 blur-3xl" />
-      <div className="absolute -right-24 top-[34%] h-96 w-96 rounded-full bg-[#f0abfc]/25 blur-3xl" />
-      <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-[#f3e8ff]/70 blur-3xl" />
-      <div className="absolute right-1/4 top-[12%] h-40 w-40 rounded-full bg-[#fbcfe8]/25 blur-2xl" />
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-200/90 to-transparent" />
+      <div className="absolute -left-32 top-20 h-[30rem] w-[30rem] rounded-full bg-kefoo-200/60 blur-3xl" />
+      <div className="absolute -right-24 top-[34%] h-96 w-96 rounded-full bg-baby-200/55 blur-3xl" />
+      <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-kefoo-100/75 blur-3xl" />
+      <div className="absolute right-1/4 top-[12%] h-40 w-40 rounded-full bg-baby-300/35 blur-2xl" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-baby-300/70 to-transparent" />
     </div>
   );
 }
@@ -134,8 +135,8 @@ export function GradientButton({
     "inline-flex items-center justify-center gap-2 rounded-full font-medium text-white transition-all duration-200 hover:-translate-y-0.5",
     KEFOO_BUTTON_GRADIENT,
     size === "lg"
-      ? "px-8 py-4 text-base shadow-[0_12px_36px_-12px_rgba(168,85,247,0.45)] hover:shadow-[0_16px_40px_-10px_rgba(168,85,247,0.52)]"
-      : "px-5 py-2.5 text-sm shadow-[0_10px_28px_-12px_rgba(168,85,247,0.4)] hover:shadow-[0_14px_32px_-10px_rgba(168,85,247,0.48)]",
+      ? "px-8 py-4 text-base shadow-[0_12px_36px_-12px_rgba(184,135,248,0.4)] hover:shadow-[0_16px_40px_-10px_rgba(137,207,240,0.45)]"
+      : "px-5 py-2.5 text-sm shadow-[0_10px_28px_-12px_rgba(184,135,248,0.35)] hover:shadow-[0_14px_32px_-10px_rgba(137,207,240,0.4)]",
     className,
   );
 
@@ -182,13 +183,18 @@ export function SectionHeading({
   return (
     <div className={cn("mx-auto mb-16 max-w-3xl text-center", className)}>
       <div className="mb-5 flex items-center justify-center gap-3">
-        <span className="hidden h-px w-12 bg-gradient-to-r from-transparent to-violet-200 sm:block" />
-        <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[11px] font-medium text-kefoo-600">
+        <span className="hidden h-px w-12 bg-gradient-to-r from-transparent to-baby-300 sm:block" />
+        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-kefoo-50 to-baby-50 px-2.5 py-1 text-[11px] font-medium text-kefoo-700">
           ✨
         </span>
-        <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-violet-200 sm:block" />
+        <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-kefoo-300 sm:block" />
       </div>
-      <h2 className="font-heading text-3xl font-bold tracking-tight text-kefoo-800 sm:text-4xl">
+      <h2
+        className={cn(
+          "font-heading text-3xl font-bold tracking-tight sm:text-4xl",
+          LANDING_HEADLINE_CLASS,
+        )}
+      >
         {title}
       </h2>
       {subtitle ? (

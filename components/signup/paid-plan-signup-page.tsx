@@ -89,7 +89,7 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
   }
 
   return (
-    <div className="relative min-h-dvh overflow-hidden bg-white text-slate-900 antialiased">
+    <div className="relative min-h-dvh overflow-hidden bg-[#f8fbff] text-slate-900 antialiased">
       <LandingBackground />
 
       <div className="relative flex min-h-dvh items-center justify-center px-5 py-10">
@@ -98,7 +98,7 @@ export function PaidPlanSignupPage({ plan }: PaidPlanSignupPageProps) {
             <KeffooBrandLockup size="sm" />
           </div>
 
-          <div className="rounded-[24px] border border-slate-200/80 bg-white/95 p-6 shadow-[0_8px_40px_-24px_rgba(15,23,42,0.12)] backdrop-blur-sm sm:p-8">
+          <div className="rounded-[24px] border border-kefoo-200/80 bg-white/95 p-6 shadow-[0_8px_40px_-24px_rgba(184,135,248,0.15)] backdrop-blur-sm sm:p-8">
             <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-kefoo-600">
               {config.name} plan · {config.priceLabel}
               {config.periodLabel}

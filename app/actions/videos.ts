@@ -427,6 +427,57 @@ export async function updateVideo(id: string, input: VideoInput) {
   return { data };
 }
 
+export async function updateVideoManualMetrics(
+  videoId: string,
+  metrics: {
+    views: number;
+    likes: number;
+    comments: number;
+    shares: number;
+    saves: number;
+  },
+) {
+  const orgResult = await getOrgIdForAction();
+  if ("error" in orgResult) {
+    return { error: orgResult.error };
+  }
+
+  const permission = await assertCanModifyOwnedResource(
+    "videos",
+    videoId,
+    orgResult.orgId,
+  );
+  if ("error" in permission) {
+    return { error: permission.error };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("videos")
+    .update({
+      views: Math.max(0, Math.floor(metrics.views)),
+      likes: Math.max(0, Math.floor(metrics.likes)),
+      comments: Math.max(0, Math.floor(metrics.comments)),
+      shares: Math.max(0, Math.floor(metrics.shares)),
+      saves: Math.max(0, Math.floor(metrics.saves)),
+    })
+    .eq("id", videoId)
+    .eq("org_id", orgResult.orgId)
+    .select("id")
+    .single();
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  if (!data) {
+    return { error: "Video not found." };
+  }
+
+  revalidateCreatorHub();
+  return { success: true as const };
+}
+
 export async function importVideoMetrics(
   videoUrl: string,
   platform?: VideoPlatform,

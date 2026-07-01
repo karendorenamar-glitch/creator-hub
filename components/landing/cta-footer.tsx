@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { KeffooBrandLockup } from "@/components/login/kefoo-logo";
+import { cn } from "@/lib/utils";
 import {
   CONTAINER_CLASS,
   FadeIn,
   GlassCard,
   GradientButton,
+  LANDING_HEADLINE_CLASS,
   FREE_TRIAL_SIGNUP_HREF,
   SIGN_IN_HREF,
 } from "@/components/landing/landing-shared";
@@ -25,11 +27,16 @@ export function CTAFooter() {
               frame
               className="relative overflow-hidden px-6 py-16 text-center sm:px-12 sm:py-20"
             >
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-kefoo-500/10 via-transparent to-kefoo-500/15" />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-kefoo-400/12 via-baby-200/20 to-kefoo-500/10" />
               <div className="pointer-events-none absolute left-1/2 top-1/2 h-[115%] w-[115%] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-slate-200/30" />
               <div className="pointer-events-none absolute left-1/2 top-1/2 h-[130%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-[2.5rem] border border-slate-200/15" />
               <div className="relative mx-auto max-w-3xl">
-                <h2 className="font-heading text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+                <h2
+                  className={cn(
+                    "font-heading text-3xl font-bold tracking-tight sm:text-5xl",
+                    LANDING_HEADLINE_CLASS,
+                  )}
+                >
                   Start tracking campaigns today.
                 </h2>
                 <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">

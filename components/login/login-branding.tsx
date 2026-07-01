@@ -3,7 +3,7 @@ import { GradientText } from "@/components/landing/landing-shared";
 
 export function LoginBranding() {
   return (
-    <div className="relative hidden h-full min-h-0 w-1/2 overflow-hidden bg-white lg:flex lg:flex-col lg:items-center lg:justify-center">
+    <div className="relative hidden h-full min-h-0 w-1/2 overflow-hidden bg-gradient-to-br from-kefoo-50/80 via-white to-baby-50/90 lg:flex lg:flex-col lg:items-center lg:justify-center">
       <div className="relative w-full max-w-md px-8 text-center xl:px-12">
         <div className="mb-8 flex justify-center">
           <KeffooBrandLockup size="lg" />

@@ -86,6 +86,13 @@ const en = {
   "campaign.content.pasteTitle": "Paste video links",
   "campaign.content.pasteDescription":
     "When a creator goes live, paste their TikTok or Instagram link here — one or many at once. Status updates to Uploaded automatically.",
+  "campaign.content.instagramMetaTitle": "Meta metrics are not imported automatically",
+  "campaign.content.instagramMetaDescription":
+    "Views, shares, and saves are not available from Instagram via Meta. After import, open Performance → Creators, view the creator, and enter metrics manually.",
+  "campaign.creator.instagramManualMetrics":
+    "Enter views, likes, comments, shares, and saves manually below — Meta does not provide them automatically.",
+  "campaign.creator.saveMetrics": "Save",
+  "campaign.creator.savingMetrics": "Saving…",
   "pages.campaignDetails.title": "Campaign Details",
   "pages.campaignDetails.description":
     "Live performance summary for this campaign.",
@@ -212,6 +219,13 @@ const id: Record<keyof typeof en, string> = {
   "campaign.content.pasteTitle": "Paste link video",
   "campaign.content.pasteDescription":
     "Saat kreator sudah live, paste link TikTok atau Instagram di sini — satu atau banyak sekaligus. Status otomatis jadi Uploaded.",
+  "campaign.content.instagramMetaTitle": "Metrik Meta tidak di-import otomatis",
+  "campaign.content.instagramMetaDescription":
+    "Views, shares, dan saves tidak tersedia dari Instagram lewat Meta. Setelah import, buka Performance → Creators, buka detail kreator, lalu isi metrik manual.",
+  "campaign.creator.instagramManualMetrics":
+    "Isi views, likes, comments, shares, dan saves manual di bawah — Meta tidak menyediakannya otomatis.",
+  "campaign.creator.saveMetrics": "Simpan",
+  "campaign.creator.savingMetrics": "Menyimpan…",
   "pages.campaignDetails.title": "Detail Campaign",
   "pages.campaignDetails.description":
     "Ringkasan performa live untuk campaign ini.",

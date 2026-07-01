@@ -509,7 +509,7 @@ export function CampaignDetailSection({
                     "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors",
                     activeView === id
                       ? "bg-kefoo-600 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-violet-50 hover:text-kefoo-600",
+                      : "text-slate-600 hover:bg-baby-50 hover:text-kefoo-600",
                   )}
                 >
                   <Icon className="h-4 w-4" />

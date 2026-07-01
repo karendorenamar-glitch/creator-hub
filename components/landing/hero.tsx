@@ -8,7 +8,8 @@ import {
   FadeIn,
   GlassCard,
   GradientButton,
-  GradientText,
+  LANDING_HEADLINE_CLASS,
+  LANDING_HEADLINE_ACCENT_CLASS,
   FREE_TRIAL_SIGNUP_HREF,
   SIGN_IN_HREF,
   fadeUpVariants,
@@ -60,14 +61,14 @@ export function Hero() {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
           <div className="relative mx-auto w-full max-w-2xl text-center lg:mx-0 lg:max-w-none lg:text-left">
             <FadeIn>
-              <span className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-violet-100 bg-violet-50/95 px-3.5 py-1.5 text-xs font-medium text-kefoo-600 shadow-sm lg:justify-start">
+              <span className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-kefoo-200 bg-gradient-to-r from-kefoo-50 to-baby-50 px-3.5 py-1.5 text-xs font-medium text-kefoo-700 shadow-sm lg:justify-start">
                 <Sparkles className="h-3.5 w-3.5 shrink-0" />
                 <span>Self-serve</span>
-                <span className="text-violet-300" aria-hidden>
+                <span className="text-baby-400" aria-hidden>
                   ·
                 </span>
                 <span>Free trial</span>
-                <span className="text-violet-300" aria-hidden>
+                <span className="text-kefoo-300" aria-hidden>
                   ·
                 </span>
                 <span>No card needed</span>
@@ -75,9 +76,14 @@ export function Hero() {
             </FadeIn>
 
             <FadeIn delay={0.05}>
-              <h1 className="mt-5 font-heading text-4xl font-bold leading-[1.08] tracking-tight text-kefoo-800 sm:text-5xl lg:text-[3.25rem]">
+              <h1
+                className={cn(
+                  "mt-5 font-heading text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-[3.25rem]",
+                  LANDING_HEADLINE_CLASS,
+                )}
+              >
                 Run KOL campaigns effortlessly, with{" "}
-                <GradientText>live data</GradientText>
+                <span className={LANDING_HEADLINE_ACCENT_CLASS}>live data</span>
               </h1>
             </FadeIn>
 
@@ -113,9 +119,9 @@ export function Hero() {
                 {benefits.map((item) => (
                   <div
                     key={item.title}
-                    className="min-w-0 rounded-2xl border border-violet-100/90 bg-white/85 px-4 py-3.5 text-left shadow-[0_12px_32px_-24px_rgba(168,85,247,0.22)] backdrop-blur-sm"
+                    className="min-w-0 rounded-2xl border border-kefoo-200/80 bg-white/85 px-4 py-3.5 text-left shadow-[0_12px_32px_-24px_rgba(184,135,248,0.18)] backdrop-blur-sm"
                   >
-                    <div className="inline-flex rounded-2xl bg-gradient-to-br from-violet-50 to-fuchsia-100/70 p-2">
+                    <div className="inline-flex rounded-2xl bg-gradient-to-br from-kefoo-50 to-baby-100 p-2">
                       <item.icon className="h-4 w-4 text-kefoo-500" />
                     </div>
                     <p className="mt-3 text-sm font-semibold leading-snug text-slate-900">

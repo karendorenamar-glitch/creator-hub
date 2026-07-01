@@ -179,6 +179,19 @@ export function CampaignVideosPanel({
               <option value="TikTok">TikTok</option>
               <option value="Instagram">Instagram</option>
             </select>
+            {platform === "Instagram" ? (
+              <div
+                role="note"
+                className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
+              >
+                <p className="font-medium">
+                  {t("campaign.content.instagramMetaTitle")}
+                </p>
+                <p className="mt-1 text-amber-900">
+                  {t("campaign.content.instagramMetaDescription")}
+                </p>
+              </div>
+            ) : null}
           </FormField>
 
           <FormField label="Video links" htmlFor="videos-paste-links">

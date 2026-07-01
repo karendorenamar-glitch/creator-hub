@@ -12,6 +12,7 @@ import {
   CONTAINER_CLASS,
   FadeIn,
   GlassCard,
+  LANDING_HEADLINE_CLASS,
 } from "@/components/landing/landing-shared";
 import { cn } from "@/lib/utils";
 
@@ -192,7 +193,7 @@ function KeywordDiscoverVisual() {
         className={cn(
           "rounded-xl border bg-white/85 p-3 transition-colors duration-300",
           isScanning
-            ? "border-kefoo-400/40 shadow-[0_0_24px_-12px_rgba(168,85,247,0.45)]"
+            ? "border-kefoo-400/40 shadow-[0_0_24px_-12px_rgba(184,135,248,0.4)]"
             : "border-slate-200/70",
         )}
       >
@@ -205,7 +206,7 @@ function KeywordDiscoverVisual() {
               key={keyword}
               animate={
                 isScanning
-                  ? { scale: [1, 1.06, 1], boxShadow: ["0 0 0 rgba(168,85,247,0)", "0 0 12px rgba(168,85,247,0.35)", "0 0 0 rgba(168,85,247,0)"] }
+                  ? { scale: [1, 1.06, 1], boxShadow: ["0 0 0 rgba(184,135,248,0)", "0 0 12px rgba(184,135,248,0.35)", "0 0 0 rgba(184,135,248,0)"] }
                   : { scale: 1 }
               }
               transition={{
@@ -228,7 +229,7 @@ function KeywordDiscoverVisual() {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="rounded-xl border border-kefoo-400/30 bg-gradient-to-r from-kefoo-50/90 to-violet-50/80 px-3 py-2.5"
+            className="rounded-xl border border-kefoo-400/30 bg-gradient-to-r from-kefoo-50/90 to-baby-50/80 px-3 py-2.5"
           >
             <div className="flex items-center gap-2 text-[10px] font-medium text-kefoo-700">
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
@@ -236,7 +237,7 @@ function KeywordDiscoverVisual() {
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/80">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-kefoo-400 to-violet-500"
+                className="h-full rounded-full bg-gradient-to-r from-baby-400 to-kefoo-500"
                 initial={{ width: "8%" }}
                 animate={{ width: "92%" }}
                 transition={{ duration: 1.35, ease: "easeInOut" }}
@@ -308,7 +309,7 @@ function KeywordDiscoverVisual() {
           repeat: showResults && matchCount > 0 ? Infinity : 0,
           ease: "easeInOut",
         }}
-        className="landing-btn-gradient w-full rounded-xl px-4 py-2.5 text-[11px] font-medium text-white shadow-[0_10px_28px_-12px_rgba(168,85,247,0.5)]"
+        className="landing-btn-gradient w-full rounded-xl px-4 py-2.5 text-[11px] font-medium text-white shadow-[0_10px_28px_-12px_rgba(184,135,248,0.45)]"
       >
         Add to campaign
       </motion.button>
@@ -319,12 +320,12 @@ function KeywordDiscoverVisual() {
 function DiscoverHighlightCard() {
   return (
     <>
-      <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-gradient-to-b from-kefoo-400/20 via-violet-400/10 to-transparent blur-2xl" />
+      <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-gradient-to-b from-kefoo-400/20 via-baby-300/15 to-transparent blur-2xl" />
       <GlassCard
         glow
         frame
         hover={false}
-        className="relative flex h-full min-h-[520px] flex-col border-kefoo-400/25 p-6 text-center shadow-[0_0_56px_-16px_rgba(168,85,247,0.4)] sm:text-left lg:scale-[1.04]"
+        className="relative flex h-full min-h-[520px] flex-col border-kefoo-400/25 p-6 text-center shadow-[0_0_56px_-16px_rgba(137,207,240,0.35)] sm:text-left lg:scale-[1.04]"
       >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-kefoo-400/30 bg-kefoo-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-kefoo-700">
@@ -558,12 +559,12 @@ function CampaignAnalyticsVisual() {
         <svg viewBox="0 0 280 80" className="h-24 w-full" preserveAspectRatio="none">
           <defs>
             <linearGradient id="analyticsArea" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#6EA5F7" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="#6EA5F7" stopOpacity="0" />
+              <stop offset="0%" stopColor="#89cff0" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#b887f8" stopOpacity="0" />
             </linearGradient>
             <linearGradient id="analyticsLine" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#6EA5F7" />
-              <stop offset="100%" stopColor="#3569C7" />
+              <stop offset="0%" stopColor="#89cff0" />
+              <stop offset="100%" stopColor="#b887f8" />
             </linearGradient>
           </defs>
           <path
@@ -598,7 +599,12 @@ export function Features() {
               <span className="h-1.5 w-1.5 rounded-full bg-kefoo-400/60" />
               <span className="hidden h-px w-12 bg-gradient-to-l from-transparent to-slate-200 sm:block" />
             </div>
-            <h2 className="font-heading text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+            <h2
+              className={cn(
+                "font-heading text-3xl font-semibold tracking-tight sm:text-4xl",
+                LANDING_HEADLINE_CLASS,
+              )}
+            >
               Everything you need to run KOL campaigns effortlessly
             </h2>
             <p className="mt-4 text-base leading-relaxed text-slate-600">

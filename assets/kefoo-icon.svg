@@ -7,15 +7,15 @@
     font-family="Arial Black, Helvetica, sans-serif"
     font-weight="900"
     font-size="150"
-    fill="#6d28d9"
+    fill="#B887F8"
   >
     K
   </text>
   <g transform="translate(90 94)">
-    <circle cx="-15" cy="1" r="15" fill="white" stroke="#d8b4fe" stroke-width="2" />
+    <circle cx="-15" cy="1" r="15" fill="white" stroke="#DCC8FF" stroke-width="2" />
     <circle cx="-15" cy="1" r="6.5" fill="#1e293b" />
     <circle cx="-12" cy="-2" r="2.2" fill="white" />
-    <circle cx="15" cy="1" r="15" fill="white" stroke="#d8b4fe" stroke-width="2" />
+    <circle cx="15" cy="1" r="15" fill="white" stroke="#DCC8FF" stroke-width="2" />
     <circle cx="15" cy="1" r="6.5" fill="#1e293b" />
     <circle cx="18" cy="-2" r="2.2" fill="white" />
   </g>

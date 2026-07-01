@@ -229,11 +229,11 @@ export function VideoFormModal({
             className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950"
           >
             <p className="font-medium">
-              Meta only provides views, comments, and likes.
+              Meta metrics are not imported automatically.
             </p>
             <p className="mt-1 text-amber-900">
-              Shares and saves are not available from Instagram — please enter
-              those manually.
+              Views, shares, and saves are not available from Instagram via Meta.
+              Enter them manually in Performance → Creators after import.
             </p>
           </div>
         ) : null}

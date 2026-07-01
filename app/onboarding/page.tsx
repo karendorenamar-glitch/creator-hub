@@ -19,8 +19,8 @@ export default async function OnboardingPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white p-8 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center app-page-bg px-6 py-12">
+      <div className="w-full max-w-md rounded-2xl border border-kefoo-200/80 bg-white/95 p-8 shadow-xl backdrop-blur-sm">
         <div className="mb-6 flex flex-col items-center gap-2">
           <div className="relative h-14 w-14 shrink-0">
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-[0.32]">
