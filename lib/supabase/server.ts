@@ -3,12 +3,6 @@ import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
 
 export async function createClient() {
-  console.log("[supabase debug] NEXT_PUBLIC_SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-  console.log(
-    "[supabase debug] NEXT_PUBLIC_SUPABASE_ANON_KEY length:",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length,
-  );
-
   const cookieStore = await cookies();
 
   return createServerClient<Database>(

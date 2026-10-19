@@ -61,6 +61,22 @@
   --color-baby-700: #3a85b8;
   --color-baby-800: #2d6a94;
   --color-baby-900: #1f5070;
+  /* Wedding planner palette */
+  --color-blush-50: #fdf7f5;
+  --color-blush-100: #fbece7;
+  --color-blush-200: #f6d9d1;
+  --color-blush-300: #eebfb3;
+  --color-blush-400: #e3a294;
+  --color-blush-500: #d38574;
+  --color-blush-600: #b96b5b;
+  --color-champagne-100: #f8f1e4;
+  --color-champagne-200: #eddfc4;
+  --color-champagne-300: #ddc49a;
+  --color-champagne-400: #c9a86a;
+  --color-champagne-500: #a98a4f;
+  --color-ivory: #fffdfa;
+  --color-ink: #3f3634;
+  --color-ink-soft: #7d6f68;
 }
 
 body {

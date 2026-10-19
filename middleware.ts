@@ -28,6 +28,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  // Wedding planner has its own sign-in screen and its own route tree.
+  if (pathname === "/wedding" || pathname.startsWith("/wedding/")) {
+    const isPublicWeddingPath =
+      pathname === "/wedding/login" || pathname === "/wedding/signup";
+
+    if (!user && !isPublicWeddingPath) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/wedding/login";
+      loginUrl.search = "";
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (user && pathname === "/wedding") {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/wedding/dashboard";
+      dashboardUrl.search = "";
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    return response;
+  }
+
   if (isProtectedPath(pathname) && !user) {
     const checkoutMatch = pathname.match(/^\/checkout\/(starter|scale)$/);
 

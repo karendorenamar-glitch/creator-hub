@@ -1,0 +1,58 @@
+import { redirect } from "next/navigation";
+import { Sparkles } from "lucide-react";
+import { WeddingDetailsForm } from "@/components/wedding/wedding-form";
+import { Card } from "@/components/wedding/ui";
+import { signOutAction } from "@/app/wedding/actions";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { weddingCopy } from "@/lib/wedding/copy";
+import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
+
+export const metadata = { title: "Set up your wedding" };
+
+export default async function OnboardingPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/wedding/login");
+
+  const session = await loadWeddingSession();
+  if (session) redirect("/wedding/dashboard");
+
+  const copy = weddingCopy[await getLocale()];
+
+  return (
+    <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-4 py-12 sm:px-6">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 items-center justify-center rounded-full bg-blush-100 text-blush-600">
+            <Sparkles className="size-5" aria-hidden />
+          </span>
+          <span className="leading-tight">
+            <span className="block font-heading text-base font-semibold text-ink">
+              Kefoo
+            </span>
+            <span className="block text-[11px] uppercase tracking-[0.18em] text-champagne-500">
+              Wedding Planner
+            </span>
+          </span>
+        </div>
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="text-sm text-ink-soft underline-offset-4 hover:text-ink hover:underline"
+          >
+            {copy.nav.signOut}
+          </button>
+        </form>
+      </div>
+
+      <Card className="p-7 sm:p-9">
+        <h1 className="font-heading text-2xl font-semibold text-ink sm:text-3xl">
+          {copy.onboarding.title}
+        </h1>
+        <p className="mt-2 mb-7 text-sm leading-relaxed text-ink-soft">
+          {copy.onboarding.subtitle}
+        </p>
+        <WeddingDetailsForm copy={copy} mode="create" />
+      </Card>
+    </div>
+  );
+}
