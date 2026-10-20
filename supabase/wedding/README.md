@@ -16,6 +16,8 @@ files in `supabase/*.sql` are untouched and must NOT be run on the new project.
    `proof_path` column on `vendor_payments`
 7. `007_inspiration_images.sql` - free-text inspiration category, uploaded
    `image_path` column and the private `inspiration-images` bucket
+8. `008_inspiration_album.sql` - `inspiration_photos` table so each item can
+   hold several photos (existing single photos are migrated into it)
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

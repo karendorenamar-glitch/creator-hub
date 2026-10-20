@@ -167,6 +167,15 @@ export type ChecklistTask = {
   updated_at: string;
 };
 
+export type InspirationPhoto = {
+  id: string;
+  wedding_id: string;
+  item_id: string;
+  path: string;
+  sort_order: number;
+  created_at: string;
+};
+
 export type InspirationItem = {
   id: string;
   wedding_id: string;
@@ -210,6 +219,7 @@ export type WeddingDatabase = {
       guests: Table<Guest>;
       checklist_tasks: Table<ChecklistTask>;
       inspiration_items: Table<InspirationItem>;
+      inspiration_photos: Table<InspirationPhoto>;
     };
     Views: Record<string, never>;
     Functions: {

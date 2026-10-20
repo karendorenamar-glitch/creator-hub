@@ -95,14 +95,15 @@ export function InspirationFormModal({
         >
           <input
             id="inspiration-photo"
-            name="image"
+            name="images"
             type="file"
+            multiple
             accept="image/jpeg,image/png,image/webp"
             className={fileClass}
           />
           {item?.image_path ? (
             <p className="text-xs text-ink-soft">
-              {item.title} · {copy.form.saved}
+              {copy.inspiration.uploadHint}
             </p>
           ) : null}
         </Field>

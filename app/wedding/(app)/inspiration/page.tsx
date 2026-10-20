@@ -21,12 +21,31 @@ export default async function InspirationPage() {
     .select("*")
     .order("created_at", { ascending: false });
 
+  const { data: photoRows } = await supabase
+    .from("inspiration_photos")
+    .select("id, item_id, path")
+    .order("sort_order", { ascending: true });
+
   const items = data ?? [];
+  const photos = photoRows ?? [];
   const categoriesUsed = new Set(items.map((item) => item.category)).size;
 
-  const imagePaths = items
-    .map((item) => item.image_path)
-    .filter((path): path is string => Boolean(path));
+  const photosByItem: Record<string, { id: string; path: string }[]> = {};
+  for (const photo of photos) {
+    (photosByItem[photo.item_id] ??= []).push({
+      id: photo.id,
+      path: photo.path,
+    });
+  }
+
+  const imagePaths = Array.from(
+    new Set([
+      ...items
+        .map((item) => item.image_path)
+        .filter((path): path is string => Boolean(path)),
+      ...photos.map((photo) => photo.path),
+    ]),
+  );
 
   const imageUrls: Record<string, string> = {};
   if (imagePaths.length > 0) {
@@ -60,7 +79,12 @@ export default async function InspirationPage() {
       </section>
 
       <Card>
-        <InspirationManager items={items} imageUrls={imageUrls} copy={copy} />
+        <InspirationManager
+          items={items}
+          photosByItem={photosByItem}
+          imageUrls={imageUrls}
+          copy={copy}
+        />
       </Card>
     </div>
   );

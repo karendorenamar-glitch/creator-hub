@@ -13,29 +13,45 @@ import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 function InspirationCard({
   item,
-  imageUrl,
+  photos,
+  imageUrls,
   copy,
   onEdit,
 }: {
   item: InspirationItem;
-  imageUrl: string | null;
+  photos: { id: string; path: string }[];
+  imageUrls: Record<string, string>;
   copy: ModuleCopy;
   onEdit: (item: InspirationItem) => void;
 }) {
   const [broken, setBroken] = useState(false);
   const safeLink = item.link_url && isHttpUrl(item.link_url) ? item.link_url : null;
+  const photoUrls = photos
+    .map((photo) => imageUrls[photo.path])
+    .filter((url): url is string => Boolean(url));
+  const mainUrl =
+    photoUrls[0] ??
+    (item.image_url && isHttpUrl(item.image_url) ? item.image_url : null);
+  const extraCount = Math.max(0, photoUrls.length - 1);
 
   return (
     <div className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-olive-100 bg-white">
-      {imageUrl && !broken ? (
-        <img
-          src={imageUrl}
-          alt={item.title}
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={() => setBroken(true)}
-          className="w-full object-cover"
-        />
+      {mainUrl && !broken ? (
+        <div className="relative">
+          <img
+            src={mainUrl}
+            alt={item.title}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setBroken(true)}
+            className="w-full object-cover"
+          />
+          {extraCount > 0 ? (
+            <span className="absolute right-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-xs font-medium text-white">
+              +{extraCount}
+            </span>
+          ) : null}
+        </div>
       ) : (
         <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-olive-50 text-olive-300">
           <ImageOff className="size-8" aria-hidden />
@@ -44,6 +60,21 @@ function InspirationCard({
           </span>
         </div>
       )}
+
+      {photoUrls.length > 1 ? (
+        <div className="grid grid-cols-4 gap-1 p-1">
+          {photoUrls.slice(1, 5).map((url, index) => (
+            <img
+              key={`${item.id}-thumb-${index}`}
+              src={url}
+              alt=""
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              className="aspect-square w-full rounded-md object-cover"
+            />
+          ))}
+        </div>
+      ) : null}
 
       <div className="space-y-2 p-3">
         <p className="text-sm font-medium text-ink">{item.title}</p>
@@ -81,10 +112,12 @@ function InspirationCard({
 
 export function InspirationManager({
   items,
+  photosByItem,
   imageUrls,
   copy,
 }: {
   items: InspirationItem[];
+  photosByItem: Record<string, { id: string; path: string }[]>;
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
 }) {
@@ -176,12 +209,8 @@ export function InspirationManager({
                 <InspirationCard
                   key={item.id}
                   item={item}
-                  imageUrl={
-                    (item.image_path ? imageUrls[item.image_path] : null) ??
-                    (item.image_url && isHttpUrl(item.image_url)
-                      ? item.image_url
-                      : null)
-                  }
+                  photos={photosByItem[item.id] ?? []}
+                  imageUrls={imageUrls}
                   copy={copy}
                   onEdit={openEdit}
                 />
