@@ -2,11 +2,12 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
-import { ExternalLink, ImageOff, Pencil } from "lucide-react";
+import { ExternalLink, Eye, ImageOff, Pencil } from "lucide-react";
 import { deleteInspirationAction } from "@/app/wedding/(app)/inspiration/actions";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { InspirationFormModal } from "@/components/wedding/inspiration/inspiration-form-modal";
+import { InspirationLightbox } from "@/components/wedding/inspiration/inspiration-lightbox";
 import type { InspirationItem } from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
@@ -17,12 +18,14 @@ function InspirationCard({
   imageUrls,
   copy,
   onEdit,
+  onView,
 }: {
   item: InspirationItem;
   photos: { id: string; path: string }[];
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
   onEdit: (item: InspirationItem) => void;
+  onView: (urls: string[]) => void;
 }) {
   const [broken, setBroken] = useState(false);
   const safeLink = item.link_url && isHttpUrl(item.link_url) ? item.link_url : null;
@@ -84,6 +87,16 @@ function InspirationCard({
           </p>
         ) : null}
         <div className="flex flex-wrap items-center gap-2">
+          {photoUrls.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => onView(photoUrls)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-olive-700"
+            >
+              <Eye className="size-3.5" aria-hidden />
+              {copy.inspiration.view}
+            </button>
+          ) : null}
           {safeLink ? (
             <a
               href={safeLink}
@@ -124,6 +137,10 @@ export function InspirationManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<InspirationItem | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [viewer, setViewer] = useState<{
+    title: string;
+    urls: string[];
+  } | null>(null);
 
   const categories = useMemo(
     () =>
@@ -213,6 +230,7 @@ export function InspirationManager({
                   imageUrls={imageUrls}
                   copy={copy}
                   onEdit={openEdit}
+                  onView={(urls) => setViewer({ title: item.title, urls })}
                 />
               ))}
             </div>
@@ -226,6 +244,14 @@ export function InspirationManager({
         onClose={() => setModalOpen(false)}
         copy={copy}
         item={editing}
+      />
+
+      <InspirationLightbox
+        open={Boolean(viewer)}
+        onClose={() => setViewer(null)}
+        title={viewer?.title ?? ""}
+        urls={viewer?.urls ?? []}
+        copy={copy}
       />
     </div>
   );

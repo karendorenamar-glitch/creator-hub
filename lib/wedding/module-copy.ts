@@ -200,6 +200,8 @@ const en = {
     imageTooLarge: "The photo is larger than 8 MB.",
     imageInvalidType: "Only JPG, PNG or WEBP photos are allowed.",
     categoryHint: "Pick a suggestion or type your own",
+    view: "View",
+    photosCount: "photos",
   },
 };
 
@@ -405,6 +407,8 @@ const id: ModuleCopy = {
     imageTooLarge: "Ukuran foto melebihi 8 MB.",
     imageInvalidType: "Hanya foto JPG, PNG, atau WEBP yang diperbolehkan.",
     categoryHint: "Pilih saran atau ketik sendiri",
+    view: "Lihat",
+    photosCount: "foto",
   },
 } as ModuleCopy;
 
