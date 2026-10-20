@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { CategoryManager } from "@/components/wedding/budget/category-manager";
 import { ExpenseManager } from "@/components/wedding/budget/expense-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
 import { VendorManager } from "@/components/wedding/vendors/vendor-manager";
@@ -69,13 +68,6 @@ export default async function BudgetPage() {
   );
   const vendorOutstanding = Math.max(0, vendorCommitments - totalPaid);
 
-  const actualByCategory: Record<string, number> = {};
-  for (const expense of expenses) {
-    if (!expense.category_id) continue;
-    actualByCategory[expense.category_id] =
-      (actualByCategory[expense.category_id] ?? 0) + Number(expense.amount);
-  }
-
   const partnerOne = session.wedding.partner_one_name;
   const partnerTwo = session.wedding.partner_two_name?.trim() ?? "";
   const picOptions = [
@@ -143,14 +135,6 @@ export default async function BudgetPage() {
           copy={copy}
           locale={locale}
           picOptions={picOptions}
-        />
-      </Card>
-
-      <Card>
-        <CategoryManager
-          categories={categories}
-          actualByCategory={actualByCategory}
-          copy={copy}
         />
       </Card>
 
