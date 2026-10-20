@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 import {
   deleteRsvpAction,
   publishInvitationFormAction,
+  setInvitationTemplateAction,
 } from "@/app/wedding/(app)/invitation/actions";
+import { INVITATION_TEMPLATES } from "@/lib/wedding/invitation-templates";
 import { CopyLinkButton } from "@/components/wedding/invitation/copy-link-button";
 import { InvitationEditor } from "@/components/wedding/invitation/invitation-editor";
 import { DeleteForm } from "@/components/wedding/delete-form";
@@ -117,6 +119,57 @@ export default async function InvitationPage() {
             </button>
           </form>
         </div>
+      </Card>
+
+      <Card className="space-y-3">
+        <h2 className="font-heading text-lg font-semibold text-ink">
+          {copy.invitation.templateTitle}
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {INVITATION_TEMPLATES.map((template) => {
+            const selected = invitation?.template === template.key;
+            return (
+              <form key={template.key} action={setInvitationTemplateAction}>
+                <input type="hidden" name="template" value={template.key} />
+                <button
+                  type="submit"
+                  disabled={!invitation}
+                  className={`w-full overflow-hidden rounded-2xl border text-left transition-colors disabled:opacity-60 ${
+                    selected
+                      ? "border-olive-500 ring-2 ring-olive-200"
+                      : "border-olive-100 hover:border-olive-300"
+                  }`}
+                >
+                  <span className={`block h-20 ${template.swatch}`} />
+                  <span className="block space-y-1 bg-white p-3">
+                    <span className="block text-sm font-medium text-ink">
+                      {template.name}
+                    </span>
+                    <span className="block text-xs leading-relaxed text-ink-soft">
+                      {template.description}
+                    </span>
+                    <span
+                      className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] ${
+                        selected
+                          ? "bg-olive-100 text-olive-700"
+                          : "bg-olive-50 text-ink-soft"
+                      }`}
+                    >
+                      {selected
+                        ? copy.invitation.currentTemplate
+                        : copy.invitation.useTemplate}
+                    </span>
+                  </span>
+                </button>
+              </form>
+            );
+          })}
+        </div>
+        {!invitation ? (
+          <p className="text-xs text-ink-soft">
+            {copy.invitation.slugHint}
+          </p>
+        ) : null}
       </Card>
 
       <section className="grid gap-4 sm:grid-cols-3">

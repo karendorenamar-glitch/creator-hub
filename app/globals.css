@@ -124,6 +124,17 @@ h6,
   font-family: var(--font-body);
 }
 
+/* Luxury invitation theme: keep text readable on the dark background. */
+.inv-luxury {
+  color: #f4ead6;
+}
+.inv-luxury .text-ink {
+  color: #f4ead6;
+}
+.inv-luxury .text-ink-soft {
+  color: rgb(244 234 214 / 0.72);
+}
+
 .wedding-app h1,
 .wedding-app h2,
 .wedding-app h3,

@@ -253,6 +253,9 @@ const en = {
     hours: "hrs",
     minutes: "min",
     seconds: "sec",
+    templateTitle: "Invitation design",
+    useTemplate: "Use this design",
+    currentTemplate: "In use",
   },
 };
 
@@ -511,6 +514,9 @@ const id: ModuleCopy = {
     hours: "jam",
     minutes: "menit",
     seconds: "detik",
+    templateTitle: "Desain undangan",
+    useTemplate: "Gunakan desain ini",
+    currentTemplate: "Sedang dipakai",
   },
 } as ModuleCopy;
 

@@ -40,6 +40,7 @@ export default async function PublicInvitationPage({ params }: Params) {
         data={{
           id: row.id,
           slug,
+          template: row.template,
           content: row.content ?? {},
           partner_one_name: row.partner_one_name,
           partner_two_name: row.partner_two_name,

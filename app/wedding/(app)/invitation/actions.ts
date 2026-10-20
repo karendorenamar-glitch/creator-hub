@@ -7,7 +7,7 @@ import {
   revalidateWedding,
   type ActionResult,
 } from "@/lib/wedding/action-context";
-import type { InvitationContent } from "@/lib/wedding/db-types";
+import type { InvitationContent, InvitationTemplateKey } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { isHttpUrl, isUuid, optionalText, text } from "@/lib/wedding/validation";
 
@@ -113,6 +113,22 @@ export async function publishInvitationAction(
 
   revalidateWedding("/wedding/invitation");
   return null;
+}
+
+export async function setInvitationTemplateAction(
+  formData: FormData,
+): Promise<void> {
+  const ctx = await context();
+  const key = text(formData, "template");
+  const allowed: InvitationTemplateKey[] = ["elegant", "garden", "luxury"];
+  if (!allowed.includes(key as InvitationTemplateKey)) return;
+
+  await ctx.supabase
+    .from("invitations")
+    .update({ template: key as InvitationTemplateKey })
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  revalidateWedding("/wedding/invitation");
 }
 
 export async function publishInvitationFormAction(
