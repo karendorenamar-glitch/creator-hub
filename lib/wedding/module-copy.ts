@@ -195,6 +195,11 @@ const en = {
     imageHint: "Direct image URL starting with https://",
     linkHint: "Optional link to the original post",
     emptyFilter: "No inspiration matches this category.",
+    uploadLabel: "Upload photo",
+    uploadHint: "JPG, PNG or WEBP, max 8 MB",
+    imageTooLarge: "The photo is larger than 8 MB.",
+    imageInvalidType: "Only JPG, PNG or WEBP photos are allowed.",
+    categoryHint: "Pick a suggestion or type your own",
   },
 };
 
@@ -395,6 +400,11 @@ const id: ModuleCopy = {
     imageHint: "URL gambar langsung yang dimulai dengan https://",
     linkHint: "Tautan opsional ke unggahan asli",
     emptyFilter: "Tidak ada inspirasi untuk kategori ini.",
+    uploadLabel: "Upload foto",
+    uploadHint: "JPG, PNG, atau WEBP, maksimal 8 MB",
+    imageTooLarge: "Ukuran foto melebihi 8 MB.",
+    imageInvalidType: "Hanya foto JPG, PNG, atau WEBP yang diperbolehkan.",
+    categoryHint: "Pilih saran atau ketik sendiri",
   },
 } as ModuleCopy;
 

@@ -24,6 +24,22 @@ export default async function InspirationPage() {
   const items = data ?? [];
   const categoriesUsed = new Set(items.map((item) => item.category)).size;
 
+  const imagePaths = items
+    .map((item) => item.image_path)
+    .filter((path): path is string => Boolean(path));
+
+  const imageUrls: Record<string, string> = {};
+  if (imagePaths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from("inspiration-images")
+      .createSignedUrls(imagePaths, 60 * 60);
+    for (const entry of signed ?? []) {
+      if (entry.path && entry.signedUrl) {
+        imageUrls[entry.path] = entry.signedUrl;
+      }
+    }
+  }
+
   return (
     <div className="space-y-7">
       <PageHeader
@@ -44,7 +60,7 @@ export default async function InspirationPage() {
       </section>
 
       <Card>
-        <InspirationManager items={items} copy={copy} locale={locale} />
+        <InspirationManager items={items} imageUrls={imageUrls} copy={copy} />
       </Card>
     </div>
   );

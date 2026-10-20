@@ -13,21 +13,29 @@ import {
   inputClass,
 } from "@/components/wedding/form-kit";
 import type { InspirationItem } from "@/lib/wedding/db-types";
-import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+
+const CATEGORY_SUGGESTIONS = [
+  "Dekorasi",
+  "Attire",
+  "MUA",
+  "Hair do",
+  "Wedding ring",
+];
+
+const fileClass =
+  "w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-olive-700";
 
 export function InspirationFormModal({
   open,
   onClose,
   copy,
   item,
-  locale,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   item: InspirationItem | null;
-  locale: "en" | "id";
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
   const [state, formAction, pending] = useActionState(action, null);
@@ -53,41 +61,50 @@ export function InspirationFormModal({
             name="title"
             required
             maxLength={120}
+            placeholder="Dekorasi akad"
             defaultValue={item?.title ?? ""}
             className={inputClass}
           />
         </Field>
 
-        <Field label={copy.inspiration.category} htmlFor="inspiration-category">
-          <select
+        <Field
+          label={copy.inspiration.category}
+          htmlFor="inspiration-category"
+          hint={copy.inspiration.categoryHint}
+        >
+          <input
             id="inspiration-category"
             name="category"
-            defaultValue={item?.category ?? "other"}
+            list="inspiration-category-suggestions"
+            maxLength={80}
+            placeholder="Dekorasi"
+            defaultValue={item?.category ?? ""}
             className={inputClass}
-          >
-            {Object.keys(labelGroups.inspirationCategory).map((value) => (
-              <option key={value} value={value}>
-                {label("inspirationCategory", value, locale)}
-              </option>
+          />
+          <datalist id="inspiration-category-suggestions">
+            {CATEGORY_SUGGESTIONS.map((option) => (
+              <option key={option} value={option} />
             ))}
-          </select>
+          </datalist>
         </Field>
 
         <Field
-          label={`${copy.inspiration.imageUrl} (${copy.form.optional})`}
-          htmlFor="inspiration-image"
-          hint={copy.inspiration.imageHint}
+          label={copy.inspiration.uploadLabel}
+          htmlFor="inspiration-photo"
+          hint={copy.inspiration.uploadHint}
         >
           <input
-            id="inspiration-image"
-            name="imageUrl"
-            type="url"
-            inputMode="url"
-            placeholder="https://"
-            maxLength={1000}
-            defaultValue={item?.image_url ?? ""}
-            className={inputClass}
+            id="inspiration-photo"
+            name="image"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className={fileClass}
           />
+          {item?.image_path ? (
+            <p className="text-xs text-ink-soft">
+              {item.title} · {copy.form.saved}
+            </p>
+          ) : null}
         </Field>
 
         <Field

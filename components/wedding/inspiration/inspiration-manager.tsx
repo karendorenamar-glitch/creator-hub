@@ -2,86 +2,63 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
-import { ExternalLink, ImageOff, Pencil, Sparkles } from "lucide-react";
+import { ExternalLink, ImageOff, Pencil } from "lucide-react";
 import { deleteInspirationAction } from "@/app/wedding/(app)/inspiration/actions";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { InspirationFormModal } from "@/components/wedding/inspiration/inspiration-form-modal";
-import { Badge } from "@/components/wedding/ui";
 import type { InspirationItem } from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
-import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 function InspirationCard({
   item,
+  imageUrl,
   copy,
-  locale,
   onEdit,
 }: {
   item: InspirationItem;
+  imageUrl: string | null;
   copy: ModuleCopy;
-  locale: "en" | "id";
   onEdit: (item: InspirationItem) => void;
 }) {
   const [broken, setBroken] = useState(false);
-  const safeImage =
-    item.image_url && isHttpUrl(item.image_url) ? item.image_url : null;
   const safeLink = item.link_url && isHttpUrl(item.link_url) ? item.link_url : null;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-olive-100 bg-white">
-      <div className="relative aspect-[4/3] bg-olive-50">
-        {safeImage && !broken ? (
-          <img
-            src={safeImage}
-            alt={item.title}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={() => setBroken(true)}
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-olive-300">
-            {broken ? (
-              <ImageOff className="size-8" aria-hidden />
-            ) : (
-              <Sparkles className="size-8" aria-hidden />
-            )}
-            <span className="text-xs text-ink-soft">
-              {copy.inspiration.imageUrl}
-            </span>
-          </div>
-        )}
-        <span className="absolute left-3 top-3">
-          <Badge tone="neutral">
-            {label("inspirationCategory", item.category, locale)}
-          </Badge>
-        </span>
-      </div>
+    <div className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-olive-100 bg-white">
+      {imageUrl && !broken ? (
+        <img
+          src={imageUrl}
+          alt={item.title}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setBroken(true)}
+          className="w-full object-cover"
+        />
+      ) : (
+        <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-olive-50 text-olive-300">
+          <ImageOff className="size-8" aria-hidden />
+          <span className="text-xs text-ink-soft">
+            {copy.inspiration.uploadLabel}
+          </span>
+        </div>
+      )}
 
-      <div className="flex flex-1 flex-col gap-2 p-4">
-        <h3 className="font-heading text-sm font-semibold text-ink">
-          {item.title}
-        </h3>
+      <div className="space-y-2 p-3">
+        <p className="text-sm font-medium text-ink">{item.title}</p>
         {item.description ? (
           <p className="line-clamp-2 text-xs leading-relaxed text-ink-soft">
             {item.description}
           </p>
         ) : null}
-        {item.notes ? (
-          <p className="line-clamp-2 text-xs italic text-ink-soft/80">
-            {item.notes}
-          </p>
-        ) : null}
-
-        <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
+        <div className="flex flex-wrap items-center gap-2">
           {safeLink ? (
             <a
               href={safeLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 transition-colors hover:bg-olive-100"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100"
             >
               <ExternalLink className="size-3.5" aria-hidden />
               {copy.inspiration.openLink}
@@ -90,16 +67,12 @@ function InspirationCard({
           <button
             type="button"
             onClick={() => onEdit(item)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50 hover:text-ink"
           >
             <Pencil className="size-3.5" aria-hidden />
             {copy.form.edit}
           </button>
-          <DeleteForm
-            action={deleteInspirationAction}
-            id={item.id}
-            copy={copy}
-          />
+          <DeleteForm action={deleteInspirationAction} id={item.id} copy={copy} />
         </div>
       </div>
     </div>
@@ -108,24 +81,43 @@ function InspirationCard({
 
 export function InspirationManager({
   items,
+  imageUrls,
   copy,
-  locale,
 }: {
   items: InspirationItem[];
+  imageUrls: Record<string, string>;
   copy: ModuleCopy;
-  locale: "en" | "id";
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<InspirationItem | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
 
+  const categories = useMemo(
+    () =>
+      Array.from(
+        new Set(items.map((item) => item.category?.trim()).filter(Boolean) as string[]),
+      ).sort((a, b) => a.localeCompare(b)),
+    [items],
+  );
+
   const filtered = useMemo(
     () =>
       categoryFilter === "all"
         ? items
-        : items.filter((item) => item.category === categoryFilter),
+        : items.filter((item) => (item.category ?? "") === categoryFilter),
     [items, categoryFilter],
   );
+
+  const groups = useMemo(() => {
+    const map = new Map<string, InspirationItem[]>();
+    for (const item of filtered) {
+      const key = item.category?.trim() || copy.form.none;
+      const bucket = map.get(key) ?? [];
+      bucket.push(item);
+      map.set(key, bucket);
+    }
+    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filtered, copy.form.none]);
 
   function openCreate() {
     setEditing(null);
@@ -138,7 +130,7 @@ export function InspirationManager({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-heading text-lg font-semibold text-ink">
           {copy.inspiration.title}
@@ -153,41 +145,58 @@ export function InspirationManager({
         className={`${inputClass} w-auto min-w-44`}
       >
         <option value="all">{copy.inspiration.allCategories}</option>
-        {Object.keys(labelGroups.inspirationCategory).map((value) => (
-          <option key={value} value={value}>
-            {label("inspirationCategory", value, locale)}
+        {categories.map((category) => (
+          <option key={category} value={category}>
+            {category}
           </option>
         ))}
       </select>
 
       {items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-10 text-center text-sm text-ink-soft">
           {copy.inspiration.noItems}
         </p>
-      ) : filtered.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+      ) : groups.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-10 text-center text-sm text-ink-soft">
           {copy.inspiration.emptyFilter}
         </p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((item) => (
-            <InspirationCard
-              key={item.id}
-              item={item}
-              copy={copy}
-              locale={locale}
-              onEdit={openEdit}
-            />
-          ))}
-        </div>
+        groups.map(([category, groupItems]) => (
+          <section key={category} className="space-y-3">
+            <div className="flex items-center gap-3">
+              <h3 className="font-heading text-base font-semibold text-ink">
+                {category}
+              </h3>
+              <span className="rounded-full bg-olive-50 px-2 py-0.5 text-xs text-olive-700">
+                {groupItems.length}
+              </span>
+            </div>
+            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+              {groupItems.map((item) => (
+                <InspirationCard
+                  key={item.id}
+                  item={item}
+                  imageUrl={
+                    (item.image_path ? imageUrls[item.image_path] : null) ??
+                    (item.image_url && isHttpUrl(item.image_url)
+                      ? item.image_url
+                      : null)
+                  }
+                  copy={copy}
+                  onEdit={openEdit}
+                />
+              ))}
+            </div>
+          </section>
+        ))
       )}
 
       <InspirationFormModal
+        key={editing?.id ?? "new-inspiration"}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         copy={copy}
         item={editing}
-        locale={locale}
       />
     </div>
   );

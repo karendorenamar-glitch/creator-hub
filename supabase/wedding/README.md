@@ -14,6 +14,8 @@ files in `supabase/*.sql` are untouched and must NOT be run on the new project.
    (diskusi / dp / lunas), internal PIC, and the `vendor_payments` history table
 6. `006_payment_proofs.sql` - private `payment-proofs` storage bucket and the
    `proof_path` column on `vendor_payments`
+7. `007_inspiration_images.sql` - free-text inspiration category, uploaded
+   `image_path` column and the private `inspiration-images` bucket
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

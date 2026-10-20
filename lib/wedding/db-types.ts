@@ -175,6 +175,7 @@ export type InspirationItem = {
   category: string;
   link_url: string | null;
   image_url: string | null;
+  image_path: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
