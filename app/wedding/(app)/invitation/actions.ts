@@ -115,6 +115,102 @@ export async function publishInvitationAction(
   return null;
 }
 
+const PHOTO_BUCKET = "invitation-photos";
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+async function currentInvitation(ctx: Awaited<ReturnType<typeof context>>) {
+  const { data } = await ctx.supabase
+    .from("invitations")
+    .select("id, cover_path, couple_path")
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+  return data;
+}
+
+export async function uploadInvitationImageAction(
+  formData: FormData,
+): Promise<{ error?: string } | null> {
+  const ctx = await context();
+  const field = text(formData, "field");
+  if (field !== "cover" && field !== "couple") {
+    return { error: ctx.copy.invitation.uploadFailed };
+  }
+
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: ctx.copy.invitation.uploadFailed };
+  }
+  if (file.size > MAX_PHOTO_BYTES) {
+    return { error: ctx.copy.invitation.imageTooLarge };
+  }
+  if (!PHOTO_TYPES.includes(file.type)) {
+    return { error: ctx.copy.invitation.imageInvalidType };
+  }
+
+  const invitation = await currentInvitation(ctx);
+  if (!invitation) {
+    return { error: ctx.copy.invitation.saveFirst };
+  }
+
+  const extension = file.name.includes(".")
+    ? file.name.split(".").pop()!.toLowerCase()
+    : "jpg";
+  const path = `${ctx.session.wedding.id}/${field}-${crypto.randomUUID()}.${extension}`;
+
+  const { error: uploadError } = await ctx.supabase.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (uploadError) return { error: ctx.copy.errors.generic };
+
+  const { error: updateError } = await ctx.supabase
+    .from("invitations")
+    .update(
+      field === "cover" ? { cover_path: path } : { couple_path: path },
+    )
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (updateError) {
+    await ctx.supabase.storage.from(PHOTO_BUCKET).remove([path]);
+    return { error: actionError(updateError, ctx.copy) };
+  }
+
+  const previous =
+    field === "cover" ? invitation.cover_path : invitation.couple_path;
+  if (previous) {
+    await ctx.supabase.storage.from(PHOTO_BUCKET).remove([previous]);
+  }
+
+  revalidateWedding("/wedding/invitation");
+  return null;
+}
+
+export async function removeInvitationImageAction(
+  formData: FormData,
+): Promise<void> {
+  const ctx = await context();
+  const field = text(formData, "field");
+  if (field !== "cover" && field !== "couple") return;
+
+  const invitation = await currentInvitation(ctx);
+  if (!invitation) return;
+
+  const path =
+    field === "cover" ? invitation.cover_path : invitation.couple_path;
+
+  await ctx.supabase
+    .from("invitations")
+    .update(field === "cover" ? { cover_path: null } : { couple_path: null })
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (path) {
+    await ctx.supabase.storage.from(PHOTO_BUCKET).remove([path]);
+  }
+
+  revalidateWedding("/wedding/invitation");
+}
+
 export async function setInvitationTemplateAction(
   formData: FormData,
 ): Promise<void> {

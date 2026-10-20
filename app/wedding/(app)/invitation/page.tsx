@@ -67,6 +67,14 @@ export default async function InvitationPage() {
 
   const isPublished = invitation?.status === "published";
 
+  const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/invitation-photos`;
+  const coverUrl = invitation?.cover_path
+    ? `${storageBase}/${invitation.cover_path}`
+    : null;
+  const coupleUrl = invitation?.couple_path
+    ? `${storageBase}/${invitation.couple_path}`
+    : null;
+
   return (
     <div className="space-y-7">
       <PageHeader
@@ -195,6 +203,8 @@ export default async function InvitationPage() {
           copy={copy}
           invitation={invitation ?? null}
           defaultSlug={defaultSlug}
+          coverUrl={coverUrl}
+          coupleUrl={coupleUrl}
         />
       </Card>
 

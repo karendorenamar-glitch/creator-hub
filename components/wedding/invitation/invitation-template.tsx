@@ -13,6 +13,8 @@ export type PublicInvitation = {
   slug: string;
   template: InvitationTemplateKey;
   content: InvitationContent;
+  coverUrl: string | null;
+  coupleUrl: string | null;
   partner_one_name: string;
   partner_two_name: string | null;
   wedding_date: string | null;
@@ -138,9 +140,9 @@ export function InvitationTemplate({
   if (!opened) {
     return (
       <main className={`relative flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 text-center ${theme.coverBg}`}>
-        {content.coverImageUrl ? (
+        {(data.coverUrl ?? content.coverImageUrl) ? (
           <img
-            src={content.coverImageUrl}
+            src={data.coverUrl ?? content.coverImageUrl ?? ""}
             alt=""
             className="absolute inset-0 size-full object-cover"
           />
@@ -212,9 +214,9 @@ export function InvitationTemplate({
           <Countdown date={data.wedding_date} copy={copy} />
         </div>
 
-        {content.coupleImageUrl ? (
+        {(data.coupleUrl ?? content.coupleImageUrl) ? (
           <img
-            src={content.coupleImageUrl}
+            src={data.coupleUrl ?? content.coupleImageUrl ?? ""}
             alt=""
             className="mt-10 w-full max-w-md rounded-3xl object-cover"
           />

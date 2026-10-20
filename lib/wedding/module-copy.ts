@@ -256,6 +256,15 @@ const en = {
     templateTitle: "Invitation design",
     useTemplate: "Use this design",
     currentTemplate: "In use",
+    uploadPhoto: "Upload photo",
+    replacePhoto: "Replace photo",
+    removePhoto: "Remove photo",
+    uploading: "Uploading...",
+    uploadFailed: "Upload failed. Please try again.",
+    imageTooLarge: "The image is larger than 5 MB.",
+    imageInvalidType: "Only JPG, PNG or WEBP images are allowed.",
+    saveFirst: "Save the invitation once before uploading photos.",
+    uploadHint: "JPG, PNG or WEBP, max 5 MB. Large photos are compressed automatically.",
   },
 };
 
@@ -517,6 +526,15 @@ const id: ModuleCopy = {
     templateTitle: "Desain undangan",
     useTemplate: "Gunakan desain ini",
     currentTemplate: "Sedang dipakai",
+    uploadPhoto: "Upload foto",
+    replacePhoto: "Ganti foto",
+    removePhoto: "Hapus foto",
+    uploading: "Mengunggah...",
+    uploadFailed: "Upload gagal. Coba lagi.",
+    imageTooLarge: "Ukuran foto melebihi 5 MB.",
+    imageInvalidType: "Hanya foto JPG, PNG, atau WEBP yang diperbolehkan.",
+    saveFirst: "Simpan undangan sekali sebelum mengunggah foto.",
+    uploadHint: "JPG, PNG, atau WEBP, maksimal 5 MB. Foto besar dikompres otomatis.",
   },
 } as ModuleCopy;
 

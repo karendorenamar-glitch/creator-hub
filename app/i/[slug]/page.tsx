@@ -34,6 +34,8 @@ export default async function PublicInvitationPage({ params }: Params) {
   const locale = await getLocale();
   const copy = moduleCopy[locale];
 
+  const storageBase = `${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}/storage/v1/object/public/invitation-photos`;
+
   return (
     <div className="wedding-app">
       <InvitationTemplate
@@ -42,6 +44,8 @@ export default async function PublicInvitationPage({ params }: Params) {
           slug,
           template: row.template,
           content: row.content ?? {},
+          coverUrl: row.cover_path ? `${storageBase}/${row.cover_path}` : null,
+          coupleUrl: row.couple_path ? `${storageBase}/${row.couple_path}` : null,
           partner_one_name: row.partner_one_name,
           partner_two_name: row.partner_two_name,
           wedding_date: row.wedding_date,

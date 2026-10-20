@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { Loader2, Save } from "lucide-react";
 import { saveInvitationAction } from "@/app/wedding/(app)/invitation/actions";
 import { Field, FormAlert, inputClass } from "@/components/wedding/form-kit";
+import { ImageUploadField } from "@/components/wedding/invitation/image-upload-field";
 import type { Invitation, InvitationContent } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -11,10 +12,14 @@ export function InvitationEditor({
   copy,
   invitation,
   defaultSlug,
+  coverUrl,
+  coupleUrl,
 }: {
   copy: ModuleCopy;
   invitation: Invitation | null;
   defaultSlug: string;
+  coverUrl: string | null;
+  coupleUrl: string | null;
 }) {
   const [state, formAction, pending] = useActionState(
     saveInvitationAction,
@@ -154,28 +159,21 @@ export function InvitationEditor({
             className={inputClass}
           />
         </Field>
-        <Field label={copy.invitation.coverImageUrl} htmlFor="invitation-cover">
-          <input
-            id="invitation-cover"
-            name="coverImageUrl"
-            type="url"
-            maxLength={1000}
-            placeholder="https://"
-            defaultValue={content.coverImageUrl ?? ""}
-            className={inputClass}
-          />
-        </Field>
-        <Field label={copy.invitation.coupleImageUrl} htmlFor="invitation-couple">
-          <input
-            id="invitation-couple"
-            name="coupleImageUrl"
-            type="url"
-            maxLength={1000}
-            placeholder="https://"
-            defaultValue={content.coupleImageUrl ?? ""}
-            className={inputClass}
-          />
-        </Field>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ImageUploadField
+          field="cover"
+          label={copy.invitation.coverImageUrl}
+          currentUrl={coverUrl}
+          copy={copy}
+        />
+        <ImageUploadField
+          field="couple"
+          label={copy.invitation.coupleImageUrl}
+          currentUrl={coupleUrl}
+          copy={copy}
+        />
       </div>
 
       <Field label={copy.invitation.musicUrl} htmlFor="invitation-music">
