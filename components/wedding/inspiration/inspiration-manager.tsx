@@ -38,16 +38,16 @@ function InspirationCard({
   const extraCount = Math.max(0, photoUrls.length - 1);
 
   return (
-    <div className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-olive-100 bg-white">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-olive-100 bg-white">
       {mainUrl && !broken ? (
-        <div className="relative flex items-center justify-center bg-olive-50/60 p-1">
+        <div className="relative flex aspect-[4/5] w-full items-center justify-center bg-olive-50/60 p-1">
           <img
             src={mainUrl}
             alt={item.title}
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={() => setBroken(true)}
-            className="max-h-[70vh] w-full object-contain"
+            className="max-h-full max-w-full object-contain"
           />
           {extraCount > 0 ? (
             <span className="absolute right-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-xs font-medium text-white">
@@ -56,7 +56,7 @@ function InspirationCard({
           ) : null}
         </div>
       ) : (
-        <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 bg-olive-50 text-olive-300">
+        <div className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 bg-olive-50 text-olive-300">
           <ImageOff className="size-8" aria-hidden />
           <span className="text-xs text-ink-soft">
             {copy.inspiration.uploadLabel}
@@ -79,14 +79,14 @@ function InspirationCard({
         </div>
       ) : null}
 
-      <div className="space-y-2 p-3">
+      <div className="flex flex-1 flex-col gap-2 p-3">
         <p className="text-sm font-medium text-ink">{item.title}</p>
         {item.description ? (
           <p className="line-clamp-2 text-xs leading-relaxed text-ink-soft">
             {item.description}
           </p>
         ) : null}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
           {photoUrls.length > 0 ? (
             <button
               type="button"
@@ -221,7 +221,7 @@ export function InspirationManager({
                 {groupItems.length}
               </span>
             </div>
-            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3">
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
               {groupItems.map((item) => (
                 <InspirationCard
                   key={item.id}
