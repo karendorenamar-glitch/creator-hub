@@ -51,7 +51,7 @@ export function VendorFormModal({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label={`${copy.vendors.name} (${copy.form.optional})`}
+            label={`${copy.vendors.name}`}
             htmlFor="vendor-name"
           >
             <input
@@ -64,7 +64,7 @@ export function VendorFormModal({
           </Field>
 
           <Field
-            label={`${copy.vendors.category} (${copy.form.optional})`}
+            label={`${copy.vendors.category}`}
             htmlFor="vendor-category"
           >
             <input
@@ -96,7 +96,7 @@ export function VendorFormModal({
           </Field>
 
           <Field
-            label={`${copy.vendors.picVendor} (${copy.form.optional})`}
+            label={`${copy.vendors.picVendor}`}
             htmlFor="vendor-contact"
           >
             <input
@@ -109,7 +109,7 @@ export function VendorFormModal({
           </Field>
 
           <Field
-            label={`${copy.vendors.picPhone} (${copy.form.optional})`}
+            label={`${copy.vendors.picPhone}`}
             htmlFor="vendor-phone"
           >
             <input
@@ -123,7 +123,7 @@ export function VendorFormModal({
           </Field>
 
           <Field
-            label={`${copy.vendors.email} (${copy.form.optional})`}
+            label={`${copy.vendors.email}`}
             htmlFor="vendor-email"
           >
             <input
@@ -203,7 +203,7 @@ export function VendorFormModal({
         </div>
 
         <Field
-          label={`${copy.vendors.notes} (${copy.form.optional})`}
+          label={`${copy.vendors.notes}`}
           htmlFor="vendor-notes"
         >
           <textarea
