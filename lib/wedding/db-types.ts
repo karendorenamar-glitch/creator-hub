@@ -10,7 +10,7 @@ export type SubscriptionStatus = "inactive" | "active" | "expired" | "canceled";
 export type RsvpStatus = "pending" | "attending" | "not_attending";
 export type InvitationStatus = "not_sent" | "sent";
 export type BookingStatus = "considering" | "contacted" | "booked" | "cancelled";
-export type PaymentStatus = "unpaid" | "deposit_paid" | "partially_paid" | "paid";
+export type PaymentStatus = "diskusi" | "dp" | "lunas";
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type TaskPriority = "low" | "medium" | "high";
 
@@ -99,6 +99,7 @@ export type Vendor = {
   amount_paid: number;
   booking_status: BookingStatus;
   payment_status: PaymentStatus;
+  pic_internal: string | null;
   booking_date: string | null;
   event_service_date: string | null;
   next_payment_due: string | null;
@@ -106,6 +107,17 @@ export type Vendor = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type VendorPayment = {
+  id: string;
+  wedding_id: string;
+  vendor_id: string;
+  amount: number;
+  paid_on: string;
+  method: string | null;
+  notes: string | null;
+  created_at: string;
 };
 
 export type Expense = {
@@ -191,6 +203,7 @@ export type WeddingDatabase = {
       subscription_payments: Table<SubscriptionPayment>;
       budget_categories: Table<BudgetCategory>;
       vendors: Table<Vendor>;
+      vendor_payments: Table<VendorPayment>;
       expenses: Table<Expense>;
       guests: Table<Guest>;
       checklist_tasks: Table<ChecklistTask>;

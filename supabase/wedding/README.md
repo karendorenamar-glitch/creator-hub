@@ -10,6 +10,13 @@ files in `supabase/*.sql` are untouched and must NOT be run on the new project.
 2. `002_features.sql` - budget, vendors, expenses, guests, checklist, inspiration, RLS
 3. `003_functions.sql` - `create_wedding()` and `accept_wedding_invite()`
 4. `004_open_access_toggle.sql` - optional subscription switch (open access by default)
+5. `005_vendor_billing.sql` - free-text vendor category, 3-state payment status
+   (diskusi / dp / lunas), internal PIC, and the `vendor_payments` history table
+
+`005` is required for the Budget tab: vendor payments are stored as individual
+rows, so "total sudah dibayarkan" is never counted twice. Existing
+`vendors.amount_paid` values are preserved as one opening payment per vendor,
+and a trigger keeps that column in sync afterwards. No rows are deleted.
 
 `004` is the temporary paywall switch. It never disables RLS or ownership: a user
 must still be a member of the wedding. It only makes the subscription optional.

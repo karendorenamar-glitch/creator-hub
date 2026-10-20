@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { CategoryManager } from "@/components/wedding/budget/category-manager";
 import { ExpenseManager } from "@/components/wedding/budget/expense-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
+import { VendorManager } from "@/components/wedding/vendors/vendor-manager";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { formatIDR, percentOf } from "@/lib/wedding/format";
@@ -9,7 +10,7 @@ import { moduleCopy } from "@/lib/wedding/module-copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
-export const metadata = { title: "Budget & Expenses" };
+export const metadata = { title: "Anggaran Menikah" };
 
 export default async function BudgetPage() {
   const session = await loadWeddingSession();
@@ -19,35 +20,43 @@ export default async function BudgetPage() {
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  const [categoriesResult, expensesResult, vendorsResult] = await Promise.all([
-    supabase
-      .from("budget_categories")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("expenses")
-      .select("*")
-      .order("due_date", { ascending: true, nullsFirst: false }),
-    supabase.from("vendors").select("id, name").order("name", { ascending: true }),
-  ]);
+  const [categoriesResult, expensesResult, vendorsResult, paymentsResult] =
+    await Promise.all([
+      supabase
+        .from("budget_categories")
+        .select("*")
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("expenses")
+        .select("*")
+        .order("due_date", { ascending: true, nullsFirst: false }),
+      supabase.from("vendors").select("*").order("name", { ascending: true }),
+      supabase
+        .from("vendor_payments")
+        .select("*")
+        .order("paid_on", { ascending: false }),
+    ]);
 
   const categories = categoriesResult.data ?? [];
   const expenses = expensesResult.data ?? [];
   const vendors = vendorsResult.data ?? [];
+  const payments = paymentsResult.data ?? [];
 
   const totalBudget = Number(session.wedding.total_budget ?? 0);
-  const totalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
-  const totalPaid = expenses.reduce(
-    (sum, item) => sum + Number(item.amount_paid),
+  const totalPaid = payments.reduce((sum, item) => sum + Number(item.amount), 0);
+  const remaining = totalBudget - totalPaid;
+  const paidPercent = percentOf(totalPaid, totalBudget);
+
+  const vendorEstimates = vendors.reduce(
+    (sum, vendor) => sum + Number(vendor.quoted_price ?? 0),
     0,
   );
-  const remaining = totalBudget - totalExpenses;
-  const usedPercent = percentOf(totalExpenses, totalBudget);
-  const plannedTotal = categories.reduce(
-    (sum, category) => sum + Number(category.planned_amount),
+  const vendorCommitments = vendors.reduce(
+    (sum, vendor) => sum + Number(vendor.agreed_price ?? 0),
     0,
   );
+  const vendorOutstanding = Math.max(0, vendorCommitments - totalPaid);
 
   const actualByCategory: Record<string, number> = {};
   for (const expense of expenses) {
@@ -56,38 +65,77 @@ export default async function BudgetPage() {
       (actualByCategory[expense.category_id] ?? 0) + Number(expense.amount);
   }
 
+  const partnerOne = session.wedding.partner_one_name;
+  const partnerTwo = session.wedding.partner_two_name?.trim() ?? "";
+  const picOptions = [
+    partnerOne,
+    partnerTwo,
+    `Ortu ${partnerOne}`,
+    partnerTwo ? `Ortu ${partnerTwo}` : "",
+  ].filter(Boolean);
+
   return (
     <div className="space-y-7">
       <PageHeader title={copy.budget.title} subtitle={copy.budget.subtitle} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={copy.budget.totalBudget} value={formatIDR(totalBudget)} />
         <StatCard
-          label={copy.budget.spent}
-          value={formatIDR(totalExpenses)}
+          label={copy.budget.totalBudget}
+          value={formatIDR(totalBudget)}
+        />
+        <StatCard
+          label={copy.budget.paidTotal}
+          value={formatIDR(totalPaid)}
           tone="champagne"
         />
-        <StatCard label={copy.budget.paid} value={formatIDR(totalPaid)} />
         <StatCard
           label={copy.budget.remaining}
           value={formatIDR(remaining)}
-          hint={
-            remaining < 0
-              ? copy.budget.overBudget
-              : `${copy.budget.planned}: ${formatIDR(plannedTotal)}`
-          }
+          hint={remaining < 0 ? copy.budget.overBudget : undefined}
+        />
+        <Card className="flex flex-col justify-between gap-3 p-5">
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+            {copy.budget.percentPaid}
+          </p>
+          <div>
+            <p className="text-2xl font-semibold tracking-tight text-ink">
+              {paidPercent}%
+            </p>
+            <div className="mt-2">
+              <Progress value={paidPercent} />
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label={copy.budget.vendorEstimates}
+          value={formatIDR(vendorEstimates)}
+        />
+        <StatCard
+          label={copy.budget.vendorCommitments}
+          value={formatIDR(vendorCommitments)}
+          tone="champagne"
+        />
+        <StatCard
+          label={copy.budget.vendorOutstanding}
+          value={formatIDR(vendorOutstanding)}
         />
       </section>
 
-      <Card className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
-            {copy.budget.usage}
-          </p>
-          <p className="text-sm font-semibold text-ink">{usedPercent}%</p>
-        </div>
-        <Progress value={usedPercent} />
+      <Card>
         <TotalBudgetForm copy={copy} totalBudget={totalBudget} />
+      </Card>
+
+      <Card>
+        <VendorManager
+          vendors={vendors}
+          payments={payments}
+          copy={copy}
+          locale={locale}
+          picOptions={picOptions}
+        />
       </Card>
 
       <Card>
@@ -102,7 +150,10 @@ export default async function BudgetPage() {
         <ExpenseManager
           expenses={expenses}
           categories={categories}
-          vendors={vendors}
+          vendors={vendors.map((vendor) => ({
+            id: vendor.id,
+            name: vendor.name || copy.vendors.unnamed,
+          }))}
           copy={copy}
           locale={locale}
         />

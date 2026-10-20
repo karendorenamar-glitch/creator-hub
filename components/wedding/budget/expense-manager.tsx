@@ -13,10 +13,9 @@ import { label } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 const statusTone = {
-  paid: "success",
-  partially_paid: "warning",
-  deposit_paid: "warning",
-  unpaid: "muted",
+  lunas: "success",
+  dp: "warning",
+  diskusi: "muted",
 } as const;
 
 export function ExpenseManager({
@@ -99,7 +98,7 @@ export function ExpenseManager({
           className={`${inputClass} w-auto min-w-40`}
         >
           <option value="all">{copy.vendors.allStatuses}</option>
-          {(["unpaid", "deposit_paid", "partially_paid", "paid"] as const).map(
+          {(["diskusi", "dp", "lunas"] as const).map(
             (status) => (
               <option key={status} value={status}>
                 {label("paymentStatus", status, locale)}
@@ -122,7 +121,7 @@ export function ExpenseManager({
           {filtered.map((expense) => {
             const days = daysFromToday(expense.due_date);
             const overdue =
-              days !== null && days < 0 && expense.payment_status !== "paid";
+              days !== null && days < 0 && expense.payment_status !== "lunas";
             return (
               <li
                 key={expense.id}

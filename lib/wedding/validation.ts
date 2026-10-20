@@ -75,14 +75,14 @@ export function enumValue<T extends string>(
   return allowed.includes(value) ? value : fallback;
 }
 
-/** Keeps the stored status consistent with the amounts. */
+/** Keeps the expense status consistent with its amounts (legacy expenses). */
 export function paymentStatusFor(
   amount: number,
   amountPaid: number,
-): "unpaid" | "deposit_paid" | "partially_paid" | "paid" {
-  if (amount > 0 && amountPaid >= amount) return "paid";
-  if (amountPaid > 0) return "partially_paid";
-  return "unpaid";
+): "diskusi" | "dp" | "lunas" {
+  if (amount > 0 && amountPaid >= amount) return "lunas";
+  if (amountPaid > 0) return "dp";
+  return "diskusi";
 }
 
 export function firstError(errors: (string | null | undefined)[]) {

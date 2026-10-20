@@ -101,6 +101,7 @@ export async function createWeddingAction(
   const totalBudget = parseAmount(text(formData, "totalBudget"));
 
   if (!partnerOne) return { error: copy.onboarding.required };
+  if (!partnerTwo) return { error: copy.onboarding.partnerTwoRequired };
   if (totalBudget === null) return { error: copy.onboarding.budgetInvalid };
   if (estimatedGuests === null && text(formData, "estimatedGuests")) {
     return { error: copy.onboarding.guestsInvalid };
@@ -145,6 +146,8 @@ export async function updateWeddingAction(
   const totalBudget = parseAmount(text(formData, "totalBudget"));
 
   if (!partnerOne) return { error: copy.settings.partnerOneRequired };
+  if (!partnerTwo) return { error: copy.onboarding.partnerTwoRequired };
+
   if (totalBudget === null) return { error: copy.settings.budgetInvalid };
   if (estimatedGuests === null && text(formData, "estimatedGuests")) {
     return { error: copy.settings.guestsInvalid };

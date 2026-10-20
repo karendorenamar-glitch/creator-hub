@@ -4,10 +4,9 @@ import type { AppLocale } from "@/lib/i18n/types";
 type Pair = readonly [string, string];
 
 const paymentStatus = {
-  unpaid: ["Unpaid", "Belum dibayar"],
-  deposit_paid: ["Deposit paid", "Deposit dibayar"],
-  partially_paid: ["Partly paid", "Dibayar sebagian"],
-  paid: ["Paid", "Lunas"],
+  diskusi: ["Discussion", "Diskusi"],
+  dp: ["Down payment (DP)", "DP"],
+  lunas: ["Paid off", "Lunas"],
 } as const;
 
 const bookingStatus = {

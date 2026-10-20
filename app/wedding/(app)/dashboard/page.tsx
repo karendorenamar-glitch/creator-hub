@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   const copy = weddingCopy[locale];
   const supabase = await createWeddingClient();
 
-  const [expensesResult, guestsResult, vendorsResult, tasksResult] =
+  const [expensesResult, guestsResult, vendorsResult, tasksResult, paymentsResult] =
     await Promise.all([
       supabase
         .from("expenses")
@@ -44,6 +44,10 @@ export default async function DashboardPage() {
         .from("checklist_tasks")
         .select("id, title, status, due_date, priority")
         .order("due_date", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("vendor_payments")
+        .select("id, vendor_id, amount, paid_on")
+        .order("paid_on", { ascending: false }),
     ]);
 
   const expenses = expensesResult.data ?? [];
@@ -51,11 +55,12 @@ export default async function DashboardPage() {
   const vendors = vendorsResult.data ?? [];
   const tasks = tasksResult.data ?? [];
 
+  const payments = paymentsResult.data ?? [];
+
   const totalBudget = Number(session.wedding.total_budget ?? 0);
-  const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount ?? 0), 0);
-  const totalPaid = expenses.reduce((sum, e) => sum + Number(e.amount_paid ?? 0), 0);
-  const remaining = totalBudget - totalExpenses;
-  const usedPercent = percentOf(totalExpenses, totalBudget);
+  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
+  const remaining = totalBudget - totalPaid;
+  const usedPercent = percentOf(totalPaid, totalBudget);
 
   const attending = guests.filter((g) => g.rsvp_status === "attending").length;
   const pendingRsvp = guests.filter((g) => g.rsvp_status === "pending").length;
@@ -68,7 +73,7 @@ export default async function DashboardPage() {
   const upcomingPayments = expenses
     .filter(
       (e) =>
-        e.payment_status !== "paid" &&
+        e.payment_status !== "lunas" &&
         e.due_date &&
         (daysFromToday(e.due_date) ?? -1) >= 0,
     )
@@ -117,8 +122,7 @@ export default async function DashboardPage() {
         />
         <StatCard
           label={copy.dashboard.spent}
-          value={formatIDR(totalExpenses)}
-          hint={`${formatIDR(totalPaid)} ${copy.dashboard.paid.toLowerCase()}`}
+          value={formatIDR(totalPaid)}
           tone="champagne"
           icon={<CheckCircle2 className="size-4" aria-hidden />}
         />

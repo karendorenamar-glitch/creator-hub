@@ -1,0 +1,108 @@
+"use client";
+
+import { useActionState, useEffect } from "react";
+import { addVendorPaymentAction } from "@/app/wedding/(app)/vendors/actions";
+import { FormModal } from "@/components/wedding/form-modal";
+import {
+  Field,
+  FormAlert,
+  ModalFooter,
+  inputClass,
+} from "@/components/wedding/form-kit";
+import type { ModuleCopy } from "@/lib/wedding/module-copy";
+
+export function PaymentFormModal({
+  open,
+  onClose,
+  copy,
+  vendorId,
+  vendorName,
+  suggestedAmount,
+}: {
+  open: boolean;
+  onClose: () => void;
+  copy: ModuleCopy;
+  vendorId: string | null;
+  vendorName: string;
+  suggestedAmount: number;
+}) {
+  const [state, formAction, pending] = useActionState(
+    addVendorPaymentAction,
+    null,
+  );
+
+  useEffect(() => {
+    if (state?.success) onClose();
+  }, [state, onClose]);
+
+  return (
+    <FormModal open={open} onClose={onClose} title={copy.vendors.pay}>
+      <form action={formAction} className="space-y-4">
+        <p className="text-sm text-ink-soft">{vendorName}</p>
+        {vendorId ? (
+          <input type="hidden" name="vendorId" value={vendorId} />
+        ) : null}
+        <FormAlert error={state?.error} />
+
+        <Field label={copy.vendors.paymentAmount} htmlFor="payment-amount">
+          <input
+            id="payment-amount"
+            name="amount"
+            type="number"
+            min={1}
+            step={1000}
+            inputMode="numeric"
+            required
+            defaultValue={suggestedAmount > 0 ? suggestedAmount : ""}
+            className={inputClass}
+          />
+        </Field>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={copy.vendors.paymentDate} htmlFor="payment-date">
+            <input
+              id="payment-date"
+              name="paidOn"
+              type="date"
+              defaultValue={new Date().toISOString().slice(0, 10)}
+              className={inputClass}
+            />
+          </Field>
+          <Field
+            label={`${copy.vendors.paymentMethod} (${copy.form.optional})`}
+            htmlFor="payment-method"
+          >
+            <input
+              id="payment-method"
+              name="method"
+              maxLength={60}
+              placeholder="Transfer, tunai..."
+              className={inputClass}
+            />
+          </Field>
+        </div>
+
+        <Field
+          label={`${copy.vendors.paymentNotes} (${copy.form.optional})`}
+          htmlFor="payment-notes"
+        >
+          <textarea
+            id="payment-notes"
+            name="notes"
+            rows={2}
+            maxLength={1000}
+            className={inputClass}
+          />
+        </Field>
+
+        <ModalFooter
+          pending={pending}
+          submitLabel={copy.form.save}
+          savingLabel={copy.form.saving}
+          cancelLabel={copy.form.cancel}
+          onCancel={onClose}
+        />
+      </form>
+    </FormModal>
+  );
+}

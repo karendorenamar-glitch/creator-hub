@@ -12,26 +12,11 @@ import {
   enumValue,
   isDateString,
   isEmail,
-  isHttpUrl,
   isUuid,
   optionalText,
   parseMoney,
   text,
 } from "@/lib/wedding/validation";
-
-const VENDOR_CATEGORIES = [
-  "venue",
-  "catering",
-  "photography",
-  "videography",
-  "makeup_artist",
-  "wedding_attire",
-  "decoration",
-  "entertainment",
-  "invitations",
-  "souvenirs",
-  "other",
-] as const;
 
 const BOOKING_STATUSES = [
   "considering",
@@ -40,30 +25,29 @@ const BOOKING_STATUSES = [
   "cancelled",
 ] as const;
 
+const PAYMENT_STATUSES = ["diskusi", "dp", "lunas"] as const;
+
 async function context() {
   const ctx = await getActionContext();
   if (!ctx) redirect("/wedding/login");
   return ctx;
 }
 
+function revalidateVendorPages() {
+  revalidateWedding("/wedding/budget", "/wedding/dashboard");
+}
+
 type VendorValues = {
   name: string;
-  category: (typeof VENDOR_CATEGORIES)[number];
+  category: string;
   contact_name: string | null;
   phone: string | null;
   email: string | null;
-  website: string | null;
+  pic_internal: string | null;
+  notes: string | null;
   quoted_price: number | null;
   agreed_price: number | null;
-  deposit_amount: number;
-  amount_paid: number;
-  booking_status: (typeof BOOKING_STATUSES)[number];
-  payment_status: "unpaid" | "partially_paid" | "paid";
-  booking_date: string | null;
-  event_service_date: string | null;
-  next_payment_due: string | null;
-  contract_notes: string | null;
-  notes: string | null;
+  payment_status: (typeof PAYMENT_STATUSES)[number];
 };
 
 function readMoneyOrNull(
@@ -77,84 +61,40 @@ function readMoneyOrNull(
   return { ok: true, value: parsed };
 }
 
-function readDateOrNull(
-  formData: FormData,
-  key: string,
-): { ok: true; value: string | null } | { ok: false } {
-  const raw = text(formData, key);
-  if (!raw) return { ok: true, value: null };
-  if (!isDateString(raw)) return { ok: false };
-  return { ok: true, value: raw };
-}
-
 function readVendor(
   formData: FormData,
   copy: ModuleCopy,
 ): { ok: true; values: VendorValues } | { ok: false; error: string } {
-  const name = text(formData, "name").slice(0, 120);
-  if (!name) return { ok: false, error: copy.form.required };
-
   const email = optionalText(formData, "email", 200);
   if (email && !isEmail(email)) {
     return { ok: false, error: copy.form.invalidEmail };
   }
 
-  const website = optionalText(formData, "website", 500);
-  if (website && !isHttpUrl(website)) {
-    return { ok: false, error: copy.form.invalidUrl };
-  }
-
   const quoted = readMoneyOrNull(formData, "quotedPrice");
   const agreed = readMoneyOrNull(formData, "agreedPrice");
-  const paid = readMoneyOrNull(formData, "amountPaid");
-  const deposit = readMoneyOrNull(formData, "depositAmount");
-
-  if (!quoted.ok || !agreed.ok || !paid.ok || !deposit.ok) {
+  if (!quoted.ok || !agreed.ok) {
     return { ok: false, error: copy.form.invalidNumber };
   }
-
-  const bookingDate = readDateOrNull(formData, "bookingDate");
-  const serviceDate = readDateOrNull(formData, "serviceDate");
-  const nextPayment = readDateOrNull(formData, "nextPaymentDue");
-
-  if (!bookingDate.ok || !serviceDate.ok || !nextPayment.ok) {
-    return { ok: false, error: copy.form.invalidDate };
-  }
-
-  const amountPaid = paid.value ?? 0;
-  const referencePrice = agreed.value ?? quoted.value;
-  const paymentStatus =
-    referencePrice !== null && referencePrice > 0 && amountPaid >= referencePrice
-      ? "paid"
-      : amountPaid > 0
-        ? "partially_paid"
-        : "unpaid";
 
   return {
     ok: true,
     values: {
-      name,
-      category: enumValue(formData, "category", VENDOR_CATEGORIES, "other"),
+      // All identity fields are optional on purpose.
+      name: text(formData, "name").slice(0, 120),
+      category: text(formData, "category").slice(0, 80),
       contact_name: optionalText(formData, "contactName", 120),
       phone: optionalText(formData, "phone", 40),
       email,
-      website,
+      pic_internal: optionalText(formData, "picInternal", 120),
+      notes: optionalText(formData, "notes", 4000),
       quoted_price: quoted.value,
       agreed_price: agreed.value,
-      deposit_amount: deposit.value ?? 0,
-      amount_paid: amountPaid,
-      booking_status: enumValue(
+      payment_status: enumValue(
         formData,
-        "bookingStatus",
-        BOOKING_STATUSES,
-        "considering",
+        "paymentStatus",
+        PAYMENT_STATUSES,
+        "diskusi",
       ),
-      payment_status: paymentStatus,
-      booking_date: bookingDate.value,
-      event_service_date: serviceDate.value,
-      next_payment_due: nextPayment.value,
-      contract_notes: optionalText(formData, "contractNotes", 4000),
-      notes: optionalText(formData, "notes", 4000),
     },
   };
 }
@@ -169,12 +109,18 @@ export async function createVendorAction(
 
   const { error } = await ctx.supabase.from("vendors").insert({
     wedding_id: ctx.session.wedding.id,
+    booking_status: enumValue(
+      formData,
+      "bookingStatus",
+      BOOKING_STATUSES,
+      "considering",
+    ),
     ...parsed.values,
   });
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/vendors", "/wedding/budget");
+  revalidateVendorPages();
   return { success: ctx.copy.form.saved };
 }
 
@@ -197,7 +143,7 @@ export async function updateVendorAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/vendors", "/wedding/budget");
+  revalidateVendorPages();
   return { success: ctx.copy.form.saved };
 }
 
@@ -208,7 +154,7 @@ export async function deleteVendorAction(
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 
-  // Expenses keep their wedding_id; only the vendor link is cleared (SET NULL).
+  // Payment rows are removed by the ON DELETE CASCADE on vendor_payments.
   const { error } = await ctx.supabase
     .from("vendors")
     .delete()
@@ -217,6 +163,58 @@ export async function deleteVendorAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/vendors", "/wedding/budget");
+  revalidateVendorPages();
+  return null;
+}
+
+export async function addVendorPaymentAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const vendorId = text(formData, "vendorId");
+  if (!isUuid(vendorId)) return { error: ctx.copy.errors.notFound };
+
+  const amount = parseMoney(text(formData, "amount"));
+  if (amount === null || amount <= 0) {
+    return { error: ctx.copy.form.invalidNumber };
+  }
+
+  const paidOn = text(formData, "paidOn") || new Date().toISOString().slice(0, 10);
+  if (!isDateString(paidOn)) {
+    return { error: ctx.copy.form.invalidDate };
+  }
+
+  const { error } = await ctx.supabase.from("vendor_payments").insert({
+    wedding_id: ctx.session.wedding.id,
+    vendor_id: vendorId,
+    amount,
+    paid_on: paidOn,
+    method: optionalText(formData, "method", 60),
+    notes: optionalText(formData, "notes", 1000),
+  });
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  revalidateVendorPages();
+  return { success: ctx.copy.form.saved };
+}
+
+export async function deleteVendorPaymentAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const { error } = await ctx.supabase
+    .from("vendor_payments")
+    .delete()
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  revalidateVendorPages();
   return null;
 }

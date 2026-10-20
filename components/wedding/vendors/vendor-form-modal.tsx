@@ -22,12 +22,14 @@ export function VendorFormModal({
   copy,
   vendor,
   locale,
+  picOptions,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   vendor: Vendor | null;
   locale: "en" | "id";
+  picOptions: string[];
 }) {
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
@@ -47,48 +49,54 @@ export function VendorFormModal({
         {vendor ? <input type="hidden" name="id" value={vendor.id} /> : null}
         <FormAlert error={state?.error} />
 
-        <Field label={copy.vendors.name} htmlFor="vendor-name">
-          <input
-            id="vendor-name"
-            name="name"
-            required
-            maxLength={120}
-            defaultValue={vendor?.name ?? ""}
-            className={inputClass}
-          />
-        </Field>
-
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={copy.vendors.category} htmlFor="vendor-category">
-            <select
+          <Field
+            label={`${copy.vendors.name} (${copy.form.optional})`}
+            htmlFor="vendor-name"
+          >
+            <input
+              id="vendor-name"
+              name="name"
+              maxLength={120}
+              defaultValue={vendor?.name ?? ""}
+              className={inputClass}
+            />
+          </Field>
+
+          <Field
+            label={`${copy.vendors.category} (${copy.form.optional})`}
+            htmlFor="vendor-category"
+          >
+            <input
               id="vendor-category"
               name="category"
-              defaultValue={vendor?.category ?? "other"}
+              list="vendor-category-suggestions"
+              maxLength={80}
+              placeholder="Venue, Catering, MUA..."
+              defaultValue={vendor?.category ?? ""}
               className={inputClass}
-            >
-              {Object.keys(labelGroups.vendorCategory).map((value) => (
-                <option key={value} value={value}>
-                  {label("vendorCategory", value, locale)}
-                </option>
+            />
+            <datalist id="vendor-category-suggestions">
+              {[
+                "Venue",
+                "Catering",
+                "Dekorasi",
+                "MUA",
+                "Wedding Organizer",
+                "Fotografi",
+                "Videografi",
+                "Busana",
+                "Undangan",
+                "Entertainment",
+                "Souvenir",
+              ].map((item) => (
+                <option key={item} value={item} />
               ))}
-            </select>
+            </datalist>
           </Field>
-          <Field label={copy.vendors.bookingStatus} htmlFor="vendor-booking">
-            <select
-              id="vendor-booking"
-              name="bookingStatus"
-              defaultValue={vendor?.booking_status ?? "considering"}
-              className={inputClass}
-            >
-              {Object.keys(labelGroups.bookingStatus).map((value) => (
-                <option key={value} value={value}>
-                  {label("bookingStatus", value, locale)}
-                </option>
-              ))}
-            </select>
-          </Field>
+
           <Field
-            label={`${copy.vendors.contactName} (${copy.form.optional})`}
+            label={`${copy.vendors.picVendor} (${copy.form.optional})`}
             htmlFor="vendor-contact"
           >
             <input
@@ -99,18 +107,21 @@ export function VendorFormModal({
               className={inputClass}
             />
           </Field>
+
           <Field
-            label={`${copy.vendors.phone} (${copy.form.optional})`}
+            label={`${copy.vendors.picPhone} (${copy.form.optional})`}
             htmlFor="vendor-phone"
           >
             <input
               id="vendor-phone"
               name="phone"
               maxLength={40}
+              inputMode="tel"
               defaultValue={vendor?.phone ?? ""}
               className={inputClass}
             />
           </Field>
+
           <Field
             label={`${copy.vendors.email} (${copy.form.optional})`}
             htmlFor="vendor-email"
@@ -124,25 +135,29 @@ export function VendorFormModal({
               className={inputClass}
             />
           </Field>
+
+          <Field label={copy.vendors.picInternal} htmlFor="vendor-pic-internal">
+            <select
+              id="vendor-pic-internal"
+              name="picInternal"
+              defaultValue={vendor?.pic_internal ?? ""}
+              className={inputClass}
+            >
+              <option value="">{copy.vendors.picInternalPlaceholder}</option>
+              {picOptions.map((person) => (
+                <option key={person} value={person}>
+                  {person}
+                </option>
+              ))}
+            </select>
+          </Field>
+
           <Field
-            label={`${copy.vendors.website} (${copy.form.optional})`}
-            htmlFor="vendor-website"
+            label={`${copy.vendors.estimate} (IDR)`}
+            htmlFor="vendor-estimate"
           >
             <input
-              id="vendor-website"
-              name="website"
-              placeholder="https://"
-              maxLength={500}
-              defaultValue={vendor?.website ?? ""}
-              className={inputClass}
-            />
-          </Field>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={`${copy.vendors.quoted} (IDR)`} htmlFor="vendor-quoted">
-            <input
-              id="vendor-quoted"
+              id="vendor-estimate"
               name="quotedPrice"
               type="number"
               min={0}
@@ -152,9 +167,13 @@ export function VendorFormModal({
               className={inputClass}
             />
           </Field>
-          <Field label={`${copy.vendors.agreed} (IDR)`} htmlFor="vendor-agreed">
+
+          <Field
+            label={`${copy.vendors.actualBill} (IDR)`}
+            htmlFor="vendor-bill"
+          >
             <input
-              id="vendor-agreed"
+              id="vendor-bill"
               name="agreedPrice"
               type="number"
               min={0}
@@ -164,72 +183,24 @@ export function VendorFormModal({
               className={inputClass}
             />
           </Field>
-          <Field label={`${copy.vendors.deposit} (IDR)`} htmlFor="vendor-deposit">
-            <input
-              id="vendor-deposit"
-              name="depositAmount"
-              type="number"
-              min={0}
-              step={1000}
-              inputMode="numeric"
-              defaultValue={vendor?.deposit_amount ?? 0}
-              className={inputClass}
-            />
-          </Field>
-          <Field label={`${copy.vendors.paid} (IDR)`} htmlFor="vendor-paid">
-            <input
-              id="vendor-paid"
-              name="amountPaid"
-              type="number"
-              min={0}
-              step={1000}
-              inputMode="numeric"
-              defaultValue={vendor?.amount_paid ?? 0}
-              className={inputClass}
-            />
-          </Field>
-          <Field label={copy.vendors.bookingDate} htmlFor="vendor-booking-date">
-            <input
-              id="vendor-booking-date"
-              name="bookingDate"
-              type="date"
-              defaultValue={vendor?.booking_date ?? ""}
-              className={inputClass}
-            />
-          </Field>
-          <Field label={copy.vendors.serviceDate} htmlFor="vendor-service-date">
-            <input
-              id="vendor-service-date"
-              name="serviceDate"
-              type="date"
-              defaultValue={vendor?.event_service_date ?? ""}
-              className={inputClass}
-            />
-          </Field>
-          <Field label={copy.vendors.nextPayment} htmlFor="vendor-next-payment">
-            <input
-              id="vendor-next-payment"
-              name="nextPaymentDue"
-              type="date"
-              defaultValue={vendor?.next_payment_due ?? ""}
-              className={inputClass}
-            />
-          </Field>
         </div>
 
-        <Field
-          label={`${copy.vendors.contractNotes} (${copy.form.optional})`}
-          htmlFor="vendor-contract"
-        >
-          <textarea
-            id="vendor-contract"
-            name="contractNotes"
-            rows={2}
-            maxLength={4000}
-            defaultValue={vendor?.contract_notes ?? ""}
-            className={inputClass}
-          />
-        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={copy.vendors.paymentStatus} htmlFor="vendor-status">
+            <select
+              id="vendor-status"
+              name="paymentStatus"
+              defaultValue={vendor?.payment_status ?? "diskusi"}
+              className={inputClass}
+            >
+              {Object.keys(labelGroups.paymentStatus).map((value) => (
+                <option key={value} value={value}>
+                  {label("paymentStatus", value, locale)}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
 
         <Field
           label={`${copy.vendors.notes} (${copy.form.optional})`}
@@ -238,7 +209,7 @@ export function VendorFormModal({
           <textarea
             id="vendor-notes"
             name="notes"
-            rows={2}
+            rows={3}
             maxLength={4000}
             defaultValue={vendor?.notes ?? ""}
             className={inputClass}

@@ -78,6 +78,7 @@ export function WeddingDetailsForm({
           <input
             id="partnerTwo"
             name="partnerTwo"
+            required
             maxLength={80}
             defaultValue={values?.partnerTwo ?? ""}
             className={fieldClass}
