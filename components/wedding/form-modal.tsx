@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 export function FormModal({
@@ -32,10 +33,13 @@ export function FormModal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  // Modals only ever open from a user interaction, so document exists here.
+  if (!open || typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+  // Portal to <body> so no ancestor stacking context can clip or cover the
+  // dialog, and so the overlay always sits above the sidebar and header.
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <button
         type="button"
         aria-label="Close"
@@ -63,6 +67,7 @@ export function FormModal({
         </div>
         <div className="overflow-y-auto px-5 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

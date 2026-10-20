@@ -285,6 +285,7 @@ export function VendorManager({
       </div>
 
       <VendorFormModal
+        key={editing?.id ?? "new-vendor"}
         open={vendorModalOpen}
         onClose={() => setVendorModalOpen(false)}
         copy={copy}
@@ -294,6 +295,7 @@ export function VendorManager({
       />
 
       <PaymentFormModal
+        key={paymentVendor?.id ?? "no-payment"}
         open={Boolean(paymentVendor)}
         onClose={() => setPaymentVendor(null)}
         copy={copy}
