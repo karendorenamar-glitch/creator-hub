@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import {
-  CreditCard,
   Images,
   LayoutDashboard,
   ListOrdered,
@@ -31,7 +30,6 @@ const NAV: { key: NavKey; href: string; Icon: typeof LayoutDashboard }[] = [
   { key: "checklist", href: "/wedding/checklist", Icon: ListOrdered },
   { key: "inspiration", href: "/wedding/inspiration", Icon: Images },
   { key: "settings", href: "/wedding/settings", Icon: Settings },
-  { key: "billing", href: "/wedding/billing", Icon: CreditCard },
 ];
 
 export function SidebarNav({
@@ -39,14 +37,12 @@ export function SidebarNav({
   locale,
   couple,
   weddingDateLabel,
-  isActive,
   onNavigate,
 }: {
   copy: WeddingCopy;
   locale: AppLocale;
   couple: string;
   weddingDateLabel: string | null;
-  isActive: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -86,11 +82,6 @@ export function SidebarNav({
         <p className="mt-0.5 text-xs text-ink-soft">
           {weddingDateLabel ?? copy.dashboard.dateTbc}
         </p>
-        {!isActive ? (
-          <p className="mt-2 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
-            {copy.billing.statusInactive}
-          </p>
-        ) : null}
       </div>
 
       <nav className="flex flex-1 flex-col gap-1" aria-label={copy.nav.menu}>

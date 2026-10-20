@@ -30,7 +30,6 @@ export default async function WeddingAppLayout({
       locale={locale}
       couple={coupleNames(session.wedding)}
       weddingDateLabel={formatWeddingDate(session.wedding.wedding_date, locale)}
-      isActive={session.hasPlanningAccess}
     >
       {children}
     </WeddingShell>

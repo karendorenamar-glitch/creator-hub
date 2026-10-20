@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { InspirationManager } from "@/components/wedding/inspiration/inspiration-manager";
-import { SubscriptionNotice } from "@/components/wedding/subscription-notice";
 import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { moduleCopy } from "@/lib/wedding/module-copy";
@@ -30,11 +29,6 @@ export default async function InspirationPage() {
       <PageHeader
         title={copy.inspiration.title}
         subtitle={copy.inspiration.subtitle}
-      />
-
-      <SubscriptionNotice
-        active={session.hasPlanningAccess}
-        copy={copy}
       />
 
       <section className="grid gap-4 sm:grid-cols-2">

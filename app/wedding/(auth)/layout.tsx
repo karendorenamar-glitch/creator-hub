@@ -36,7 +36,6 @@ export default async function WeddingAuthLayout({
         </div>
 
         <p className="text-xs text-ink-soft/80">
-          Rp 20.000 {copy.common.perMonth} · {copy.billing.planName}
         </p>
 
         <div

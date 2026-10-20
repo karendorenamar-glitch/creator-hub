@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { CategoryManager } from "@/components/wedding/budget/category-manager";
 import { ExpenseManager } from "@/components/wedding/budget/expense-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
-import { SubscriptionNotice } from "@/components/wedding/subscription-notice";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { formatIDR, percentOf } from "@/lib/wedding/format";
@@ -60,11 +59,6 @@ export default async function BudgetPage() {
   return (
     <div className="space-y-7">
       <PageHeader title={copy.budget.title} subtitle={copy.budget.subtitle} />
-
-      <SubscriptionNotice
-        active={session.hasPlanningAccess}
-        copy={copy}
-      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label={copy.budget.totalBudget} value={formatIDR(totalBudget)} />

@@ -76,7 +76,6 @@ export default async function DashboardPage() {
 
   const daysToWedding = daysFromToday(session.wedding.wedding_date);
   const weddingDateLabel = formatWeddingDate(session.wedding.wedding_date, locale);
-  const isActive = session.hasPlanningAccess;
 
   return (
     <div className="space-y-7">
@@ -84,27 +83,6 @@ export default async function DashboardPage() {
         title={copy.dashboard.title}
         subtitle={`${coupleNames(session.wedding)} · ${copy.dashboard.subtitle}`}
       />
-
-      {!isActive ? (
-        <Card className="border-amber-200 bg-amber-50/60">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-xl">
-              <h2 className="font-heading text-base font-semibold text-ink">
-                {copy.dashboard.lockedTitle}
-              </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">
-                {copy.dashboard.lockedBody}
-              </p>
-            </div>
-            <Link
-              href="/wedding/billing"
-              className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700"
-            >
-              {copy.dashboard.activate}
-            </Link>
-          </div>
-        </Card>
-      ) : null}
 
       {weddingDateLabel ? (
         <Card className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-olive-50 via-cream to-sand-100/70">

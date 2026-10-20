@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { TaskManager } from "@/components/wedding/checklist/task-manager";
-import { SubscriptionNotice } from "@/components/wedding/subscription-notice";
 import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { daysFromToday } from "@/lib/wedding/format";
@@ -50,11 +49,6 @@ export default async function ChecklistPage() {
       <PageHeader
         title={copy.checklist.title}
         subtitle={copy.checklist.subtitle}
-      />
-
-      <SubscriptionNotice
-        active={session.hasPlanningAccess}
-        copy={copy}
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
