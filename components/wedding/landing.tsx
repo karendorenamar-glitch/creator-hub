@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { motion, useReducedMotion } from "framer-motion";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
@@ -32,18 +31,13 @@ function Reveal({
   delay?: number;
   className?: string;
 }) {
-  const reduce = useReducedMotion();
-
   return (
-    <motion.div
-      className={className}
-      initial={reduce ? false : { opacity: 0, y: 26 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.75, delay, ease: [0.22, 1, 0.36, 1] }}
+    <div
+      className={`landing-fade ${className ?? ""}`}
+      style={{ animationDelay: `${delay}s` }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -108,13 +102,6 @@ const FEATURES = [
 ];
 
 export function WeddingLanding() {
-  const reduce = useReducedMotion();
-  const rise = (delay = 0) => ({
-    initial: reduce ? false : { opacity: 0, y: 22 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] as const },
-  });
-
   return (
     <div className="wedding-app wedding-surface min-h-screen text-cocoa">
       <header className="sticky top-0 z-40 border-b border-blush/60 bg-ivory/80 backdrop-blur-md">
@@ -168,33 +155,30 @@ export function WeddingLanding() {
 
           <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
             <div>
-              <motion.div {...rise(0)}>
+              <div className="landing-fade">
                 <Eyebrow>Untuk perjalanan menuju hari istimewa</Eyebrow>
-              </motion.div>
+              </div>
 
-              <motion.h1
-                {...rise(0.1)}
-                className="mt-6 font-heading text-[2.6rem] leading-[1.08] tracking-tight text-cocoa sm:text-6xl lg:text-[4.1rem]"
+              <h1
+                className="landing-fade mt-6 font-heading text-[2.6rem] leading-[1.08] tracking-tight text-cocoa sm:text-6xl lg:text-[4.1rem]"
               >
                 Merencanakan Hari Istimewa,
                 <br className="hidden sm:block" />{" "}
                 <span className="italic text-rosewood">
                   dengan Hati yang Lebih Tenang.
                 </span>
-              </motion.h1>
+              </h1>
 
-              <motion.p
-                {...rise(0.2)}
-                className="mt-6 max-w-xl text-base leading-relaxed text-cocoa/70 sm:text-lg"
+              <p
+                className="landing-fade mt-6 max-w-xl text-base leading-relaxed text-cocoa/70 sm:text-lg"
               >
                 Setiap detail memiliki cerita. Atur anggaran, kelola kebutuhan,
                 dan persiapkan pernikahan impian Anda dalam satu ruang yang
                 dirancang dengan indah.
-              </motion.p>
+              </p>
 
-              <motion.div
-                {...rise(0.3)}
-                className="mt-9 flex flex-wrap items-center gap-3"
+              <div
+                className="landing-fade mt-9 flex flex-wrap items-center gap-3"
               >
                 <Link
                   href="/wedding/signup"
@@ -212,14 +196,14 @@ export function WeddingLanding() {
                 >
                   Jelajahi Fitur
                 </a>
-              </motion.div>
+              </div>
 
-              <motion.p {...rise(0.4)} className="mt-5 text-sm text-cocoa/55">
+              <p className="landing-fade mt-5 text-sm text-cocoa/55">
                 Satu ruang untuk anggaran, vendor, tamu, dan seluruh persiapan.
-              </motion.p>
+              </p>
             </div>
 
-            <motion.div {...rise(0.25)} className="relative mx-auto w-full max-w-md">
+            <div className="landing-fade relative mx-auto w-full max-w-md">
               <div className="absolute -left-8 -top-10 size-28 rounded-full bg-blush/70 blur-2xl" />
               <div className="relative overflow-hidden rounded-t-[10rem] rounded-b-[2rem] border border-champagne/50 bg-gradient-to-b from-sage/70 via-blush/60 to-ivory p-3 shadow-[0_45px_90px_-65px_rgba(87,66,63,0.55)]">
                 <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden rounded-t-[9rem] rounded-b-[1.6rem] bg-gradient-to-b from-dusty/45 via-blush/70 to-ivory">
@@ -239,12 +223,9 @@ export function WeddingLanding() {
                 </p>
                 <p className="mt-1 font-heading text-2xl text-cocoa">Rp 150 jt</p>
                 <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-blush">
-                  <motion.div
+                  <div
                     className="h-full rounded-full bg-gradient-to-r from-dusty to-rosewood"
-                    initial={reduce ? false : { width: 0 }}
-                    whileInView={{ width: "78%" }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 1.1, delay: 0.5, ease: "easeOut" }}
+                    style={{ width: "78%" }}
                   />
                 </div>
                 <p className="mt-2 text-[11px] text-cocoa/60">
@@ -256,7 +237,7 @@ export function WeddingLanding() {
                 className="absolute -right-2 top-10 hidden size-6 text-champagne sm:block landing-float"
                 aria-hidden
               />
-            </motion.div>
+            </div>
 
           </div>
         </section>
@@ -355,28 +336,14 @@ export function WeddingLanding() {
                   {[
                     { label: "Sudah dialokasikan", value: "Rp 92.000.000", pct: "61%" },
                     { label: "Sudah dibayarkan", value: "Rp 45.000.000", pct: "30%" },
-                  ].map((row, index) => (
+                  ].map((row) => (
                     <div key={row.label}>
                       <div className="flex items-baseline justify-between text-sm">
                         <span className="text-cocoa/70">{row.label}</span>
                         <span className="font-medium text-cocoa">{row.value}</span>
                       </div>
                       <div className="mt-2 h-2 overflow-hidden rounded-full bg-blush/70">
-                        <motion.div
-                          className={`h-full rounded-full ${
-                            index === 0
-                              ? "bg-gradient-to-r from-sage to-dusty"
-                              : "bg-gradient-to-r from-dusty to-rosewood"
-                          }`}
-                          initial={reduce ? false : { width: 0 }}
-                          whileInView={{ width: row.pct }}
-                          viewport={{ once: true }}
-                          transition={{
-                            duration: 1.2,
-                            delay: 0.2 + index * 0.15,
-                            ease: "easeOut",
-                          }}
-                        />
+                        
                       </div>
                     </div>
                   ))}
