@@ -167,6 +167,47 @@ export type ChecklistTask = {
   updated_at: string;
 };
 
+export type InvitationPublishStatus = "draft" | "published";
+
+export type InvitationContent = {
+  tagline?: string | null;
+  story?: string | null;
+  ceremonyTime?: string | null;
+  ceremonyPlace?: string | null;
+  receptionTime?: string | null;
+  receptionPlace?: string | null;
+  venueAddress?: string | null;
+  mapsUrl?: string | null;
+  dressCode?: string | null;
+  closingMessage?: string | null;
+  coverImageUrl?: string | null;
+  coupleImageUrl?: string | null;
+  musicUrl?: string | null;
+};
+
+export type Invitation = {
+  id: string;
+  wedding_id: string;
+  slug: string;
+  status: InvitationPublishStatus;
+  template: "elegant";
+  content: InvitationContent;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type InvitationRsvp = {
+  id: string;
+  invitation_id: string;
+  wedding_id: string;
+  name: string;
+  attendance: "attending" | "not_attending";
+  guests: number;
+  message: string | null;
+  created_at: string;
+};
+
 export type InspirationPhoto = {
   id: string;
   wedding_id: string;
@@ -220,9 +261,25 @@ export type WeddingDatabase = {
       checklist_tasks: Table<ChecklistTask>;
       inspiration_items: Table<InspirationItem>;
       inspiration_photos: Table<InspirationPhoto>;
+      invitations: Table<Invitation>;
+      invitation_rsvps: Table<InvitationRsvp>;
     };
     Views: Record<string, never>;
     Functions: {
+      get_public_invitation: {
+        Args: { p_slug: string };
+        Returns: {
+          id: string;
+          wedding_id: string;
+          content: InvitationContent;
+          template: "elegant";
+          published_at: string | null;
+          partner_one_name: string;
+          partner_two_name: string | null;
+          wedding_date: string | null;
+          location: string | null;
+        }[];
+      };
       create_wedding: {
         Args: {
           p_partner_one_name: string;

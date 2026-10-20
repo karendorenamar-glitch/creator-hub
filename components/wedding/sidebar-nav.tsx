@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListOrdered,
   LogOut,
+  Mail,
   Settings,
   Users,
   Wallet,
@@ -27,6 +28,7 @@ const NAV: { key: NavKey; href: string; Icon: typeof LayoutDashboard }[] = [
   { key: "guests", href: "/wedding/guests", Icon: Users },
   { key: "checklist", href: "/wedding/checklist", Icon: ListOrdered },
   { key: "inspiration", href: "/wedding/inspiration", Icon: Images },
+  { key: "invitation", href: "/wedding/invitation", Icon: Mail },
   { key: "settings", href: "/wedding/settings", Icon: Settings },
 ];
 

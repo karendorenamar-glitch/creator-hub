@@ -1,3 +1,5 @@
+"use client";
+
 import { useActionState, useState } from "react";
 import { Trash2 } from "lucide-react";
 import type { ActionResult } from "@/lib/wedding/action-context";
