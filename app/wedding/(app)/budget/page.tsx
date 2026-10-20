@@ -4,6 +4,7 @@ import { VendorManager } from "@/components/wedding/vendors/vendor-manager";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { formatIDR, percentOf } from "@/lib/wedding/format";
+import { label } from "@/lib/wedding/labels";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
@@ -48,12 +49,11 @@ export default async function BudgetPage() {
   const remaining = totalBudget - totalPaid;
   const paidPercent = percentOf(totalPaid, totalBudget);
 
-  const vendorCommitments = vendors.reduce(
-    (sum, vendor) =>
-      sum + Number(vendor.agreed_price ?? vendor.quoted_price ?? 0),
-    0,
-  );
-  const vendorOutstanding = Math.max(0, vendorCommitments - totalPaid);
+  const statusCounts = { diskusi: 0, dp: 0, lunas: 0 } as Record<string, number>;
+  for (const vendor of vendors) {
+    statusCounts[vendor.payment_status] =
+      (statusCounts[vendor.payment_status] ?? 0) + 1;
+  }
 
   const partnerOne = session.wedding.partner_one_name;
   const partnerTwo = session.wedding.partner_two_name?.trim() ?? "";
@@ -98,16 +98,16 @@ export default async function BudgetPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        <StatCard
-          label={copy.budget.vendorCommitments}
-          value={formatIDR(vendorCommitments)}
-          tone="champagne"
-        />
-        <StatCard
-          label={copy.budget.vendorOutstanding}
-          value={formatIDR(vendorOutstanding)}
-        />
+      <section className="grid gap-4 sm:grid-cols-3">
+        {(["diskusi", "dp", "lunas"] as const).map((status) => (
+          <StatCard
+            key={status}
+            label={label("paymentStatus", status, locale)}
+            value={String(statusCounts[status] ?? 0)}
+            hint={copy.vendors.title}
+            tone={status === "lunas" ? "champagne" : "blush"}
+          />
+        ))}
       </section>
 
       <Card>
