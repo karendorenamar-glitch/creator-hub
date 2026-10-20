@@ -221,7 +221,7 @@ export function InspirationManager({
                 {groupItems.length}
               </span>
             </div>
-            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(280px,1fr))]">
+            <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(320px,1fr))]">
               {groupItems.map((item) => (
                 <InspirationCard
                   key={item.id}
