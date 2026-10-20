@@ -252,3 +252,70 @@ export async function deleteInspirationAction(
   return null;
 }
 
+
+async function uploadFile(
+  ctx: Ctx,
+  file: File,
+): Promise<{ ok: true; path: string } | { ok: false; error: string }> {
+  if (file.size > MAX_IMAGE_BYTES) {
+    return { ok: false, error: ctx.copy.inspiration.imageTooLarge };
+  }
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return { ok: false, error: ctx.copy.inspiration.imageInvalidType };
+  }
+
+  const extension = file.name.includes(".")
+    ? file.name.split(".").pop()!.toLowerCase()
+    : "jpg";
+  const path = `${ctx.session.wedding.id}/${crypto.randomUUID()}.${extension}`;
+
+  const { error } = await ctx.supabase.storage
+    .from(IMAGE_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (error) return { ok: false, error: ctx.copy.errors.generic };
+  return { ok: true, path };
+}
+
+export async function replaceInspirationPhotoAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: ctx.copy.form.required };
+  }
+
+  const { data: existing } = await ctx.supabase
+    .from("inspiration_photos")
+    .select("path")
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+
+  const uploaded = await uploadFile(ctx, file);
+  if (!uploaded.ok) return { error: uploaded.error };
+
+  const { error } = await ctx.supabase
+    .from("inspiration_photos")
+    .update({ path: uploaded.path })
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (error) {
+    await ctx.supabase.storage.from(IMAGE_BUCKET).remove([uploaded.path]);
+    return { error: actionError(error, ctx.copy) };
+  }
+
+  if (existing?.path) {
+    await ctx.supabase.storage.from(IMAGE_BUCKET).remove([existing.path]);
+  }
+
+  revalidateWedding("/wedding/inspiration");
+  return { success: ctx.copy.form.saved };
+}
+

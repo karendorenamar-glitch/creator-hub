@@ -6,6 +6,7 @@ import {
   updateInspirationAction,
 } from "@/app/wedding/(app)/inspiration/actions";
 import { FormModal } from "@/components/wedding/form-modal";
+import { InspirationPhotoManager } from "@/components/wedding/inspiration/inspiration-photo-manager";
 import {
   Field,
   FormAlert,
@@ -31,11 +32,13 @@ export function InspirationFormModal({
   onClose,
   copy,
   item,
+  photos,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   item: InspirationItem | null;
+  photos: { id: string; url: string }[];
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
   const [state, formAction, pending] = useActionState(action, null);
@@ -51,7 +54,12 @@ export function InspirationFormModal({
       wide
       title={item ? copy.inspiration.edit : copy.inspiration.add}
     >
-      <form action={formAction} className="space-y-4">
+      <div className="space-y-4">
+        {item ? (
+          <InspirationPhotoManager photos={photos} copy={copy} />
+        ) : null}
+
+        <form action={formAction} className="space-y-4">
         {item ? <input type="hidden" name="id" value={item.id} /> : null}
         <FormAlert error={state?.error} />
 
@@ -161,6 +169,7 @@ export function InspirationFormModal({
           onCancel={onClose}
         />
       </form>
+      </div>
     </FormModal>
   );
 }

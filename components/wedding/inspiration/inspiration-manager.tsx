@@ -249,6 +249,9 @@ export function InspirationManager({
         onClose={() => setModalOpen(false)}
         copy={copy}
         item={editing}
+        photos={(photosByItem[editing?.id ?? ""] ?? [])
+          .map((photo) => ({ id: photo.id, url: imageUrls[photo.path] }))
+          .filter((photo) => Boolean(photo.url))}
       />
 
       <InspirationLightbox

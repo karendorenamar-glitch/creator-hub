@@ -202,6 +202,8 @@ const en = {
     categoryHint: "Pick a suggestion or type your own",
     view: "View",
     photosCount: "photos",
+    replace: "Replace",
+    currentPhotos: "Current photos",
   },
 };
 
@@ -409,6 +411,8 @@ const id: ModuleCopy = {
     categoryHint: "Pilih saran atau ketik sendiri",
     view: "Lihat",
     photosCount: "foto",
+    replace: "Ganti",
+    currentPhotos: "Foto saat ini",
   },
 } as ModuleCopy;
 
