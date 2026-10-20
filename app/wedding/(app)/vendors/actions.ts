@@ -99,6 +99,77 @@ function readVendor(
   };
 }
 
+type Ctx = NonNullable<Awaited<ReturnType<typeof getActionContext>>>;
+
+const PROOF_BUCKET = "payment-proofs";
+const MAX_PROOF_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PROOF_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "application/pdf",
+];
+
+async function storeProof(
+  ctx: Ctx,
+  formData: FormData,
+): Promise<{ ok: true; path: string | null } | { ok: false; error: string }> {
+  const file = formData.get("proof");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: true, path: null };
+  }
+  if (file.size > MAX_PROOF_BYTES) {
+    return { ok: false, error: ctx.copy.vendors.proofTooLarge };
+  }
+  if (!ALLOWED_PROOF_TYPES.includes(file.type)) {
+    return { ok: false, error: ctx.copy.vendors.proofInvalidType };
+  }
+
+  const extension = file.name.includes(".")
+    ? file.name.split(".").pop()!.toLowerCase()
+    : "bin";
+  const path = `${ctx.session.wedding.id}/${crypto.randomUUID()}.${extension}`;
+
+  const { error } = await ctx.supabase.storage
+    .from(PROOF_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+
+  if (error) return { ok: false, error: ctx.copy.errors.generic };
+
+  return { ok: true, path };
+}
+
+/** Optional payment captured straight from the vendor form (DP / Lunas). */
+async function maybeRecordPayment(
+  ctx: Ctx,
+  vendorId: string,
+  formData: FormData,
+): Promise<string | null> {
+  const raw = text(formData, "paidAmount");
+  if (!raw) return null;
+
+  const amount = parseMoney(raw);
+  if (amount === null || amount <= 0) return ctx.copy.form.invalidNumber;
+
+  const paidOn = text(formData, "paidOn") || new Date().toISOString().slice(0, 10);
+  if (!isDateString(paidOn)) return ctx.copy.form.invalidDate;
+
+  const proof = await storeProof(ctx, formData);
+  if (!proof.ok) return proof.error;
+
+  const { error } = await ctx.supabase.from("vendor_payments").insert({
+    wedding_id: ctx.session.wedding.id,
+    vendor_id: vendorId,
+    amount,
+    paid_on: paidOn,
+    method: optionalText(formData, "paymentMethod", 60),
+    notes: optionalText(formData, "paymentNotes", 1000),
+    proof_path: proof.path,
+  });
+
+  return error ? actionError(error, ctx.copy) : null;
+}
+
 export async function createVendorAction(
   _prev: ActionResult,
   formData: FormData,
@@ -107,18 +178,26 @@ export async function createVendorAction(
   const parsed = readVendor(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase.from("vendors").insert({
-    wedding_id: ctx.session.wedding.id,
-    booking_status: enumValue(
-      formData,
-      "bookingStatus",
-      BOOKING_STATUSES,
-      "considering",
-    ),
-    ...parsed.values,
-  });
+  const { data: created, error } = await ctx.supabase
+    .from("vendors")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      booking_status: enumValue(
+        formData,
+        "bookingStatus",
+        BOOKING_STATUSES,
+        "considering",
+      ),
+      ...parsed.values,
+    })
+    .select("id")
+    .single();
 
-  if (error) return { error: actionError(error, ctx.copy) };
+  if (error || !created) return { error: actionError(error ?? { message: "" }, ctx.copy) };
+
+  // Record the DP / pelunasan entered while creating the vendor.
+  const paymentError = await maybeRecordPayment(ctx, created.id, formData);
+  if (paymentError) return { error: paymentError };
 
   revalidateVendorPages();
   return { success: ctx.copy.form.saved };
@@ -142,6 +221,9 @@ export async function updateVendorAction(
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  const paymentError = await maybeRecordPayment(ctx, id, formData);
+  if (paymentError) return { error: paymentError };
 
   revalidateVendorPages();
   return { success: ctx.copy.form.saved };
@@ -185,6 +267,9 @@ export async function addVendorPaymentAction(
     return { error: ctx.copy.form.invalidDate };
   }
 
+  const proof = await storeProof(ctx, formData);
+  if (!proof.ok) return { error: proof.error };
+
   const { error } = await ctx.supabase.from("vendor_payments").insert({
     wedding_id: ctx.session.wedding.id,
     vendor_id: vendorId,
@@ -192,6 +277,7 @@ export async function addVendorPaymentAction(
     paid_on: paidOn,
     method: optionalText(formData, "method", 60),
     notes: optionalText(formData, "notes", 1000),
+    proof_path: proof.path,
   });
 
   if (error) return { error: actionError(error, ctx.copy) };
@@ -207,6 +293,13 @@ export async function deleteVendorPaymentAction(
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 
+  const { data: existing } = await ctx.supabase
+    .from("vendor_payments")
+    .select("proof_path")
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+
   const { error } = await ctx.supabase
     .from("vendor_payments")
     .delete()
@@ -214,6 +307,11 @@ export async function deleteVendorPaymentAction(
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  // Best effort: remove the stored proof as well.
+  if (existing?.proof_path) {
+    await ctx.supabase.storage.from(PROOF_BUCKET).remove([existing.proof_path]);
+  }
 
   revalidateVendorPages();
   return null;

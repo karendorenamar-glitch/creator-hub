@@ -117,6 +117,7 @@ export type VendorPayment = {
   paid_on: string;
   method: string | null;
   notes: string | null;
+  proof_path: string | null;
   created_at: string;
 };
 

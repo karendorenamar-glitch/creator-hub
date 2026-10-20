@@ -25,12 +25,14 @@ const statusTone = {
 export function VendorManager({
   vendors,
   payments,
+  proofUrls,
   copy,
   locale,
   picOptions,
 }: {
   vendors: Vendor[];
   payments: VendorPayment[];
+  proofUrls: Record<string, string>;
   copy: ModuleCopy;
   locale: "en" | "id";
   picOptions: string[];
@@ -264,6 +266,16 @@ export function VendorManager({
                   <span className="text-sm font-medium text-ink">
                     {formatIDR(payment.amount)}
                   </span>
+                  {payment.proof_path && proofUrls[payment.proof_path] ? (
+                    <a
+                      href={proofUrls[payment.proof_path]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-lg bg-olive-50 px-2 py-1 text-xs font-medium text-olive-700 hover:bg-olive-100"
+                    >
+                      {copy.vendors.viewProof}
+                    </a>
+                  ) : null}
                   <DeleteForm
                     action={deleteVendorPaymentAction}
                     id={payment.id}

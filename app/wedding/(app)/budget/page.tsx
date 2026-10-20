@@ -43,6 +43,20 @@ export default async function BudgetPage() {
   const vendors = vendorsResult.data ?? [];
   const payments = paymentsResult.data ?? [];
 
+  const proofPaths = payments
+    .map((payment) => payment.proof_path)
+    .filter((path): path is string => Boolean(path));
+
+  const proofUrls: Record<string, string> = {};
+  if (proofPaths.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from("payment-proofs")
+      .createSignedUrls(proofPaths, 60 * 60);
+    for (const item of signed ?? []) {
+      if (item.path && item.signedUrl) proofUrls[item.path] = item.signedUrl;
+    }
+  }
+
   const totalBudget = Number(session.wedding.total_budget ?? 0);
   const totalPaid = payments.reduce((sum, item) => sum + Number(item.amount), 0);
   const remaining = totalBudget - totalPaid;
@@ -132,6 +146,7 @@ export default async function BudgetPage() {
         <VendorManager
           vendors={vendors}
           payments={payments}
+          proofUrls={proofUrls}
           copy={copy}
           locale={locale}
           picOptions={picOptions}

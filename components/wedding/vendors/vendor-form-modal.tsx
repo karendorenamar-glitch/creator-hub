@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   createVendorAction,
   updateVendorAction,
@@ -33,6 +33,7 @@ export function VendorFormModal({
 }) {
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
+  const [status, setStatus] = useState(vendor?.payment_status ?? "diskusi");
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -190,7 +191,10 @@ export function VendorFormModal({
             <select
               id="vendor-status"
               name="paymentStatus"
-              defaultValue={vendor?.payment_status ?? "diskusi"}
+              value={status}
+              onChange={(event) =>
+                setStatus(event.target.value as typeof status)
+              }
               className={inputClass}
             >
               {Object.keys(labelGroups.paymentStatus).map((value) => (
@@ -201,6 +205,56 @@ export function VendorFormModal({
             </select>
           </Field>
         </div>
+
+        {status !== "diskusi" ? (
+          <div className="space-y-4 rounded-2xl border border-olive-200 bg-olive-50/60 p-4">
+            <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
+              {copy.vendors.payments}
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label={copy.vendors.paymentAmount}
+                htmlFor="vendor-paid-amount"
+              >
+                <input
+                  id="vendor-paid-amount"
+                  name="paidAmount"
+                  type="number"
+                  min={1}
+                  step={1000}
+                  inputMode="numeric"
+                  placeholder="0"
+                  className={inputClass}
+                />
+              </Field>
+              <Field
+                label={copy.vendors.paymentDate}
+                htmlFor="vendor-paid-on"
+              >
+                <input
+                  id="vendor-paid-on"
+                  name="paidOn"
+                  type="date"
+                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+            <Field
+              label={copy.vendors.proofLabel}
+              htmlFor="vendor-proof"
+              hint={copy.vendors.proofHint}
+            >
+              <input
+                id="vendor-proof"
+                name="proof"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,application/pdf"
+                className="w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-olive-700"
+              />
+            </Field>
+          </div>
+        ) : null}
 
         <Field
           label={`${copy.vendors.notes}`}

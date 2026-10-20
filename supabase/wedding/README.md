@@ -12,6 +12,8 @@ files in `supabase/*.sql` are untouched and must NOT be run on the new project.
 4. `004_open_access_toggle.sql` - optional subscription switch (open access by default)
 5. `005_vendor_billing.sql` - free-text vendor category, 3-state payment status
    (diskusi / dp / lunas), internal PIC, and the `vendor_payments` history table
+6. `006_payment_proofs.sql` - private `payment-proofs` storage bucket and the
+   `proof_path` column on `vendor_payments`
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

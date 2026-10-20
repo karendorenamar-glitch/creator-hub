@@ -150,6 +150,11 @@ const en = {
     totalPaid: "Total paid",
     billRemaining: "Remaining bill",
     search: "Search vendors",
+    proofLabel: "Payment proof",
+    proofHint: "JPG, PNG, WEBP or PDF, max 5 MB",
+    proofTooLarge: "The file is larger than 5 MB.",
+    proofInvalidType: "Only JPG, PNG, WEBP or PDF files are allowed.",
+    viewProof: "View proof",
   },
   checklist: {
     title: "Checklist & Timeline",
@@ -344,6 +349,11 @@ const id: ModuleCopy = {
     totalPaid: "Total dibayar",
     billRemaining: "Sisa tagihan",
     search: "Cari vendor",
+    proofLabel: "Bukti pembayaran",
+    proofHint: "JPG, PNG, WEBP, atau PDF, maksimal 5 MB",
+    proofTooLarge: "Ukuran file melebihi 5 MB.",
+    proofInvalidType: "Hanya file JPG, PNG, WEBP, atau PDF yang diperbolehkan.",
+    viewProof: "Lihat bukti",
   },
   checklist: {
     title: "Checklist & Timeline",

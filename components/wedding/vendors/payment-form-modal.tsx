@@ -95,6 +95,20 @@ export function PaymentFormModal({
           />
         </Field>
 
+        <Field
+          label={copy.vendors.proofLabel}
+          htmlFor="payment-proof"
+          hint={copy.vendors.proofHint}
+        >
+          <input
+            id="payment-proof"
+            name="proof"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            className="w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-olive-700"
+          />
+        </Field>
+
         <ModalFooter
           pending={pending}
           submitLabel={copy.form.save}
