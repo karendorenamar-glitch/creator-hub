@@ -68,7 +68,7 @@ export function SidebarNav({
         <BrandLogo />
       </Link>
 
-      <div className="rounded-2xl border border-olive-100 bg-olive-50/70 px-4 py-3">
+      <div className="rounded-2xl border border-petal-100 bg-gradient-to-br from-petal-50 to-olive-50/70 px-4 py-3">
         <p className="font-heading text-sm font-semibold text-ink">{couple}</p>
         <p className="mt-0.5 text-xs text-ink-soft">
           {weddingDateLabel ?? copy.dashboard.dateTbc}
@@ -89,7 +89,7 @@ export function SidebarNav({
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
                 active
-                  ? "bg-olive-50 font-medium text-olive-700"
+                  ? "bg-gradient-to-r from-petal-50 to-olive-50 font-medium text-olive-700"
                   : "text-ink-soft hover:bg-olive-50/60 hover:text-ink",
               )}
             >

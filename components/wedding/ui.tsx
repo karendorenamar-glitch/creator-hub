@@ -37,7 +37,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-3xl border border-olive-100 bg-cream p-6 shadow-[0_18px_50px_-40px_rgba(95,114,72,0.35)]",
+        "rounded-[1.75rem] border border-petal-100 bg-white/95 p-6 shadow-[0_24px_60px_-45px_rgba(207,131,113,0.35)]",
         className,
       )}
     >
@@ -60,7 +60,7 @@ export function StatCard({
   tone?: "blush" | "champagne" | "neutral";
 }) {
   const toneStyles = {
-    blush: "bg-olive-50 text-olive-700",
+    blush: "bg-petal-100 text-petal-500",
     champagne: "bg-sand-100 text-clay-500",
     neutral: "bg-white text-ink-soft",
   }[tone];
@@ -88,14 +88,14 @@ export function Progress({ value }: { value: number }) {
 
   return (
     <div
-      className="h-2 w-full overflow-hidden rounded-full bg-olive-100"
+      className="h-2 w-full overflow-hidden rounded-full bg-petal-100"
       role="progressbar"
       aria-valuenow={safe}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-olive-300 to-clay-400 transition-[width] duration-500"
+        className="h-full rounded-full bg-gradient-to-r from-petal-300 via-olive-300 to-olive-500 transition-[width] duration-500"
         style={{ width: `${safe}%` }}
       />
     </div>

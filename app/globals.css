@@ -76,6 +76,13 @@
   --color-sand-300: #e2d3ba;
   --color-clay-400: #d8a58d;
   --color-clay-500: #bf886f;
+  /* Feminine accent: soft petal/blush, paired with olive */
+  --color-petal-50: #fdf7f5;
+  --color-petal-100: #fbeae5;
+  --color-petal-200: #f6d6cd;
+  --color-petal-300: #eebcaf;
+  --color-petal-400: #e2a191;
+  --color-petal-500: #cf8371;
   --color-cream: #fdfbf5;
   --color-ink: #3a3d33;
   --color-ink-soft: #74776a;
@@ -122,6 +129,14 @@ h6,
   --font-heading: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-body: "Nunito", ui-sans-serif, system-ui, sans-serif;
   font-family: var(--font-body);
+}
+
+/* Soft, feminine surface used by the landing page and the app shell. */
+.wedding-surface {
+  background:
+    radial-gradient(circle at 12% -5%, rgba(251, 234, 229, 0.85), transparent 42%),
+    radial-gradient(circle at 88% 4%, rgba(246, 247, 241, 0.9), transparent 38%),
+    linear-gradient(180deg, #fffdfa 0%, #fdf7f5 100%);
 }
 
 /* Luxury invitation theme: keep text readable on the dark background. */

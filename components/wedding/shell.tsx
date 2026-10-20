@@ -22,7 +22,7 @@ export function WeddingShell({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="wedding-surface min-h-screen">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-66 border-r border-olive-100 bg-white/80 backdrop-blur lg:block">
         <SidebarNav
           copy={copy}

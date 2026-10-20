@@ -45,7 +45,7 @@ const FEATURES = [
 
 export function WeddingLanding() {
   return (
-    <div className="wedding-app min-h-screen bg-cream text-ink">
+    <div className="wedding-app wedding-surface min-h-screen text-ink">
       <header className="sticky top-0 z-30 border-b border-olive-100/70 bg-cream/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3">
           <Link href="/" className="flex items-center">
@@ -70,7 +70,7 @@ export function WeddingLanding() {
             </Link>
             <Link
               href="/wedding/signup"
-              className="rounded-xl bg-olive-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-olive-700"
+              className="rounded-full bg-olive-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-olive-700"
             >
               Daftar
             </Link>
@@ -82,7 +82,7 @@ export function WeddingLanding() {
         <section className="bg-gradient-to-b from-olive-50 via-cream to-cream px-5 pb-16 pt-14 sm:pt-20">
           <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-olive-200 bg-white/70 px-3 py-1 text-xs text-olive-700">
+              <span className="inline-flex items-center gap-2 rounded-full border border-petal-200 bg-white/80 px-3 py-1 text-xs text-petal-500">
                 <Sparkles className="size-3.5" aria-hidden />
                 Wedding planner untuk pasangan Indonesia
               </span>
@@ -100,7 +100,7 @@ export function WeddingLanding() {
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <Link
                   href="/wedding/signup"
-                  className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-olive-700"
+                  className="inline-flex items-center gap-2 rounded-full bg-olive-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-olive-700"
                 >
                   Mulai Merencanakan
                   <ArrowRight className="size-4" aria-hidden />
@@ -161,17 +161,6 @@ export function WeddingLanding() {
           </div>
         </section>
 
-        <div className="px-5 pb-4 text-center">
-          <p className="text-sm text-ink-soft">
-            Email:{" "}
-            <a
-              href="mailto:hello@kefootech"
-              className="font-medium text-olive-700 underline-offset-4 hover:underline"
-            >
-              hello@kefootech
-            </a>
-          </p>
-        </div>
 
         <section id="fitur" className="bg-white/70 px-5 py-16 sm:py-20">
           <div className="mx-auto max-w-6xl">
@@ -240,7 +229,7 @@ export function WeddingLanding() {
 
             <Link
               href="/wedding/signup"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-olive-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-olive-700"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-olive-600 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-olive-700"
             >
               Mulai Merencanakan
               <ArrowRight className="size-4" aria-hidden />
@@ -264,7 +253,7 @@ export function WeddingLanding() {
             </p>
             <Link
               href="/wedding/signup"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3 text-sm font-medium text-olive-700 transition-colors hover:bg-olive-50"
+              className="mt-8 inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-medium text-olive-700 transition-colors hover:bg-olive-50"
             >
               Mulai Merencanakan
               <ArrowRight className="size-4" aria-hidden />
@@ -273,10 +262,23 @@ export function WeddingLanding() {
         </section>
       </main>
 
-      <footer className="border-t border-olive-100 bg-cream px-5 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-ink-soft sm:flex-row">
+      <footer className="border-t border-petal-100 bg-cream/80 px-5 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 text-sm text-ink-soft sm:flex-row sm:items-end sm:justify-between">
           <BrandLogo />
-          <p>© {new Date().getFullYear()} Kefoo Wedding Planner</p>
+          <div className="text-center sm:text-right">
+            <p>
+              Email:{" "}
+              <a
+                href="mailto:hello@kefootech"
+                className="font-medium text-olive-700 underline-offset-4 hover:underline"
+              >
+                hello@kefootech
+              </a>
+            </p>
+            <p className="mt-1 text-xs text-ink-soft/80">
+              © {new Date().getFullYear()} Kefoo Wedding Planner
+            </p>
+          </div>
         </div>
       </footer>
     </div>
