@@ -123,10 +123,35 @@ export async function setInvitationTemplateAction(
   const allowed: InvitationTemplateKey[] = ["elegant", "garden", "luxury"];
   if (!allowed.includes(key as InvitationTemplateKey)) return;
 
-  await ctx.supabase
+  const weddingId = ctx.session.wedding.id;
+
+  const { data: existing } = await ctx.supabase
     .from("invitations")
-    .update({ template: key as InvitationTemplateKey })
-    .eq("wedding_id", ctx.session.wedding.id);
+    .select("id")
+    .eq("wedding_id", weddingId)
+    .maybeSingle();
+
+  if (existing) {
+    await ctx.supabase
+      .from("invitations")
+      .update({ template: key as InvitationTemplateKey })
+      .eq("wedding_id", weddingId);
+  } else {
+    const slug =
+      `${ctx.session.wedding.partner_one_name}-${ctx.session.wedding.partner_two_name ?? ""}`
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/-{2,}/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 60) || "undangan-kami";
+
+    await ctx.supabase.from("invitations").insert({
+      wedding_id: weddingId,
+      slug,
+      template: key as InvitationTemplateKey,
+    });
+  }
 
   revalidateWedding("/wedding/invitation");
 }

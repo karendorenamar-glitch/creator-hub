@@ -133,8 +133,7 @@ export default async function InvitationPage() {
                 <input type="hidden" name="template" value={template.key} />
                 <button
                   type="submit"
-                  disabled={!invitation}
-                  className={`w-full overflow-hidden rounded-2xl border text-left transition-colors disabled:opacity-60 ${
+                  className={`w-full overflow-hidden rounded-2xl border text-left transition-colors ${
                     selected
                       ? "border-olive-500 ring-2 ring-olive-200"
                       : "border-olive-100 hover:border-olive-300"
@@ -167,7 +166,7 @@ export default async function InvitationPage() {
         </div>
         {!invitation ? (
           <p className="text-xs text-ink-soft">
-            {copy.invitation.slugHint}
+            Pilih desain untuk membuat undangan draf otomatis.
           </p>
         ) : null}
       </Card>
