@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { BrandLogo } from "@/components/wedding/brand-logo";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 
@@ -12,19 +12,7 @@ export default async function WeddingAuthLayout({
   return (
     <div className="grid min-h-screen bg-cream lg:grid-cols-2">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-olive-100 via-olive-50 to-sand-100 p-12 lg:flex">
-        <div className="flex items-center gap-3">
-          <span className="flex size-11 items-center justify-center rounded-full bg-white/70 text-olive-700">
-            <Sparkles className="size-5" aria-hidden />
-          </span>
-          <span className="leading-tight">
-            <span className="block font-heading text-lg font-semibold text-ink">
-              Kefoo
-            </span>
-            <span className="block text-[11px] uppercase tracking-[0.18em] text-clay-500">
-              Wedding Planner
-            </span>
-          </span>
-        </div>
+        <BrandLogo size="lg" />
 
         <div className="max-w-md">
           <h2 className="font-heading text-4xl leading-tight font-semibold text-ink">

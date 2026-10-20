@@ -9,7 +9,6 @@ import {
   ListOrdered,
   LogOut,
   Settings,
-  Sparkles,
   Users,
   Wallet,
 } from "lucide-react";
@@ -18,6 +17,7 @@ import { signOutAction } from "@/app/wedding/actions";
 import type { AppLocale } from "@/lib/i18n/types";
 import type { WeddingCopy } from "@/lib/wedding/copy";
 import { cn } from "@/lib/utils";
+import { BrandLogo } from "@/components/wedding/brand-logo";
 
 type NavKey = keyof WeddingCopy["nav"];
 
@@ -62,17 +62,7 @@ export function SidebarNav({
         onClick={onNavigate}
         className="flex items-center gap-3"
       >
-        <span className="flex size-10 items-center justify-center rounded-full bg-olive-100 text-olive-700">
-          <Sparkles className="size-5" aria-hidden />
-        </span>
-        <span className="leading-tight">
-          <span className="block font-heading text-base font-semibold text-ink">
-            Kefoo
-          </span>
-          <span className="block text-[11px] uppercase tracking-[0.18em] text-clay-500">
-            Wedding Planner
-          </span>
-        </span>
+        <BrandLogo />
       </Link>
 
       <div className="rounded-2xl border border-olive-100 bg-olive-50/70 px-4 py-3">
