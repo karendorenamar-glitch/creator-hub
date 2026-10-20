@@ -19,6 +19,7 @@ import type { AppLocale } from "@/lib/i18n/types";
 import type { WeddingCopy } from "@/lib/wedding/copy";
 import { cn } from "@/lib/utils";
 import { BrandLogo } from "@/components/wedding/brand-logo";
+import { E_INVITATION_ENABLED } from "@/lib/wedding/features";
 
 type NavKey = keyof WeddingCopy["nav"];
 
@@ -75,7 +76,9 @@ export function SidebarNav({
       </div>
 
       <nav className="flex flex-1 flex-col gap-1" aria-label={copy.nav.menu}>
-        {NAV.map(({ key, href, Icon }) => {
+        {NAV.filter(
+          (item) => item.key !== "invitation" || E_INVITATION_ENABLED,
+        ).map(({ key, href, Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link

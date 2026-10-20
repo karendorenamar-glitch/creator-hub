@@ -4,6 +4,7 @@ import { InvitationTemplate } from "@/components/wedding/invitation/invitation-t
 import { getLocale } from "@/lib/i18n/get-locale";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { createWeddingClient } from "@/lib/wedding/supabase";
+import { E_INVITATION_ENABLED } from "@/lib/wedding/features";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,8 @@ async function loadInvitation(slug: string) {
 }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  if (!E_INVITATION_ENABLED) return { title: "Undangan" };
+
   const { slug } = await params;
   const row = await loadInvitation(slug).catch(() => null);
   if (!row) return { title: "Undangan" };
@@ -27,6 +30,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 export default async function PublicInvitationPage({ params }: Params) {
+  if (!E_INVITATION_ENABLED) notFound();
+
   const { slug } = await params;
   const row = await loadInvitation(slug);
   if (!row) notFound();

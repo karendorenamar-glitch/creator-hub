@@ -1,6 +1,7 @@
 "use server";
 
 import { createWeddingClient } from "@/lib/wedding/supabase";
+import { E_INVITATION_ENABLED } from "@/lib/wedding/features";
 import { optionalText, text } from "@/lib/wedding/validation";
 
 export type RsvpState = { error?: string; success?: boolean } | null;
@@ -9,6 +10,10 @@ export async function submitRsvpAction(
   _prev: RsvpState,
   formData: FormData,
 ): Promise<RsvpState> {
+  if (!E_INVITATION_ENABLED) {
+    return { error: "Undangan tidak tersedia." };
+  }
+
   const slug = text(formData, "slug");
   const name = text(formData, "name").slice(0, 120);
   const attendance =

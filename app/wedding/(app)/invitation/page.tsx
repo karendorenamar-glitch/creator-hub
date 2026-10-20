@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   deleteRsvpAction,
   publishInvitationFormAction,
@@ -14,6 +14,7 @@ import { Badge, Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { formatDateTime } from "@/lib/wedding/format";
 import { moduleCopy } from "@/lib/wedding/module-copy";
+import { E_INVITATION_ENABLED } from "@/lib/wedding/features";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
@@ -30,6 +31,8 @@ function slugify(value: string) {
 }
 
 export default async function InvitationPage() {
+  if (!E_INVITATION_ENABLED) notFound();
+
   const session = await loadWeddingSession();
   if (!session) redirect("/wedding/onboarding");
 

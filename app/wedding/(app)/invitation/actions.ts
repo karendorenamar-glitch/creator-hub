@@ -10,8 +10,10 @@ import {
 import type { InvitationContent, InvitationTemplateKey } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { isHttpUrl, isUuid, optionalText, text } from "@/lib/wedding/validation";
+import { E_INVITATION_ENABLED } from "@/lib/wedding/features";
 
 async function context() {
+  if (!E_INVITATION_ENABLED) redirect("/wedding/dashboard");
   const ctx = await getActionContext();
   if (!ctx) redirect("/wedding/login");
   return ctx;
