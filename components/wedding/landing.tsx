@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { BrandLogo } from "@/components/wedding/brand-logo";
 import { BudgetPlayground } from "@/components/wedding/budget-playground";
+import { GoalConfetti } from "@/components/wedding/goal-confetti";
 
 const FEATURES = [
   {
@@ -156,37 +157,21 @@ export function WeddingLanding() {
               </div>
             </div>
 
-            <div className="flex items-end justify-center gap-4">
-              <div className="w-full max-w-md rounded-2xl border border-olive-200 bg-white p-2 shadow-[0_24px_60px_-50px_rgba(74,90,57,0.8)]">
-                <div className="rounded-xl bg-olive-50/70 p-4">
-                  <div className="flex gap-1.5">
-                    <span className="size-2 rounded-full bg-olive-300" />
-                    <span className="size-2 rounded-full bg-olive-200" />
-                    <span className="size-2 rounded-full bg-olive-100" />
-                  </div>
-                  <div className="mt-3 space-y-2">
-                    <div className="h-2 w-24 rounded bg-olive-200" />
-                    <div className="h-16 rounded-lg bg-white" />
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="h-10 rounded-lg bg-white" />
-                      <div className="h-10 rounded-lg bg-white" />
-                      <div className="h-10 rounded-lg bg-white" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-24 shrink-0 rounded-2xl border border-olive-200 bg-white p-1.5 shadow-[0_18px_40px_-30px_rgba(74,90,57,0.9)] sm:w-28">
-                <div className="space-y-2 rounded-xl bg-olive-50/70 p-2">
-                  <div className="mx-auto h-1 w-8 rounded bg-olive-200" />
-                  <div className="h-10 rounded-md bg-white" />
-                  <div className="h-2 w-3/4 rounded bg-olive-200" />
-                  <div className="h-2 w-1/2 rounded bg-olive-100" />
-                </div>
-              </div>
-            </div>
+            <GoalConfetti />
           </div>
         </section>
+
+        <div className="px-5 pb-4 text-center">
+          <p className="text-sm text-ink-soft">
+            Email:{" "}
+            <a
+              href="mailto:hello@kefootech"
+              className="font-medium text-olive-700 underline-offset-4 hover:underline"
+            >
+              hello@kefootech
+            </a>
+          </p>
+        </div>
 
         <section id="fitur" className="bg-white/70 px-5 py-16 sm:py-20">
           <div className="mx-auto max-w-6xl">

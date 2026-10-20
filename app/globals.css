@@ -152,6 +152,18 @@ h6,
   100% { opacity: 0; transform: translateY(-42px) scale(1.05); }
 }
 
+@keyframes landing-confetti {
+  0% { opacity: 0; transform: translate3d(0, -12px, 0) rotate(0deg); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(0, 240px, 0) rotate(540deg); }
+}
+
+@keyframes landing-pop {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.04); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 .landing-float {
   animation: landing-float-soft 7s ease-in-out infinite;
 }
@@ -164,10 +176,20 @@ h6,
   animation: landing-heart-pop 1.6s ease-out forwards;
 }
 
+.landing-confetti {
+  animation: landing-confetti 2.6s linear forwards;
+}
+
+.landing-pop {
+  animation: landing-pop 0.5s ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .landing-float,
   .landing-fade,
-  .landing-heart {
+  .landing-heart,
+  .landing-confetti,
+  .landing-pop {
     animation: none;
   }
 }
