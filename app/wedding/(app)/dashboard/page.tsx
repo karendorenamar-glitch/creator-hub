@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Clock,
   ListOrdered,
-  Store,
   Users,
 } from "lucide-react";
 import {
@@ -39,7 +38,7 @@ export default async function DashboardPage() {
       supabase.from("guests").select("id, rsvp_status"),
       supabase
         .from("vendors")
-        .select("id, name, booking_status, agreed_price, quoted_price"),
+        .select("id, name, agreed_price, quoted_price"),
       supabase
         .from("checklist_tasks")
         .select("id, title, status, due_date, priority")
@@ -65,7 +64,6 @@ export default async function DashboardPage() {
   const pendingRsvp = guests.filter((g) => g.rsvp_status === "pending").length;
   const notAttending = guests.filter((g) => g.rsvp_status === "not_attending").length;
 
-  const bookedVendors = vendors.filter((v) => v.booking_status === "booked").length;
   const doneTasks = tasks.filter((t) => t.status === "done").length;
 
   const upcomingTasks = tasks.filter((t) => t.status !== "done" && t.due_date).slice(0, 5);
@@ -165,7 +163,7 @@ export default async function DashboardPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-3">
+      <section className="grid gap-4 sm:grid-cols-2">
         <Card>
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
@@ -186,24 +184,6 @@ export default async function DashboardPage() {
             <Badge tone="muted">
               {copy.dashboard.notAttending} {notAttending}
             </Badge>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
-              {copy.dashboard.vendorsBooked}
-            </p>
-            <Store className="size-4 text-olive-400" aria-hidden />
-          </div>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-            {bookedVendors}
-            <span className="ml-1 text-base font-normal text-ink-soft">
-              / {vendors.length}
-            </span>
-          </p>
-          <div className="mt-3">
-            <Progress value={percentOf(bookedVendors, vendors.length)} />
           </div>
         </Card>
 
