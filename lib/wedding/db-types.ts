@@ -185,16 +185,52 @@ export type InvitationContent = {
   musicUrl?: string | null;
 };
 
+export type InvitationTemplateKey = "elegant" | "garden" | "luxury";
+
+export type InvitationDesign = {
+  palette?: "olive" | "gold" | "blush";
+  font?: "fraunces" | "playfair" | "cormorant";
+  coverLayout?: "centered" | "split" | "frame";
+  sections?: {
+    story?: boolean;
+    ceremony?: boolean;
+    reception?: boolean;
+    venue?: boolean;
+    dressCode?: boolean;
+    rsvp?: boolean;
+  };
+};
+
 export type Invitation = {
   id: string;
   wedding_id: string;
   slug: string;
   status: InvitationPublishStatus;
-  template: "elegant";
+  template: InvitationTemplateKey;
   content: InvitationContent;
+  design: InvitationDesign;
+  music_mode: "none" | "library" | "upload";
+  music_track_id: string | null;
+  music_path: string | null;
+  music_volume: number;
+  cover_path: string | null;
+  couple_path: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type MusicTrack = {
+  id: string;
+  title: string;
+  mood: string;
+  duration_seconds: number | null;
+  license: string;
+  license_url: string | null;
+  audio_url: string | null;
+  is_available: boolean;
+  sort_order: number;
+  created_at: string;
 };
 
 export type InvitationRsvp = {
@@ -263,6 +299,7 @@ export type WeddingDatabase = {
       inspiration_photos: Table<InspirationPhoto>;
       invitations: Table<Invitation>;
       invitation_rsvps: Table<InvitationRsvp>;
+      music_tracks: Table<MusicTrack>;
     };
     Views: Record<string, never>;
     Functions: {
@@ -272,7 +309,14 @@ export type WeddingDatabase = {
           id: string;
           wedding_id: string;
           content: InvitationContent;
-          template: "elegant";
+          design: InvitationDesign;
+          template: InvitationTemplateKey;
+          music_mode: "none" | "library" | "upload";
+          music_track_id: string | null;
+          music_path: string | null;
+          music_volume: number;
+          cover_path: string | null;
+          couple_path: string | null;
           published_at: string | null;
           partner_one_name: string;
           partner_two_name: string | null;
