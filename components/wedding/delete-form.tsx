@@ -60,7 +60,7 @@ export function DeleteForm({
       <button
         type="button"
         onClick={() => setConfirming(false)}
-        className="rounded-lg px-2 py-1 text-xs text-ink-soft hover:bg-blush-50"
+        className="rounded-lg px-2 py-1 text-xs text-ink-soft hover:bg-olive-50"
       >
         {copy.form.cancel}
       </button>

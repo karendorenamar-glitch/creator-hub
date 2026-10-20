@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
   Clock,
   ListOrdered,
   Store,
@@ -11,7 +12,6 @@ import {
 import {
   Badge,
   Card,
-  EmptyState,
   PageHeader,
   Progress,
   StatCard,
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/wedding/billing"
-              className="rounded-xl bg-blush-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600"
+              className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700"
             >
               {copy.dashboard.activate}
             </Link>
@@ -107,9 +107,9 @@ export default async function DashboardPage() {
       ) : null}
 
       {weddingDateLabel ? (
-        <Card className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-blush-50 via-ivory to-champagne-100/70">
+        <Card className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-olive-50 via-cream to-sand-100/70">
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-full bg-white text-blush-500">
+            <span className="flex size-10 items-center justify-center rounded-full bg-white text-olive-600">
               <CalendarDays className="size-5" aria-hidden />
             </span>
             <div>
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
               {copy.dashboard.percentSpent}
             </p>
-            <span className="rounded-full bg-blush-50 p-2 text-blush-600">
+            <span className="rounded-full bg-olive-50 p-2 text-olive-700">
               <ListOrdered className="size-4" aria-hidden />
             </span>
           </div>
@@ -176,7 +176,7 @@ export default async function DashboardPage() {
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
               {copy.dashboard.guestsInvited}
             </p>
-            <Users className="size-4 text-blush-400" aria-hidden />
+            <Users className="size-4 text-olive-400" aria-hidden />
           </div>
           <p className="mt-3 text-3xl font-semibold tracking-tight text-ink">
             {guests.length}
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
               {copy.dashboard.vendorsBooked}
             </p>
-            <Store className="size-4 text-blush-400" aria-hidden />
+            <Store className="size-4 text-olive-400" aria-hidden />
           </div>
           <p className="mt-3 text-3xl font-semibold tracking-tight text-ink">
             {bookedVendors}
@@ -217,7 +217,7 @@ export default async function DashboardPage() {
             <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
               {copy.dashboard.tasksDone}
             </p>
-            <CheckCircle2 className="size-4 text-blush-400" aria-hidden />
+            <CheckCircle2 className="size-4 text-olive-400" aria-hidden />
           </div>
           <p className="mt-3 text-3xl font-semibold tracking-tight text-ink">
             {doneTasks}
@@ -238,11 +238,11 @@ export default async function DashboardPage() {
           </h2>
           <div className="mt-4">
             {upcomingTasks.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-6 text-center text-sm text-ink-soft">
+              <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-6 text-center text-sm text-ink-soft">
                 {copy.dashboard.noTasks}
               </p>
             ) : (
-              <ul className="divide-y divide-blush-100">
+              <ul className="divide-y divide-olive-100">
                 {upcomingTasks.map((task) => {
                   const days = daysFromToday(task.due_date);
                   return (
@@ -275,11 +275,11 @@ export default async function DashboardPage() {
           </h2>
           <div className="mt-4">
             {upcomingPayments.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-6 text-center text-sm text-ink-soft">
+              <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-6 text-center text-sm text-ink-soft">
                 {copy.dashboard.noUpcoming}
               </p>
             ) : (
-              <ul className="divide-y divide-blush-100">
+              <ul className="divide-y divide-olive-100">
                 {upcomingPayments.map((expense) => (
                   <li
                     key={expense.id}
@@ -303,11 +303,37 @@ export default async function DashboardPage() {
       </section>
 
       {guests.length === 0 && vendors.length === 0 && tasks.length === 0 ? (
-        <EmptyState
-          title={copy.dashboard.setupTitle}
-          body={copy.dashboard.setupBody}
-          icon={<ListOrdered className="size-6" aria-hidden />}
-        />
+        <Card className="bg-gradient-to-br from-white via-cream to-olive-50">
+          <h2 className="font-heading text-lg font-semibold text-ink">
+            {copy.dashboard.setupTitle}
+          </h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            {copy.dashboard.setupBody}
+          </p>
+          <ol className="mt-5 grid gap-3 sm:grid-cols-2">
+            {[
+              { href: "/wedding/settings", label: copy.dashboard.setupStep1 },
+              { href: "/wedding/guests", label: copy.dashboard.setupStep2 },
+              { href: "/wedding/vendors", label: copy.dashboard.setupStep3 },
+              { href: "/wedding/checklist", label: copy.dashboard.setupStep4 },
+            ].map((step, index) => (
+              <li key={step.href}>
+                <Link
+                  href={step.href}
+                  className="flex items-center gap-3 rounded-2xl border border-olive-100 bg-white/70 px-4 py-3 transition-colors hover:border-olive-200 hover:bg-olive-50"
+                >
+                  <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-olive-600 text-xs font-semibold text-white">
+                    {index + 1}
+                  </span>
+                  <span className="flex-1 text-sm font-medium text-ink">
+                    {step.label}
+                  </span>
+                  <ChevronRight className="size-4 text-ink-soft" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </Card>
       ) : null}
     </div>
   );

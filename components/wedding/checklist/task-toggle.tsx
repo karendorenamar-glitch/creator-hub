@@ -30,7 +30,7 @@ export function TaskToggle({
         aria-label={completed ? copy.checklist.reopen : copy.checklist.markDone}
         title={completed ? copy.checklist.reopen : copy.checklist.markDone}
         className={`rounded-full p-0.5 transition-colors disabled:opacity-50 ${
-          completed ? "text-emerald-500" : "text-blush-300 hover:text-blush-500"
+          completed ? "text-emerald-500" : "text-olive-300 hover:text-olive-600"
         }`}
       >
         <CheckCircle2 className="size-5" aria-hidden />

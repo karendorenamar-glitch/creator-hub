@@ -122,15 +122,15 @@ export function GuestManager({
       </div>
 
       {guests.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
           {copy.guests.noGuests}
         </p>
       ) : filtered.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
           {copy.guests.emptyFilter}
         </p>
       ) : (
-        <ul className="divide-y divide-blush-100 rounded-2xl border border-blush-100 bg-white">
+        <ul className="divide-y divide-olive-100 rounded-2xl border border-olive-100 bg-white">
           {filtered.map((guest) => (
             <li
               key={guest.id}
@@ -164,7 +164,7 @@ export function GuestManager({
                 <button
                   type="button"
                   onClick={() => openEdit(guest)}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-blush-50 hover:text-ink"
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
                 >
                   <Pencil className="size-3.5" aria-hidden />
                   {copy.form.edit}

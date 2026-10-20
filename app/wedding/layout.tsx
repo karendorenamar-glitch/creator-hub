@@ -14,5 +14,5 @@ export default function WeddingRootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-screen bg-ivory text-ink">{children}</div>;
+  return <div className="wedding-app min-h-screen bg-cream text-ink">{children}</div>;
 }

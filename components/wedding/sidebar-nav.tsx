@@ -68,20 +68,20 @@ export function SidebarNav({
         onClick={onNavigate}
         className="flex items-center gap-3"
       >
-        <span className="flex size-10 items-center justify-center rounded-full bg-blush-100 text-blush-600">
+        <span className="flex size-10 items-center justify-center rounded-full bg-olive-100 text-olive-700">
           <Sparkles className="size-5" aria-hidden />
         </span>
         <span className="leading-tight">
           <span className="block font-heading text-base font-semibold text-ink">
             Kefoo
           </span>
-          <span className="block text-[11px] uppercase tracking-[0.18em] text-champagne-500">
+          <span className="block text-[11px] uppercase tracking-[0.18em] text-clay-500">
             Wedding Planner
           </span>
         </span>
       </Link>
 
-      <div className="rounded-2xl border border-blush-100 bg-blush-50/70 px-4 py-3">
+      <div className="rounded-2xl border border-olive-100 bg-olive-50/70 px-4 py-3">
         <p className="font-heading text-sm font-semibold text-ink">{couple}</p>
         <p className="mt-0.5 text-xs text-ink-soft">
           {weddingDateLabel ?? copy.dashboard.dateTbc}
@@ -105,14 +105,14 @@ export function SidebarNav({
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
                 active
-                  ? "bg-blush-50 font-medium text-blush-600"
-                  : "text-ink-soft hover:bg-blush-50/60 hover:text-ink",
+                  ? "bg-olive-50 font-medium text-olive-700"
+                  : "text-ink-soft hover:bg-olive-50/60 hover:text-ink",
               )}
             >
               <Icon
                 className={cn(
                   "size-4 shrink-0",
-                  active ? "text-blush-500" : "text-ink-soft/70",
+                  active ? "text-olive-600" : "text-ink-soft/70",
                 )}
                 aria-hidden
               />
@@ -122,10 +122,10 @@ export function SidebarNav({
         })}
       </nav>
 
-      <div className="space-y-3 border-t border-blush-100 pt-4">
+      <div className="space-y-3 border-t border-olive-100 pt-4">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-ink-soft">{copy.nav.language}</span>
-          <div className="flex overflow-hidden rounded-full border border-blush-100">
+          <div className="flex overflow-hidden rounded-full border border-olive-100">
             {(["en", "id"] as const).map((code) => (
               <button
                 key={code}
@@ -135,8 +135,8 @@ export function SidebarNav({
                 className={cn(
                   "px-2.5 py-1 text-[11px] font-medium uppercase transition-colors",
                   locale === code
-                    ? "bg-blush-100 text-blush-600"
-                    : "bg-white text-ink-soft hover:bg-blush-50",
+                    ? "bg-olive-100 text-olive-700"
+                    : "bg-white text-ink-soft hover:bg-olive-50",
                 )}
               >
                 {code}
@@ -147,7 +147,7 @@ export function SidebarNav({
         <form action={signOutAction}>
           <button
             type="submit"
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-ink-soft transition-colors hover:bg-blush-50 hover:text-ink"
+            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
           >
             <LogOut className="size-4" aria-hidden />
             {copy.nav.signOut}

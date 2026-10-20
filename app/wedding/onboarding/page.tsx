@@ -22,14 +22,14 @@ export default async function OnboardingPage() {
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-4 py-12 sm:px-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex size-10 items-center justify-center rounded-full bg-blush-100 text-blush-600">
+          <span className="flex size-10 items-center justify-center rounded-full bg-olive-100 text-olive-700">
             <Sparkles className="size-5" aria-hidden />
           </span>
           <span className="leading-tight">
             <span className="block font-heading text-base font-semibold text-ink">
               Kefoo
             </span>
-            <span className="block text-[11px] uppercase tracking-[0.18em] text-champagne-500">
+            <span className="block text-[11px] uppercase tracking-[0.18em] text-clay-500">
               Wedding Planner
             </span>
           </span>

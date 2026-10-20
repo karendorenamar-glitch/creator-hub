@@ -30,7 +30,7 @@ export default function WeddingError({
       <button
         type="button"
         onClick={reset}
-        className="inline-flex items-center gap-2 rounded-xl bg-blush-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600"
+        className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700"
       >
         <RefreshCw className="size-4" aria-hidden />
         Try again · Coba lagi

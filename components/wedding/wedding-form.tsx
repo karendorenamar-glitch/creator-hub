@@ -12,7 +12,7 @@ import type { WeddingCopy } from "@/lib/wedding/copy";
 const initial: FormState = null;
 
 const fieldClass =
-  "w-full rounded-xl border border-blush-200 bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/60 focus:border-blush-400 focus:ring-2 focus:ring-blush-100";
+  "w-full rounded-xl border border-olive-200 bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/60 focus:border-olive-400 focus:ring-2 focus:ring-olive-100";
 
 const labelClass = "text-sm font-medium text-ink";
 
@@ -158,7 +158,7 @@ export function WeddingDetailsForm({
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center justify-center gap-2 rounded-xl bg-blush-500 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600 disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-2 rounded-xl bg-olive-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
       >
         {pending ? (
           <Loader2 className="size-4 animate-spin" aria-hidden />

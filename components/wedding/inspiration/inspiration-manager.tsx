@@ -30,8 +30,8 @@ function InspirationCard({
   const safeLink = item.link_url && isHttpUrl(item.link_url) ? item.link_url : null;
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-blush-100 bg-white">
-      <div className="relative aspect-[4/3] bg-blush-50">
+    <div className="flex flex-col overflow-hidden rounded-2xl border border-olive-100 bg-white">
+      <div className="relative aspect-[4/3] bg-olive-50">
         {safeImage && !broken ? (
           <img
             src={safeImage}
@@ -42,7 +42,7 @@ function InspirationCard({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-blush-300">
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-olive-300">
             {broken ? (
               <ImageOff className="size-8" aria-hidden />
             ) : (
@@ -81,7 +81,7 @@ function InspirationCard({
               href={safeLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-blush-50 px-2.5 py-1.5 text-xs font-medium text-blush-600 transition-colors hover:bg-blush-100"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 transition-colors hover:bg-olive-100"
             >
               <ExternalLink className="size-3.5" aria-hidden />
               {copy.inspiration.openLink}
@@ -90,7 +90,7 @@ function InspirationCard({
           <button
             type="button"
             onClick={() => onEdit(item)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-blush-50 hover:text-ink"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
           >
             <Pencil className="size-3.5" aria-hidden />
             {copy.form.edit}
@@ -161,11 +161,11 @@ export function InspirationManager({
       </select>
 
       {items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
           {copy.inspiration.noItems}
         </p>
       ) : filtered.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
           {copy.inspiration.emptyFilter}
         </p>
       ) : (

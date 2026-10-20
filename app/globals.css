@@ -1,4 +1,5 @@
 @import url("https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -61,22 +62,23 @@
   --color-baby-700: #3a85b8;
   --color-baby-800: #2d6a94;
   --color-baby-900: #1f5070;
-  /* Wedding planner palette */
-  --color-blush-50: #fdf7f5;
-  --color-blush-100: #fbece7;
-  --color-blush-200: #f6d9d1;
-  --color-blush-300: #eebfb3;
-  --color-blush-400: #e3a294;
-  --color-blush-500: #d38574;
-  --color-blush-600: #b96b5b;
-  --color-champagne-100: #f8f1e4;
-  --color-champagne-200: #eddfc4;
-  --color-champagne-300: #ddc49a;
-  --color-champagne-400: #c9a86a;
-  --color-champagne-500: #a98a4f;
-  --color-ivory: #fffdfa;
-  --color-ink: #3f3634;
-  --color-ink-soft: #7d6f68;
+  /* Wedding planner palette: olive green, warm sand, soft clay */
+  --color-olive-50: #f6f7f1;
+  --color-olive-100: #eaeedd;
+  --color-olive-200: #d7dfc4;
+  --color-olive-300: #bcc9a4;
+  --color-olive-400: #9fb083;
+  --color-olive-500: #7f9161;
+  --color-olive-600: #5f7248;
+  --color-olive-700: #4a5a39;
+  --color-sand-100: #f8f2e6;
+  --color-sand-200: #efe4d2;
+  --color-sand-300: #e2d3ba;
+  --color-clay-400: #d8a58d;
+  --color-clay-500: #bf886f;
+  --color-cream: #fdfbf5;
+  --color-ink: #3a3d33;
+  --color-ink-soft: #74776a;
 }
 
 body {
@@ -112,6 +114,32 @@ h6,
   border: 1px solid rgb(232 212 255 / 0.75);
   background: rgb(255 255 255 / 0.92);
   box-shadow: 0 14px 40px -30px rgba(184, 135, 248, 0.2);
+}
+
+/* Wedding planner only: soft serif headings + rounded friendly body text.
+   Scoped so the legacy Kefoo pages keep their own fonts. */
+.wedding-app {
+  --font-heading: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-body: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-body);
+}
+
+.wedding-app h1,
+.wedding-app h2,
+.wedding-app h3,
+.wedding-app h4,
+.wedding-app .font-heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  font-variation-settings: "SOFT" 40, "WONK" 1;
+}
+
+.wedding-app button,
+.wedding-app input,
+.wedding-app select,
+.wedding-app textarea {
+  font-family: inherit;
 }
 
 @keyframes kefoo-blink {

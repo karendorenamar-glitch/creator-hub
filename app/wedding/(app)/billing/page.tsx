@@ -40,10 +40,10 @@ export default async function BillingPage() {
       <PageHeader title={copy.billing.title} subtitle={copy.billing.subtitle} />
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-        <Card className="bg-gradient-to-br from-white via-ivory to-blush-50">
+        <Card className="bg-gradient-to-br from-white via-cream to-olive-50">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-champagne-500">
+              <p className="text-xs uppercase tracking-[0.14em] text-clay-500">
                 {copy.billing.planName}
               </p>
               <p className="mt-2 font-heading text-3xl font-semibold text-ink">
@@ -53,7 +53,7 @@ export default async function BillingPage() {
                 </span>
               </p>
             </div>
-            <span className="rounded-full bg-blush-100 p-3 text-blush-600">
+            <span className="rounded-full bg-olive-100 p-3 text-olive-700">
               <CreditCard className="size-5" aria-hidden />
             </span>
           </div>
@@ -94,8 +94,8 @@ export default async function BillingPage() {
           </ul>
         </Card>
 
-        <Card className="border-champagne-200 bg-champagne-100/40">
-          <div className="flex items-center gap-2 text-champagne-500">
+        <Card className="border-sand-200 bg-sand-100/40">
+          <div className="flex items-center gap-2 text-clay-500">
             <Info className="size-4" aria-hidden />
             <h2 className="text-sm font-semibold">{copy.billing.noticeTitle}</h2>
           </div>
@@ -116,21 +116,21 @@ export default async function BillingPage() {
           {copy.billing.paymentHistory}
         </h2>
         {!payments || payments.length === 0 ? (
-          <p className="mt-4 rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+          <p className="mt-4 rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
             {copy.billing.noPayments}
           </p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-blush-100 text-xs uppercase tracking-[0.1em] text-ink-soft">
+                <tr className="border-b border-olive-100 text-xs uppercase tracking-[0.1em] text-ink-soft">
                   <th className="py-2 pr-4 font-medium">{copy.billing.date}</th>
                   <th className="py-2 pr-4 font-medium">{copy.billing.amount}</th>
                   <th className="py-2 pr-4 font-medium">{copy.billing.status}</th>
                   <th className="py-2 font-medium">{copy.billing.method}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-blush-100">
+              <tbody className="divide-y divide-olive-100">
                 {payments.map((payment) => (
                   <tr key={payment.id}>
                     <td className="py-2.5 pr-4 text-ink">

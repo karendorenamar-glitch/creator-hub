@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export const inputClass =
-  "w-full rounded-xl border border-blush-200 bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/60 focus:border-blush-400 focus:ring-2 focus:ring-blush-100";
+  "w-full rounded-xl border border-olive-200 bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/60 focus:border-olive-400 focus:ring-2 focus:ring-olive-100";
 
 export const labelClass = "text-sm font-medium text-ink";
 
@@ -68,18 +68,18 @@ export function ModalFooter({
   onCancel: () => void;
 }) {
   return (
-    <div className="flex justify-end gap-2 border-t border-blush-100 pt-4">
+    <div className="flex justify-end gap-2 border-t border-olive-100 pt-4">
       <button
         type="button"
         onClick={onCancel}
-        className="rounded-xl px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-blush-50 hover:text-ink"
+        className="rounded-xl px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
       >
         {cancelLabel}
       </button>
       <button
         type="submit"
         disabled={pending}
-        className="rounded-xl bg-blush-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600 disabled:opacity-60"
+        className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
       >
         {pending ? savingLabel : submitLabel}
       </button>
@@ -98,7 +98,7 @@ export function AddButton({
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-2 rounded-xl bg-blush-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600"
+      className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700"
     >
       <span aria-hidden className="text-base leading-none">
         +

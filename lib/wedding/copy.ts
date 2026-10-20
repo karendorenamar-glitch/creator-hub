@@ -96,7 +96,11 @@ const en = {
     dateTbc: "Wedding date not set",
     setupTitle: "Let's get started",
     setupBody:
-      "Add your budget categories, guests and vendors to bring this dashboard to life.",
+      "Four short steps and your planner is ready. You can change everything later.",
+    setupStep1: "Set your budget and categories",
+    setupStep2: "Add your guest list",
+    setupStep3: "Add your vendors",
+    setupStep4: "Plan your checklist",
     emptyBudget: "Set your total budget in Wedding Settings to see progress here.",
     lockedTitle: "Your planner is not active yet",
     lockedBody:
@@ -263,7 +267,11 @@ const id: WeddingCopy = {
     dateTbc: "Tanggal pernikahan belum diatur",
     setupTitle: "Mari mulai",
     setupBody:
-      "Tambahkan kategori anggaran, tamu, dan vendor untuk menghidupkan dasbor ini.",
+      "Empat langkah singkat dan perencana Anda siap. Semua bisa diubah nanti.",
+    setupStep1: "Atur anggaran dan kategori",
+    setupStep2: "Tambahkan daftar tamu",
+    setupStep3: "Tambahkan vendor",
+    setupStep4: "Susun checklist pernikahan",
     emptyBudget:
       "Atur total anggaran di Pengaturan Pernikahan untuk melihat progres.",
     lockedTitle: "Perencana Anda belum aktif",

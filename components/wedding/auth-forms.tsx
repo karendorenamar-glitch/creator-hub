@@ -13,7 +13,7 @@ import type { WeddingCopy } from "@/lib/wedding/copy";
 const initial: FormState = null;
 
 const fieldClass =
-  "w-full rounded-xl border border-blush-200 bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/60 focus:border-blush-400 focus:ring-2 focus:ring-blush-100";
+  "w-full rounded-xl border border-olive-200 bg-white px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/60 focus:border-olive-400 focus:ring-2 focus:ring-olive-100";
 
 function Alert({ state }: { state: FormState }) {
   if (!state) return null;
@@ -71,14 +71,14 @@ export function SignInForm({ copy }: { copy: WeddingCopy }) {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blush-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600 disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
       >
         {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {pending ? copy.auth.signingIn : copy.auth.signIn}
       </button>
       <p className="text-center text-sm text-ink-soft">
         {copy.auth.noAccount}{" "}
-        <Link href="/wedding/signup" className="font-medium text-blush-600 hover:underline">
+        <Link href="/wedding/signup" className="font-medium text-olive-700 hover:underline">
           {copy.auth.createAccount}
         </Link>
       </p>
@@ -139,14 +139,14 @@ export function SignUpForm({ copy }: { copy: WeddingCopy }) {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blush-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600 disabled:opacity-60"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
       >
         {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {pending ? copy.auth.signingUp : copy.auth.signUp}
       </button>
       <p className="text-center text-sm text-ink-soft">
         {copy.auth.haveAccount}{" "}
-        <Link href="/wedding/login" className="font-medium text-blush-600 hover:underline">
+        <Link href="/wedding/login" className="font-medium text-olive-700 hover:underline">
           {copy.auth.signInLink}
         </Link>
       </p>

@@ -31,7 +31,7 @@ export function TotalBudgetForm({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-xl bg-blush-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blush-600 disabled:opacity-60"
+          className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
         >
           {pending ? copy.form.saving : copy.budget.updateBudget}
         </button>

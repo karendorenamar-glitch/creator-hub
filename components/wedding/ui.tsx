@@ -37,7 +37,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-3xl border border-blush-100 bg-ivory p-6 shadow-[0_18px_50px_-40px_rgba(120,80,60,0.35)]",
+        "rounded-3xl border border-olive-100 bg-cream p-6 shadow-[0_18px_50px_-40px_rgba(95,114,72,0.35)]",
         className,
       )}
     >
@@ -60,8 +60,8 @@ export function StatCard({
   tone?: "blush" | "champagne" | "neutral";
 }) {
   const toneStyles = {
-    blush: "bg-blush-50 text-blush-600",
-    champagne: "bg-champagne-100 text-champagne-500",
+    blush: "bg-olive-50 text-olive-700",
+    champagne: "bg-sand-100 text-clay-500",
     neutral: "bg-white text-ink-soft",
   }[tone];
 
@@ -88,14 +88,14 @@ export function Progress({ value }: { value: number }) {
 
   return (
     <div
-      className="h-2 w-full overflow-hidden rounded-full bg-blush-100"
+      className="h-2 w-full overflow-hidden rounded-full bg-olive-100"
       role="progressbar"
       aria-valuenow={safe}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-blush-300 to-champagne-400 transition-[width] duration-500"
+        className="h-full rounded-full bg-gradient-to-r from-olive-300 to-clay-400 transition-[width] duration-500"
         style={{ width: `${safe}%` }}
       />
     </div>
@@ -110,7 +110,7 @@ export function Badge({
   tone?: "neutral" | "success" | "warning" | "muted";
 }) {
   const tones = {
-    neutral: "bg-blush-50 text-blush-600 border-blush-100",
+    neutral: "bg-olive-50 text-olive-700 border-olive-100",
     success: "bg-emerald-50 text-emerald-700 border-emerald-100",
     warning: "bg-amber-50 text-amber-700 border-amber-100",
     muted: "bg-stone-50 text-stone-500 border-stone-200",
@@ -138,8 +138,8 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-blush-200 bg-blush-50/50 px-6 py-12 text-center">
-      {icon ? <span className="text-blush-400">{icon}</span> : null}
+    <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-olive-200 bg-olive-50/50 px-6 py-12 text-center">
+      {icon ? <span className="text-olive-400">{icon}</span> : null}
       <h3 className="text-base font-semibold text-ink">{title}</h3>
       <p className="max-w-md text-sm leading-relaxed text-ink-soft">{body}</p>
     </div>

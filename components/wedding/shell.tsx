@@ -24,8 +24,8 @@ export function WeddingShell({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-ivory">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-66 border-r border-blush-100 bg-white/80 backdrop-blur lg:block">
+    <div className="min-h-screen bg-cream">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-66 border-r border-olive-100 bg-white/80 backdrop-blur lg:block">
         <SidebarNav
           copy={copy}
           locale={locale}
@@ -35,12 +35,12 @@ export function WeddingShell({
         />
       </aside>
 
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-blush-100 bg-ivory/90 px-4 py-3 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-olive-100 bg-cream/90 px-4 py-3 backdrop-blur lg:hidden">
         <button
           type="button"
           onClick={() => setMenuOpen(true)}
           aria-label={copy.nav.menu}
-          className="rounded-xl border border-blush-100 p-2 text-ink"
+          className="rounded-xl border border-olive-100 p-2 text-ink"
         >
           <Menu className="size-5" aria-hidden />
         </button>

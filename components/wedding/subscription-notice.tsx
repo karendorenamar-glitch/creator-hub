@@ -27,7 +27,7 @@ export function SubscriptionNotice({
       </div>
       <Link
         href="/wedding/billing"
-        className="rounded-xl bg-blush-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blush-600"
+        className="rounded-xl bg-olive-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-olive-700"
       >
         {copy.errors.activate}
       </Link>

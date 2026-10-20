@@ -92,15 +92,15 @@ export function VendorManager({
       </div>
 
       {vendors.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
           {copy.vendors.noVendors}
         </p>
       ) : filtered.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-blush-200 bg-blush-50/50 px-4 py-8 text-center text-sm text-ink-soft">
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
           {copy.vendors.emptyFilter}
         </p>
       ) : (
-        <ul className="divide-y divide-blush-100 rounded-2xl border border-blush-100 bg-white">
+        <ul className="divide-y divide-olive-100 rounded-2xl border border-olive-100 bg-white">
           {filtered.map((vendor) => {
             const price = vendor.agreed_price ?? vendor.quoted_price ?? 0;
             const remaining = Math.max(0, price - vendor.amount_paid);
@@ -140,7 +140,7 @@ export function VendorManager({
                   <button
                     type="button"
                     onClick={() => openEdit(vendor)}
-                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-blush-50 hover:text-ink"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
                   >
                     <Pencil className="size-3.5" aria-hidden />
                     {copy.form.edit}

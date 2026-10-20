@@ -46,17 +46,17 @@ export function FormModal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-blush-100 bg-ivory shadow-2xl sm:rounded-3xl ${
+        className={`relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-olive-100 bg-cream shadow-2xl sm:rounded-3xl ${
           wide ? "sm:max-w-2xl" : "sm:max-w-lg"
         }`}
       >
-        <div className="flex items-center justify-between border-b border-blush-100 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-olive-100 px-5 py-4">
           <h2 className="font-heading text-base font-semibold text-ink">{title}</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-lg p-1.5 text-ink-soft transition-colors hover:bg-blush-50 hover:text-ink"
+            className="rounded-lg p-1.5 text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
           >
             <X className="size-5" aria-hidden />
           </button>
