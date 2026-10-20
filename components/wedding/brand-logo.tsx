@@ -5,12 +5,17 @@ import { useState } from "react";
 import { Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const LOGO_SRC = "/brand/kefoo-wedding-planner.jpg";
+const LOGO_CANDIDATES = [
+  "/brand/logo-wedding-planner.jpg",
+  "/brand/logo-wedding-planner.jpeg",
+  "/brand/logo-wedding-planner.png",
+  "/brand/kefoo-wedding-planner.jpg",
+];
 
 /**
  * Brand mark used in the sidebar, login screen and onboarding.
- * Falls back to the previous icon + wordmark if the image is missing,
- * so a not-yet-copied file never leaves a broken image.
+ * Tries the uploaded logo files in order and falls back to the previous
+ * icon + wordmark if none exist, so a missing file never shows a broken image.
  */
 export function BrandLogo({
   size = "sm",
@@ -19,15 +24,22 @@ export function BrandLogo({
   size?: "sm" | "lg";
   className?: string;
 }) {
+  const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const height = size === "lg" ? "h-16" : "h-10";
 
   if (!failed) {
     return (
       <img
-        src={LOGO_SRC}
+        src={LOGO_CANDIDATES[attempt]}
         alt="Kefoo Wedding Planner"
-        onError={() => setFailed(true)}
+        onError={() => {
+          if (attempt + 1 < LOGO_CANDIDATES.length) {
+            setAttempt(attempt + 1);
+          } else {
+            setFailed(true);
+          }
+        }}
         className={cn(height, "w-auto max-w-[220px] object-contain", className)}
       />
     );
