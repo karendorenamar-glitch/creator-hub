@@ -1,29 +1,22 @@
 import type { Metadata } from "next";
-import { LandingPage } from "@/components/landing/landing-page";
+import { WeddingLanding } from "@/components/wedding/landing";
 
-const homeTitle = "Kefoo | Self-Serve KOL Campaign Tracker & Creator Analytics";
+const homeTitle = "Kefoo Wedding Planner — Rencanakan Pernikahan dengan Tenang";
 const homeDescription =
-  "Run KOL campaigns effortlessly with live data. Create a workspace, paste video links, and track creator performance — free trial, no sales call required.";
+  "Atur anggaran, kelola pengeluaran, pantau pembayaran vendor, dan susun persiapan pernikahan dalam satu tempat.";
 
 export const metadata: Metadata = {
-  title: {
-    absolute: homeTitle,
-  },
+  title: { absolute: homeTitle },
   description: homeDescription,
-  alternates: {
-    canonical: "/",
-  },
+  alternates: { canonical: "/" },
   openGraph: {
     title: homeTitle,
     description: homeDescription,
-    url: "https://kefoo.tech",
-  },
-  twitter: {
-    title: homeTitle,
-    description: homeDescription,
+    locale: "id_ID",
+    type: "website",
   },
 };
 
 export default function HomePage() {
-  return <LandingPage />;
+  return <WeddingLanding />;
 }
