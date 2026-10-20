@@ -40,14 +40,14 @@ function InspirationCard({
   return (
     <div className="mb-4 break-inside-avoid overflow-hidden rounded-2xl border border-olive-100 bg-white">
       {mainUrl && !broken ? (
-        <div className="relative">
+        <div className="relative flex items-center justify-center bg-olive-50/60 p-1">
           <img
             src={mainUrl}
             alt={item.title}
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={() => setBroken(true)}
-            className="w-full object-cover"
+            className="max-h-[70vh] w-full object-contain"
           />
           {extraCount > 0 ? (
             <span className="absolute right-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-xs font-medium text-white">
@@ -73,7 +73,7 @@ function InspirationCard({
               alt=""
               loading="lazy"
               referrerPolicy="no-referrer"
-              className="aspect-square w-full rounded-md object-cover"
+              className="aspect-square w-full rounded-md bg-olive-50 object-contain"
             />
           ))}
         </div>

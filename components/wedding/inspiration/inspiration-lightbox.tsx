@@ -51,7 +51,7 @@ export function InspirationLightbox({
 
   return createPortal(
     <div className="fixed inset-0 z-[120] flex flex-col bg-ink/90 backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 text-white">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 text-white">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{title}</p>
           <p className="text-xs text-white/70">
@@ -68,7 +68,7 @@ export function InspirationLightbox({
         </button>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center px-3 pb-3">
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-14 pb-3 sm:px-20">
         {urls.length > 1 ? (
           <button
             type="button"
@@ -76,24 +76,26 @@ export function InspirationLightbox({
               setIndex((index - 1 + urls.length) % urls.length)
             }
             aria-label="Previous photo"
-            className="absolute left-2 z-10 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:left-6"
+            className="absolute left-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:left-4"
           >
             <ChevronLeft className="size-6" aria-hidden />
           </button>
         ) : null}
 
-        <img
-          src={urls[current]}
-          alt={`${title} ${current + 1}`}
-          className="max-h-full max-w-full rounded-xl object-contain"
-        />
+        <div className="flex h-full w-full items-center justify-center rounded-2xl bg-white/5 p-2 sm:p-4">
+          <img
+            src={urls[current]}
+            alt={`${title} ${current + 1}`}
+            className="max-h-full max-w-full object-contain"
+          />
+        </div>
 
         {urls.length > 1 ? (
           <button
             type="button"
             onClick={() => setIndex((index + 1) % urls.length)}
             aria-label="Next photo"
-            className="absolute right-2 z-10 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:right-6"
+            className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/15 p-2 text-white hover:bg-white/25 sm:right-4"
           >
             <ChevronRight className="size-6" aria-hidden />
           </button>
@@ -101,7 +103,7 @@ export function InspirationLightbox({
       </div>
 
       {urls.length > 1 ? (
-        <div className="flex gap-2 overflow-x-auto px-4 pb-4">
+        <div className="flex shrink-0 gap-2 overflow-x-auto px-4 pb-4">
           {urls.map((url, thumbIndex) => (
             <button
               key={`${url}-${thumbIndex}`}
@@ -114,7 +116,7 @@ export function InspirationLightbox({
               <img
                 src={url}
                 alt=""
-                className="size-16 object-cover opacity-80 hover:opacity-100"
+                className="size-16 bg-white/10 object-contain opacity-80 hover:opacity-100"
               />
             </button>
           ))}
