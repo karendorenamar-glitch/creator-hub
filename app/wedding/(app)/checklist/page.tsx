@@ -5,7 +5,7 @@ import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { daysFromToday } from "@/lib/wedding/format";
 import { moduleCopy } from "@/lib/wedding/module-copy";
-import { isSubscriptionActive, loadWeddingSession } from "@/lib/wedding/session";
+import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Checklist & Timeline" };
@@ -53,7 +53,7 @@ export default async function ChecklistPage() {
       />
 
       <SubscriptionNotice
-        active={isSubscriptionActive(session.subscription)}
+        active={session.hasPlanningAccess}
         copy={copy}
       />
 

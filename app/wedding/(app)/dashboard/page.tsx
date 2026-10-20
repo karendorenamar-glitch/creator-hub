@@ -19,7 +19,7 @@ import {
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 import { daysFromToday, formatIDR, formatWeddingDate, percentOf } from "@/lib/wedding/format";
-import { coupleNames, isSubscriptionActive, loadWeddingSession } from "@/lib/wedding/session";
+import { coupleNames, loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Dashboard" };
@@ -76,7 +76,7 @@ export default async function DashboardPage() {
 
   const daysToWedding = daysFromToday(session.wedding.wedding_date);
   const weddingDateLabel = formatWeddingDate(session.wedding.wedding_date, locale);
-  const isActive = isSubscriptionActive(session.subscription);
+  const isActive = session.hasPlanningAccess;
 
   return (
     <div className="space-y-7">

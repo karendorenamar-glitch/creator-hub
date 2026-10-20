@@ -7,7 +7,7 @@ import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { formatIDR, percentOf } from "@/lib/wedding/format";
 import { moduleCopy } from "@/lib/wedding/module-copy";
-import { isSubscriptionActive, loadWeddingSession } from "@/lib/wedding/session";
+import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Budget & Expenses" };
@@ -62,7 +62,7 @@ export default async function BudgetPage() {
       <PageHeader title={copy.budget.title} subtitle={copy.budget.subtitle} />
 
       <SubscriptionNotice
-        active={isSubscriptionActive(session.subscription)}
+        active={session.hasPlanningAccess}
         copy={copy}
       />
 

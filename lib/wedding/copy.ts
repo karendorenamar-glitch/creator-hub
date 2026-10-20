@@ -144,6 +144,9 @@ const en = {
     noticeTitle: "Online payments are coming",
     noticeBody:
       "No payment gateway is connected yet, so nothing can be charged from this page. Once payments are enabled you will be able to activate and renew here.",
+    openAccessTitle: "Testing mode: access is open",
+    openAccessBody:
+      "Subscriptions are not required right now, so every feature is unlocked. No payment is taken and nothing is charged.",
     contactToActivate:
       "Need access now? Contact support and we will activate it manually.",
     amount: "Amount",
@@ -316,6 +319,9 @@ const id: WeddingCopy = {
     noticeTitle: "Pembayaran online segera hadir",
     noticeBody:
       "Belum ada gateway pembayaran yang terhubung, jadi tidak ada yang bisa ditagih dari halaman ini. Setelah pembayaran aktif, Anda dapat mengaktifkan dan memperpanjang di sini.",
+    openAccessTitle: "Mode uji: akses terbuka",
+    openAccessBody:
+      "Langganan tidak diwajibkan untuk sementara, jadi semua fitur terbuka. Tidak ada pembayaran dan tidak ada tagihan.",
     contactToActivate:
       "Butuh akses sekarang? Hubungi dukungan dan kami akan mengaktifkannya secara manual.",
     amount: "Jumlah",

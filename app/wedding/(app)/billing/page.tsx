@@ -39,6 +39,17 @@ export default async function BillingPage() {
     <div className="space-y-7">
       <PageHeader title={copy.billing.title} subtitle={copy.billing.subtitle} />
 
+      {!session.subscriptionRequired ? (
+        <Card className="border-olive-200 bg-olive-50/70">
+          <h2 className="text-sm font-semibold text-ink">
+            {copy.billing.openAccessTitle}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+            {copy.billing.openAccessBody}
+          </p>
+        </Card>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
         <Card className="bg-gradient-to-br from-white via-cream to-olive-50">
           <div className="flex items-start justify-between gap-4">

@@ -6,7 +6,6 @@ import { formatWeddingDate } from "@/lib/wedding/format";
 import {
   coupleNames,
   getCurrentUser,
-  isSubscriptionActive,
   loadWeddingSession,
 } from "@/lib/wedding/session";
 
@@ -31,7 +30,7 @@ export default async function WeddingAppLayout({
       locale={locale}
       couple={coupleNames(session.wedding)}
       weddingDateLabel={formatWeddingDate(session.wedding.wedding_date, locale)}
-      isActive={isSubscriptionActive(session.subscription)}
+      isActive={session.hasPlanningAccess}
     >
       {children}
     </WeddingShell>

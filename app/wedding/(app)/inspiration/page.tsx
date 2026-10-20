@@ -4,7 +4,7 @@ import { SubscriptionNotice } from "@/components/wedding/subscription-notice";
 import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { moduleCopy } from "@/lib/wedding/module-copy";
-import { isSubscriptionActive, loadWeddingSession } from "@/lib/wedding/session";
+import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Inspiration" };
@@ -33,7 +33,7 @@ export default async function InspirationPage() {
       />
 
       <SubscriptionNotice
-        active={isSubscriptionActive(session.subscription)}
+        active={session.hasPlanningAccess}
         copy={copy}
       />
 

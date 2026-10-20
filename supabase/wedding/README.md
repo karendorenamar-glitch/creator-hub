@@ -9,6 +9,15 @@ files in `supabase/*.sql` are untouched and must NOT be run on the new project.
 1. `001_core.sql` - weddings, members, invites, subscription, payment history, helper functions, RLS
 2. `002_features.sql` - budget, vendors, expenses, guests, checklist, inspiration, RLS
 3. `003_functions.sql` - `create_wedding()` and `accept_wedding_invite()`
+4. `004_open_access_toggle.sql` - optional subscription switch (open access by default)
+
+`004` is the temporary paywall switch. It never disables RLS or ownership: a user
+must still be a member of the wedding. It only makes the subscription optional.
+
+- Open access: `update public.app_settings set require_subscription = false;`
+- Paywall back on: `update public.app_settings set require_subscription = true;`
+
+If `004` has not been run, the app falls back to requiring an active subscription.
 
 Run each file in full, in order. Re-running is safe. Status: all four files
 **pass a PostgreSQL syntax parse** (pglast), but they have **not been executed

@@ -5,7 +5,7 @@ import { VendorManager } from "@/components/wedding/vendors/vendor-manager";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { formatIDR } from "@/lib/wedding/format";
 import { moduleCopy } from "@/lib/wedding/module-copy";
-import { isSubscriptionActive, loadWeddingSession } from "@/lib/wedding/session";
+import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Vendors" };
@@ -36,7 +36,7 @@ export default async function VendorsPage() {
       <PageHeader title={copy.vendors.title} subtitle={copy.vendors.subtitle} />
 
       <SubscriptionNotice
-        active={isSubscriptionActive(session.subscription)}
+        active={session.hasPlanningAccess}
         copy={copy}
       />
 

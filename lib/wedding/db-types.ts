@@ -167,6 +167,12 @@ export type InspirationItem = {
   updated_at: string;
 };
 
+export type AppSettings = {
+  id: boolean;
+  require_subscription: boolean;
+  updated_at: string;
+};
+
 type Table<Row> = {
   Row: Row;
   Insert: Partial<Row>;
@@ -177,6 +183,7 @@ type Table<Row> = {
 export type WeddingDatabase = {
   public: {
     Tables: {
+      app_settings: Table<AppSettings>;
       weddings: Table<Wedding>;
       wedding_members: Table<WeddingMember>;
       wedding_invites: Table<WeddingInvite>;
