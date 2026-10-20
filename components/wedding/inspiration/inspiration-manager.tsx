@@ -211,31 +211,36 @@ export function InspirationManager({
           {copy.inspiration.emptyFilter}
         </p>
       ) : (
-        groups.map(([category, groupItems]) => (
-          <section key={category} className="space-y-3">
-            <div className="flex items-center gap-3">
-              <h3 className="font-heading text-base font-semibold text-ink">
-                {category}
-              </h3>
-              <span className="rounded-full bg-olive-50 px-2 py-0.5 text-xs text-olive-700">
-                {groupItems.length}
-              </span>
-            </div>
-            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {groupItems.map((item) => (
-                <InspirationCard
-                  key={item.id}
-                  item={item}
-                  photos={photosByItem[item.id] ?? []}
-                  imageUrls={imageUrls}
-                  copy={copy}
-                  onEdit={openEdit}
-                  onView={(urls) => setViewer({ title: item.title, urls })}
-                />
-              ))}
-            </div>
-          </section>
-        ))
+        <div className="grid items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
+          {groups.map(([category, groupItems]) => (
+            <section
+              key={category}
+              className="rounded-2xl border border-olive-100 bg-white/70 p-4"
+            >
+              <div className="mb-3 flex items-center gap-3">
+                <h3 className="font-heading text-base font-semibold text-ink">
+                  {category}
+                </h3>
+                <span className="rounded-full bg-olive-50 px-2 py-0.5 text-xs text-olive-700">
+                  {groupItems.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {groupItems.map((item) => (
+                  <InspirationCard
+                    key={item.id}
+                    item={item}
+                    photos={photosByItem[item.id] ?? []}
+                    imageUrls={imageUrls}
+                    copy={copy}
+                    onEdit={openEdit}
+                    onView={(urls) => setViewer({ title: item.title, urls })}
+                  />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       )}
 
       <InspirationFormModal
