@@ -148,7 +148,7 @@ export function VendorFormModal({
               name="agreedPrice"
               type="number"
               min={0}
-              step={1000}
+              step={1}
               inputMode="numeric"
               defaultValue={vendor?.agreed_price ?? vendor?.quoted_price ?? ""}
               className={inputClass}
@@ -190,8 +190,8 @@ export function VendorFormModal({
                   id="vendor-paid-amount"
                   name="paidAmount"
                   type="number"
-                  min={1}
-                  step={1000}
+                  min={0}
+                  step={1}
                   inputMode="numeric"
                   placeholder="0"
                   className={inputClass}

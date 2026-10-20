@@ -49,8 +49,8 @@ export function PaymentFormModal({
             id="payment-amount"
             name="amount"
             type="number"
-            min={1}
-            step={1000}
+            min={0}
+            step={1}
             inputMode="numeric"
             required
             defaultValue={suggestedAmount > 0 ? suggestedAmount : ""}
