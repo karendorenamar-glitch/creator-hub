@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { ExpenseManager } from "@/components/wedding/budget/expense-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
 import { VendorManager } from "@/components/wedding/vendors/vendor-manager";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
@@ -19,26 +18,14 @@ export default async function BudgetPage() {
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  const [categoriesResult, expensesResult, vendorsResult, paymentsResult] =
-    await Promise.all([
-      supabase
-        .from("budget_categories")
-        .select("*")
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("expenses")
-        .select("*")
-        .order("due_date", { ascending: true, nullsFirst: false }),
-      supabase.from("vendors").select("*").order("name", { ascending: true }),
-      supabase
-        .from("vendor_payments")
-        .select("*")
-        .order("paid_on", { ascending: false }),
-    ]);
+  const [vendorsResult, paymentsResult] = await Promise.all([
+    supabase.from("vendors").select("*").order("name", { ascending: true }),
+    supabase
+      .from("vendor_payments")
+      .select("*")
+      .order("paid_on", { ascending: false }),
+  ]);
 
-  const categories = categoriesResult.data ?? [];
-  const expenses = expensesResult.data ?? [];
   const vendors = vendorsResult.data ?? [];
   const payments = paymentsResult.data ?? [];
 
@@ -135,19 +122,6 @@ export default async function BudgetPage() {
           copy={copy}
           locale={locale}
           picOptions={picOptions}
-        />
-      </Card>
-
-      <Card>
-        <ExpenseManager
-          expenses={expenses}
-          categories={categories}
-          vendors={vendors.map((vendor) => ({
-            id: vendor.id,
-            name: vendor.name || copy.vendors.unnamed,
-          }))}
-          copy={copy}
-          locale={locale}
         />
       </Card>
     </div>

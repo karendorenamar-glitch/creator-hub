@@ -18,6 +18,7 @@ import {
 } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
+import { moduleCopy } from "@/lib/wedding/module-copy";
 import { daysFromToday, formatIDR, formatWeddingDate, percentOf } from "@/lib/wedding/format";
 import { coupleNames, loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
@@ -30,16 +31,15 @@ export default async function DashboardPage() {
 
   const locale = await getLocale();
   const copy = weddingCopy[locale];
+  const moduleText = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  const [expensesResult, guestsResult, vendorsResult, tasksResult, paymentsResult] =
+  const [guestsResult, vendorsResult, tasksResult, paymentsResult] =
     await Promise.all([
-      supabase
-        .from("expenses")
-        .select("id, name, amount, amount_paid, payment_status, due_date")
-        .order("due_date", { ascending: true, nullsFirst: false }),
       supabase.from("guests").select("id, rsvp_status"),
-      supabase.from("vendors").select("id, name, booking_status"),
+      supabase
+        .from("vendors")
+        .select("id, name, booking_status, agreed_price, quoted_price"),
       supabase
         .from("checklist_tasks")
         .select("id, title, status, due_date, priority")
@@ -50,7 +50,6 @@ export default async function DashboardPage() {
         .order("paid_on", { ascending: false }),
     ]);
 
-  const expenses = expensesResult.data ?? [];
   const guests = guestsResult.data ?? [];
   const vendors = vendorsResult.data ?? [];
   const tasks = tasksResult.data ?? [];
@@ -70,13 +69,27 @@ export default async function DashboardPage() {
   const doneTasks = tasks.filter((t) => t.status === "done").length;
 
   const upcomingTasks = tasks.filter((t) => t.status !== "done" && t.due_date).slice(0, 5);
-  const upcomingPayments = expenses
-    .filter(
-      (e) =>
-        e.payment_status !== "lunas" &&
-        e.due_date &&
-        (daysFromToday(e.due_date) ?? -1) >= 0,
-    )
+
+  const paidByVendor = new Map<string, number>();
+  for (const payment of payments) {
+    paidByVendor.set(
+      payment.vendor_id,
+      (paidByVendor.get(payment.vendor_id) ?? 0) + Number(payment.amount ?? 0),
+    );
+  }
+
+  const outstandingVendors = vendors
+    .map((vendor) => ({
+      id: vendor.id,
+      name: vendor.name?.trim() || moduleText.vendors.unnamed,
+      remaining: Math.max(
+        0,
+        Number(vendor.agreed_price ?? vendor.quoted_price ?? 0) -
+          (paidByVendor.get(vendor.id) ?? 0),
+      ),
+    }))
+    .filter((vendor) => vendor.remaining > 0)
+    .sort((a, b) => b.remaining - a.remaining)
     .slice(0, 5);
 
   const daysToWedding = daysFromToday(session.wedding.wedding_date);
@@ -253,28 +266,25 @@ export default async function DashboardPage() {
 
         <Card>
           <h2 className="font-heading text-base font-semibold text-ink">
-            {copy.dashboard.upcomingPayments}
+            {copy.dashboard.outstanding}
           </h2>
           <div className="mt-4">
-            {upcomingPayments.length === 0 ? (
+            {outstandingVendors.length === 0 ? (
               <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-6 text-center text-sm text-ink-soft">
                 {copy.dashboard.noUpcoming}
               </p>
             ) : (
               <ul className="divide-y divide-olive-100">
-                {upcomingPayments.map((expense) => (
+                {outstandingVendors.map((vendor) => (
                   <li
-                    key={expense.id}
+                    key={vendor.id}
                     className="flex items-center justify-between gap-3 py-2.5"
                   >
                     <span className="min-w-0 truncate text-sm text-ink">
-                      {expense.name}
+                      {vendor.name}
                     </span>
-                    <span className="flex shrink-0 items-center gap-3 text-xs text-ink-soft">
-                      {formatWeddingDate(expense.due_date, locale)}
-                      <span className="font-medium text-ink">
-                        {formatIDR(Number(expense.amount ?? 0))}
-                      </span>
+                    <span className="shrink-0 text-sm font-medium text-ink">
+                      {formatIDR(vendor.remaining)}
                     </span>
                   </li>
                 ))}
