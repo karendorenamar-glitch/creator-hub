@@ -11,7 +11,6 @@ import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import {
   enumValue,
   isDateString,
-  isEmail,
   isUuid,
   optionalText,
   parseMoney,
@@ -42,10 +41,8 @@ type VendorValues = {
   category: string;
   contact_name: string | null;
   phone: string | null;
-  email: string | null;
   pic_internal: string | null;
   notes: string | null;
-  quoted_price: number | null;
   agreed_price: number | null;
   payment_status: (typeof PAYMENT_STATUSES)[number];
 };
@@ -65,14 +62,8 @@ function readVendor(
   formData: FormData,
   copy: ModuleCopy,
 ): { ok: true; values: VendorValues } | { ok: false; error: string } {
-  const email = optionalText(formData, "email", 200);
-  if (email && !isEmail(email)) {
-    return { ok: false, error: copy.form.invalidEmail };
-  }
-
-  const quoted = readMoneyOrNull(formData, "quotedPrice");
-  const agreed = readMoneyOrNull(formData, "agreedPrice");
-  if (!quoted.ok || !agreed.ok) {
+  const total = readMoneyOrNull(formData, "agreedPrice");
+  if (!total.ok) {
     return { ok: false, error: copy.form.invalidNumber };
   }
 
@@ -84,11 +75,9 @@ function readVendor(
       category: text(formData, "category").slice(0, 80),
       contact_name: optionalText(formData, "contactName", 120),
       phone: optionalText(formData, "phone", 40),
-      email,
       pic_internal: optionalText(formData, "picInternal", 120),
       notes: optionalText(formData, "notes", 4000),
-      quoted_price: quoted.value,
-      agreed_price: agreed.value,
+      agreed_price: total.value,
       payment_status: enumValue(
         formData,
         "paymentStatus",

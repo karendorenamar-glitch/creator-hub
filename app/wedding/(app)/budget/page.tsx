@@ -62,12 +62,9 @@ export default async function BudgetPage() {
   const remaining = totalBudget - totalPaid;
   const paidPercent = percentOf(totalPaid, totalBudget);
 
-  const vendorEstimates = vendors.reduce(
-    (sum, vendor) => sum + Number(vendor.quoted_price ?? 0),
-    0,
-  );
   const vendorCommitments = vendors.reduce(
-    (sum, vendor) => sum + Number(vendor.agreed_price ?? 0),
+    (sum, vendor) =>
+      sum + Number(vendor.agreed_price ?? vendor.quoted_price ?? 0),
     0,
   );
   const vendorOutstanding = Math.max(0, vendorCommitments - totalPaid);
@@ -122,11 +119,7 @@ export default async function BudgetPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label={copy.budget.vendorEstimates}
-          value={formatIDR(vendorEstimates)}
-        />
+      <section className="grid gap-4 sm:grid-cols-2">
         <StatCard
           label={copy.budget.vendorCommitments}
           value={formatIDR(vendorCommitments)}

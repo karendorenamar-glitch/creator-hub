@@ -123,20 +123,6 @@ export function VendorFormModal({
             />
           </Field>
 
-          <Field
-            label={`${copy.vendors.email}`}
-            htmlFor="vendor-email"
-          >
-            <input
-              id="vendor-email"
-              name="email"
-              type="email"
-              maxLength={200}
-              defaultValue={vendor?.email ?? ""}
-              className={inputClass}
-            />
-          </Field>
-
           <Field label={copy.vendors.picInternal} htmlFor="vendor-pic-internal">
             <select
               id="vendor-pic-internal"
@@ -155,32 +141,16 @@ export function VendorFormModal({
 
           <Field
             label={`${copy.vendors.estimate} (IDR)`}
-            htmlFor="vendor-estimate"
+            htmlFor="vendor-total"
           >
             <input
-              id="vendor-estimate"
-              name="quotedPrice"
-              type="number"
-              min={0}
-              step={1000}
-              inputMode="numeric"
-              defaultValue={vendor?.quoted_price ?? ""}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field
-            label={`${copy.vendors.actualBill} (IDR)`}
-            htmlFor="vendor-bill"
-          >
-            <input
-              id="vendor-bill"
+              id="vendor-total"
               name="agreedPrice"
               type="number"
               min={0}
               step={1000}
               inputMode="numeric"
-              defaultValue={vendor?.agreed_price ?? ""}
+              defaultValue={vendor?.agreed_price ?? vendor?.quoted_price ?? ""}
               className={inputClass}
             />
           </Field>

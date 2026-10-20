@@ -168,8 +168,7 @@ export function VendorManager({
       ) : (
         <ul className="divide-y divide-olive-100 rounded-2xl border border-olive-100 bg-white">
           {filtered.map((vendor) => {
-            const bill = Number(vendor.agreed_price ?? 0);
-            const estimate = Number(vendor.quoted_price ?? 0);
+            const bill = Number(vendor.agreed_price ?? vendor.quoted_price ?? 0);
             const paid = paidByVendor.get(vendor.id) ?? 0;
             const remaining = Math.max(0, bill - paid);
 
@@ -201,9 +200,6 @@ export function VendorManager({
                     <p className="text-xs text-ink-soft">
                       {copy.vendors.totalPaid}: {formatIDR(paid)} ·{" "}
                       {copy.vendors.billRemaining}: {formatIDR(remaining)}
-                    </p>
-                    <p className="text-xs text-ink-soft/80">
-                      {copy.vendors.estimate}: {formatIDR(estimate)}
                     </p>
                   </div>
                   <Badge tone={statusTone[vendor.payment_status]}>
