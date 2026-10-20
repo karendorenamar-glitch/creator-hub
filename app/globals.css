@@ -1,5 +1,5 @@
 @import url("https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Nunito:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;1,6..96,400;1,6..96,500&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 :root {
@@ -83,6 +83,14 @@
   --color-petal-300: #eebcaf;
   --color-petal-400: #e2a191;
   --color-petal-500: #cf8371;
+  /* Feminine luxury palette (editorial refresh) */
+  --color-ivory: #fff9f4;
+  --color-blush: #f3dde1;
+  --color-dusty: #d7a6af;
+  --color-rosewood: #a86f7a;
+  --color-champagne: #c8ac7c;
+  --color-cocoa: #57423f;
+  --color-sage: #dde2d2;
   --color-cream: #fdfbf5;
   --color-ink: #3a3d33;
   --color-ink-soft: #74776a;
@@ -126,17 +134,17 @@ h6,
 /* Wedding planner only: soft serif headings + rounded friendly body text.
    Scoped so the legacy Kefoo pages keep their own fonts. */
 .wedding-app {
-  --font-heading: "Fraunces", "Iowan Old Style", Georgia, serif;
-  --font-body: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Bodoni Moda", "Cormorant Garamond", "Iowan Old Style", Georgia, serif;
+  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   font-family: var(--font-body);
 }
 
 /* Soft, feminine surface used by the landing page and the app shell. */
 .wedding-surface {
   background:
-    radial-gradient(circle at 12% -5%, rgba(251, 234, 229, 0.85), transparent 42%),
-    radial-gradient(circle at 88% 4%, rgba(246, 247, 241, 0.9), transparent 38%),
-    linear-gradient(180deg, #fffdfa 0%, #fdf7f5 100%);
+    radial-gradient(circle at 8% -10%, rgba(243, 221, 225, 0.92), transparent 46%),
+    radial-gradient(circle at 92% 2%, rgba(221, 226, 210, 0.85), transparent 42%),
+    linear-gradient(180deg, #fff9f4 0%, #fdf2ef 55%, #fff9f4 100%);
 }
 
 /* Luxury invitation theme: keep text readable on the dark background. */
