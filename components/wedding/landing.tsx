@@ -12,6 +12,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { BrandLogo } from "@/components/wedding/brand-logo";
+import { BudgetPlayground } from "@/components/wedding/budget-playground";
 
 const FEATURES = [
   {
@@ -39,12 +40,6 @@ const FEATURES = [
     title: "Tamu dan RSVP",
     body: "Kelola daftar tamu, kelompokkan undangan, dan pantau konfirmasi kehadiran dalam satu tampilan.",
   },
-];
-
-const STATS = [
-  { label: "Total biaya", value: "Rp 150.000.000" },
-  { label: "Sudah dibayar", value: "Rp 45.000.000" },
-  { label: "Sisa biaya", value: "Rp 105.000.000" },
 ];
 
 export function WeddingLanding() {
@@ -118,65 +113,18 @@ export function WeddingLanding() {
             </div>
 
             <div className="relative">
-              <div className="absolute -left-6 -top-6 hidden size-24 rounded-full bg-olive-100/70 blur-2xl sm:block" />
-              <div className="relative rounded-3xl border border-olive-100 bg-white p-6 shadow-[0_30px_80px_-60px_rgba(74,90,57,0.6)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-olive-600">
-                      Ringkasan persiapan
-                    </p>
-                    <p className="mt-1 font-heading text-lg">
-                      Dorena &amp; Vandy
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full bg-olive-50 px-2.5 py-1 text-[11px] text-olive-700">
-                    Contoh tampilan
-                  </span>
-                </div>
-
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  {STATS.map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="rounded-2xl bg-olive-50/70 px-3 py-3"
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.1em] text-ink-soft">
-                        {stat.label}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-ink">
-                        {stat.value}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4">
-                  <div className="flex items-center justify-between text-xs text-ink-soft">
-                    <span>Anggaran terpakai</span>
-                    <span>30%</span>
-                  </div>
-                  <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-olive-100">
-                    <div className="h-full w-[30%] rounded-full bg-gradient-to-r from-olive-400 to-olive-600" />
-                  </div>
-                </div>
-
-                <div className="mt-5 space-y-2 border-t border-olive-100 pt-4 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span>Catering — DP</span>
-                    <span className="font-medium">Rp 25.000.000</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Dekorasi — lunas</span>
-                    <span className="font-medium">Rp 20.000.000</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Fotografi — diskusi</span>
-                    <span className="text-ink-soft">—</span>
-                  </div>
-                </div>
+              <div className="absolute -right-4 -top-6 hidden size-20 rounded-full bg-olive-100/80 blur-2xl sm:block" />
+              <div className="absolute -left-6 bottom-10 hidden text-olive-300 sm:block landing-float">
+                <svg width="74" height="96" viewBox="0 0 74 96" fill="none" aria-hidden>
+                  <path d="M37 94V26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M37 62C24 58 16 48 15 34c14 1 22 11 22 28Z" fill="currentColor" opacity="0.55" />
+                  <path d="M37 48c13-4 21-14 22-28-14 1-22 11-22 28Z" fill="currentColor" opacity="0.4" />
+                  <path d="M37 80c-9-3-14-9-15-18 9 1 15 8 15 18Z" fill="currentColor" opacity="0.35" />
+                  <circle cx="37" cy="16" r="7" stroke="currentColor" strokeWidth="2" />
+                </svg>
               </div>
+              <BudgetPlayground />
             </div>
-
           </div>
         </section>
 
@@ -254,7 +202,7 @@ export function WeddingLanding() {
               {FEATURES.map((feature) => (
                 <div
                   key={feature.title}
-                  className="rounded-3xl border border-olive-100 bg-cream p-6"
+                  className="rounded-3xl border border-olive-100 bg-cream p-6 transition-transform duration-300 hover:-translate-y-1 hover:border-olive-200"
                 >
                   <span className="flex size-10 items-center justify-center rounded-full bg-olive-100 text-olive-700">
                     <feature.icon className="size-5" aria-hidden />

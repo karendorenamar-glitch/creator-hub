@@ -135,6 +135,43 @@ h6,
   color: rgb(244 234 214 / 0.72);
 }
 
+/* Landing page: soft, playful motion (kept subtle for performance). */
+@keyframes landing-float-soft {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1.5deg); }
+}
+
+@keyframes landing-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes landing-heart-pop {
+  0% { opacity: 0; transform: translateY(6px) scale(0.6); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-42px) scale(1.05); }
+}
+
+.landing-float {
+  animation: landing-float-soft 7s ease-in-out infinite;
+}
+
+.landing-fade {
+  animation: landing-fade-up 0.7s ease-out both;
+}
+
+.landing-heart {
+  animation: landing-heart-pop 1.6s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-float,
+  .landing-fade,
+  .landing-heart {
+    animation: none;
+  }
+}
+
 .wedding-app h1,
 .wedding-app h2,
 .wedding-app h3,
