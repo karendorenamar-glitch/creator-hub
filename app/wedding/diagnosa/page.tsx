@@ -29,6 +29,8 @@ export default async function DiagnosaPage() {
     .eq("user_id", user.id)
     .maybeSingle();
 
+  const isAdminQuery = await supabase.rpc("is_admin");
+
   const settingsQuery = await supabase
     .from("app_settings")
     .select("require_subscription")
@@ -52,6 +54,12 @@ export default async function DiagnosaPage() {
       adminQuery.error
         ? `GAGAL: ${adminQuery.error.code} ${adminQuery.error.message}`
         : "berhasil",
+    ],
+    [
+      "RPC is_admin()",
+      isAdminQuery.error
+        ? `GAGAL: ${isAdminQuery.error.code} ${isAdminQuery.error.message}`
+        : String(isAdminQuery.data),
     ],
     [
       "Wedding",

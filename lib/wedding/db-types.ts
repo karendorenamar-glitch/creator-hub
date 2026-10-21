@@ -351,6 +351,10 @@ export type WeddingDatabase = {
           location: string | null;
         }[];
       };
+      is_admin: {
+        Args: Record<string, never>;
+        Returns: boolean;
+      };
       approve_payment: {
         Args: { p_payment_id: string };
         Returns: undefined;

@@ -17,19 +17,16 @@ export async function requireAdmin(): Promise<AdminContext> {
   if (!user) redirect("/wedding/login?next=/admin");
 
   const supabase = await createWeddingClient();
-  const { data, error } = await supabase
-    .from("admins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
+
+  // is_admin() is SECURITY DEFINER, so this check does not depend on any
+  // select policy on public.admins being configured correctly.
+  const { data: isAdmin, error } = await supabase.rpc("is_admin");
 
   if (error) {
-    // A failed query is not the same as "not an admin" — surface it in logs
-    // so a misconfigured environment is visible instead of a silent 404.
-    console.error("[requireAdmin] admins query failed:", error.code, error.message);
+    console.error("[requireAdmin] is_admin rpc failed:", error.code, error.message);
   }
 
-  if (!data) notFound();
+  if (isAdmin !== true) notFound();
 
   return { userId: user.id, email: user.email ?? null };
 }
