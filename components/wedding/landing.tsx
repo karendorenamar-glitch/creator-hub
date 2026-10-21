@@ -227,9 +227,9 @@ export function WeddingLanding() {
                   </p>
                   <div className="mt-2 grid grid-cols-3 gap-1">
                     {[
-                      ["/inspiration/wedding-decoration.jpg", "Dekorasi pernikahan"],
-                      ["/inspiration/bridal-makeup.jpg", "Tata rias pengantin"],
-                      ["/inspiration/venue.jpg", "Venue pernikahan"],
+                      ["/inspiration/dekorasi.jpg", "Dekorasi pernikahan"],
+                      ["/inspiration/attire.jpg", "Venue pernikahan"],
+                      ["/inspiration/attire.jpg", "Venue pernikahan"],
                     ].map(([src, alt]) => (
                       <img
                         key={src}
@@ -272,12 +272,12 @@ export function WeddingLanding() {
             <Reveal delay={0.1}>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {[
-                  { label: "Dekorasi", src: "/inspiration/wedding-decoration.jpg", alt: "Dekorasi resepsi pernikahan dengan rangkaian bunga dan cahaya lilin", tone: "dekorasi" },
-                  { label: "Attire", src: "/inspiration/bridal-attire.jpg", alt: "Busana pengantin berwarna lembut dengan detail elegan", tone: "square" },
-                  { label: "MUA", src: "/inspiration/bridal-makeup.jpg", alt: "Tata rias pengantin bernuansa soft glam", tone: "tall" },
+                  { label: "Dekorasi", src: "/inspiration/dekorasi.jpg", alt: "Dekorasi resepsi pernikahan dengan rangkaian bunga dan cahaya lilin", tone: "dekorasi" },
+                  { label: "Attire", src: "/inspiration/ring.jpg", alt: "Busana pengantin berwarna lembut dengan detail elegan", tone: "square" },
+                  { label: "MUA", src: "/inspiration/mua.jpg", alt: "Tata rias pengantin bernuansa soft glam", tone: "tall" },
                   { label: "Hair do", src: "/inspiration/hairdo.jpg", alt: "Sanggul pengantin dengan aksen hiasan rambut", tone: "square" },
-                  { label: "Wedding ring", src: "/inspiration/ring.jpg", alt: "Cincin pernikahan dengan latar lembut", tone: "dekorasi" },
-                  { label: "Venue", src: "/inspiration/venue.jpg", alt: "Venue pernikahan romantis dengan dekorasi hangat", tone: "tall" },
+                  { label: "Wedding ring", src: "/inspiration/wedding-ring.jpg", alt: "Cincin pernikahan dengan latar lembut", tone: "dekorasi" },
+                  { label: "Venue", src: "/inspiration/attire.jpg", alt: "Venue pernikahan romantis dengan dekorasi hangat", tone: "tall" },
                 ].map((tile) => (
                   <InspirationTile
                     key={tile.label}
