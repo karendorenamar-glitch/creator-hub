@@ -40,7 +40,11 @@ export function BrandLogo({
             setFailed(true);
           }
         }}
-        className={cn(height, "w-auto max-w-[220px] object-contain", className)}
+        className={cn(
+          height,
+          "w-auto max-w-[220px] object-contain mix-blend-multiply",
+          className,
+        )}
       />
     );
   }

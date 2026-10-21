@@ -4,8 +4,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
+  CalendarDays,
   CheckCircle2,
   CircleDollarSign,
+  Images,
   ListChecks,
   Sparkles,
   Store,
@@ -98,6 +100,12 @@ const FEATURES = [
     label: "04 — Tamu",
     title: "Kenali tamu Anda dengan lebih dekat.",
     body: "Kelola daftar tamu, kelompokkan, dan pantau konfirmasi kehadiran agar jumlah undangan tetap terkendali.",
+  },
+  {
+    icon: Images,
+    label: "05 — Inspirasi",
+    title: "Simpan semua ide indah di satu papan.",
+    body: "Unggah foto dekorasi, gaun, tata rias, atau referensi apa pun layaknya papan Pinterest pribadi—rapi per kategori.",
   },
 ];
 
@@ -231,6 +239,36 @@ export function WeddingLanding() {
                 <p className="mt-2 text-[11px] text-cocoa/60">
                   78% terpakai · sisa Rp 33 jt
                 </p>
+              </div>
+
+              <div className="absolute -right-5 -top-8 w-44 rounded-2xl border border-champagne/60 bg-ivory/95 p-3 shadow-[0_20px_45px_-32px_rgba(87,66,63,0.7)]">
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-8 overflow-hidden rounded-t-2xl">
+                  {[10, 30, 52, 74, 90].map((left, i) => (
+                    <span
+                      key={left}
+                      className="landing-confetti absolute top-0 block size-1.5 rounded-sm"
+                      style={{
+                        left: `${left}%`,
+                        backgroundColor: ["#c8ac7c", "#d7a6af", "#dde2d2", "#a86f7a", "#c8ac7c"][i],
+                        animationDelay: `${i * 0.18}s`,
+                      }}
+                    />
+                  ))}
+                </div>
+                <p className="mt-4 text-[10px] uppercase tracking-[0.18em] text-rosewood">
+                  Lunas 100%
+                </p>
+                <p className="mt-1 font-heading text-lg leading-tight text-cocoa">
+                  Biaya sudah lunas
+                </p>
+              </div>
+
+              <div className="absolute -bottom-24 right-0 w-44 rounded-2xl border border-blush bg-ivory/95 p-3 shadow-[0_20px_45px_-32px_rgba(87,66,63,0.6)]">
+                <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-rosewood">
+                  <CalendarDays className="size-3.5" aria-hidden /> Menuju hari H
+                </p>
+                <p className="mt-1 font-heading text-2xl text-cocoa">120 hari</p>
+                <p className="text-[11px] text-cocoa/55">lagi · 12 Mei 2027</p>
               </div>
 
               <Sparkles
@@ -402,6 +440,7 @@ export function WeddingLanding() {
                     "Pengelolaan vendor beserta bukti pembayaran",
                     "Daftar tugas dan linimasa persiapan",
                     "Daftar tamu dan status RSVP",
+                    "Papan inspirasi untuk menyimpan foto dan referensi",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2.5">
                       <CheckCircle2
