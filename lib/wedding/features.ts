@@ -1,9 +1,9 @@
 /**
  * Feature flag for the e-invitation module.
  *
- * Locally the variable is unset, so the feature is enabled.
- * On Vercel set NEXT_PUBLIC_ENABLE_E_INVITATION=false to deploy the wedding
- * planner without the invitation builder or the public /i/[slug] pages.
+ * LOCKED BY DEFAULT: the invitation builder and the public /i/[slug] pages are
+ * not ready for customers yet, so nothing can reach them. Enable it only in a
+ * development environment by setting NEXT_PUBLIC_ENABLE_E_INVITATION=true.
  */
 export const E_INVITATION_ENABLED =
-  process.env.NEXT_PUBLIC_ENABLE_E_INVITATION !== "false";
+  process.env.NEXT_PUBLIC_ENABLE_E_INVITATION === "true";

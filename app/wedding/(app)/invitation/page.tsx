@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Lock } from "lucide-react";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -31,10 +32,39 @@ function slugify(value: string) {
 }
 
 export default async function InvitationPage() {
-  if (!E_INVITATION_ENABLED) notFound();
-
   const session = await loadWeddingSession();
   if (!session) redirect("/wedding/onboarding");
+
+  // Locked until the builder is ready for customers.
+  if (!E_INVITATION_ENABLED) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="E-Invitation"
+          subtitle="Undangan digital sedang kami siapkan."
+        />
+        <Card className="space-y-3 text-center">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-blush/50 text-rosewood">
+            <Lock className="size-5" aria-hidden />
+          </span>
+          <h2 className="font-heading text-xl text-cocoa">
+            Fitur ini belum tersedia
+          </h2>
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-cocoa/65">
+            Pembuat undangan digital masih dalam pengembangan dan belum bisa
+            dipakai. Undangan publik juga belum dapat diakses oleh tamu. Kami
+            akan mengabari Anda begitu fitur ini siap.
+          </p>
+          <Link
+            href="/wedding/dashboard"
+            className="inline-flex rounded-full bg-rosewood px-5 py-2.5 text-sm text-ivory hover:bg-cocoa"
+          >
+            Kembali ke dashboard
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   const locale = await getLocale();
   const copy = moduleCopy[locale];

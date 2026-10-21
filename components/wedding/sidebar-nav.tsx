@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListOrdered,
   LogOut,
+  Lock,
   Mail,
   ShieldCheck,
   Settings,
@@ -79,9 +80,8 @@ export function SidebarNav({
       </div>
 
       <nav className="flex flex-1 flex-col gap-1" aria-label={copy.nav.menu}>
-        {NAV.filter(
-          (item) => item.key !== "invitation" || E_INVITATION_ENABLED,
-        ).map(({ key, href, Icon }) => {
+        {NAV.map(({ key, href, Icon }) => {
+          const locked = key === "invitation" && !E_INVITATION_ENABLED;
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
             <Link
@@ -104,6 +104,12 @@ export function SidebarNav({
                 aria-hidden
               />
               {copy.nav[key]}
+              {locked ? (
+                <Lock
+                  className="ml-auto size-3.5 text-ink-soft/60"
+                  aria-label="Belum tersedia"
+                />
+              ) : null}
             </Link>
           );
         })}
