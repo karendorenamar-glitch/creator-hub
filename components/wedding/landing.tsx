@@ -482,10 +482,6 @@ export function WeddingLanding() {
                   Mulai Merencanakan
                   <ArrowRight className="size-4" aria-hidden />
                 </Link>
-                <p className="mt-4 text-xs text-cocoa/50">
-                  Pembayaran online belum tersedia. Tim kami akan membantu proses
-                  aktivasi.
-                </p>
               </div>
             </Reveal>
           </div>
