@@ -228,7 +228,7 @@ export function WeddingLanding() {
                   <div className="mt-2 grid grid-cols-3 gap-1">
                     {[
                       ["/inspiration/dekorasi.jpg", "Dekorasi pernikahan"],
-                      ["/inspiration/attire.jpg", "Venue pernikahan"],
+                      ["/inspiration/mua.jpg", "Tata rias pengantin"],
                       ["/inspiration/attire.jpg", "Venue pernikahan"],
                     ].map(([src, alt]) => (
                       <img
