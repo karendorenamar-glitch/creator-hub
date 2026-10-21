@@ -77,6 +77,14 @@ export function SignInForm({ copy, next }: { copy: WeddingCopy; next?: string })
         {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {pending ? copy.auth.signingIn : copy.auth.signIn}
       </button>
+      <p className="text-right text-xs">
+        <Link
+          href="/wedding/forgot-password"
+          className="text-ink-soft underline-offset-4 hover:text-rosewood hover:underline"
+        >
+          Lupa kata sandi?
+        </Link>
+      </p>
       <p className="text-center text-sm text-ink-soft">
         {copy.auth.noAccount}{" "}
         <Link href="/wedding/signup" className="font-medium text-olive-700 hover:underline">

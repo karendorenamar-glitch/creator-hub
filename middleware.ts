@@ -41,7 +41,10 @@ export async function middleware(request: NextRequest) {
   // Wedding planner has its own sign-in screen and its own route tree.
   if (pathname === "/wedding" || pathname.startsWith("/wedding/")) {
     const isPublicWeddingPath =
-      pathname === "/wedding/login" || pathname === "/wedding/signup";
+      pathname === "/wedding/login" ||
+      pathname === "/wedding/signup" ||
+      pathname === "/wedding/forgot-password" ||
+      pathname === "/wedding/reset-password";
 
     if (!user && !isPublicWeddingPath) {
       const loginUrl = request.nextUrl.clone();

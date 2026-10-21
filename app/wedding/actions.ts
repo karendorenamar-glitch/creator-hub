@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
@@ -161,6 +162,46 @@ export async function signUpAction(
   redirect(
     withRef(`/wedding/onboarding?next=${encodeURIComponent(next)}`, ref),
   );
+}
+
+
+/**
+ * Sends a Supabase recovery email. The link always comes back to
+ * /wedding/reset-password (never the Site URL landing page).
+ */
+export async function requestPasswordResetAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const copy = await messages();
+  const email = text(formData, "email").toLowerCase();
+
+  if (!EMAIL_PATTERN.test(email)) return { error: copy.auth.invalidEmail };
+
+  const headerStore = await headers();
+  const host = headerStore.get("host") ?? "localhost:3000";
+  const protocol =
+    host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
+
+  const supabase = await createWeddingClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${protocol}://${host}/wedding/reset-password`,
+  });
+
+  if (error) {
+    console.error("[requestPasswordResetAction]", error.code, error.message);
+    const message = error.message.toLowerCase();
+    if (message.includes("rate") || message.includes("limit")) {
+      return { error: "Terlalu banyak permintaan. Tunggu beberapa menit." };
+    }
+    return { error: copy.common.genericError };
+  }
+
+  // Same message on purpose: do not reveal whether an account exists.
+  return {
+    info:
+      "Jika email terdaftar, tautan reset sudah dikirim. Periksa inbox dan folder spam.",
+  };
 }
 
 export async function signOutAction() {
