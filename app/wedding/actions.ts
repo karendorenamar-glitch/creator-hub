@@ -16,7 +16,11 @@ function safeNext(value: string, fallback = "/wedding/dashboard") {
   if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
     return fallback;
   }
-  if (!value.startsWith("/checkout") && !value.startsWith("/wedding")) {
+  if (
+    !value.startsWith("/checkout") &&
+    !value.startsWith("/wedding") &&
+    !value.startsWith("/admin")
+  ) {
     return fallback;
   }
   return value;
@@ -91,7 +95,19 @@ export async function signUpAction(
   const supabase = await createWeddingClient();
   const { data, error } = await supabase.auth.signUp({ email, password });
 
-  if (error) return { error: copy.common.genericError };
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("already registered") || message.includes("already exists")) {
+      return { error: "Email ini sudah terdaftar. Silakan masuk." };
+    }
+    if (message.includes("rate limit") || message.includes("too many")) {
+      return {
+        error:
+          "Terlalu banyak percobaan pendaftaran. Tunggu beberapa menit lalu coba lagi.",
+      };
+    }
+    return { error: copy.common.genericError };
+  }
 
   // If email confirmation is enabled there is no session yet. Send the user to
   // the sign-in screen while preserving the safe destination (no auth bypass).
