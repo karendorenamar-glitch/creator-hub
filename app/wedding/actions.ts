@@ -155,7 +155,8 @@ export async function signUpAction(
   }
 
   revalidatePath("/wedding", "layout");
-  const next = safeNext(text(formData, "next"), "/wedding/dashboard");
+  // New accounts head to onboarding, then straight to payment.
+  const next = safeNext(text(formData, "next"), "/checkout");
   const ref = text(formData, "ref");
   redirect(
     withRef(`/wedding/onboarding?next=${encodeURIComponent(next)}`, ref),
