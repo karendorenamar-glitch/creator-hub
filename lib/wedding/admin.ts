@@ -17,11 +17,17 @@ export async function requireAdmin(): Promise<AdminContext> {
   if (!user) redirect("/wedding/login?next=/admin");
 
   const supabase = await createWeddingClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("admins")
     .select("user_id")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  if (error) {
+    // A failed query is not the same as "not an admin" — surface it in logs
+    // so a misconfigured environment is visible instead of a silent 404.
+    console.error("[requireAdmin] admins query failed:", error.code, error.message);
+  }
 
   if (!data) notFound();
 
