@@ -1,134 +1,64 @@
-"use client";
-
 import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   ArrowRight,
   CalendarDays,
   CheckCircle2,
-  CircleDollarSign,
   Images,
   ListChecks,
-  Sparkles,
   Store,
   Users,
+  Wallet,
 } from "lucide-react";
 import { BrandLogo } from "@/components/wedding/brand-logo";
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-rosewood">
+    <p className="flex items-center gap-3 text-[11px] uppercase tracking-[0.3em] text-rosewood">
       <span className="h-px w-8 bg-champagne" aria-hidden />
       {children}
     </p>
   );
 }
 
-function Reveal({
-  children,
-  delay = 0,
-  className,
-}: {
-  children: ReactNode;
-  delay?: number;
-  className?: string;
-}) {
+function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   return (
-    <div
-      className={`landing-fade ${className ?? ""}`}
-      style={{ animationDelay: `${delay}s` }}
-    >
+    <div className="landing-fade" style={{ animationDelay: `${delay}s` }}>
       {children}
     </div>
   );
 }
 
-function FloralCorner({ className }: { className?: string }) {
+function Floral({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 120 140"
-      fill="none"
-      aria-hidden
-      className={className}
-    >
-      <path
-        d="M60 138V46"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        opacity="0.6"
-      />
-      <path
-        d="M60 96C38 90 24 74 22 50c24 2 38 18 38 46Z"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        opacity="0.55"
-      />
-      <path
-        d="M60 74c22-6 36-22 38-46-24 2-38 18-38 46Z"
-        stroke="currentColor"
-        strokeWidth="1.2"
-        opacity="0.4"
-      />
+    <svg viewBox="0 0 120 140" fill="none" aria-hidden className={className}>
+      <path d="M60 138V46" stroke="currentColor" strokeWidth="1.2" opacity=".6" />
+      <path d="M60 96C38 90 24 74 22 50c24 2 38 18 38 46Z" stroke="currentColor" strokeWidth="1.2" opacity=".5" />
+      <path d="M60 74c22-6 36-22 38-46-24 2-38 18-38 46Z" stroke="currentColor" strokeWidth="1.2" opacity=".4" />
       <circle cx="60" cy="30" r="12" stroke="currentColor" strokeWidth="1.2" />
-      <circle cx="60" cy="30" r="4" fill="currentColor" opacity="0.25" />
     </svg>
   );
 }
 
-const FEATURES = [
-  {
-    icon: CircleDollarSign,
-    label: "01 — Anggaran",
-    title: "Anggaran yang tersusun, bukan sekadar catatan.",
-    body: "Tetapkan total biaya, bagi per kategori, lalu lihat sisa dana setiap kali ada pengeluaran baru. Semua angka diperbarui otomatis.",
-  },
-  {
-    icon: Store,
-    label: "02 — Vendor",
-    title: "Satu tempat untuk semua vendor Anda.",
-    body: "Simpan kontak, harga kesepakatan, dan status pembayaran—DP, cicilan, hingga lunas—beserta bukti pembayarannya.",
-  },
-  {
-    icon: ListChecks,
-    label: "03 — Persiapan",
-    title: "Persiapan yang terasa lebih ringan.",
-    body: "Susun tugas dan linimasa per tahap, atur tenggat dan prioritas, lalu pantau apa yang sudah selesai.",
-  },
-  {
-    icon: Users,
-    label: "04 — Tamu",
-    title: "Kenali tamu Anda dengan lebih dekat.",
-    body: "Kelola daftar tamu, kelompokkan, dan pantau konfirmasi kehadiran agar jumlah undangan tetap terkendali.",
-  },
-  {
-    icon: Images,
-    label: "05 — Inspirasi",
-    title: "Simpan semua ide indah di satu papan.",
-    body: "Unggah foto dekorasi, gaun, tata rias, atau referensi apa pun layaknya papan Pinterest pribadi—rapi per kategori.",
-  },
+const NAV_LINKS = [
+  ["Fitur", "#fitur"],
+  ["Inspirasi", "#inspirasi"],
+  ["Anggaran", "#anggaran"],
+  ["Harga", "#harga"],
 ];
 
 export function WeddingLanding() {
   return (
     <div className="wedding-app wedding-surface min-h-screen text-cocoa">
-      <header className="sticky top-0 z-40 border-b border-blush/60 bg-ivory/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3">
+      <header className="sticky top-0 z-40 border-b border-blush/60 bg-ivory/85 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-2.5">
           <Link href="/" className="flex items-center">
             <BrandLogo />
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm text-cocoa/70 md:flex">
-            {[
-              ["Fitur", "#fitur"],
-              ["Anggaran", "#anggaran"],
-              ["Harga", "#harga"],
-            ].map(([label, href]) => (
-              <a
-                key={href}
-                href={href}
-                className="group relative py-1 transition-colors hover:text-rosewood"
-              >
+          <nav className="hidden items-center gap-7 text-sm text-cocoa/70 md:flex">
+            {NAV_LINKS.map(([label, href]) => (
+              <a key={href} href={href} className="group relative py-1 transition-colors hover:text-rosewood">
                 {label}
                 <span className="absolute inset-x-0 -bottom-0.5 h-px scale-x-0 bg-champagne transition-transform duration-300 group-hover:scale-x-100" />
               </a>
@@ -136,190 +66,369 @@ export function WeddingLanding() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link
-              href="/wedding/login"
-              className="rounded-full px-3.5 py-2 text-sm font-medium text-cocoa/70 transition-colors hover:bg-blush/50 hover:text-cocoa"
-            >
+            <Link href="/wedding/login" className="rounded-full px-3 py-2 text-sm font-medium text-cocoa/70 hover:bg-blush/50 hover:text-cocoa">
               Masuk
             </Link>
-            <Link
-              href="/wedding/signup"
-              className="rounded-full bg-rosewood px-4 py-2 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
-            >
+            <Link href="/wedding/signup" className="rounded-full bg-rosewood px-4 py-2 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa">
               Daftar
             </Link>
+            <details className="relative md:hidden">
+              <summary className="cursor-pointer list-none rounded-full border border-blush px-3 py-2 text-xs text-cocoa/70">
+                Menu
+              </summary>
+              <div className="absolute right-0 mt-2 w-44 rounded-2xl border border-blush bg-ivory p-2 shadow-xl">
+                {NAV_LINKS.map(([label, href]) => (
+                  <a key={href} href={href} className="block rounded-xl px-3 py-2 text-sm text-cocoa/75 hover:bg-blush/40">
+                    {label}
+                  </a>
+                ))}
+              </div>
+            </details>
           </div>
         </div>
       </header>
 
       <main>
-        <section className="relative overflow-hidden px-5 pb-20 pt-14 sm:pt-20">
+        <section className="relative overflow-hidden px-5 pb-14 pt-10 sm:pt-12">
           <div className="pointer-events-none absolute -left-10 top-24 hidden text-champagne/60 sm:block">
-            <FloralCorner className="landing-float size-28" />
-          </div>
-          <div className="pointer-events-none absolute -right-6 top-6 hidden rotate-180 text-dusty/50 sm:block">
-            <FloralCorner className="landing-float size-24" />
+            <Floral className="landing-float size-24" />
           </div>
 
-          <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
             <div>
-              <div className="landing-fade">
-                <Eyebrow>Untuk perjalanan menuju hari istimewa</Eyebrow>
-              </div>
-
-              <h1
-                className="landing-fade mt-6 font-heading text-[2.6rem] leading-[1.08] tracking-tight text-cocoa sm:text-6xl lg:text-[4.1rem]"
-              >
-                Merencanakan Hari Istimewa,
-                <br className="hidden sm:block" />{" "}
-                <span className="italic text-rosewood">
-                  dengan Hati yang Lebih Tenang.
-                </span>
-              </h1>
-
-              <p
-                className="landing-fade mt-6 max-w-xl text-base leading-relaxed text-cocoa/70 sm:text-lg"
-              >
-                Setiap detail memiliki cerita. Atur anggaran, kelola kebutuhan,
-                dan persiapkan pernikahan impian Anda dalam satu ruang yang
-                dirancang dengan indah.
-              </p>
-
-              <div
-                className="landing-fade mt-9 flex flex-wrap items-center gap-3"
-              >
-                <Link
-                  href="/wedding/signup"
-                  className="group inline-flex items-center gap-2 rounded-full bg-rosewood px-7 py-3.5 text-sm font-medium text-ivory shadow-[0_18px_40px_-24px_rgba(168,111,122,0.9)] transition-all hover:-translate-y-0.5 hover:bg-cocoa"
-                >
-                  Mulai Merencanakan
-                  <ArrowRight
-                    className="size-4 transition-transform group-hover:translate-x-1"
-                    aria-hidden
-                  />
-                </Link>
-                <a
-                  href="#fitur"
-                  className="inline-flex items-center gap-2 rounded-full border border-champagne/60 px-6 py-3.5 text-sm font-medium text-cocoa transition-colors hover:bg-blush/40"
-                >
-                  Jelajahi Fitur
-                </a>
-              </div>
-
-              <p className="landing-fade mt-5 text-sm text-cocoa/55">
-                Satu ruang untuk anggaran, vendor, tamu, dan seluruh persiapan.
-              </p>
+              <Reveal>
+                <Eyebrow>Wedding planner, bukan sekadar undangan</Eyebrow>
+              </Reveal>
+              <Reveal delay={0.05}>
+                <h1 className="mt-5 font-heading text-[2.4rem] leading-[1.06] tracking-tight text-cocoa sm:text-5xl lg:text-[3.4rem]">
+                  Merencanakan Hari Istimewa,
+                  <br className="hidden sm:block" />{" "}
+                  <span className="italic text-rosewood">dengan Hati yang Lebih Tenang.</span>
+                </h1>
+              </Reveal>
+              <Reveal delay={0.1}>
+                <p className="mt-5 max-w-xl text-base leading-relaxed text-cocoa/70">
+                  Kelola anggaran, pantau pengeluaran, temukan inspirasi, atur
+                  vendor, dan checklist persiapan pernikahan dalam satu ruang yang
+                  dirancang dengan indah.
+                </p>
+              </Reveal>
+              <Reveal delay={0.15}>
+                <div className="mt-7 flex flex-wrap items-center gap-3">
+                  <Link href="/wedding/signup" className="group inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory shadow-[0_16px_36px_-24px_rgba(168,111,122,0.9)] transition-all hover:-translate-y-0.5 hover:bg-cocoa">
+                    Mulai Merencanakan
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
+                  </Link>
+                  <a href="#fitur" className="inline-flex items-center gap-2 rounded-full border border-champagne/60 px-5 py-3 text-sm font-medium text-cocoa hover:bg-blush/40">
+                    Jelajahi Fitur
+                  </a>
+                </div>
+                <p className="mt-4 text-xs text-cocoa/50">
+                  Satu ruang untuk inspirasi, anggaran, vendor, dan seluruh
+                  persiapan pernikahan.
+                </p>
+              </Reveal>
             </div>
 
-            <div className="landing-fade relative mx-auto w-full max-w-md">
-              <div className="absolute -left-8 -top-10 size-28 rounded-full bg-blush/70 blur-2xl" />
-              <div className="relative overflow-hidden rounded-t-[10rem] rounded-b-[2rem] border border-champagne/50 bg-gradient-to-b from-sage/70 via-blush/60 to-ivory p-3 shadow-[0_45px_90px_-65px_rgba(87,66,63,0.55)]">
-                <div className="relative flex aspect-[4/5] items-center justify-center overflow-hidden rounded-t-[9rem] rounded-b-[1.6rem] bg-gradient-to-b from-dusty/45 via-blush/70 to-ivory">
-                  <FloralCorner className="size-44 text-rosewood/35" />
-                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-heading text-5xl italic text-ivory/70">
-                    H &amp; J
-                  </span>
-                  <p className="absolute bottom-6 font-heading text-sm italic text-cocoa/60">
-                    Hailey &amp; Justin · 2027
+            <Reveal delay={0.2}>
+              <div className="relative">
+                <div className="absolute -right-4 -top-6 z-10 w-40 rounded-2xl border border-champagne/60 bg-ivory/95 p-3 shadow-[0_18px_40px_-30px_rgba(87,66,63,0.7)]">
+                  <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.16em] text-rosewood">
+                    <CalendarDays className="size-3.5" aria-hidden /> Menuju hari H
                   </p>
+                  <p className="mt-1 font-heading text-xl text-cocoa">120 hari</p>
+                  <p className="text-[10px] text-cocoa/55">lagi · contoh tampilan</p>
+                </div>
+
+                <div className="overflow-hidden rounded-[1.6rem] border border-champagne/50 bg-ivory shadow-[0_40px_90px_-65px_rgba(87,66,63,0.65)]">
+                  <div className="flex items-center gap-1.5 border-b border-blush/60 bg-blush/25 px-4 py-2.5">
+                    <span className="size-2 rounded-full bg-dusty/70" />
+                    <span className="size-2 rounded-full bg-champagne/70" />
+                    <span className="size-2 rounded-full bg-sage" />
+                    <span className="ml-2 text-[10px] uppercase tracking-[0.18em] text-cocoa/40">
+                      kefoo · dashboard
+                    </span>
+                  </div>
+
+                  <div className="flex">
+                    <div className="hidden w-28 shrink-0 border-r border-blush/60 bg-blush/15 p-3 sm:block">
+                      {["Dashboard", "Anggaran", "Vendor", "Tamu", "Checklist", "Inspirasi"].map((item, i) => (
+                        <p
+                          key={item}
+                          className={`mb-1 rounded-lg px-2 py-1.5 text-[10px] ${
+                            i === 0 ? "bg-ivory text-rosewood" : "text-cocoa/45"
+                          }`}
+                        >
+                          {item}
+                        </p>
+                      ))}
+                    </div>
+
+                    <div className="min-w-0 flex-1 p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-heading text-sm text-cocoa">Hailey &amp; Justin</p>
+                          <p className="text-[10px] text-cocoa/45">12 Mei 2027 · Jakarta</p>
+                        </div>
+                        <span className="rounded-full bg-sage/60 px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-cocoa/60">
+                          Contoh data
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {[
+                          ["Total biaya", "Rp 150 jt"],
+                          ["Terpakai", "Rp 45 jt"],
+                          ["Sisa", "Rp 105 jt"],
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-xl border border-blush/70 bg-white/80 px-2 py-2">
+                            <p className="text-[8px] uppercase tracking-[0.1em] text-cocoa/40">{label}</p>
+                            <p className="mt-0.5 font-heading text-[11px] text-cocoa">{value}</p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-3">
+                        <div className="flex justify-between text-[9px] text-cocoa/50">
+                          <span>Anggaran terpakai</span>
+                          <span>30%</span>
+                        </div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-blush/60">
+                          <div className="h-full w-[30%] rounded-full bg-gradient-to-r from-dusty to-rosewood" />
+                        </div>
+                      </div>
+
+                      <div className="mt-3 space-y-1.5">
+                        {[
+                          ["Catering", "DP", "bg-champagne/25 text-cocoa/70"],
+                          ["Dekorasi", "Lunas", "bg-sage/60 text-cocoa/70"],
+                        ].map(([name, status, tone]) => (
+                          <div key={name} className="flex items-center justify-between rounded-lg bg-white/70 px-2 py-1.5">
+                            <span className="text-[10px] text-cocoa/75">{name}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-[8px] ${tone}`}>{status}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 flex items-center gap-2">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-blush/60">
+                          <div className="h-full w-[40%] rounded-full bg-gradient-to-r from-sage to-dusty" />
+                        </div>
+                        <span className="text-[9px] text-cocoa/45">Checklist 2/5</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="absolute -bottom-6 -left-4 hidden w-36 rounded-2xl border border-blush bg-ivory/95 p-3 shadow-[0_18px_40px_-30px_rgba(87,66,63,0.6)] sm:block">
+                  <p className="flex items-center gap-1 text-[9px] uppercase tracking-[0.14em] text-rosewood">
+                    <Images className="size-3" aria-hidden /> Inspirasi
+                  </p>
+                  <div className="mt-2 grid grid-cols-3 gap-1">
+                    {["from-blush to-ivory", "from-sage to-ivory", "from-dusty/60 to-ivory"].map((tone) => (
+                      <span key={tone} className={`aspect-square rounded-md bg-gradient-to-br ${tone}`} />
+                    ))}
+                  </div>
+                  <p className="mt-1.5 text-[9px] text-cocoa/50">Dekorasi · MUA · Venue</p>
                 </div>
               </div>
-
-              <div className="absolute -bottom-8 -left-6 w-56 rounded-2xl border border-blush bg-ivory/95 p-4 shadow-[0_25px_50px_-35px_rgba(87,66,63,0.6)] backdrop-blur">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-rosewood">
-                  Anggaran
-                </p>
-                <p className="mt-1 font-heading text-2xl text-cocoa">Rp 150 jt</p>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-blush">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-dusty to-rosewood"
-                    style={{ width: "78%" }}
-                  />
-                </div>
-                <p className="mt-2 text-[11px] text-cocoa/60">
-                  78% terpakai · sisa Rp 33 jt
-                </p>
-              </div>
-
-              <div className="absolute -right-5 -top-8 w-44 rounded-2xl border border-champagne/60 bg-ivory/95 p-3 shadow-[0_20px_45px_-32px_rgba(87,66,63,0.7)]">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-8 overflow-hidden rounded-t-2xl">
-                  {[10, 30, 52, 74, 90].map((left, i) => (
-                    <span
-                      key={left}
-                      className="landing-confetti absolute top-0 block size-1.5 rounded-sm"
-                      style={{
-                        left: `${left}%`,
-                        backgroundColor: ["#c8ac7c", "#d7a6af", "#dde2d2", "#a86f7a", "#c8ac7c"][i],
-                        animationDelay: `${i * 0.18}s`,
-                      }}
-                    />
-                  ))}
-                </div>
-                <p className="mt-4 text-[10px] uppercase tracking-[0.18em] text-rosewood">
-                  Lunas 100%
-                </p>
-                <p className="mt-1 font-heading text-lg leading-tight text-cocoa">
-                  Biaya sudah lunas
-                </p>
-              </div>
-
-              <div className="absolute -bottom-24 right-0 w-44 rounded-2xl border border-blush bg-ivory/95 p-3 shadow-[0_20px_45px_-32px_rgba(87,66,63,0.6)]">
-                <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-rosewood">
-                  <CalendarDays className="size-3.5" aria-hidden /> Menuju hari H
-                </p>
-                <p className="mt-1 font-heading text-2xl text-cocoa">120 hari</p>
-                <p className="text-[11px] text-cocoa/55">lagi · 12 Mei 2027</p>
-              </div>
-
-              <Sparkles
-                className="absolute -right-2 top-10 hidden size-6 text-champagne sm:block landing-float"
-                aria-hidden
-              />
-            </div>
+            </Reveal>
 
           </div>
         </section>
 
-        <section id="fitur" className="border-y border-blush/60 bg-ivory/70 px-5 py-20">
+        <section id="inspirasi" className="border-y border-blush/60 bg-blush/30 px-5 py-16">
+          <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-end">
+            <Reveal>
+              <Eyebrow>Inspirasi pernikahan</Eyebrow>
+              <h2 className="mt-4 font-heading text-3xl leading-[1.1] text-cocoa sm:text-[2.6rem]">
+                Kumpulkan Inspirasi,{" "}
+                <span className="italic text-rosewood">Wujudkan Pernikahan Impian.</span>
+              </h2>
+              <p className="mt-4 max-w-md text-sm leading-relaxed text-cocoa/70 sm:text-base">
+                Dari dekorasi hingga detail terkecil, simpan ide-ide yang kamu
+                sukai dan jadikan referensi untuk hari istimewamu.
+              </p>
+              <Link
+                href="/wedding/signup"
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-rosewood px-5 py-2.5 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
+              >
+                Mulai kumpulkan inspirasi
+                <ArrowRight className="size-4" aria-hidden />
+              </Link>
+            </Reveal>
+
+            <Reveal delay={0.1}>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                {[
+                  ["Dekorasi", "from-blush via-dusty/50 to-ivory"],
+                  ["Attire", "from-sage via-blush/60 to-ivory"],
+                  ["MUA", "from-dusty/60 via-blush to-ivory"],
+                  ["Hair do", "from-champagne/40 via-sage/70 to-ivory"],
+                  ["Wedding ring", "from-blush/80 via-champagne/30 to-ivory"],
+                  ["Venue", "from-sage/80 via-blush/40 to-ivory"],
+                ].map(([label, tone], index) => (
+                  <div
+                    key={label}
+                    className={`group relative overflow-hidden rounded-2xl border border-champagne/40 bg-gradient-to-br ${tone} ${
+                      index % 3 === 1 ? "aspect-[4/5]" : "aspect-square"
+                    }`}
+                  >
+                    <div className="absolute inset-0 flex items-center justify-center opacity-40 transition-transform duration-500 group-hover:scale-110">
+                      <Floral className="size-16 text-rosewood/50" />
+                    </div>
+                    <span className="absolute bottom-2 left-2 rounded-full bg-ivory/85 px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] text-cocoa/60">
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-cocoa/50">
+                Contoh papan inspirasi. Di aplikasi, Anda mengunggah foto sendiri
+                dan menyimpannya per kategori.
+              </p>
+            </Reveal>
+          </div>
+        </section>
+
+        <section id="fitur" className="px-5 py-16">
           <div className="mx-auto max-w-6xl">
             <Reveal>
-              <Eyebrow>Setiap detail, lebih terencana</Eyebrow>
-              <h2 className="mt-5 max-w-3xl font-heading text-4xl leading-[1.12] text-cocoa sm:text-5xl">
-                Dari anggaran pertama hingga{" "}
-                <span className="italic text-rosewood">
-                  daftar persiapan terakhir.
-                </span>
+              <Eyebrow>Fitur inti</Eyebrow>
+              <h2 className="mt-4 max-w-2xl font-heading text-3xl leading-[1.1] text-cocoa sm:text-[2.5rem]">
+                Semua Persiapan Pernikahan,{" "}
+                <span className="italic text-rosewood">Lebih Terorganisir.</span>
               </h2>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-cocoa/70">
-                Semua kebutuhan tersusun rapi agar Anda bisa lebih menikmati
-                prosesnya.
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-cocoa/70">
+                Lebih sedikit hal yang perlu dikhawatirkan. Lebih banyak waktu
+                untuk menikmati perjalanannya.
               </p>
             </Reveal>
 
-            <div className="mt-14 space-y-10">
-              {FEATURES.map((feature, index) => (
-                <Reveal key={feature.title} delay={index * 0.05}>
-                  <div
-                    className={`grid items-center gap-6 border-t border-champagne/30 pt-8 md:grid-cols-[0.9fr_1.1fr] ${
-                      index % 2 === 1 ? "md:[&>*:first-child]:order-2" : ""
-                    }`}
-                  >
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.28em] text-champagne">
-                        {feature.label}
-                      </p>
-                      <h3 className="mt-3 max-w-md font-heading text-2xl leading-snug text-cocoa sm:text-3xl">
-                        {feature.title}
-                      </h3>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <article id="anggaran" className="rounded-3xl border border-blush/70 bg-white/80 p-5">
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-champagne">
+                  <Wallet className="size-3.5" aria-hidden /> Anggaran
+                </span>
+                <h3 className="mt-2 font-heading text-xl text-cocoa">Anggaran Lebih Terkontrol.</h3>
+                <p className="mt-2 text-sm leading-relaxed text-cocoa/65">
+                  Tentukan anggaran, alokasikan per kategori, dan pantau sisa budget.
+                </p>
+                <div className="mt-4 rounded-2xl bg-ivory p-4">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-[10px] uppercase tracking-[0.12em] text-cocoa/45">Total</span>
+                    <span className="font-heading text-base text-cocoa">Rp 150 jt</span>
+                  </div>
+                  {[
+                    ["Dialokasikan", 61, "from-sage to-dusty"],
+                    ["Dibayar", 30, "from-dusty to-rosewood"],
+                  ].map(([label, pct, tone]) => (
+                    <div key={String(label)} className="mt-2.5">
+                      <div className="flex justify-between text-[10px] text-cocoa/55">
+                        <span>{label}</span>
+                        <span>{pct}%</span>
+                      </div>
+                      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-blush/60">
+                        <div className={`h-full rounded-full bg-gradient-to-r ${tone}`} style={{ width: `${pct}%` }} />
+                      </div>
                     </div>
-                    <div className="flex items-start gap-4">
-                      <span className="mt-1 flex size-11 shrink-0 items-center justify-center rounded-full border border-champagne/50 bg-ivory text-rosewood">
-                        <feature.icon className="size-5" aria-hidden />
-                      </span>
-                      <p className="text-sm leading-relaxed text-cocoa/70 sm:text-base">
-                        {feature.body}
-                      </p>
+                  ))}
+                  <p className="mt-2.5 text-[10px] text-cocoa/50">Sisa Rp 105 jt</p>
+                </div>
+              </article>
+
+              <article className="rounded-3xl border border-blush/70 bg-white/80 p-5">
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-champagne">
+                  <CheckCircle2 className="size-3.5" aria-hidden /> Pengeluaran
+                </span>
+                <h3 className="mt-2 font-heading text-xl text-cocoa">Setiap Pengeluaran Terpantau.</h3>
+                <p className="mt-2 text-sm leading-relaxed text-cocoa/65">
+                  Catat biaya dan status pembayaran agar tidak ada yang terlewat.
+                </p>
+                <div className="mt-4 space-y-1.5 rounded-2xl bg-ivory p-4">
+                  {[
+                    ["Catering", "Rp 25 jt", "DP"],
+                    ["Dekorasi", "Rp 20 jt", "Lunas"],
+                    ["Fotografi", "Rp 12 jt", "Diskusi"],
+                  ].map(([name, amount, status]) => (
+                    <div key={name} className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5">
+                      <span className="text-[11px] text-cocoa">{name} · {amount}</span>
+                      <span className="rounded-full bg-blush/60 px-2 py-0.5 text-[9px] text-cocoa/70">{status}</span>
                     </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="rounded-3xl border border-blush/70 bg-white/80 p-5">
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-champagne">
+                  <Store className="size-3.5" aria-hidden /> Vendor
+                </span>
+                <h3 className="mt-2 font-heading text-xl text-cocoa">Semua Vendor Satu Tempat.</h3>
+                <p className="mt-2 text-sm leading-relaxed text-cocoa/65">
+                  Kontak, harga kesepakatan, dan status pembayaran tiap vendor.
+                </p>
+                <div className="mt-4 space-y-1.5 rounded-2xl bg-ivory p-4">
+                  {[
+                    ["Venue · Ballroom", "Lunas"],
+                    ["Catering · Ibu Sari", "DP"],
+                  ].map(([name, status]) => (
+                    <div key={name} className="flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5">
+                      <span className="text-[11px] text-cocoa">{name}</span>
+                      <span className="rounded-full bg-sage/60 px-2 py-0.5 text-[9px] text-cocoa/70">{status}</span>
+                    </div>
+                  ))}
+                </div>
+              </article>
+
+              <article className="rounded-3xl border border-blush/70 bg-white/80 p-5">
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-champagne">
+                  <ListChecks className="size-3.5" aria-hidden /> Checklist &amp; Tamu
+                </span>
+                <h3 className="mt-2 font-heading text-xl text-cocoa">Persiapan Lebih Terarah.</h3>
+                <p className="mt-2 text-sm leading-relaxed text-cocoa/65">
+                  Tugas, progres, dan daftar tamu beserta konfirmasi kehadiran.
+                </p>
+                <div className="mt-4 rounded-2xl bg-ivory p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-blush/60">
+                      <div className="h-full w-[60%] rounded-full bg-gradient-to-r from-sage to-dusty" />
+                    </div>
+                    <span className="text-[10px] text-cocoa/55">3/5</span>
+                  </div>
+                  <div className="mt-2.5 flex items-center justify-between rounded-lg bg-white/80 px-2.5 py-1.5">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] text-cocoa">
+                      <Users className="size-3.5 text-rosewood" aria-hidden /> 120 tamu
+                    </span>
+                    <span className="text-[10px] text-cocoa/55">84 hadir</span>
+                  </div>
+                </div>
+              </article>
+
+            </div>
+
+            <p className="mt-4 text-[11px] text-cocoa/45">
+              Semua angka di atas adalah contoh tampilan, bukan data pengguna.
+            </p>
+          </div>
+        </section>
+
+        <section className="border-y border-blush/60 bg-sage/25 px-5 py-14">
+          <div className="mx-auto max-w-6xl">
+            <Reveal>
+              <Eyebrow>Alurnya sederhana</Eyebrow>
+              <h2 className="mt-3 font-heading text-3xl text-cocoa sm:text-[2.3rem]">Dari Ide Menjadi Rencana.</h2>
+            </Reveal>
+            <div className="mt-7 grid gap-4 sm:grid-cols-3">
+              {[
+                ["01", "Temukan Inspirasi", "Mulai dengan mengumpulkan referensi dan ide untuk pernikahan impianmu."],
+                ["02", "Susun Rencana & Anggaran", "Tentukan budget, catat kebutuhan, dan atur prioritas pengeluaran."],
+                ["03", "Pantau Persiapan", "Kelola vendor, checklist, dan progres persiapan dalam satu tempat."],
+              ].map(([no, title, body], index) => (
+                <Reveal key={no} delay={index * 0.05}>
+                  <div className="h-full rounded-2xl border border-champagne/40 bg-ivory/85 p-5">
+                    <p className="font-heading text-2xl italic text-champagne">{no}</p>
+                    <h3 className="mt-2 font-heading text-lg text-cocoa">{title}</h3>
+                    <p className="mt-2 text-sm leading-relaxed text-cocoa/65">{body}</p>
                   </div>
                 </Reveal>
               ))}
@@ -327,200 +436,111 @@ export function WeddingLanding() {
           </div>
         </section>
 
-        <section id="anggaran" className="relative overflow-hidden px-5 py-20">
-          <div className="pointer-events-none absolute right-0 top-16 hidden text-sage md:block">
-            <FloralCorner className="size-40 rotate-180" />
-          </div>
 
-          <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+
+        <section id="harga" className="px-5 py-16">
+          <div className="mx-auto max-w-3xl text-center">
             <Reveal>
-              <Eyebrow>Anggaran</Eyebrow>
-              <h2 className="mt-5 font-heading text-4xl leading-[1.12] text-cocoa sm:text-[2.9rem]">
-                Tahu persis ke mana{" "}
-                <span className="italic text-rosewood">setiap rupiah</span>{" "}
-                berjalan.
+              <p className="text-[11px] uppercase tracking-[0.3em] text-rosewood">Harga</p>
+              <h2 className="mx-auto mt-4 max-w-2xl font-heading text-3xl leading-[1.1] text-cocoa sm:text-[2.5rem]">
+                Perencanaan Indah, dengan Harga yang{" "}
+                <span className="italic text-rosewood">Tetap Bersahabat.</span>
               </h2>
-              <p className="mt-5 max-w-md text-base leading-relaxed text-cocoa/70">
-                Bedakan anggaran yang sudah dialokasikan dengan uang yang benar-
-                benar sudah dibayarkan. Sisa dana selalu terlihat, tanpa perlu
-                menghitung ulang.
+              <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-cocoa/70">
+                Mulai merencanakan hari istimewamu dengan akses ke seluruh fitur
+                yang tersedia.
               </p>
-              <Link
-                href="/wedding/signup"
-                className="mt-8 inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
-              >
-                Mulai Merencanakan
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
             </Reveal>
 
             <Reveal delay={0.1}>
-              <div className="rounded-[1.8rem] border border-blush bg-ivory/95 p-6 shadow-[0_35px_80px_-60px_rgba(87,66,63,0.5)] sm:p-8">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-rosewood">
-                    Contoh tampilan anggaran
-                  </p>
-                  <span className="rounded-full bg-sage/60 px-2.5 py-1 text-[10px] uppercase tracking-[0.12em] text-cocoa/70">
-                    Data contoh
-                  </span>
-                </div>
-
-                <p className="mt-4 font-heading text-3xl text-cocoa sm:text-4xl">
-                  Rp 150.000.000
-                </p>
-                <p className="text-xs text-cocoa/55">Total biaya pernikahan</p>
-
-                <div className="mt-7 space-y-5">
+              <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-champagne/60 bg-blush/35 p-8 sm:p-10">
+                <p className="font-heading text-5xl text-cocoa sm:text-6xl">Rp20.000</p>
+                <p className="mt-3 text-sm text-cocoa/70">Satu harga untuk mengakses seluruh fitur yang tersedia.</p>
+                <ul className="mx-auto mt-6 grid max-w-sm gap-2 text-left text-sm text-cocoa/75">
                   {[
-                    { label: "Sudah dialokasikan", value: "Rp 92.000.000", pct: "61%" },
-                    { label: "Sudah dibayarkan", value: "Rp 45.000.000", pct: "30%" },
-                  ].map((row) => (
-                    <div key={row.label}>
-                      <div className="flex items-baseline justify-between text-sm">
-                        <span className="text-cocoa/70">{row.label}</span>
-                        <span className="font-medium text-cocoa">{row.value}</span>
-                      </div>
-                      <div className="mt-2 h-2 overflow-hidden rounded-full bg-blush/70">
-                        
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="flex items-center justify-between border-t border-champagne/30 pt-4">
-                    <span className="text-sm text-cocoa/70">Sisa biaya</span>
-                    <span className="font-heading text-2xl text-rosewood">
-                      Rp 58.000.000
-                    </span>
-                  </div>
-                </div>
-
-                <p className="mt-5 text-xs leading-relaxed text-cocoa/50">
-                  Angka di atas hanya contoh. Di dalam aplikasi, semua nilai
-                  dihitung otomatis dari anggaran dan pembayaran Anda.
-                </p>
-              </div>
-            </Reveal>
-
-          </div>
-        </section>
-
-        <section id="harga" className="border-y border-blush/60 bg-blush/45 px-5 py-20">
-          <div className="mx-auto max-w-3xl">
-            <Reveal className="text-center">
-              <p className="text-[11px] uppercase tracking-[0.32em] text-rosewood">
-                Harga
-              </p>
-              <h2 className="mx-auto mt-5 max-w-2xl font-heading text-4xl leading-[1.12] text-cocoa sm:text-[2.9rem]">
-                Perencanaan indah, dengan harga yang{" "}
-                <span className="italic text-rosewood">tetap bersahabat.</span>
-              </h2>
-              <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-cocoa/70">
-                Satu harga untuk mengakses seluruh fitur yang tersedia.
-              </p>
-            </Reveal>
-
-            <Reveal delay={0.1} className="mt-12">
-              <div className="relative overflow-hidden rounded-[2rem] border border-champagne/60 bg-ivory p-8 text-center shadow-[0_40px_90px_-70px_rgba(87,66,63,0.6)] sm:p-12">
-                <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-blush/60 blur-2xl" />
-
-                <p className="relative font-heading text-[10px] uppercase tracking-[0.3em] text-rosewood">
-                  Wedding Planner Pro
-                </p>
-                <p className="relative mt-4 font-heading text-6xl leading-none text-cocoa">
-                  Rp20.000
-                  <span className="ml-2 align-middle font-body text-sm font-normal text-cocoa/55">
-                    /bulan
-                  </span>
-                </p>
-
-                <ul className="relative mx-auto mt-8 grid max-w-sm gap-3 text-left text-sm text-cocoa/75">
-                  {[
-                    "Perencanaan anggaran dan alokasi per kategori",
-                    "Pelacakan pengeluaran dan pembayaran vendor",
-                    "Pengelolaan vendor beserta bukti pembayaran",
-                    "Daftar tugas dan linimasa persiapan",
-                    "Daftar tamu dan status RSVP",
-                    "Papan inspirasi untuk menyimpan foto dan referensi",
+                    "Anggaran, pengeluaran, dan pembayaran vendor",
+                    "Pengelolaan vendor",
+                    "Checklist dan linimasa persiapan",
+                    "Daftar tamu dan RSVP",
+                    "Papan inspirasi pernikahan",
                   ].map((item) => (
-                    <li key={item} className="flex items-start gap-2.5">
-                      <CheckCircle2
-                        className="mt-0.5 size-4 shrink-0 text-rosewood"
-                        aria-hidden
-                      />
+                    <li key={item} className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-rosewood" aria-hidden />
                       {item}
                     </li>
                   ))}
                 </ul>
-
                 <Link
                   href="/wedding/signup"
-                  className="relative mt-9 inline-flex items-center gap-2 rounded-full bg-rosewood px-7 py-3.5 text-sm font-medium text-ivory shadow-[0_18px_40px_-24px_rgba(168,111,122,0.9)] transition-all hover:-translate-y-0.5 hover:bg-cocoa"
+                  className="mt-7 inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
                 >
                   Mulai Merencanakan
                   <ArrowRight className="size-4" aria-hidden />
                 </Link>
-
-                <p className="relative mt-5 text-xs leading-relaxed text-cocoa/50">
-                  Pembayaran online belum tersedia. Tim kami akan membantu
-                  proses aktivasi.
+                <p className="mt-4 text-xs text-cocoa/50">
+                  Pembayaran online belum tersedia. Tim kami akan membantu proses
+                  aktivasi.
                 </p>
               </div>
             </Reveal>
           </div>
         </section>
 
-        <section className="relative overflow-hidden bg-cocoa px-5 py-20 text-center text-ivory">
-          <div className="pointer-events-none absolute inset-0 opacity-[0.07]">
-            <FloralCorner className="absolute -left-8 bottom-0 size-56 text-ivory" />
-            <FloralCorner className="absolute -right-8 top-0 size-56 rotate-180 text-ivory" />
+        <section className="relative overflow-hidden border-t border-blush/60 bg-ivory px-5 py-16 text-center">
+          <div className="pointer-events-none absolute -left-6 bottom-0 hidden text-champagne/40 sm:block">
+            <Floral className="size-32" />
           </div>
-
           <Reveal>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-champagne">
-              Dengan penuh cinta
-            </p>
-            <h2 className="mx-auto mt-5 max-w-2xl font-heading text-4xl leading-[1.12] sm:text-[2.9rem]">
-              Persiapan lebih teratur, menyambut hari istimewa{" "}
-              <span className="italic text-blush">dengan tenang.</span>
+            <h2 className="mx-auto max-w-2xl font-heading text-3xl leading-[1.12] text-cocoa sm:text-[2.5rem]">
+              Mulai Menyusun Hari yang Akan{" "}
+              <span className="italic text-rosewood">Selalu Kamu Kenang.</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-lg text-sm leading-relaxed text-ivory/70 sm:text-base">
-              Mulai susun anggaran, atur setiap kebutuhan, dan nikmati perjalanan
-              menuju pernikahan Anda dengan lebih terencana.
+            <p className="mx-auto mt-4 max-w-lg text-sm leading-relaxed text-cocoa/70">
+              Jadikan persiapan pernikahan terasa lebih terarah, dari inspirasi
+              pertama hingga detail terakhir.
             </p>
             <Link
               href="/wedding/signup"
-              className="group mt-9 inline-flex items-center gap-2 rounded-full bg-ivory px-7 py-3.5 text-sm font-medium text-cocoa transition-all hover:-translate-y-0.5 hover:bg-blush"
+              className="group mt-7 inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
             >
               Mulai Merencanakan
-              <ArrowRight
-                className="size-4 transition-transform group-hover:translate-x-1"
-                aria-hidden
-              />
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
             </Link>
           </Reveal>
         </section>
-
-        <footer className="border-t border-blush/70 bg-ivory px-5 py-8">
-          <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 text-sm text-cocoa/60 sm:flex-row sm:items-end sm:justify-between">
-            <BrandLogo />
-            <div className="text-center sm:text-right">
-              <p>
-                Email:{" "}
-                <a
-                  href="mailto:hello@kefootech"
-                  className="font-medium text-rosewood underline-offset-4 hover:underline"
-                >
-                  hello@kefootech
-                </a>
-              </p>
-              <p className="mt-1 text-xs text-cocoa/45">
-                © {new Date().getFullYear()} Kefoo Wedding Planner
-              </p>
-            </div>
-          </div>
-        </footer>
       </main>
+
+      <footer className="border-t border-blush/70 bg-blush/25 px-5 py-8">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-5 text-sm text-cocoa/60 sm:flex-row sm:items-start sm:justify-between">
+          <div className="max-w-xs text-center sm:text-left">
+            <BrandLogo />
+            <p className="mt-3 text-xs leading-relaxed text-cocoa/55">
+              Wedding planner untuk mengatur anggaran, vendor, tamu, checklist,
+              dan inspirasi pernikahan dalam satu tempat.
+            </p>
+          </div>
+
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs">
+            {NAV_LINKS.map(([label, href]) => (
+              <a key={href} href={href} className="hover:text-rosewood">
+                {label}
+              </a>
+            ))}
+            <Link href="/wedding/login" className="hover:text-rosewood">Masuk</Link>
+            <Link href="/wedding/signup" className="hover:text-rosewood">Daftar</Link>
+          </nav>
+
+          <div className="text-center text-xs sm:text-right">
+            <p>
+              Email:{" "}
+              <a href="mailto:hello@kefootech" className="font-medium text-rosewood underline-offset-4 hover:underline">
+                hello@kefootech
+              </a>
+            </p>
+            <p className="mt-1 text-cocoa/45">© {new Date().getFullYear()} Kefoo Wedding Planner</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
-
