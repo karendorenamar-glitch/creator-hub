@@ -3,6 +3,7 @@ import { SignInForm } from "@/components/wedding/auth-forms";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
+import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Sign in" };
 
@@ -29,7 +30,17 @@ export default async function WeddingLoginPage({
   if (user) {
     if (requested) redirect(requested);
     const session = await loadWeddingSession();
-    redirect(session ? "/wedding/dashboard" : "/wedding/onboarding");
+    if (session) redirect("/wedding/dashboard");
+
+    // No wedding yet: an admin belongs in the admin dashboard, not onboarding.
+    const supabase = await createWeddingClient();
+    const { data: adminRow } = await supabase
+      .from("admins")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    redirect(adminRow ? "/admin" : "/wedding/onboarding");
   }
 
   const copy = weddingCopy[await getLocale()];
