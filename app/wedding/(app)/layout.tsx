@@ -6,6 +6,7 @@ import { formatWeddingDate } from "@/lib/wedding/format";
 import {
   coupleNames,
   getCurrentUser,
+  isSubscriptionActive,
   loadWeddingSession,
 } from "@/lib/wedding/session";
 
@@ -19,6 +20,17 @@ export default async function WeddingAppLayout({
   if (!session) {
     const user = await getCurrentUser();
     redirect(user ? "/wedding/onboarding" : "/wedding/login");
+  }
+
+  // Paywall: only enforced when the DB switch is on. Members with lifetime
+  // access, an active subscription, or the open-access switch keep working.
+  const hasAccess =
+    !session.subscriptionRequired ||
+    isSubscriptionActive(session.subscription) ||
+    Boolean(session.wedding.lifetime_access_granted_at);
+
+  if (!hasAccess) {
+    redirect("/checkout");
   }
 
   const locale = await getLocale();
