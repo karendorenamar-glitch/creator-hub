@@ -97,16 +97,48 @@ export async function signUpAction(
 
   if (error) {
     const message = error.message.toLowerCase();
-    if (message.includes("already registered") || message.includes("already exists")) {
+    const code = String(error.code ?? "");
+    // Server-side log only, so the real reason is visible in the terminal.
+    console.error("[signUpAction]", code, error.message);
+
+    if (
+      message.includes("already registered") ||
+      message.includes("already exists") ||
+      code === "user_already_exists"
+    ) {
       return { error: "Email ini sudah terdaftar. Silakan masuk." };
     }
-    if (message.includes("rate limit") || message.includes("too many")) {
+    if (
+      message.includes("rate") ||
+      message.includes("limit") ||
+      message.includes("too many") ||
+      code === "429" ||
+      error.status === 429
+    ) {
       return {
         error:
           "Terlalu banyak percobaan pendaftaran. Tunggu beberapa menit lalu coba lagi.",
       };
     }
-    return { error: copy.common.genericError };
+    if (
+      message.includes("sending") ||
+      message.includes("confirmation email") ||
+      message.includes("smtp")
+    ) {
+      return {
+        error:
+          "Gagal mengirim email konfirmasi. Matikan “Confirm email” di Supabase atau atur SMTP, lalu coba lagi.",
+      };
+    }
+    if (message.includes("signups not allowed") || message.includes("disabled")) {
+      return {
+        error: "Pendaftaran sedang ditutup. Hubungi admin.",
+      };
+    }
+    if (message.includes("password")) {
+      return { error: "Kata sandi terlalu lemah. Gunakan minimal 8 karakter." };
+    }
+    return { error: `${copy.common.genericError} (${code || error.status || "?"})` };
   }
 
   // If email confirmation is enabled there is no session yet. Send the user to
