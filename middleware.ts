@@ -1,32 +1,42 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { createServerClient } from "@supabase/ssr";
 
-const PROTECTED_PREFIXES = [
-  "/dashboard",
-  "/creators",
-  "/videos",
-  "/campaigns",
-  "/planner",
-  "/payouts",
-  "/settings",
-  "/checkout",
-];
+/** Reads the signed-in user and refreshes the Supabase session cookies. */
+async function updateSession(request: NextRequest) {
+  let response = NextResponse.next({ request });
 
-function isProtectedPath(pathname: string) {
-  return PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) return { response, user: null };
+
+  const supabase = createServerClient(url, anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
+      },
+    },
+  });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return { response, user };
 }
+
 
 export async function middleware(request: NextRequest) {
   const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
-
-  if (pathname === "/checkout/growth" || pathname === "/signup/growth") {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = redirectUrl.pathname.replace("/growth", "/scale");
-    return NextResponse.redirect(redirectUrl);
-  }
 
   // Wedding planner has its own sign-in screen and its own route tree.
   if (pathname === "/wedding" || pathname.startsWith("/wedding/")) {
@@ -62,25 +72,6 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  if (isProtectedPath(pathname) && !user) {
-    const checkoutMatch = pathname.match(/^\/checkout\/(starter|scale)$/);
-
-    if (checkoutMatch) {
-      const signupUrl = request.nextUrl.clone();
-      signupUrl.pathname = `/signup/${checkoutMatch[1]}`;
-      signupUrl.search = "";
-      return NextResponse.redirect(signupUrl);
-    }
-
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (pathname === "/onboarding" && !user) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
 
   return response;
 }

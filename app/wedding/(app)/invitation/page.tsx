@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import {
   deleteRsvpAction,
   publishInvitationFormAction,

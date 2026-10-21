@@ -14,39 +14,35 @@ const geistMono = Geist_Mono({
 });
 
 const siteDescription =
-  "Self-serve KOL campaign tracker for brands and agencies. Search campaign videos by keyword, paste TikTok & Instagram links, track live creator performance, and manage payouts. Free trial, no demo required.";
+  "Kefoo Wedding Planner — atur anggaran, vendor, tamu, checklist, dan inspirasi pernikahan dalam satu tempat.";
 
 const ogImage = {
   url: "/og-image.jpg",
   width: 831,
   height: 831,
-  alt: "Kefoo — self-serve KOL campaign tracker with live creator analytics",
+  alt: "Kefoo Wedding Planner",
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://kefoo.tech"),
 
   title: {
-    default: "Kefoo | Self-Serve KOL Campaign Tracker",
+    default: "Kefoo Wedding Planner",
     template: "%s | Kefoo",
   },
 
   description: siteDescription,
 
   keywords: [
-    "KOL campaign tracker",
-    "influencer campaign management",
-    "creator analytics",
-    "TikTok campaign analytics",
-    "Instagram creator tracking",
-    "KOL management software",
-    "influencer reporting",
-    "campaign performance dashboard",
-    "self-serve influencer marketing",
+    "wedding planner",
+    "anggaran pernikahan",
+    "daftar tamu pernikahan",
+    "manajemen vendor pernikahan",
+    "checklist pernikahan",
   ],
 
   openGraph: {
-    title: "Kefoo | Self-Serve KOL Campaign Tracker",
+    title: "Kefoo Wedding Planner",
     description: siteDescription,
     url: "https://kefoo.tech",
     siteName: "Kefoo",
@@ -57,7 +53,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Kefoo | Self-Serve KOL Campaign Tracker",
+    title: "Kefoo Wedding Planner",
     description: siteDescription,
     images: [ogImage.url],
   },
