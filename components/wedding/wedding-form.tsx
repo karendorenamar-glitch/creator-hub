@@ -30,16 +30,22 @@ export function WeddingDetailsForm({
   copy,
   mode,
   values,
+  next,
+  refCode,
 }: {
   copy: WeddingCopy;
   mode: "create" | "update";
   values?: WeddingFormValues;
+  next?: string;
+  refCode?: string;
 }) {
   const action = mode === "create" ? createWeddingAction : updateWeddingAction;
   const [state, formAction, pending] = useActionState(action, initial);
 
   return (
     <form action={formAction} className="space-y-5">
+      {next ? <input type="hidden" name="next" value={next} /> : null}
+      {refCode ? <input type="hidden" name="ref" value={refCode} /> : null}
       {state?.error ? (
         <p
           role="alert"

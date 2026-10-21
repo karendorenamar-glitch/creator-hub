@@ -11,6 +11,22 @@ export type FormState =
   | { error?: string; success?: string; info?: string }
   | null;
 
+
+function safeNext(value: string, fallback = "/wedding/dashboard") {
+  if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
+    return fallback;
+  }
+  if (!value.startsWith("/checkout") && !value.startsWith("/wedding")) {
+    return fallback;
+  }
+  return value;
+}
+
+function withRef(path: string, ref: string) {
+  if (!ref) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}ref=${encodeURIComponent(ref)}`;
+}
+
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function text(formData: FormData, key: string) {
@@ -53,7 +69,10 @@ export async function signInAction(
   if (error) return { error: copy.auth.invalidCredentials };
 
   revalidatePath("/wedding", "layout");
-  redirect("/wedding/dashboard");
+  const next = text(formData, "next");
+  const safeNext =
+    next.startsWith("/checkout") || next.startsWith("/wedding") ? next : null;
+  redirect(safeNext ?? "/wedding/dashboard");
 }
 
 export async function signUpAction(
@@ -74,11 +93,25 @@ export async function signUpAction(
 
   if (error) return { error: copy.common.genericError };
 
-  // If email confirmation is enabled, there is no session yet.
-  if (!data.session) return { info: copy.auth.checkEmail };
+  // If email confirmation is enabled there is no session yet. Send the user to
+  // the sign-in screen while preserving the safe destination (no auth bypass).
+  if (!data.session) {
+    const next = safeNext(text(formData, "next"), "/wedding/dashboard");
+    const ref = text(formData, "ref");
+    redirect(
+      withRef(
+        `/wedding/login?next=${encodeURIComponent(next)}`,
+        ref,
+      ),
+    );
+  }
 
   revalidatePath("/wedding", "layout");
-  redirect("/wedding/onboarding");
+  const next = safeNext(text(formData, "next"), "/wedding/dashboard");
+  const ref = text(formData, "ref");
+  redirect(
+    withRef(`/wedding/onboarding?next=${encodeURIComponent(next)}`, ref),
+  );
 }
 
 export async function signOutAction() {
@@ -125,7 +158,8 @@ export async function createWeddingAction(
   }
 
   revalidatePath("/wedding", "layout");
-  redirect("/wedding/dashboard");
+  const next = safeNext(text(formData, "next"), "/wedding/dashboard");
+  redirect(withRef(next, text(formData, "ref")));
 }
 
 export async function updateWeddingAction(

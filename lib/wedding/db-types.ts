@@ -23,6 +23,8 @@ export type Wedding = {
   location: string | null;
   estimated_guest_count: number | null;
   total_budget: number;
+  lifetime_access_granted_at?: string | null;
+  lifetime_access_payment_id?: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -167,6 +169,30 @@ export type ChecklistTask = {
   updated_at: string;
 };
 
+export type AccessPaymentStatus = "awaiting_payment" | "pending_review" | "approved" | "rejected";
+
+export type Payment = {
+  id: string;
+  reference: string;
+  user_id: string;
+  wedding_id: string;
+  amount_idr: number;
+  currency: "IDR";
+  method: "bank_transfer";
+  status: AccessPaymentStatus;
+  sender_name: string;
+  receipt_path: string | null;
+  submitted_at: string;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  rejection_reason: string | null;
+  email_status: "pending" | "sent" | "failed";
+  email_attempts: number;
+  email_last_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type InvitationPublishStatus = "draft" | "published";
 
 export type InvitationContent = {
@@ -300,6 +326,7 @@ export type WeddingDatabase = {
       invitations: Table<Invitation>;
       invitation_rsvps: Table<InvitationRsvp>;
       music_tracks: Table<MusicTrack>;
+      payments: Table<Payment>;
     };
     Views: Record<string, never>;
     Functions: {
@@ -323,6 +350,14 @@ export type WeddingDatabase = {
           wedding_date: string | null;
           location: string | null;
         }[];
+      };
+      approve_payment: {
+        Args: { p_payment_id: string };
+        Returns: undefined;
+      };
+      reject_payment: {
+        Args: { p_payment_id: string; p_reason?: string | null };
+        Returns: undefined;
       };
       create_wedding: {
         Args: {

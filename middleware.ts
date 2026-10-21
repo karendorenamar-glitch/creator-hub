@@ -50,6 +50,18 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Wedding planner checkout uses the wedding sign-in screen, not the legacy login.
+  if (pathname === "/checkout" || pathname.startsWith("/checkout/")) {
+    if (!user) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/wedding/login";
+      loginUrl.search = "";
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return response;
+  }
+
   if (isProtectedPath(pathname) && !user) {
     const checkoutMatch = pathname.match(/^\/checkout\/(starter|scale)$/);
 

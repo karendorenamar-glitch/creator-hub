@@ -34,12 +34,13 @@ function Alert({ state }: { state: FormState }) {
   );
 }
 
-export function SignInForm({ copy }: { copy: WeddingCopy }) {
+export function SignInForm({ copy, next }: { copy: WeddingCopy; next?: string }) {
   const [state, action, pending] = useActionState(signInAction, initial);
 
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-sm font-medium text-ink">
           {copy.auth.email}
@@ -86,12 +87,22 @@ export function SignInForm({ copy }: { copy: WeddingCopy }) {
   );
 }
 
-export function SignUpForm({ copy }: { copy: WeddingCopy }) {
+export function SignUpForm({
+  copy,
+  next,
+  refCode,
+}: {
+  copy: WeddingCopy;
+  next?: string;
+  refCode?: string;
+}) {
   const [state, action, pending] = useActionState(signUpAction, initial);
 
   return (
     <form action={action} className="space-y-4">
       <Alert state={state} />
+      {next ? <input type="hidden" name="next" value={next} /> : null}
+      {refCode ? <input type="hidden" name="ref" value={refCode} /> : null}
       <div className="space-y-1.5">
         <label htmlFor="email" className="text-sm font-medium text-ink">
           {copy.auth.email}

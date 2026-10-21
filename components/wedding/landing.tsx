@@ -116,7 +116,7 @@ export function WeddingLanding() {
               </Reveal>
               <Reveal delay={0.15}>
                 <div className="mt-7 flex flex-wrap items-center gap-3">
-                  <Link href="/wedding/signup" className="group inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory shadow-[0_16px_36px_-24px_rgba(168,111,122,0.9)] transition-all hover:-translate-y-0.5 hover:bg-cocoa">
+                  <Link href="/checkout" className="group inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory shadow-[0_16px_36px_-24px_rgba(168,111,122,0.9)] transition-all hover:-translate-y-0.5 hover:bg-cocoa">
                     Mulai Merencanakan
                     <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
                   </Link>
@@ -261,7 +261,7 @@ export function WeddingLanding() {
                 sukai dan jadikan referensi untuk hari istimewamu.
               </p>
               <Link
-                href="/wedding/signup"
+                href="/checkout"
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-rosewood px-5 py-2.5 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
               >
                 Mulai kumpulkan inspirasi
@@ -476,7 +476,7 @@ export function WeddingLanding() {
                   ))}
                 </ul>
                 <Link
-                  href="/wedding/signup"
+                  href="/checkout"
                   className="mt-7 inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
                 >
                   Mulai Merencanakan
@@ -501,7 +501,7 @@ export function WeddingLanding() {
               pertama hingga detail terakhir.
             </p>
             <Link
-              href="/wedding/signup"
+              href="/checkout"
               className="group mt-7 inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
             >
               Mulai Merencanakan

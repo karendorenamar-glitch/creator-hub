@@ -6,7 +6,11 @@ import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
 
 export const metadata = { title: "Sign in" };
 
-export default async function WeddingLoginPage() {
+export default async function WeddingLoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const user = await getCurrentUser();
 
   if (user) {
@@ -15,6 +19,7 @@ export default async function WeddingLoginPage() {
   }
 
   const copy = weddingCopy[await getLocale()];
+  const { next } = await searchParams;
 
   return (
     <div className="rounded-3xl border border-olive-100 bg-white p-7 shadow-[0_24px_70px_-50px_rgba(120,80,60,0.45)] sm:p-9">
@@ -24,7 +29,7 @@ export default async function WeddingLoginPage() {
       <p className="mt-1.5 mb-6 text-sm text-ink-soft">
         {copy.auth.signInSubtitle}
       </p>
-      <SignInForm copy={copy} />
+      <SignInForm copy={copy} next={next} />
     </div>
   );
 }

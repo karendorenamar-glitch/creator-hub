@@ -6,7 +6,11 @@ import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
 
 export const metadata = { title: "Create account" };
 
-export default async function WeddingSignUpPage() {
+export default async function WeddingSignUpPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string; ref?: string }>;
+}) {
   const user = await getCurrentUser();
 
   if (user) {
@@ -15,6 +19,7 @@ export default async function WeddingSignUpPage() {
   }
 
   const copy = weddingCopy[await getLocale()];
+  const { next, ref } = await searchParams;
 
   return (
     <div className="rounded-3xl border border-olive-100 bg-white p-7 shadow-[0_24px_70px_-50px_rgba(120,80,60,0.45)] sm:p-9">
@@ -24,7 +29,7 @@ export default async function WeddingSignUpPage() {
       <p className="mt-1.5 mb-6 text-sm text-ink-soft">
         {copy.auth.signUpSubtitle}
       </p>
-      <SignUpForm copy={copy} />
+      <SignUpForm copy={copy} next={next} refCode={ref} />
     </div>
   );
 }
