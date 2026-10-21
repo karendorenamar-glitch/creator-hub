@@ -11,6 +11,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { BrandLogo } from "@/components/wedding/brand-logo";
+import { InspirationTile } from "@/components/wedding/inspiration-tile";
 
 function Eyebrow({ children }: { children: ReactNode }) {
   return (
@@ -261,26 +262,20 @@ export function WeddingLanding() {
             <Reveal delay={0.1}>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {[
-                  ["Dekorasi", "from-blush via-dusty/50 to-ivory"],
-                  ["Attire", "from-sage via-blush/60 to-ivory"],
-                  ["MUA", "from-dusty/60 via-blush to-ivory"],
-                  ["Hair do", "from-champagne/40 via-sage/70 to-ivory"],
-                  ["Wedding ring", "from-blush/80 via-champagne/30 to-ivory"],
-                  ["Venue", "from-sage/80 via-blush/40 to-ivory"],
-                ].map(([label, tone], index) => (
-                  <div
-                    key={label}
-                    className={`group relative overflow-hidden rounded-2xl border border-champagne/40 bg-gradient-to-br ${tone} ${
-                      index % 3 === 1 ? "aspect-[4/5]" : "aspect-square"
-                    }`}
-                  >
-                    <div className="absolute inset-0 flex items-center justify-center opacity-40 transition-transform duration-500 group-hover:scale-110">
-                      <Floral className="size-16 text-rosewood/50" />
-                    </div>
-                    <span className="absolute bottom-2 left-2 rounded-full bg-ivory/85 px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] text-cocoa/60">
-                      {label}
-                    </span>
-                  </div>
+                  { label: "Dekorasi", src: "/inspiration/dekorasi.jpg", alt: "Dekorasi resepsi pernikahan dengan rangkaian bunga dan cahaya lilin", tone: "dekorasi" },
+                  { label: "Attire", src: "/inspiration/attire.jpg", alt: "Busana pengantin berwarna lembut dengan detail elegan", tone: "square" },
+                  { label: "MUA", src: "/inspiration/mua.jpg", alt: "Tata rias pengantin bernuansa soft glam", tone: "tall" },
+                  { label: "Hair do", src: "/inspiration/hairdo.jpg", alt: "Sanggul pengantin dengan aksen hiasan rambut", tone: "square" },
+                  { label: "Wedding ring", src: "/inspiration/ring.jpg", alt: "Cincin pernikahan dengan latar lembut", tone: "dekorasi" },
+                  { label: "Venue", src: "/inspiration/venue.jpg", alt: "Venue pernikahan romantis dengan dekorasi hangat", tone: "tall" },
+                ].map((tile) => (
+                  <InspirationTile
+                    key={tile.label}
+                    src={tile.src}
+                    alt={tile.alt}
+                    label={tile.label}
+                    ratio={tile.tone === "square" ? "aspect-square" : tile.tone === "tall" ? "aspect-[4/5]" : "aspect-[3/4]"}
+                  />
                 ))}
               </div>
               <p className="mt-3 text-[11px] text-cocoa/50">
