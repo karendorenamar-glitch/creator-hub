@@ -226,8 +226,18 @@ export function WeddingLanding() {
                     <Images className="size-3" aria-hidden /> Inspirasi
                   </p>
                   <div className="mt-2 grid grid-cols-3 gap-1">
-                    {["from-blush to-ivory", "from-sage to-ivory", "from-dusty/60 to-ivory"].map((tone) => (
-                      <span key={tone} className={`aspect-square rounded-md bg-gradient-to-br ${tone}`} />
+                    {[
+                      ["/inspiration/wedding-decoration.jpg", "Dekorasi pernikahan"],
+                      ["/inspiration/bridal-makeup.jpg", "Tata rias pengantin"],
+                      ["/inspiration/venue.jpg", "Venue pernikahan"],
+                    ].map(([src, alt]) => (
+                      <img
+                        key={src}
+                        src={src}
+                        alt={alt}
+                        loading="lazy"
+                        className="aspect-square w-full rounded-md object-cover"
+                      />
                     ))}
                   </div>
                   <p className="mt-1.5 text-[9px] text-cocoa/50">Dekorasi · MUA · Venue</p>
@@ -262,9 +272,9 @@ export function WeddingLanding() {
             <Reveal delay={0.1}>
               <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 {[
-                  { label: "Dekorasi", src: "/inspiration/dekorasi.jpg", alt: "Dekorasi resepsi pernikahan dengan rangkaian bunga dan cahaya lilin", tone: "dekorasi" },
-                  { label: "Attire", src: "/inspiration/attire.jpg", alt: "Busana pengantin berwarna lembut dengan detail elegan", tone: "square" },
-                  { label: "MUA", src: "/inspiration/mua.jpg", alt: "Tata rias pengantin bernuansa soft glam", tone: "tall" },
+                  { label: "Dekorasi", src: "/inspiration/wedding-decoration.jpg", alt: "Dekorasi resepsi pernikahan dengan rangkaian bunga dan cahaya lilin", tone: "dekorasi" },
+                  { label: "Attire", src: "/inspiration/bridal-attire.jpg", alt: "Busana pengantin berwarna lembut dengan detail elegan", tone: "square" },
+                  { label: "MUA", src: "/inspiration/bridal-makeup.jpg", alt: "Tata rias pengantin bernuansa soft glam", tone: "tall" },
                   { label: "Hair do", src: "/inspiration/hairdo.jpg", alt: "Sanggul pengantin dengan aksen hiasan rambut", tone: "square" },
                   { label: "Wedding ring", src: "/inspiration/ring.jpg", alt: "Cincin pernikahan dengan latar lembut", tone: "dekorasi" },
                   { label: "Venue", src: "/inspiration/venue.jpg", alt: "Venue pernikahan romantis dengan dekorasi hangat", tone: "tall" },
