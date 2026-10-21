@@ -12,14 +12,27 @@ export default async function WeddingLoginPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const user = await getCurrentUser();
+  const { next } = await searchParams;
+
+  // Already signed in: honour an explicit internal destination first, so an
+  // admin opening /admin is not pushed into wedding onboarding.
+  const requested =
+    next &&
+    next.startsWith("/") &&
+    !next.startsWith("//") &&
+    (next.startsWith("/admin") ||
+      next.startsWith("/checkout") ||
+      next.startsWith("/wedding"))
+      ? next
+      : null;
 
   if (user) {
+    if (requested) redirect(requested);
     const session = await loadWeddingSession();
     redirect(session ? "/wedding/dashboard" : "/wedding/onboarding");
   }
 
   const copy = weddingCopy[await getLocale()];
-  const { next } = await searchParams;
 
   return (
     <div className="rounded-3xl border border-olive-100 bg-white p-7 shadow-[0_24px_70px_-50px_rgba(120,80,60,0.45)] sm:p-9">

@@ -76,7 +76,11 @@ export async function signInAction(
   revalidatePath("/wedding", "layout");
   const next = text(formData, "next");
   const safeNext =
-    next.startsWith("/checkout") || next.startsWith("/wedding") ? next : null;
+    next.startsWith("/checkout") ||
+    next.startsWith("/wedding") ||
+    next.startsWith("/admin")
+      ? next
+      : null;
   redirect(safeNext ?? "/wedding/dashboard");
 }
 
