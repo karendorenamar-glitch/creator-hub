@@ -133,7 +133,7 @@ const en = {
     planName: "Wedding Planner Pro",
     planDescription:
       "Budget tracking, guest list and RSVPs, vendor payments, checklist and timeline, and your inspiration board.",
-    price: "Rp 20.000",
+    price: "Rp 30.000",
     status: "Status",
     statusActive: "Active",
     statusInactive: "Not active",
@@ -285,7 +285,7 @@ const id: WeddingCopy = {
       "Atur total anggaran di Pengaturan Pernikahan untuk melihat progres.",
     lockedTitle: "Perencana Anda belum aktif",
     lockedBody:
-      "Wedding Planner Pro Rp 20.000 per bulan. Aktifkan langganan untuk menambah anggaran, tamu, vendor, dan tugas.",
+      "Wedding Planner Pro Rp 30.000 per bulan. Aktifkan langganan untuk menambah anggaran, tamu, vendor, dan tugas.",
     activate: "Lihat langganan",
   },
   settings: {
@@ -311,7 +311,7 @@ const id: WeddingCopy = {
     planName: "Wedding Planner Pro",
     planDescription:
       "Pelacakan anggaran, daftar tamu dan RSVP, pembayaran vendor, checklist dan timeline, serta papan inspirasi Anda.",
-    price: "Rp 20.000",
+    price: "Rp 30.000",
     status: "Status",
     statusActive: "Aktif",
     statusInactive: "Belum aktif",

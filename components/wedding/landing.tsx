@@ -459,7 +459,7 @@ export function WeddingLanding() {
 
             <Reveal delay={0.1}>
               <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-champagne/60 bg-blush/35 p-8 sm:p-10">
-                <p className="font-heading text-5xl text-cocoa sm:text-6xl">Rp20.000</p>
+                <p className="font-heading text-5xl text-cocoa sm:text-6xl">Rp30.000</p>
                 <p className="mt-3 text-sm text-cocoa/70">Satu harga untuk mengakses seluruh fitur yang tersedia.</p>
                 <ul className="mx-auto mt-6 grid max-w-sm gap-2 text-left text-sm text-cocoa/75">
                   {[
