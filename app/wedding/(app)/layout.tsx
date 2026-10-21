@@ -36,12 +36,26 @@ export default async function WeddingAppLayout({
   const locale = await getLocale();
   const copy = weddingCopy[locale];
 
+  // Sidebar shows the Admin link only for accounts listed in public.admins.
+  let isAdmin = false;
+  if (session) {
+    const { createWeddingClient } = await import("@/lib/wedding/supabase");
+    const supabase = await createWeddingClient();
+    const { data } = await supabase
+      .from("admins")
+      .select("user_id")
+      .eq("user_id", session.userId)
+      .maybeSingle();
+    isAdmin = Boolean(data);
+  }
+
   return (
     <WeddingShell
       copy={copy}
       locale={locale}
       couple={coupleNames(session.wedding)}
       weddingDateLabel={formatWeddingDate(session.wedding.wedding_date, locale)}
+      isAdmin={isAdmin}
     >
       {children}
     </WeddingShell>

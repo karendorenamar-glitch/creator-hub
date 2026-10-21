@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import {
   approvePaymentAction,
@@ -9,7 +8,7 @@ import {
 import { Badge, Card } from "@/components/wedding/ui";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { getCurrentUser } from "@/lib/wedding/session";
+import { requireAdmin } from "@/lib/wedding/admin";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Admin — Pembayaran" };
@@ -20,33 +19,41 @@ const STATUSES = ["pending_review", "approved", "rejected"] as const;
 export default async function AdminPaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/wedding/login?next=/admin/payments");
-
+  await requireAdmin();
   const supabase = await createWeddingClient();
-  const { data: adminRow } = await supabase
-    .from("admins")
-    .select("user_id")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  if (!adminRow) notFound();
 
   const locale = await getLocale();
-  const { status } = await searchParams;
+  const { status, q, page } = await searchParams;
+  const search = (q ?? "").trim().slice(0, 60);
+  const currentPage = Math.max(1, Number(page) || 1);
+  const PAGE_SIZE = 20;
   const filter = STATUSES.includes(status as (typeof STATUSES)[number])
     ? (status as (typeof STATUSES)[number])
     : "pending_review";
 
-  const { data: payments } = await supabase
+  let query = supabase
     .from("payments")
     .select("*")
     .eq("status", filter)
     .order("submitted_at", { ascending: false })
-    .limit(50);
-  const rows = payments ?? [];
+    .limit(200);
+
+  if (search) {
+    query = query.or(
+      `reference.ilike.%${search}%,sender_name.ilike.%${search}%`,
+    );
+  }
+
+  const { data: payments } = await query;
+  const allRows = payments ?? [];
+  const pageCount = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, pageCount);
+  const rows = allRows.slice(
+    (safePage - 1) * PAGE_SIZE,
+    safePage * PAGE_SIZE,
+  );
 
   const receiptPaths = rows
     .map((row) => row.receipt_path)
@@ -94,6 +101,30 @@ export default async function AdminPaymentsPage({
             Kembali ke aplikasi
           </Link>
         </div>
+
+        <form action="/admin/payments" className="flex flex-wrap gap-2">
+          <input type="hidden" name="status" value={filter} />
+          <input
+            name="q"
+            defaultValue={search}
+            placeholder="Cari referensi atau nama pengirim…"
+            className="min-w-56 flex-1 rounded-xl border border-blush bg-white px-3.5 py-2.5 text-sm outline-none focus:border-rosewood"
+          />
+          <button
+            type="submit"
+            className="rounded-full bg-rosewood px-5 py-2.5 text-sm text-ivory hover:bg-cocoa"
+          >
+            Cari
+          </button>
+          {search ? (
+            <Link
+              href={`/admin/payments?status=${filter}`}
+              className="rounded-full border border-blush px-4 py-2.5 text-sm text-cocoa/65 hover:bg-blush/40"
+            >
+              Reset
+            </Link>
+          ) : null}
+        </form>
 
         <div className="flex flex-wrap gap-2">
           {STATUSES.map((value) => (
@@ -222,6 +253,35 @@ export default async function AdminPaymentsPage({
           </div>
         )}
       </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-cocoa/55">
+        <span>
+          Halaman {safePage} dari {pageCount}
+        </span>
+        <div className="flex gap-2">
+          {safePage > 1 ? (
+            <Link
+              href={`/admin/payments?status=${filter}&page=${safePage - 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+              className="rounded-full border border-blush px-3 py-1.5"
+            >
+              Sebelumnya
+            </Link>
+          ) : null}
+          {safePage < pageCount ? (
+            <Link
+              href={`/admin/payments?status=${filter}&page=${safePage + 1}${search ? `&q=${encodeURIComponent(search)}` : ""}`}
+              className="rounded-full border border-blush px-3 py-1.5"
+            >
+              Berikutnya
+            </Link>
+          ) : null}
+        </div>
+      </div>
+
+      <p className="text-xs text-cocoa/45">
+        Filter status: {filter.replace("_", " ")} · pendapatan KPI hanya menghitung
+        pembayaran berstatus approved.
+      </p>
     </div>
   );
 }

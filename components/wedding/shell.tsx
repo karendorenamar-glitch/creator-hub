@@ -11,12 +11,14 @@ export function WeddingShell({
   locale,
   couple,
   weddingDateLabel,
+  isAdmin,
   children,
 }: {
   copy: WeddingCopy;
   locale: AppLocale;
   couple: string;
   weddingDateLabel: string | null;
+  isAdmin: boolean;
   children: React.ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,6 +31,7 @@ export function WeddingShell({
           locale={locale}
           couple={couple}
           weddingDateLabel={weddingDateLabel}
+          isAdmin={isAdmin}
         />
       </aside>
 
@@ -69,6 +72,7 @@ export function WeddingShell({
               locale={locale}
               couple={couple}
               weddingDateLabel={weddingDateLabel}
+              isAdmin={isAdmin}
               onNavigate={() => setMenuOpen(false)}
             />
           </div>

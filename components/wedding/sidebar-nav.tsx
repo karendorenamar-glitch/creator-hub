@@ -9,6 +9,7 @@ import {
   ListOrdered,
   LogOut,
   Mail,
+  ShieldCheck,
   Settings,
   Users,
   Wallet,
@@ -38,12 +39,14 @@ export function SidebarNav({
   locale,
   couple,
   weddingDateLabel,
+  isAdmin = false,
   onNavigate,
 }: {
   copy: WeddingCopy;
   locale: AppLocale;
   couple: string;
   weddingDateLabel: string | null;
+  isAdmin?: boolean;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -105,6 +108,17 @@ export function SidebarNav({
           );
         })}
       </nav>
+
+      {isAdmin ? (
+        <Link
+          href="/admin"
+          onClick={onNavigate}
+          className="flex items-center gap-3 rounded-xl border border-champagne/60 px-3 py-2.5 text-sm text-rosewood transition-colors hover:bg-blush/40"
+        >
+          <ShieldCheck className="size-4 shrink-0" aria-hidden />
+          Admin
+        </Link>
+      ) : null}
 
       <div className="space-y-3 border-t border-olive-100 pt-4">
         <div className="flex items-center justify-between gap-2">
