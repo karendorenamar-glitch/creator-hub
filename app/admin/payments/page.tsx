@@ -1,10 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
-import {
-  approvePaymentAction,
-  rejectPaymentAction,
-  retryEmailAction,
-} from "@/app/admin/payments/actions";
+import { retryEmailAction } from "@/app/admin/payments/actions";
+import { PaymentDecision } from "@/components/wedding/admin/payment-decision";
 import { Badge, Card } from "@/components/wedding/ui";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -208,32 +205,7 @@ export default async function AdminPaymentsPage({
                 )}
 
                 {row.status === "pending_review" ? (
-                  <div className="flex flex-wrap items-end gap-3 border-t border-blush/60 pt-3">
-                    <form action={approvePaymentAction}>
-                      <input type="hidden" name="paymentId" value={row.id} />
-                      <button
-                        type="submit"
-                        className="rounded-full bg-emerald-600 px-4 py-2 text-xs font-medium text-white hover:bg-emerald-700"
-                      >
-                        Setujui &amp; aktifkan akses
-                      </button>
-                    </form>
-
-                    <form action={rejectPaymentAction} className="flex items-end gap-2">
-                      <input type="hidden" name="paymentId" value={row.id} />
-                      <input
-                        name="reason"
-                        placeholder="Alasan penolakan"
-                        className="rounded-xl border border-blush bg-white px-3 py-2 text-xs"
-                      />
-                      <button
-                        type="submit"
-                        className="rounded-full border border-rose-200 px-4 py-2 text-xs text-rose-700 hover:bg-rose-50"
-                      >
-                        Tolak
-                      </button>
-                    </form>
-                  </div>
+                  <PaymentDecision paymentId={row.id} />
                 ) : null}
 
                 {row.email_status !== "sent" ? (

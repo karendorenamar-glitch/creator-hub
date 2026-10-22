@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { submitPaymentAction } from "@/app/checkout/actions";
 import { Badge, Card } from "@/components/wedding/ui";
+import { SubmitButton } from "@/components/wedding/submit-button";
 import { PAYMENT_CONFIG } from "@/lib/wedding/payment-config";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -172,12 +173,10 @@ export default async function CheckoutPage({
                   </p>
                 </div>
 
-                <button
-                  type="submit"
-                  className="inline-flex w-full items-center justify-center rounded-full bg-rosewood px-5 py-3 text-sm font-medium text-ivory hover:bg-cocoa"
-                >
-                  Kirim Bukti Pembayaran
-                </button>
+                <SubmitButton
+                  label="Kirim Bukti Pembayaran"
+                  pendingLabel="Mengirim bukti…"
+                />
 
                 <p className="text-xs leading-relaxed text-cocoa/50">
                   Akses aktif setelah admin memverifikasi dana masuk ke rekening

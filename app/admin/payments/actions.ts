@@ -24,30 +24,52 @@ async function requireAdmin() {
   return { supabase, user };
 }
 
-export async function approvePaymentAction(formData: FormData): Promise<void> {
+export async function approvePaymentAction(
+  _prev: AdminResult,
+  formData: FormData,
+): Promise<AdminResult> {
   const id = text(formData, "paymentId");
   const ctx = await requireAdmin();
-  if ("error" in ctx) return;
+  if ("error" in ctx) return { error: "Tidak memiliki akses admin." };
 
-  // RPC enforces is_admin(), locks the row, is idempotent, and grants
-  // lifetime access only to the wedding stored on the payment.
-  await ctx.supabase.rpc("approve_payment", { p_payment_id: id });
+  // RPC enforces is_admin(), locks the row, is idempotent, and grants lifetime
+  // access to the account (and its wedding when one is linked).
+  const { error } = await ctx.supabase.rpc("approve_payment", {
+    p_payment_id: id,
+  });
+
+  if (error) {
+    console.error("[approve_payment]", error.code, error.message);
+    return {
+      error: `Gagal menyetujui (${error.code ?? "?"}): ${error.message}`,
+    };
+  }
 
   revalidatePath("/admin/payments");
+  return { success: "Pembayaran disetujui. Akses customer sudah aktif." };
 }
 
-export async function rejectPaymentAction(formData: FormData): Promise<void> {
+export async function rejectPaymentAction(
+  _prev: AdminResult,
+  formData: FormData,
+): Promise<AdminResult> {
   const id = text(formData, "paymentId");
   const reason = text(formData, "reason").slice(0, 500);
   const ctx = await requireAdmin();
-  if ("error" in ctx) return;
+  if ("error" in ctx) return { error: "Tidak memiliki akses admin." };
 
-  await ctx.supabase.rpc("reject_payment", {
+  const { error } = await ctx.supabase.rpc("reject_payment", {
     p_payment_id: id,
     p_reason: reason || null,
   });
 
+  if (error) {
+    console.error("[reject_payment]", error.code, error.message);
+    return { error: `Gagal menolak (${error.code ?? "?"}): ${error.message}` };
+  }
+
   revalidatePath("/admin/payments");
+  return { success: "Pembayaran ditolak." };
 }
 
 /** Re-send the admin notification for a payment whose email failed. */

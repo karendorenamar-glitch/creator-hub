@@ -3,14 +3,14 @@ import { redirect } from "next/navigation";
 import { Badge, Card } from "@/components/wedding/ui";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { loadWeddingSession } from "@/lib/wedding/session";
+import { loadAccountContext } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Status Pembayaran" };
 
 export default async function CheckoutStatusPage() {
-  const session = await loadWeddingSession();
-  if (!session) redirect("/wedding/login?next=/checkout/status");
+  const account = await loadAccountContext();
+  if (!account) redirect("/wedding/login?next=/checkout/status");
 
   const locale = await getLocale();
   const supabase = await createWeddingClient();
@@ -18,12 +18,12 @@ export default async function CheckoutStatusPage() {
   const { data: rows } = await supabase
     .from("payments")
     .select("*")
-    .eq("user_id", session.userId)
+    .eq("user_id", account.userId)
     .order("created_at", { ascending: false })
     .limit(1);
 
   const payment = rows?.[0] ?? null;
-  const active = Boolean(session.wedding.lifetime_access_granted_at);
+  const active = account.hasEntitlement;
 
   return (
     <div className="wedding-app wedding-surface min-h-screen px-4 py-10 text-cocoa sm:px-6">
