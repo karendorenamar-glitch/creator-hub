@@ -40,6 +40,26 @@ export async function approvePaymentAction(
 
   if (error) {
     console.error("[approve_payment]", error.code, error.message);
+
+    // Map the failure to an action the admin can take.
+    if (error.message.includes("does not belong to")) {
+      return {
+        error:
+          "Pembayaran ini tertaut ke wedding milik akun lain. Periksa data payment sebelum menyetujui.",
+      };
+    }
+    if (error.message.includes("Only payments pending review")) {
+      return { error: "Pembayaran ini sudah diproses sebelumnya." };
+    }
+    if (error.message.includes("Not authorized")) {
+      return { error: "Akun Anda bukan admin." };
+    }
+    if (error.message.includes("function") || error.code === "PGRST202") {
+      return {
+        error:
+          "Fungsi approve_payment belum ada di database. Jalankan migrasi 016.",
+      };
+    }
     return {
       error: `Gagal menyetujui (${error.code ?? "?"}): ${error.message}`,
     };
