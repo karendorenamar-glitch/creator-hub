@@ -102,6 +102,9 @@ export type Vendor = {
   booking_status: BookingStatus;
   payment_status: PaymentStatus;
   pic_internal: string | null;
+  group_id: string | null;
+  archived_at: string | null;
+  quotation_path: string | null;
   booking_date: string | null;
   event_service_date: string | null;
   next_payment_due: string | null;
@@ -121,6 +124,20 @@ export type VendorPayment = {
   notes: string | null;
   proof_path: string | null;
   created_at: string;
+};
+
+export type VendorGroup = {
+  id: string;
+  wedding_id: string;
+  name: string;
+  category: string;
+  notes: string | null;
+  pic_internal: string | null;
+  status: "diskusi" | "dp" | "lunas";
+  selected_vendor_id: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type Expense = {
@@ -325,6 +342,7 @@ export type WeddingDatabase = {
       subscription_payments: Table<SubscriptionPayment>;
       budget_categories: Table<BudgetCategory>;
       vendors: Table<Vendor>;
+      vendor_groups: Table<VendorGroup>;
       vendor_payments: Table<VendorPayment>;
       expenses: Table<Expense>;
       guests: Table<Guest>;
@@ -363,6 +381,10 @@ export type WeddingDatabase = {
       is_admin: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      refresh_vendor_group_status: {
+        Args: { p_group_id: string };
+        Returns: string;
       };
       approve_payment: {
         Args: { p_payment_id: string };

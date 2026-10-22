@@ -23,6 +23,7 @@ export function VendorFormModal({
   vendor,
   locale,
   picOptions,
+  groupId,
 }: {
   open: boolean;
   onClose: () => void;
@@ -30,6 +31,7 @@ export function VendorFormModal({
   vendor: Vendor | null;
   locale: "en" | "id";
   picOptions: string[];
+  groupId?: string | null;
 }) {
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
@@ -48,6 +50,7 @@ export function VendorFormModal({
     >
       <form action={formAction} className="space-y-4">
         {vendor ? <input type="hidden" name="id" value={vendor.id} /> : null}
+        {groupId ? <input type="hidden" name="groupId" value={groupId} /> : null}
         <FormAlert error={state?.error} />
 
         <div className="grid gap-4 sm:grid-cols-2">

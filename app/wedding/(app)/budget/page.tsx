@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
-import { VendorManager } from "@/components/wedding/vendors/vendor-manager";
+import { VendorGroups } from "@/components/wedding/vendors/vendor-groups";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { formatIDR, percentOf } from "@/lib/wedding/format";
@@ -19,40 +19,61 @@ export default async function BudgetPage() {
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  const [vendorsResult, paymentsResult] = await Promise.all([
-    supabase.from("vendors").select("*").order("name", { ascending: true }),
+  const [groupsResult, vendorsResult, paymentsResult] = await Promise.all([
+    supabase
+      .from("vendor_groups")
+      .select("*")
+      .is("archived_at", null)
+      .order("created_at", { ascending: true }),
+    supabase.from("vendors").select("*").is("archived_at", null),
     supabase
       .from("vendor_payments")
       .select("*")
       .order("paid_on", { ascending: false }),
   ]);
 
+  const groups = groupsResult.data ?? [];
   const vendors = vendorsResult.data ?? [];
   const payments = paymentsResult.data ?? [];
 
-  const proofPaths = payments
-    .map((payment) => payment.proof_path)
-    .filter((path): path is string => Boolean(path));
-
-  const proofUrls: Record<string, string> = {};
-  if (proofPaths.length > 0) {
-    const { data: signed } = await supabase.storage
-      .from("payment-proofs")
-      .createSignedUrls(proofPaths, 60 * 60);
-    for (const item of signed ?? []) {
-      if (item.path && item.signedUrl) proofUrls[item.path] = item.signedUrl;
-    }
+  const vendorById = new Map(vendors.map((vendor) => [vendor.id, vendor]));
+  const paidByVendor = new Map<string, number>();
+  for (const payment of payments) {
+    paidByVendor.set(
+      payment.vendor_id,
+      (paidByVendor.get(payment.vendor_id) ?? 0) + Number(payment.amount),
+    );
   }
 
-  const totalBudget = Number(session.wedding.total_budget ?? 0);
-  const totalPaid = payments.reduce((sum, item) => sum + Number(item.amount), 0);
-  const remaining = totalBudget - totalPaid;
-  const paidPercent = percentOf(totalPaid, totalBudget);
+  // Committed cost = agreed price (fallback quoted) of the SELECTED option only.
+  let committedCost = 0;
+  let committedPaid = 0;
+  let unknownPriceGroups = 0;
+
+  for (const group of groups) {
+    const selected = group.selected_vendor_id
+      ? vendorById.get(group.selected_vendor_id)
+      : null;
+    if (!selected) continue;
+
+    const price =
+      selected.agreed_price ?? selected.quoted_price ?? null;
+    if (price === null) {
+      unknownPriceGroups += 1;
+    } else {
+      committedCost += Number(price);
+    }
+    committedPaid += paidByVendor.get(selected.id) ?? 0;
+  }
+
+  const target = Number(session.wedding.total_budget ?? 0);
+  const remaining = target - committedCost;
+  const paidPercent = percentOf(committedPaid, committedCost);
+  const overBudget = target > 0 && committedCost > target;
 
   const statusCounts = { diskusi: 0, dp: 0, lunas: 0 } as Record<string, number>;
-  for (const vendor of vendors) {
-    statusCounts[vendor.payment_status] =
-      (statusCounts[vendor.payment_status] ?? 0) + 1;
+  for (const group of groups) {
+    statusCounts[group.status] = (statusCounts[group.status] ?? 0) + 1;
   }
 
   const partnerOne = session.wedding.partner_one_name;
@@ -69,19 +90,21 @@ export default async function BudgetPage() {
       <PageHeader title={copy.budget.title} subtitle={copy.budget.subtitle} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label={copy.budget.totalBudget} value={formatIDR(target)} />
         <StatCard
-          label={copy.budget.totalBudget}
-          value={formatIDR(totalBudget)}
-        />
-        <StatCard
-          label={copy.budget.paidTotal}
-          value={formatIDR(totalPaid)}
+          label={copy.budget.vendorCommitments}
+          value={formatIDR(committedCost)}
           tone="champagne"
+          hint={
+            unknownPriceGroups > 0
+              ? `${unknownPriceGroups} ${copy.vendors.priceUnknown}`
+              : undefined
+          }
         />
         <StatCard
           label={copy.budget.remaining}
           value={formatIDR(remaining)}
-          hint={remaining < 0 ? copy.budget.overBudget : undefined}
+          hint={overBudget ? copy.budget.overBudget : undefined}
         />
         <Card className="flex flex-col justify-between gap-3 p-5">
           <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
@@ -94,6 +117,9 @@ export default async function BudgetPage() {
             <div className="mt-2">
               <Progress value={paidPercent} />
             </div>
+            <p className="mt-1 text-xs text-ink-soft">
+              {copy.vendors.totalPaid}: {formatIDR(committedPaid)}
+            </p>
           </div>
         </Card>
       </section>
@@ -104,21 +130,21 @@ export default async function BudgetPage() {
             key={status}
             label={label("paymentStatus", status, locale)}
             value={String(statusCounts[status] ?? 0)}
-            hint={copy.vendors.title}
+            hint={copy.vendors.groupsTitle}
             tone={status === "lunas" ? "champagne" : "blush"}
           />
         ))}
       </section>
 
       <Card>
-        <TotalBudgetForm copy={copy} totalBudget={totalBudget} />
+        <TotalBudgetForm copy={copy} totalBudget={target} />
       </Card>
 
       <Card>
-        <VendorManager
+        <VendorGroups
+          groups={groups}
           vendors={vendors}
           payments={payments}
-          proofUrls={proofUrls}
           copy={copy}
           locale={locale}
           picOptions={picOptions}

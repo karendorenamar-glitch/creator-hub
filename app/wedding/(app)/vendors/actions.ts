@@ -13,6 +13,7 @@ import {
   isDateString,
   isUuid,
   optionalText,
+  optionalUuid,
   parseMoney,
   text,
 } from "@/lib/wedding/validation";
@@ -159,6 +160,25 @@ async function maybeRecordPayment(
   return error ? actionError(error, ctx.copy) : null;
 }
 
+
+async function refreshGroupOfVendor(
+  ctx: Awaited<ReturnType<typeof context>>,
+  vendorId: string,
+) {
+  const { data } = await ctx.supabase
+    .from("vendors")
+    .select("group_id")
+    .eq("id", vendorId)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+
+  if (data?.group_id) {
+    await ctx.supabase.rpc("refresh_vendor_group_status", {
+      p_group_id: data.group_id,
+    });
+  }
+}
+
 export async function createVendorAction(
   _prev: ActionResult,
   formData: FormData,
@@ -171,6 +191,7 @@ export async function createVendorAction(
     .from("vendors")
     .insert({
       wedding_id: ctx.session.wedding.id,
+      group_id: optionalUuid(formData, "groupId"),
       booking_status: enumValue(
         formData,
         "bookingStatus",
@@ -271,6 +292,7 @@ export async function addVendorPaymentAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
+  await refreshGroupOfVendor(ctx, vendorId);
   revalidateVendorPages();
   return { success: ctx.copy.form.saved };
 }
@@ -301,6 +323,170 @@ export async function deleteVendorPaymentAction(
   if (existing?.proof_path) {
     await ctx.supabase.storage.from(PROOF_BUCKET).remove([existing.proof_path]);
   }
+
+  revalidateVendorPages();
+  return null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Vendor GROUPS: one decision per category, many comparable options          */
+/* -------------------------------------------------------------------------- */
+
+export async function createVendorGroupAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const category = text(formData, "category").slice(0, 80);
+  const name = (text(formData, "name") || category).slice(0, 120);
+
+  if (!name) return { error: ctx.copy.form.required };
+
+  const { data, error } = await ctx.supabase
+    .from("vendor_groups")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      name,
+      category,
+      notes: optionalText(formData, "notes", 2000),
+      pic_internal: optionalText(formData, "picInternal", 120),
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    return { error: actionError(error ?? { message: "" }, ctx.copy) };
+  }
+
+  revalidateVendorPages();
+  return { success: ctx.copy.form.saved };
+}
+
+export async function updateVendorGroupAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const category = text(formData, "category").slice(0, 80);
+  const name = (text(formData, "name") || category).slice(0, 120);
+  if (!name) return { error: ctx.copy.form.required };
+
+  const { error } = await ctx.supabase
+    .from("vendor_groups")
+    .update({
+      name,
+      category,
+      notes: optionalText(formData, "notes", 2000),
+      pic_internal: optionalText(formData, "picInternal", 120),
+    })
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  revalidateVendorPages();
+  return { success: ctx.copy.form.saved };
+}
+
+/** Select one option in a group. Payments stay on their original vendor. */
+export async function selectVendorOptionAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const groupId = text(formData, "groupId");
+  const vendorId = text(formData, "vendorId");
+  if (!isUuid(groupId)) return { error: ctx.copy.errors.notFound };
+
+  // The DB rejects an option that is not part of this group (composite FK).
+  const { error } = await ctx.supabase
+    .from("vendor_groups")
+    .update({ selected_vendor_id: isUuid(vendorId) ? vendorId : null })
+    .eq("id", groupId)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  await ctx.supabase.rpc("refresh_vendor_group_status", { p_group_id: groupId });
+
+  revalidateVendorPages();
+  return { success: ctx.copy.form.saved };
+}
+
+/** Soft delete: keeps payment history and audit trail intact. */
+export async function archiveVendorGroupAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const { data: paid } = await ctx.supabase
+    .from("vendor_payments")
+    .select("id")
+    .eq("wedding_id", ctx.session.wedding.id)
+    .in(
+      "vendor_id",
+      (
+        await ctx.supabase
+          .from("vendors")
+          .select("id")
+          .eq("group_id", id)
+          .eq("wedding_id", ctx.session.wedding.id)
+      ).data?.map((row) => row.id) ?? ["00000000-0000-0000-0000-000000000000"],
+    )
+    .limit(1);
+
+  if (paid && paid.length > 0) {
+    return {
+      error:
+        "Kelompok ini punya riwayat pembayaran. Hapus pembayaran terlebih dahulu atau biarkan diarsipkan tanpa dihapus.",
+    };
+  }
+
+  const { error } = await ctx.supabase
+    .from("vendor_groups")
+    .update({ archived_at: new Date().toISOString(), selected_vendor_id: null })
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  revalidateVendorPages();
+  return null;
+}
+
+export async function archiveVendorOptionAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const { data: payments } = await ctx.supabase
+    .from("vendor_payments")
+    .select("id")
+    .eq("vendor_id", id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .limit(1);
+
+  if (payments && payments.length > 0) {
+    return {
+      error:
+        "Opsi ini punya riwayat pembayaran dan tidak bisa diarsipkan. Selesaikan atau hapus pembayarannya dulu.",
+    };
+  }
+
+  const { error } = await ctx.supabase
+    .from("vendors")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (error) return { error: actionError(error, ctx.copy) };
 
   revalidateVendorPages();
   return null;
