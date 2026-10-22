@@ -30,7 +30,7 @@ const en = {
     generic: "Something went wrong. Please try again.",
     invalid: "Please check the form and try again.",
     subscriptionRequired:
-      "Your subscription is not active, so this change was not saved. Activate Wedding Planner Pro to continue.",
+      "This change was blocked because your access is not active on the server. If you have already paid, contact support so we can activate it.",
     forbidden: "You do not have access to this wedding.",
     notFound: "That record no longer exists.",
     duplicate: "A record with this name already exists.",
@@ -296,7 +296,7 @@ const id: ModuleCopy = {
     generic: "Terjadi kesalahan. Silakan coba lagi.",
     invalid: "Periksa formulir dan coba lagi.",
     subscriptionRequired:
-      "Langganan Anda belum aktif, jadi perubahan ini tidak disimpan. Aktifkan Wedding Planner Pro untuk melanjutkan.",
+      "Perubahan ini diblokir karena akses Anda belum aktif di server. Jika Anda sudah membayar, hubungi admin agar diaktifkan.",
     forbidden: "Anda tidak memiliki akses ke pernikahan ini.",
     notFound: "Data tersebut sudah tidak ada.",
     duplicate: "Data dengan nama ini sudah ada.",
