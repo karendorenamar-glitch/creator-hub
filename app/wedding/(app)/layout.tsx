@@ -6,7 +6,6 @@ import { formatWeddingDate } from "@/lib/wedding/format";
 import {
   coupleNames,
   getCurrentUser,
-  isSubscriptionActive,
   loadWeddingSession,
 } from "@/lib/wedding/session";
 
@@ -22,14 +21,10 @@ export default async function WeddingAppLayout({
     redirect(user ? "/wedding/onboarding" : "/wedding/login");
   }
 
-  // Paywall: only enforced when the DB switch is on. Members with lifetime
-  // access, an active subscription, or the open-access switch keep working.
-  const hasAccess =
-    !session.subscriptionRequired ||
-    isSubscriptionActive(session.subscription) ||
-    Boolean(session.wedding.lifetime_access_granted_at);
-
-  if (!hasAccess) {
+  // Single source of truth: hasPlanningAccess already accounts for the open
+  // access switch, an active subscription, AND account-level lifetime access
+  // (customers who paid before onboarding have no per-wedding flag yet).
+  if (!session.hasPlanningAccess) {
     redirect("/checkout");
   }
 

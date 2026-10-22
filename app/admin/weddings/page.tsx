@@ -36,7 +36,7 @@ export default async function AdminWeddingsPage({
   let query = supabase
     .from("weddings")
     .select(
-      "id, partner_one_name, partner_two_name, wedding_date, created_at, lifetime_access_granted_at",
+      "id, created_by, partner_one_name, partner_two_name, wedding_date, created_at, lifetime_access_granted_at",
     )
     .order("created_at", { ascending: false });
 
@@ -57,18 +57,35 @@ export default async function AdminWeddingsPage({
   );
 
   const ids = pageRows.length ? pageRows.map((w) => w.id) : ["00000000-0000-0000-0000-000000000000"];
-  const [{ data: members }, { data: subs }] = await Promise.all([
+  const ownerIds = Array.from(
+    new Set(pageRows.map((w) => w.created_by).filter(Boolean) as string[]),
+  );
+
+  const [{ data: members }, { data: subs }, { data: entitlements }] =
+    await Promise.all([
     supabase.from("wedding_members").select("wedding_id, role").in("wedding_id", ids),
-    supabase
-      .from("subscriptions")
-      .select("wedding_id, status, current_period_end")
-      .in("wedding_id", ids),
-  ]);
+      supabase
+        .from("subscriptions")
+        .select("wedding_id, status, current_period_end")
+        .in("wedding_id", ids),
+      ownerIds.length
+        ? supabase
+            .from("user_entitlements")
+            .select("user_id, lifetime_access_granted_at")
+            .in("user_id", ownerIds)
+        : Promise.resolve({ data: [] as { user_id: string; lifetime_access_granted_at: string | null }[] }),
+    ]);
 
   const memberCount = new Map<string, number>();
   for (const row of members ?? []) {
     memberCount.set(row.wedding_id, (memberCount.get(row.wedding_id) ?? 0) + 1);
   }
+
+  const entitledUsers = new Set(
+    (entitlements ?? [])
+      .filter((row) => row.lifetime_access_granted_at)
+      .map((row) => row.user_id),
+  );
 
   const subByWedding = new Map(
     (subs ?? []).map((row) => [row.wedding_id, row]),
@@ -80,7 +97,10 @@ export default async function AdminWeddingsPage({
   const nowMs = new Date().getTime();
   const accessMap = new Map<string, { label: string; tone: "success" | "neutral" | "warning" | "muted" }>();
   for (const wedding of pageRows) {
-    if (wedding.lifetime_access_granted_at) {
+    if (
+      wedding.lifetime_access_granted_at ||
+      entitledUsers.has(wedding.created_by)
+    ) {
       accessMap.set(wedding.id, { label: "Lifetime", tone: "success" });
       continue;
     }
