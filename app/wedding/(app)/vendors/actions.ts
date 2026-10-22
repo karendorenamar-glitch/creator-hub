@@ -304,9 +304,10 @@ export async function deleteVendorPaymentAction(
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 
+  // Read vendor_id BEFORE deleting so the group status can be recalculated.
   const { data: existing } = await ctx.supabase
     .from("vendor_payments")
-    .select("proof_path")
+    .select("proof_path, vendor_id")
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id)
     .maybeSingle();
@@ -322,6 +323,11 @@ export async function deleteVendorPaymentAction(
   // Best effort: remove the stored proof as well.
   if (existing?.proof_path) {
     await ctx.supabase.storage.from(PROOF_BUCKET).remove([existing.proof_path]);
+  }
+
+  // A removed payment can turn "lunas" back into "dp" / "diskusi".
+  if (existing?.vendor_id) {
+    await refreshGroupOfVendor(ctx, existing.vendor_id);
   }
 
   revalidateVendorPages();
