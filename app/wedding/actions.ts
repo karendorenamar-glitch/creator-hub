@@ -143,7 +143,12 @@ export async function signUpAction(
     if (message.includes("password")) {
       return { error: "Kata sandi terlalu lemah. Gunakan minimal 8 karakter." };
     }
-    return { error: `${copy.common.genericError} (${code || error.status || "?"})` };
+    // Show the real reason so the founder can fix configuration quickly.
+    // Supabase messages are user-facing and contain no credentials.
+    const detail = error.message?.trim() || "unknown";
+    return {
+      error: `Pendaftaran gagal (${code || error.status || "?"}): ${detail}`,
+    };
   }
 
   // If email confirmation is enabled there is no session yet. Send the user to
