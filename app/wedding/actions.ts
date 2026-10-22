@@ -5,7 +5,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
-import { createWeddingClient } from "@/lib/wedding/supabase";
+import {
+  createWeddingAnonymousClient,
+  createWeddingClient,
+} from "@/lib/wedding/supabase";
 import { loadWeddingSession } from "@/lib/wedding/session";
 
 export type FormState =
@@ -97,7 +100,9 @@ export async function signUpAction(
   if (password.length < 8) return { error: copy.auth.passwordTooShort };
   if (password !== confirmPassword) return { error: copy.auth.passwordMismatch };
 
-  const supabase = await createWeddingClient();
+  // Session-less client: never send the visitor's existing cookie/token,
+  // otherwise a stale session produces 401 bad_jwt.
+  const supabase = createWeddingAnonymousClient();
   const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
@@ -192,7 +197,7 @@ export async function requestPasswordResetAction(
   const protocol =
     host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
 
-  const supabase = await createWeddingClient();
+  const supabase = createWeddingAnonymousClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${protocol}://${host}/wedding/reset-password`,
   });
