@@ -400,7 +400,7 @@ export async function createVendorGroupAction(
 
   if (!name) return { error: ctx.copy.form.required };
 
-  const { data, error } = await ctx.supabase
+  const { data: group, error } = await ctx.supabase
     .from("vendor_groups")
     .insert({
       wedding_id: ctx.session.wedding.id,
@@ -412,8 +412,83 @@ export async function createVendorGroupAction(
     .select("id")
     .single();
 
-  if (error || !data) {
+  if (error || !group) {
     return { error: actionError(error ?? { message: "" }, ctx.copy) };
+  }
+
+  // Options entered in the same form.
+  const names = formData.getAll("optName").map((v) => String(v).trim());
+  const pics = formData.getAll("optPic").map((v) => String(v).trim());
+  const phones = formData.getAll("optPhone").map((v) => String(v).trim());
+  const quoted = formData.getAll("optQuoted").map((v) => String(v).trim());
+  const agreed = formData.getAll("optAgreed").map((v) => String(v).trim());
+  const statuses = formData.getAll("optStatus").map((v) => String(v).trim());
+  const paids = formData.getAll("optPaid").map((v) => String(v).trim());
+  const paidOns = formData.getAll("optPaidOn").map((v) => String(v).trim());
+
+  let selectedId: string | null = null;
+
+  for (let i = 0; i < names.length; i += 1) {
+    const optionName = names[i];
+    const quotedPrice = quoted[i] ? parseMoney(quoted[i]) : null;
+    if (!optionName && quotedPrice === null) continue; // baris kosong
+
+    const agreedPrice = agreed[i] ? parseMoney(agreed[i]) : null;
+    const status = ["diskusi", "dp", "lunas"].includes(statuses[i])
+      ? (statuses[i] as "diskusi" | "dp" | "lunas")
+      : "diskusi";
+    const paid = paids[i] ? parseMoney(paids[i]) : 0;
+    const paidOn = paidOns[i] || new Date().toISOString().slice(0, 10);
+
+    const { data: option, error: optionError } = await ctx.supabase
+      .from("vendors")
+      .insert({
+        wedding_id: ctx.session.wedding.id,
+        group_id: group.id,
+        name: optionName.slice(0, 120),
+        category,
+        contact_name: pics[i] ? pics[i].slice(0, 120) : null,
+        phone: phones[i] ? phones[i].slice(0, 40) : null,
+        quoted_price: quotedPrice,
+        agreed_price: agreedPrice,
+        payment_status: status,
+        booking_status: "considering",
+      })
+      .select("id")
+      .single();
+
+    if (optionError || !option) {
+      return { error: actionError(optionError ?? { message: "" }, ctx.copy) };
+    }
+
+    // A real payment is recorded, never inferred from the status label.
+    if (paid && paid > 0) {
+      const { error: payError } = await ctx.supabase
+        .from("vendor_payments")
+        .insert({
+          wedding_id: ctx.session.wedding.id,
+          vendor_id: option.id,
+          amount: paid,
+          paid_on: isDateString(paidOn)
+            ? paidOn
+            : new Date().toISOString().slice(0, 10),
+          notes: "Pembayaran awal",
+        });
+      if (payError) return { error: actionError(payError, ctx.copy) };
+
+      if (!selectedId) selectedId = option.id;
+    }
+  }
+
+  if (selectedId) {
+    await ctx.supabase
+      .from("vendor_groups")
+      .update({ selected_vendor_id: selectedId })
+      .eq("id", group.id)
+      .eq("wedding_id", ctx.session.wedding.id);
+    await ctx.supabase.rpc("refresh_vendor_group_status", {
+      p_group_id: group.id,
+    });
   }
 
   revalidateVendorPages();
