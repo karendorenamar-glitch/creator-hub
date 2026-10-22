@@ -5,7 +5,10 @@ import { Card } from "@/components/wedding/ui";
 import { signOutAction } from "@/app/wedding/actions";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
-import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
+import {
+  loadAccountContext,
+  loadWeddingSession,
+} from "@/lib/wedding/session";
 
 export const metadata = { title: "Set up your wedding" };
 
@@ -14,11 +17,15 @@ export default async function OnboardingPage({
 }: {
   searchParams: Promise<{ next?: string; ref?: string }>;
 }) {
-  const user = await getCurrentUser();
-  if (!user) redirect("/wedding/login");
+  const account = await loadAccountContext();
+  if (!account) redirect("/wedding/login");
 
+  // Already onboarded.
   const session = await loadWeddingSession();
   if (session) redirect("/wedding/dashboard");
+
+  // Pay first: onboarding is locked until the payment is approved.
+  if (!account.hasEntitlement) redirect("/checkout");
 
   const copy = weddingCopy[await getLocale()];
   const { next, ref } = await searchParams;

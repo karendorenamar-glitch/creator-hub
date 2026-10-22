@@ -170,12 +170,10 @@ export async function signUpAction(
   }
 
   revalidatePath("/wedding", "layout");
-  // New accounts head to onboarding, then straight to payment.
+  // Pay first: onboarding only opens after the payment is approved.
   const next = safeNext(text(formData, "next"), "/checkout");
   const ref = text(formData, "ref");
-  redirect(
-    withRef(`/wedding/onboarding?next=${encodeURIComponent(next)}`, ref),
-  );
+  redirect(withRef(next, ref));
 }
 
 
@@ -262,8 +260,7 @@ export async function createWeddingAction(
   }
 
   revalidatePath("/wedding", "layout");
-  const next = safeNext(text(formData, "next"), "/wedding/dashboard");
-  redirect(withRef(next, text(formData, "ref")));
+  redirect(withRef("/wedding/dashboard", text(formData, "ref")));
 }
 
 export async function updateWeddingAction(

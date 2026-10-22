@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { SignInForm } from "@/components/wedding/auth-forms";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
-import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
+import {
+  getCurrentUser,
+  loadAccountContext,
+  loadWeddingSession,
+} from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Sign in" };
@@ -31,6 +35,10 @@ export default async function WeddingLoginPage({
     if (requested) redirect(requested);
     const session = await loadWeddingSession();
     if (session) redirect("/wedding/dashboard");
+
+    // No wedding yet: paid customers go to onboarding, others pay first.
+    const account = await loadAccountContext();
+    if (account && !account.hasEntitlement) redirect("/checkout");
 
     // No wedding yet: an admin belongs in the admin dashboard, not onboarding.
     const supabase = await createWeddingClient();

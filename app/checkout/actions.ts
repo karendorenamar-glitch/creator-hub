@@ -2,7 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { PAYMENT_CONFIG } from "@/lib/wedding/payment-config";
-import { loadWeddingSession } from "@/lib/wedding/session";
+import {
+  loadAccountContext,
+  loadWeddingSession,
+} from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { text } from "@/lib/wedding/validation";
@@ -12,8 +15,8 @@ const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
 export async function submitPaymentAction(formData: FormData): Promise<void> {
-  const session = await loadWeddingSession();
-  if (!session) redirect("/wedding/login?next=/checkout");
+  const account = await loadAccountContext();
+  if (!account) redirect("/wedding/login?next=/checkout");
 
   const senderName = text(formData, "senderName").slice(0, 120);
   if (senderName.length < 1) {
@@ -28,8 +31,9 @@ export async function submitPaymentAction(formData: FormData): Promise<void> {
   if (!ALLOWED.includes(file.type)) redirect("/checkout?error=type");
 
   const supabase = await createWeddingClient();
-  const userId = session.userId;
-  const weddingId = session.wedding.id;
+  const userId = account.userId;
+  // Payment may happen BEFORE onboarding, so the wedding is optional.
+  const weddingId = ((await loadWeddingSession())?.wedding.id) ?? null;
 
   const extension = file.name.includes(".")
     ? file.name.split(".").pop()!.toLowerCase()
@@ -46,7 +50,7 @@ export async function submitPaymentAction(formData: FormData): Promise<void> {
     .from("payments")
     .insert({
       user_id: userId,
-      wedding_id: weddingId,
+      wedding_id: weddingId ?? undefined,
       amount_idr: PAYMENT_CONFIG.amountIdr,
       currency: "IDR",
       method: "bank_transfer",
@@ -66,7 +70,7 @@ export async function submitPaymentAction(formData: FormData): Promise<void> {
   await notifyAdmin({
     reference: payment.reference,
     senderName,
-    email: session.email ?? "-",
+    email: account.email ?? "-",
     amount: PAYMENT_CONFIG.amountIdr,
     submittedAt: new Date().toISOString(),
   }).then(async (ok) => {

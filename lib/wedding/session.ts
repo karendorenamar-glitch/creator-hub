@@ -13,6 +13,8 @@ export type WeddingSession = {
   subscription: Subscription | null;
   role: WeddingRole;
   members: WeddingMember[];
+  /** True when the ACCOUNT owns lifetime access (paid before onboarding). */
+  hasEntitlement: boolean;
   /** False while the temporary open-access switch is on. */
   subscriptionRequired: boolean;
   /** True when the member may use planning features right now. */
@@ -69,8 +71,12 @@ export async function loadWeddingSession(): Promise<WeddingSession | null> {
 
     if (!wedding) return null;
 
-    const [{ data: subscription }, { data: members }, { data: settings }] =
-      await Promise.all([
+    const [
+      { data: subscription },
+      { data: members },
+      { data: settings },
+      { data: entitlement },
+    ] = await Promise.all([
         supabase
           .from("subscriptions")
           .select("*")
@@ -86,6 +92,11 @@ export async function loadWeddingSession(): Promise<WeddingSession | null> {
           .select("require_subscription")
           .eq("id", true)
           .maybeSingle(),
+        supabase
+          .from("user_entitlements")
+          .select("user_id, lifetime_access_granted_at")
+          .eq("user_id", user.id)
+          .maybeSingle(),
       ]);
 
     // Safe default: if the settings row is missing (migration 004 not run yet),
@@ -100,8 +111,12 @@ export async function loadWeddingSession(): Promise<WeddingSession | null> {
       role: membership.role,
       members: members ?? [],
       subscriptionRequired,
+      hasEntitlement: Boolean(entitlement?.lifetime_access_granted_at),
       hasPlanningAccess:
-        !subscriptionRequired || isSubscriptionActive(subscription ?? null),
+        !subscriptionRequired ||
+        isSubscriptionActive(subscription ?? null) ||
+        Boolean(entitlement?.lifetime_access_granted_at) ||
+        Boolean(wedding.lifetime_access_granted_at),
     };
   } catch {
     return null;
@@ -113,4 +128,58 @@ export function coupleNames(wedding: Wedding): string {
   return second
     ? `${wedding.partner_one_name} & ${second}`
     : wedding.partner_one_name;
+}
+
+/**
+ * Account-level context for pages that must work BEFORE a wedding exists
+ * (checkout, onboarding gating). Unlike loadWeddingSession this never returns
+ * null for a signed-in user who has not completed onboarding yet.
+ */
+export type AccountContext = {
+  userId: string;
+  email: string | null;
+  hasWedding: boolean;
+  hasEntitlement: boolean;
+  hasActiveSubscription: boolean;
+};
+
+export async function loadAccountContext(): Promise<AccountContext | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  try {
+    const supabase = await createWeddingClient();
+
+    const [{ data: membership }, { data: entitlement }, { data: settings }] =
+      await Promise.all([
+        supabase
+          .from("wedding_members")
+          .select("wedding_id")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("user_entitlements")
+          .select("lifetime_access_granted_at")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("app_settings")
+          .select("require_subscription")
+          .eq("id", true)
+          .maybeSingle(),
+      ]);
+
+    const subscriptionRequired = settings?.require_subscription ?? true;
+    const entitled = Boolean(entitlement?.lifetime_access_granted_at);
+
+    return {
+      userId: user.id,
+      email: user.email ?? null,
+      hasWedding: Boolean(membership),
+      hasEntitlement: entitled,
+      hasActiveSubscription: !subscriptionRequired || entitled,
+    };
+  } catch {
+    return null;
+  }
 }

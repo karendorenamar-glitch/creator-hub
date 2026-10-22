@@ -169,6 +169,14 @@ export type ChecklistTask = {
   updated_at: string;
 };
 
+export type UserEntitlement = {
+  user_id: string;
+  lifetime_access_granted_at: string | null;
+  source_payment_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AccessPaymentStatus = "awaiting_payment" | "pending_review" | "approved" | "rejected";
 
 export type Payment = {
@@ -327,6 +335,7 @@ export type WeddingDatabase = {
       invitation_rsvps: Table<InvitationRsvp>;
       music_tracks: Table<MusicTrack>;
       payments: Table<Payment>;
+      user_entitlements: Table<UserEntitlement>;
     };
     Views: Record<string, never>;
     Functions: {
