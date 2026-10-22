@@ -253,6 +253,12 @@ export function VendorGroups({
                   </div>
                 </div>
 
+                {!selected ? (
+                  <p className="mx-4 mb-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700">
+                    {copy.vendors.noVendorChosen}
+                  </p>
+                ) : null}
+
                 {overpaid ? (
                   <p className="mx-4 mb-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-700">
                     {copy.vendors.overpaidWarning}:{" "}

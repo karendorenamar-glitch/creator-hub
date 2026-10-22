@@ -161,22 +161,74 @@ async function maybeRecordPayment(
 }
 
 
+/** Sum of real payments for one option. */
+async function paidTotalFor(
+  ctx: Awaited<ReturnType<typeof context>>,
+  vendorId: string,
+): Promise<number> {
+  const { data } = await ctx.supabase
+    .from("vendor_payments")
+    .select("amount")
+    .eq("vendor_id", vendorId)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  return (data ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
+}
+
+/**
+ * Keeps a group consistent after any payment change.
+ *
+ * Selection rule (single source of truth):
+ *   - an option becomes the SELECTED vendor as soon as it has a real payment
+ *     (i.e. the couple moved it to DP or Lunas);
+ *   - if its payments drop back to zero, it is no longer selected;
+ *   - the group status is then recomputed from the selected option only.
+ */
 async function refreshGroupOfVendor(
   ctx: Awaited<ReturnType<typeof context>>,
   vendorId: string,
 ) {
-  const { data } = await ctx.supabase
+  const { data: vendor } = await ctx.supabase
     .from("vendors")
     .select("group_id")
     .eq("id", vendorId)
     .eq("wedding_id", ctx.session.wedding.id)
     .maybeSingle();
 
-  if (data?.group_id) {
-    await ctx.supabase.rpc("refresh_vendor_group_status", {
-      p_group_id: data.group_id,
-    });
+  const groupId = vendor?.group_id;
+  if (!groupId) return;
+
+  const [paid, { data: group }] = await Promise.all([
+    paidTotalFor(ctx, vendorId),
+    ctx.supabase
+      .from("vendor_groups")
+      .select("selected_vendor_id")
+      .eq("id", groupId)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .maybeSingle(),
+  ]);
+
+  if (!group) return;
+
+  if (paid > 0 && group.selected_vendor_id !== vendorId) {
+    // A paid option wins the selection; the DB rejects options from other groups.
+    await ctx.supabase
+      .from("vendor_groups")
+      .update({ selected_vendor_id: vendorId })
+      .eq("id", groupId)
+      .eq("wedding_id", ctx.session.wedding.id);
+  } else if (paid === 0 && group.selected_vendor_id === vendorId) {
+    // Payments removed: back to "belum menentukan vendor".
+    await ctx.supabase
+      .from("vendor_groups")
+      .update({ selected_vendor_id: null })
+      .eq("id", groupId)
+      .eq("wedding_id", ctx.session.wedding.id);
   }
+
+  await ctx.supabase.rpc("refresh_vendor_group_status", {
+    p_group_id: groupId,
+  });
 }
 
 export async function createVendorAction(
