@@ -557,32 +557,34 @@ export async function archiveVendorGroupAction(
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 
-  const { data: paid } = await ctx.supabase
-    .from("vendor_payments")
+  // Hard delete is allowed only when no money is attached to the group.
+  const { data: options } = await ctx.supabase
+    .from("vendors")
     .select("id")
-    .eq("wedding_id", ctx.session.wedding.id)
-    .in(
-      "vendor_id",
-      (
-        await ctx.supabase
-          .from("vendors")
-          .select("id")
-          .eq("group_id", id)
-          .eq("wedding_id", ctx.session.wedding.id)
-      ).data?.map((row) => row.id) ?? ["00000000-0000-0000-0000-000000000000"],
-    )
-    .limit(1);
+    .eq("group_id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
 
-  if (paid && paid.length > 0) {
-    return {
-      error:
-        "Kelompok ini punya riwayat pembayaran. Hapus pembayaran terlebih dahulu atau biarkan diarsipkan tanpa dihapus.",
-    };
+  const optionIds = (options ?? []).map((row) => row.id);
+  if (optionIds.length > 0) {
+    const { data: paid } = await ctx.supabase
+      .from("vendor_payments")
+      .select("id")
+      .in("vendor_id", optionIds)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .limit(1);
+
+    if (paid && paid.length > 0) {
+      return {
+        error:
+          "Kategori ini punya riwayat pembayaran. Hapus pembayarannya dulu sebelum menghapus kategori.",
+      };
+    }
   }
 
+  // Deleting the group cascades to its options (FK on delete cascade).
   const { error } = await ctx.supabase
     .from("vendor_groups")
-    .update({ archived_at: new Date().toISOString(), selected_vendor_id: null })
+    .delete()
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 
@@ -599,6 +601,7 @@ export async function archiveVendorOptionAction(
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 
+  // Never remove financial history.
   const { data: payments } = await ctx.supabase
     .from("vendor_payments")
     .select("id")
@@ -609,13 +612,20 @@ export async function archiveVendorOptionAction(
   if (payments && payments.length > 0) {
     return {
       error:
-        "Opsi ini punya riwayat pembayaran dan tidak bisa diarsipkan. Selesaikan atau hapus pembayarannya dulu.",
+        "Opsi ini punya riwayat pembayaran. Hapus pembayarannya dulu sebelum menghapus opsi.",
     };
   }
 
+  // Clear the selection first so no group points at a missing option.
+  await ctx.supabase
+    .from("vendor_groups")
+    .update({ selected_vendor_id: null })
+    .eq("selected_vendor_id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+
   const { error } = await ctx.supabase
     .from("vendors")
-    .update({ archived_at: new Date().toISOString() })
+    .delete()
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 
