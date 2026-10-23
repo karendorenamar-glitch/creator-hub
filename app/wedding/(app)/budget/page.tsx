@@ -68,6 +68,8 @@ export default async function BudgetPage() {
 
   const target = Number(session.wedding.total_budget ?? 0);
   const remaining = target - committedCost;
+  // Outstanding bill on vendor contracts: committed cost minus what was paid.
+  const outstandingBill = Math.max(0, committedCost - committedPaid);
   const paidPercent = percentOf(committedPaid, committedCost);
   const overBudget = target > 0 && committedCost > target;
 
@@ -100,20 +102,46 @@ export default async function BudgetPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label={copy.budget.totalBudget} value={formatIDR(target)} />
+        <Card className="flex flex-col gap-3 p-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+              {copy.budget.vendorCommitments}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+              {formatIDR(committedCost)}
+            </p>
+            {unknownPriceGroups > 0 ? (
+              <p className="mt-0.5 text-xs text-ink-soft">
+                {unknownPriceGroups} {copy.vendors.priceUnknown}
+              </p>
+            ) : null}
+          </div>
+
+          <dl className="space-y-1 border-t border-olive-100 pt-3 text-xs">
+            {(["diskusi", "dp", "lunas"] as const).map((status) => (
+              <div key={status} className="flex items-baseline justify-between gap-2">
+                <dt className="text-ink-soft">
+                  {label("paymentStatus", status, locale)}
+                  {" "}
+                  <span className="text-ink-soft/60">
+                    ({statusVendors[status] ?? 0})
+                  </span>
+                </dt>
+                <dd className="font-medium text-ink">
+                  {formatIDR(statusTotals[status] ?? 0)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </Card>
         <StatCard
-          label={copy.budget.vendorCommitments}
-          value={formatIDR(committedCost)}
-          tone="champagne"
+          label={copy.budget.remainingBill}
+          value={formatIDR(outstandingBill)}
           hint={
-            unknownPriceGroups > 0
-              ? `${unknownPriceGroups} ${copy.vendors.priceUnknown}`
+            committedPaid > committedCost
+              ? copy.budget.overpaidWarning
               : undefined
           }
-        />
-        <StatCard
-          label={copy.budget.remaining}
-          value={formatIDR(remaining)}
-          hint={overBudget ? copy.budget.overBudget : undefined}
         />
         <Card className="flex flex-col justify-between gap-3 p-5">
           <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
@@ -132,25 +160,6 @@ export default async function BudgetPage() {
           </div>
         </Card>
       </section>
-
-      <div className="rounded-2xl border border-olive-100 bg-white px-4 py-3">
-        <dl className="grid gap-2 text-xs sm:grid-cols-3">
-          {(["diskusi", "dp", "lunas"] as const).map((status) => (
-            <div key={status} className="flex items-baseline justify-between gap-2 sm:block">
-              <dt className="text-ink-soft">
-                {label("paymentStatus", status, locale)}
-                {" "}
-                <span className="text-ink-soft/60">
-                  ({statusVendors[status] ?? 0})
-                </span>
-              </dt>
-              <dd className="font-medium text-ink sm:mt-0.5">
-                {formatIDR(statusTotals[status] ?? 0)}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      </div>
 
       <Card>
         <TotalBudgetForm copy={copy} totalBudget={target} />
