@@ -13,11 +13,11 @@ let r = calculateBudget({
   vendors: [{ id: 'v1', agreed_price: 10_000_000, quoted_price: 12_000_000 }],
   payments: [], target: 50_000_000,
 });
-t('tanpa bayar: committedCost', r.committedCost, 10_000_000);
+t('tanpa bayar: committedCost 0', r.committedCost, 0);
 t('tanpa bayar: committedPaid', r.committedPaid, 0);
-t('tanpa bayar: outstandingBill', r.outstandingBill, 10_000_000);
+t('tanpa bayar: outstandingBill 0', r.outstandingBill, 0);
 t('tanpa bayar: paidPercent bukan 100', r.paidPercent, 0);
-t('tanpa bayar: remainingBudget', r.remainingBudget, 40_000_000);
+t('tanpa bayar: remainingBudget utuh', r.remainingBudget, 50_000_000);
 
 // Kasus 2: DP sebagian
 r = calculateBudget({
@@ -49,8 +49,8 @@ r = calculateBudget({
   vendors: [{ id: 'v1', agreed_price: 8_000_000, quoted_price: null }],
   payments: [], target: 50_000_000,
 });
-t('diskusi: committedCost', r.committedCost, 8_000_000);
-t('diskusi: statusTotals.diskusi', r.statusTotals.diskusi, 8_000_000);
+t('diskusi: committedCost 0', r.committedCost, 0);
+t('diskusi: statusTotals.diskusi 0', r.statusTotals.diskusi, 0);
 t('diskusi: paidPercent', r.paidPercent, 0);
 
 // Kasus 5: vendor alternatif tidak dipilih -> tidak dihitung
@@ -75,7 +75,7 @@ r = calculateBudget({
   payments: [{ vendor_id: 'v2', amount: 5_000_000 }], target: 50_000_000,
 });
 t('bayar di alternatif: committedPaid', r.committedPaid, 0);
-t('bayar di alternatif: committedCost', r.committedCost, 10_000_000);
+t('bayar di alternatif: committedCost 0', r.committedCost, 0);
 
 // Kasus 7: kelebihan bayar -> outstanding negatif & terlihat
 r = calculateBudget({
@@ -93,7 +93,15 @@ r = calculateBudget({
   vendors: [{ id: 'v1', agreed_price: null, quoted_price: 15_000_000 }],
   payments: [], target: 50_000_000,
 });
-t('fallback quoted: committedCost', r.committedCost, 15_000_000);
+t('fallback quoted tanpa bayar: committedCost 0', r.committedCost, 0);
+
+// fallback quoted dengan pembayaran -> masuk
+r = calculateBudget({
+  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
+  vendors: [{ id: 'v1', agreed_price: null, quoted_price: 15_000_000 }],
+  payments: [{ vendor_id: 'v1', amount: 3_000_000 }], target: 50_000_000,
+});
+t('fallback quoted dengan bayar: committedCost', r.committedCost, 15_000_000);
 
 // Kasus 9: target terlampaui
 r = calculateBudget({
@@ -103,6 +111,57 @@ r = calculateBudget({
 });
 t('target terlampaui: remainingBudget', r.remainingBudget, -10_000_000);
 t('target terlampaui: overBudget', r.overBudget, true);
+
+
+// Kasus 10: kategori Diskusi (belum ada pembayaran) TIDAK masuk anggaran
+r = calculateBudget({
+  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' }],
+  vendors: [{ id: 'v1', agreed_price: 8_000_000, quoted_price: null }],
+  payments: [], target: 50_000_000,
+});
+t('diskusi tidak masuk: committedCost', r.committedCost, 0);
+t('diskusi tidak masuk: committedPaid', r.committedPaid, 0);
+t('diskusi tidak masuk: outstandingBill', r.outstandingBill, 0);
+t('diskusi tidak masuk: remainingBudget utuh', r.remainingBudget, 50_000_000);
+t('diskusi tidak masuk: statusTotals.diskusi', r.statusTotals.diskusi, 0);
+t('diskusi tidak masuk: statusVendors tetap 1', r.statusVendors.diskusi, 1);
+
+// Kasus 11: kategori tanpa vendor terpilih TIDAK masuk anggaran
+r = calculateBudget({
+  groups: [{ id: 'g1', selected_vendor_id: null, status: 'diskusi' }],
+  vendors: [{ id: 'v1', agreed_price: 9_000_000, quoted_price: null }],
+  payments: [{ vendor_id: 'v1', amount: 3_000_000 }], target: 50_000_000,
+});
+t('tanpa vendor terpilih: committedCost', r.committedCost, 0);
+t('tanpa vendor terpilih: committedPaid', r.committedPaid, 0);
+t('tanpa vendor terpilih: remainingBudget utuh', r.remainingBudget, 50_000_000);
+
+// Kasus 12: sudah DP -> masuk anggaran
+r = calculateBudget({
+  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
+  vendors: [{ id: 'v1', agreed_price: 10_000_000, quoted_price: null }],
+  payments: [{ vendor_id: 'v1', amount: 4_000_000 }], target: 50_000_000,
+});
+t('sudah DP: committedCost', r.committedCost, 10_000_000);
+t('sudah DP: committedPaid', r.committedPaid, 4_000_000);
+t('sudah DP: remainingBudget', r.remainingBudget, 40_000_000);
+
+// Kasus 13: dua kategori, satu Diskusi satu DP -> hanya DP yang dihitung
+r = calculateBudget({
+  groups: [
+    { id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' },
+    { id: 'g2', selected_vendor_id: 'v2', status: 'dp' },
+  ],
+  vendors: [
+    { id: 'v1', agreed_price: 8_000_000, quoted_price: null },
+    { id: 'v2', agreed_price: 12_000_000, quoted_price: null },
+  ],
+  payments: [{ vendor_id: 'v2', amount: 5_000_000 }],
+  target: 50_000_000,
+});
+t('campuran: committedCost hanya DP', r.committedCost, 12_000_000);
+t('campuran: committedPaid hanya DP', r.committedPaid, 5_000_000);
+t('campuran: sisa tagihan', r.outstandingBill, 7_000_000);
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

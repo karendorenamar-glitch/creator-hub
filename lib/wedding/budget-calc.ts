@@ -5,6 +5,9 @@
  * verified with unit tests independently from the database.
  *
  * Rules:
+ *  0. A category enters the budget only after the couple committed to a
+ *     vendor, i.e. the selected option has at least one real payment.
+ *     Categories still "diskusi" contribute nothing.
  *  1. Committed cost = agreed_price (fallback quoted_price) of the SELECTED
  *     option only. Alternates are never counted.
  *  2. Paid = sum of real payment rows for the selected option. A status
@@ -89,6 +92,17 @@ export function calculateBudget(input: {
       : undefined;
     if (!selected) continue;
 
+    // Rule 2 - real payments only.
+    const paid = paidByVendor.get(selected.id) ?? 0;
+
+    // A category only enters the budget once the couple has actually committed
+    // to a vendor, i.e. there is a real payment (DP or Lunas). Categories that
+    // are still "diskusi" contribute nothing to the budget.
+    if (paid <= 0) {
+      statusVendors[group.status] = (statusVendors[group.status] ?? 0) + 1;
+      continue;
+    }
+
     // Rule 1
     const price = vendorPrice(selected);
     if (price === null) {
@@ -97,8 +111,7 @@ export function calculateBudget(input: {
       committedCost += price;
     }
 
-    // Rule 2 - real payments only.
-    committedPaid += paidByVendor.get(selected.id) ?? 0;
+    committedPaid += paid;
 
     // Rule 6 - the vendor price is bucketed by its real status.
     const value = price ?? 0;
