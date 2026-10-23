@@ -164,12 +164,21 @@ export function GroupFormModal({
                     min={0}
                     step={1000}
                     placeholder={copy.vendors.paymentAmount}
+                    aria-label={`${copy.vendors.paymentAmount} ${row + 1}`}
                     className={smallInput}
                   />
                   <input
                     name="optPaidOn"
                     type="date"
+                    aria-label={`${copy.vendors.paymentDate} ${row + 1}`}
                     className={smallInput}
+                  />
+                  <input
+                    name={`optProof${row}`}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    aria-label={`${copy.vendors.proofLabel} ${row + 1}`}
+                    className="w-full rounded-lg border border-olive-100 bg-white px-2 py-1 text-[11px] text-ink-soft file:mr-2 file:rounded-md file:border-0 file:bg-olive-100 file:px-2 file:py-1 file:text-[10px] file:text-olive-700"
                   />
                 </div>
               </div>
