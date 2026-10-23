@@ -56,14 +56,26 @@ export default async function BudgetPage() {
       : null;
     if (!selected) continue;
 
-    const price =
-      selected.agreed_price ?? selected.quoted_price ?? null;
-    if (price === null) {
-      unknownPriceGroups += 1;
-    } else {
-      committedCost += Number(price);
+    const paid = paidByVendor.get(selected.id) ?? 0;
+
+    // Committed cost rules:
+    //   - Diskusi : nothing is committed yet.
+    //   - DP      : only the DP amount (the recorded payment) is committed.
+    //   - Lunas   : the agreed price is committed.
+    let committed = 0;
+    if (group.status === "lunas") {
+      const price = selected.agreed_price ?? selected.quoted_price ?? null;
+      if (price === null) {
+        unknownPriceGroups += 1;
+      } else {
+        committed = Number(price);
+      }
+    } else if (group.status === "dp") {
+      committed = paid;
     }
-    committedPaid += paidByVendor.get(selected.id) ?? 0;
+
+    committedCost += committed;
+    committedPaid += paid;
   }
 
   const target = Number(session.wedding.total_budget ?? 0);
@@ -80,9 +92,14 @@ export default async function BudgetPage() {
     const selected = group.selected_vendor_id
       ? vendorById.get(group.selected_vendor_id)
       : null;
-    const value = selected
-      ? Number(selected.agreed_price ?? selected.quoted_price ?? 0)
-      : 0;
+    const paid = selected ? (paidByVendor.get(selected.id) ?? 0) : 0;
+    // Same rule as the committed cost: DP counts the paid amount only.
+    const value =
+      group.status === "dp"
+        ? paid
+        : selected
+          ? Number(selected.agreed_price ?? selected.quoted_price ?? 0)
+          : 0;
     statusTotals[group.status] = (statusTotals[group.status] ?? 0) + value;
     statusVendors[group.status] = (statusVendors[group.status] ?? 0) + 1;
   }
