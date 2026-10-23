@@ -3,9 +3,10 @@ import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
 import { VendorGroups } from "@/components/wedding/vendors/vendor-groups";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { formatIDR, percentOf } from "@/lib/wedding/format";
+import { formatIDR } from "@/lib/wedding/format";
 import { label } from "@/lib/wedding/labels";
 import { moduleCopy } from "@/lib/wedding/module-copy";
+import { calculateBudget } from "@/lib/wedding/budget-calc";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
@@ -35,66 +36,38 @@ export default async function BudgetPage() {
   const groups = groupsResult.data ?? [];
   const vendors = vendorsResult.data ?? [];
   const payments = paymentsResult.data ?? [];
-
-  const vendorById = new Map(vendors.map((vendor) => [vendor.id, vendor]));
-  const paidByVendor = new Map<string, number>();
-  for (const payment of payments) {
-    paidByVendor.set(
-      payment.vendor_id,
-      (paidByVendor.get(payment.vendor_id) ?? 0) + Number(payment.amount),
-    );
-  }
-
-  // Committed cost = agreed price (fallback quoted) of the SELECTED option only.
-  let committedCost = 0;
-  let committedPaid = 0;
-  let unknownPriceGroups = 0;
-
-  for (const group of groups) {
-    const selected = group.selected_vendor_id
-      ? vendorById.get(group.selected_vendor_id)
-      : null;
-    if (!selected) continue;
-
-    const paid = paidByVendor.get(selected.id) ?? 0;
-
-    // The agreed/quoted price of the selected vendor always counts as the
-    // committed cost. The status only decides which row of the breakdown it
-    // appears in (Diskusi / DP / Lunas).
-    const price = selected.agreed_price ?? selected.quoted_price ?? null;
-    if (price === null) {
-      unknownPriceGroups += 1;
-    } else {
-      committedCost += Number(price);
-    }
-    committedPaid += paid;
-  }
+  const calc = calculateBudget({
+    groups: groups.map((group) => ({
+      id: group.id,
+      selected_vendor_id: group.selected_vendor_id,
+      status: group.status,
+    })),
+    vendors: vendors.map((vendor) => ({
+      id: vendor.id,
+      agreed_price: vendor.agreed_price,
+      quoted_price: vendor.quoted_price,
+    })),
+    payments: payments.map((payment) => ({
+      vendor_id: payment.vendor_id,
+      amount: Number(payment.amount),
+    })),
+    target: Number(session.wedding.total_budget ?? 0),
+  });
 
   const target = Number(session.wedding.total_budget ?? 0);
-  const remaining = target - committedCost;
-  // Outstanding bill on vendor contracts: committed cost minus what was paid.
-  const outstandingBill = Math.max(0, committedCost - committedPaid);
-  const paidPercent = percentOf(committedPaid, committedCost);
-  const overBudget = target > 0 && committedCost > target;
 
-  // Per-status TOTALS of the selected option (amount, not vendor count).
-  const statusTotals = { diskusi: 0, dp: 0, lunas: 0 } as Record<string, number>;
-  const statusVendors = { diskusi: 0, dp: 0, lunas: 0 } as Record<string, number>;
-  for (const group of groups) {
-    const selected = group.selected_vendor_id
-      ? vendorById.get(group.selected_vendor_id)
-      : null;
-    const paid = selected ? (paidByVendor.get(selected.id) ?? 0) : 0;
-    // Same rule as the committed cost: DP counts the paid amount only.
-    const value =
-      group.status === "dp"
-        ? paid
-        : selected
-          ? Number(selected.agreed_price ?? selected.quoted_price ?? 0)
-          : 0;
-    statusTotals[group.status] = (statusTotals[group.status] ?? 0) + value;
-    statusVendors[group.status] = (statusVendors[group.status] ?? 0) + 1;
-  }
+  const {
+    committedCost,
+    committedPaid,
+    outstandingBill,
+    remaining,
+    paidPercent,
+    overpaid,
+    overBudget,
+    unknownPriceGroups,
+    statusTotals,
+    statusVendors,
+  } = calc;
 
   const partnerOne = session.wedding.partner_one_name;
   const partnerTwo = session.wedding.partner_two_name?.trim() ?? "";
@@ -146,11 +119,7 @@ export default async function BudgetPage() {
         <StatCard
           label={copy.budget.remainingBill}
           value={formatIDR(outstandingBill)}
-          hint={
-            committedPaid > committedCost
-              ? copy.budget.overpaidWarning
-              : undefined
-          }
+          hint={overpaid ? copy.budget.overpaidWarning : undefined}
         />
         <Card className="flex flex-col justify-between gap-3 p-5">
           <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
@@ -165,6 +134,7 @@ export default async function BudgetPage() {
             </div>
             <p className="mt-1 text-xs text-ink-soft">
               {copy.vendors.totalPaid}: {formatIDR(committedPaid)}
+              {committedPaid === 0 ? ` (${copy.budget.noPaymentYet})` : ""}
             </p>
           </div>
         </Card>
