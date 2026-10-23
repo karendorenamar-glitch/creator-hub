@@ -58,23 +58,15 @@ export default async function BudgetPage() {
 
     const paid = paidByVendor.get(selected.id) ?? 0;
 
-    // Committed cost rules:
-    //   - Diskusi : nothing is committed yet.
-    //   - DP      : only the DP amount (the recorded payment) is committed.
-    //   - Lunas   : the agreed price is committed.
-    let committed = 0;
-    if (group.status === "lunas") {
-      const price = selected.agreed_price ?? selected.quoted_price ?? null;
-      if (price === null) {
-        unknownPriceGroups += 1;
-      } else {
-        committed = Number(price);
-      }
-    } else if (group.status === "dp") {
-      committed = paid;
+    // The agreed/quoted price of the selected vendor always counts as the
+    // committed cost. The status only decides which row of the breakdown it
+    // appears in (Diskusi / DP / Lunas).
+    const price = selected.agreed_price ?? selected.quoted_price ?? null;
+    if (price === null) {
+      unknownPriceGroups += 1;
+    } else {
+      committedCost += Number(price);
     }
-
-    committedCost += committed;
     committedPaid += paid;
   }
 
