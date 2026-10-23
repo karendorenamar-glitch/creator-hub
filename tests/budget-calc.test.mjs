@@ -1,4 +1,4 @@
-import { calculateBudget } from './lib/wedding/budget-calc.ts';
+import { calculateBudget } from '../lib/wedding/budget-calc.ts';
 
 let pass = 0, fail = 0;
 function t(name, got, want) {
