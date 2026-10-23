@@ -71,9 +71,18 @@ export default async function BudgetPage() {
   const paidPercent = percentOf(committedPaid, committedCost);
   const overBudget = target > 0 && committedCost > target;
 
-  const statusCounts = { diskusi: 0, dp: 0, lunas: 0 } as Record<string, number>;
+  // Per-status TOTALS of the selected option (amount, not vendor count).
+  const statusTotals = { diskusi: 0, dp: 0, lunas: 0 } as Record<string, number>;
+  const statusVendors = { diskusi: 0, dp: 0, lunas: 0 } as Record<string, number>;
   for (const group of groups) {
-    statusCounts[group.status] = (statusCounts[group.status] ?? 0) + 1;
+    const selected = group.selected_vendor_id
+      ? vendorById.get(group.selected_vendor_id)
+      : null;
+    const value = selected
+      ? Number(selected.agreed_price ?? selected.quoted_price ?? 0)
+      : 0;
+    statusTotals[group.status] = (statusTotals[group.status] ?? 0) + value;
+    statusVendors[group.status] = (statusVendors[group.status] ?? 0) + 1;
   }
 
   const partnerOne = session.wedding.partner_one_name;
@@ -124,17 +133,24 @@ export default async function BudgetPage() {
         </Card>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        {(["diskusi", "dp", "lunas"] as const).map((status) => (
-          <StatCard
-            key={status}
-            label={label("paymentStatus", status, locale)}
-            value={String(statusCounts[status] ?? 0)}
-            hint={copy.vendors.groupsTitle}
-            tone={status === "lunas" ? "champagne" : "blush"}
-          />
-        ))}
-      </section>
+      <div className="rounded-2xl border border-olive-100 bg-white px-4 py-3">
+        <dl className="grid gap-2 text-xs sm:grid-cols-3">
+          {(["diskusi", "dp", "lunas"] as const).map((status) => (
+            <div key={status} className="flex items-baseline justify-between gap-2 sm:block">
+              <dt className="text-ink-soft">
+                {label("paymentStatus", status, locale)}
+                {" "}
+                <span className="text-ink-soft/60">
+                  ({statusVendors[status] ?? 0})
+                </span>
+              </dt>
+              <dd className="font-medium text-ink sm:mt-0.5">
+                {formatIDR(statusTotals[status] ?? 0)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
 
       <Card>
         <TotalBudgetForm copy={copy} totalBudget={target} />

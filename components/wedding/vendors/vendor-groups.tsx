@@ -203,11 +203,25 @@ export function VendorGroups({
                       {group.pic_internal || copy.form.none} · {options.length}{" "}
                       {copy.vendors.options}
                     </p>
-                    <p className="mt-1 truncate text-xs text-ink-soft">
-                      {selected
-                        ? `${copy.vendors.selected}: ${selected.name || copy.vendors.unnamed}`
-                        : copy.vendors.notSelected}
-                    </p>
+                    {selected ? (
+                      <p
+                        className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          group.status === "lunas"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {group.status === "lunas"
+                          ? copy.vendors.chosenLunas
+                          : copy.vendors.chosenDp}
+                        {" · "}
+                        {selected.name || copy.vendors.unnamed}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-ink-soft">
+                        {copy.vendors.notSelected}
+                      </p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
