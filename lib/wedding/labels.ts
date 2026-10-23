@@ -3,6 +3,18 @@ import type { AppLocale } from "@/lib/i18n/types";
 /** [English, Bahasa Indonesia] */
 type Pair = readonly [string, string];
 
+
+const selectionStatus = {
+  alternatif: ["Still considering", "Masih Dipikirkan"],
+  terpilih: ["Chosen", "Terpilih"],
+} as const;
+
+const paymentKind = {
+  dp: ["Down payment (DP)", "DP"],
+  lanjutan: ["Further payment", "Pembayaran Lanjutan"],
+  pelunasan: ["Final payment", "Pelunasan"],
+} as const;
+
 const paymentStatus = {
   diskusi: ["Discussion", "Diskusi"],
   dp: ["Down payment (DP)", "DP"],
@@ -75,6 +87,8 @@ const inspirationCategory = {
 } as const;
 
 export const labelGroups = {
+  selectionStatus,
+  paymentKind,
   paymentStatus,
   bookingStatus,
   rsvpStatus,

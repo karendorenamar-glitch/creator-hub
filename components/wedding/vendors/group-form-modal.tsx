@@ -151,10 +151,17 @@ export function GroupFormModal({
                     placeholder={copy.vendors.agreed}
                     className={smallInput}
                   />
-                  <select name="optStatus" className={smallInput}>
-                    {Object.keys(labelGroups.paymentStatus).map((value) => (
+                  <select name="optKind" className={smallInput}>
+                    {Object.keys(labelGroups.paymentKind).map((value) => (
                       <option key={value} value={value}>
-                        {label("paymentStatus", value, locale)}
+                        {label("paymentKind", value, locale)}
+                      </option>
+                    ))}
+                  </select>
+                  <select name="optStatus" className={smallInput}>
+                    {Object.keys(labelGroups.selectionStatus).map((value) => (
+                      <option key={value} value={value}>
+                        {label("selectionStatus", value, locale)}
                       </option>
                     ))}
                   </select>

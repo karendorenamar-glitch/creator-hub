@@ -46,6 +46,7 @@ type VendorValues = {
   notes: string | null;
   agreed_price: number | null;
   payment_status: (typeof PAYMENT_STATUSES)[number];
+  selection_status: "alternatif" | "terpilih";
 };
 
 function readMoneyOrNull(
@@ -85,6 +86,10 @@ function readVendor(
         PAYMENT_STATUSES,
         "diskusi",
       ),
+      selection_status:
+        text(formData, "selectionStatus") === "terpilih"
+          ? "terpilih"
+          : "alternatif",
     },
   };
 }
@@ -92,6 +97,11 @@ function readVendor(
 type Ctx = NonNullable<Awaited<ReturnType<typeof getActionContext>>>;
 
 const PROOF_BUCKET = "payment-proofs";
+
+function paymentKindOf(value: string): "dp" | "lanjutan" | "pelunasan" {
+  if (value === "lanjutan" || value === "pelunasan") return value;
+  return "dp";
+}
 const PROOF_MAX_BYTES = 5 * 1024 * 1024;
 const PROOF_TYPES = [
   "image/jpeg",
@@ -161,6 +171,7 @@ async function maybeRecordPayment(
     paid_on: paidOn,
     method: optionalText(formData, "paymentMethod", 60),
     notes: optionalText(formData, "paymentNotes", 1000),
+    payment_kind: paymentKindOf(text(formData, "paymentKind")),
     proof_path: proof.path,
   });
 
@@ -222,13 +233,6 @@ async function refreshGroupOfVendor(
     await ctx.supabase
       .from("vendor_groups")
       .update({ selected_vendor_id: vendorId })
-      .eq("id", groupId)
-      .eq("wedding_id", ctx.session.wedding.id);
-  } else if (paid === 0 && group.selected_vendor_id === vendorId) {
-    // Payments removed: back to "belum menentukan vendor".
-    await ctx.supabase
-      .from("vendor_groups")
-      .update({ selected_vendor_id: null })
       .eq("id", groupId)
       .eq("wedding_id", ctx.session.wedding.id);
   }
@@ -430,6 +434,8 @@ export async function createVendorGroupAction(
   const quoted = formData.getAll("optQuoted").map((v) => String(v).trim());
   const agreed = formData.getAll("optAgreed").map((v) => String(v).trim());
   const statuses = formData.getAll("optStatus").map((v) => String(v).trim());
+  const kinds = formData.getAll("optKind").map((v) => String(v).trim());
+  // optStatus now carries "alternatif" | "terpilih".
   const paids = formData.getAll("optPaid").map((v) => String(v).trim());
   const paidOns = formData.getAll("optPaidOn").map((v) => String(v).trim());
 
@@ -441,9 +447,10 @@ export async function createVendorGroupAction(
     if (!optionName && quotedPrice === null) continue; // baris kosong
 
     const agreedPrice = agreed[i] ? parseMoney(agreed[i]) : null;
-    const status = ["diskusi", "dp", "lunas"].includes(statuses[i])
-      ? (statuses[i] as "diskusi" | "dp" | "lunas")
-      : "diskusi";
+    const selected = statuses[i] === "terpilih";
+    // payment_status is a hint only; the real status is derived from payments
+    // by refresh_vendor_group_status().
+    const status: "diskusi" | "dp" | "lunas" = selected ? "dp" : "diskusi";
     const paid = paids[i] ? parseMoney(paids[i]) : 0;
     const paidOn = paidOns[i] || new Date().toISOString().slice(0, 10);
 
@@ -459,6 +466,7 @@ export async function createVendorGroupAction(
         quoted_price: quotedPrice,
         agreed_price: agreedPrice,
         payment_status: status,
+        selection_status: selected ? "terpilih" : "alternatif",
         booking_status: "considering",
       })
       .select("id")
@@ -507,6 +515,7 @@ export async function createVendorGroupAction(
             ? paidOn
             : new Date().toISOString().slice(0, 10),
           notes: "Pembayaran awal",
+          payment_kind: paymentKindOf(kinds[i] ?? ""),
           proof_path: proofPath,
         });
       if (payError) {
@@ -516,7 +525,14 @@ export async function createVendorGroupAction(
         return { error: actionError(payError, ctx.copy) };
       }
 
-      if (!selectedId) selectedId = option.id;
+      if (!selectedId) {
+        selectedId = option.id;
+        await ctx.supabase
+          .from("vendors")
+          .update({ selection_status: "terpilih" })
+          .eq("id", option.id)
+          .eq("wedding_id", ctx.session.wedding.id);
+      }
     }
   }
 
@@ -574,14 +590,39 @@ export async function selectVendorOptionAction(
   const vendorId = text(formData, "vendorId");
   if (!isUuid(groupId)) return { error: ctx.copy.errors.notFound };
 
+  if (!isUuid(vendorId)) return { error: ctx.copy.errors.notFound };
+
+  // The previous option becomes an alternative again; its payment history
+  // is never deleted or moved.
+  const { data: group } = await ctx.supabase
+    .from("vendor_groups")
+    .select("selected_vendor_id")
+    .eq("id", groupId)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+
+  if (group?.selected_vendor_id && group.selected_vendor_id !== vendorId) {
+    await ctx.supabase
+      .from("vendors")
+      .update({ selection_status: "alternatif" })
+      .eq("id", group.selected_vendor_id)
+      .eq("wedding_id", ctx.session.wedding.id);
+  }
+
   // The DB rejects an option that is not part of this group (composite FK).
   const { error } = await ctx.supabase
     .from("vendor_groups")
-    .update({ selected_vendor_id: isUuid(vendorId) ? vendorId : null })
+    .update({ selected_vendor_id: vendorId })
     .eq("id", groupId)
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  await ctx.supabase
+    .from("vendors")
+    .update({ selection_status: "terpilih" })
+    .eq("id", vendorId)
+    .eq("wedding_id", ctx.session.wedding.id);
 
   await ctx.supabase.rpc("refresh_vendor_group_status", { p_group_id: groupId });
 

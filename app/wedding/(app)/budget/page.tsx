@@ -6,7 +6,7 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { formatIDR } from "@/lib/wedding/format";
 import { label } from "@/lib/wedding/labels";
 import { moduleCopy } from "@/lib/wedding/module-copy";
-import { calculateBudget } from "@/lib/wedding/budget-calc";
+import { budgetMessage, calculateBudget } from "@/lib/wedding/budget-calc";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
@@ -46,6 +46,7 @@ export default async function BudgetPage() {
       id: vendor.id,
       agreed_price: vendor.agreed_price,
       quoted_price: vendor.quoted_price,
+      selection_status: vendor.selection_status,
     })),
     payments: payments.map((payment) => ({
       vendor_id: payment.vendor_id,
@@ -124,6 +125,9 @@ export default async function BudgetPage() {
         <Card className="flex flex-col justify-between gap-3 p-5">
           <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
             {copy.budget.percentPaid}
+          </p>
+          <p className="text-xs leading-relaxed text-ink-soft">
+            {budgetMessage(target, committedCost)}
           </p>
           <div>
             <p className="text-2xl font-semibold tracking-tight text-ink">

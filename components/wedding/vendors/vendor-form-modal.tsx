@@ -35,7 +35,9 @@ export function VendorFormModal({
 }) {
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
-  const [status, setStatus] = useState(vendor?.payment_status ?? "diskusi");
+  const [status, setStatus] = useState<string>(
+    vendor?.selection_status ?? "alternatif",
+  );
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -163,16 +165,16 @@ export function VendorFormModal({
           <Field label={copy.vendors.paymentStatus} htmlFor="vendor-status">
             <select
               id="vendor-status"
-              name="paymentStatus"
+              name="selectionStatus"
               value={status}
               onChange={(event) =>
                 setStatus(event.target.value as typeof status)
               }
               className={inputClass}
             >
-              {Object.keys(labelGroups.paymentStatus).map((value) => (
+              {Object.keys(labelGroups.selectionStatus).map((value) => (
                 <option key={value} value={value}>
-                  {label("paymentStatus", value, locale)}
+                  {label("selectionStatus", value, locale)}
                 </option>
               ))}
             </select>

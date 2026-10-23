@@ -103,6 +103,7 @@ export type Vendor = {
   payment_status: PaymentStatus;
   pic_internal: string | null;
   group_id: string | null;
+  selection_status: "alternatif" | "terpilih";
   archived_at: string | null;
   quotation_path: string | null;
   booking_date: string | null;
@@ -122,6 +123,7 @@ export type VendorPayment = {
   paid_on: string;
   method: string | null;
   notes: string | null;
+  payment_kind: "dp" | "lanjutan" | "pelunasan";
   proof_path: string | null;
   created_at: string;
 };

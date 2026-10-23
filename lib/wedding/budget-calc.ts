@@ -22,6 +22,8 @@ export type BudgetVendor = {
   id: string;
   agreed_price: number | null;
   quoted_price: number | null;
+  /** "terpilih" = counts towards the budget; "alternatif" = comparison only. */
+  selection_status?: "alternatif" | "terpilih";
 };
 
 export type BudgetPayment = {
@@ -92,16 +94,15 @@ export function calculateBudget(input: {
       : undefined;
     if (!selected) continue;
 
-    // Rule 2 - real payments only.
-    const paid = paidByVendor.get(selected.id) ?? 0;
-
-    // A category only enters the budget once the couple has actually committed
-    // to a vendor, i.e. there is a real payment (DP or Lunas). Categories that
-    // are still "diskusi" contribute nothing to the budget.
-    if (paid <= 0) {
+    // Only the option the couple actually chose counts. Alternatives are
+    // kept for comparison and never enter the budget.
+    if (selected.selection_status === "alternatif") {
       statusVendors[group.status] = (statusVendors[group.status] ?? 0) + 1;
       continue;
     }
+
+    // Rule 2 - real payments only.
+    const paid = paidByVendor.get(selected.id) ?? 0;
 
     // Rule 1
     const price = vendorPrice(selected);
@@ -126,7 +127,7 @@ export function calculateBudget(input: {
   // Rule 4
   const paidPercent =
     committedCost > 0 && committedPaid > 0
-      ? Math.round((committedPaid / committedCost) * 100)
+      ? Math.round((committedPaid / committedCost) * 10000) / 100
       : 0;
 
   // Rule 5
@@ -147,4 +148,19 @@ export function calculateBudget(input: {
     statusVendors,
     paidByVendor,
   };
+}
+
+/**
+ * Budget evaluation message shown on the dashboard.
+ *  - positive  : "Kamu menghemat biaya sebesar RpX."
+ *  - zero      : "Budget sesuai."
+ *  - negative  : "Budget melebihi anggaran sebesar RpX."
+ */
+export function budgetMessage(target: number, committedCost: number) {
+  const diff = target - committedCost;
+  if (diff > 0) {
+    return `Kamu menghemat biaya sebesar Rp${diff.toLocaleString("id-ID")}.`;
+  }
+  if (diff === 0) return "Budget sesuai.";
+  return `Budget melebihi anggaran sebesar Rp${Math.abs(diff).toLocaleString("id-ID")}.`;
 }
