@@ -92,6 +92,13 @@ function readVendor(
 type Ctx = NonNullable<Awaited<ReturnType<typeof getActionContext>>>;
 
 const PROOF_BUCKET = "payment-proofs";
+const PROOF_MAX_BYTES = 5 * 1024 * 1024;
+const PROOF_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
 const MAX_PROOF_BYTES = 5 * 1024 * 1024;
 const ALLOWED_PROOF_TYPES = [
   "image/png",
@@ -463,6 +470,33 @@ export async function createVendorGroupAction(
 
     // A real payment is recorded, never inferred from the status label.
     if (paid && paid > 0) {
+      // Optional receipt uploaded with the option.
+      const proofFile = formData.get(`optProof${i}`);
+      let proofPath: string | null = null;
+
+      if (proofFile instanceof File && proofFile.size > 0) {
+        if (proofFile.size > PROOF_MAX_BYTES) {
+          return { error: ctx.copy.vendors.proofTooLarge };
+        }
+        if (!PROOF_TYPES.includes(proofFile.type)) {
+          return { error: ctx.copy.vendors.proofInvalidType };
+        }
+        const ext = proofFile.name.includes(".")
+          ? proofFile.name.split(".").pop()!.toLowerCase()
+          : "jpg";
+        const uploadPath = `${ctx.session.wedding.id}/${option.id}-${crypto.randomUUID()}.${ext}`;
+        const { error: uploadError } = await ctx.supabase.storage
+          .from(PROOF_BUCKET)
+          .upload(uploadPath, proofFile, {
+            contentType: proofFile.type,
+            upsert: false,
+          });
+        if (uploadError) {
+          return { error: ctx.copy.vendors.proofUploadFailed };
+        }
+        proofPath = uploadPath;
+      }
+
       const { error: payError } = await ctx.supabase
         .from("vendor_payments")
         .insert({
@@ -473,8 +507,14 @@ export async function createVendorGroupAction(
             ? paidOn
             : new Date().toISOString().slice(0, 10),
           notes: "Pembayaran awal",
+          proof_path: proofPath,
         });
-      if (payError) return { error: actionError(payError, ctx.copy) };
+      if (payError) {
+        if (proofPath) {
+          await ctx.supabase.storage.from(PROOF_BUCKET).remove([proofPath]);
+        }
+        return { error: actionError(payError, ctx.copy) };
+      }
 
       if (!selectedId) selectedId = option.id;
     }

@@ -179,6 +179,7 @@ const en = {
     proofTooLarge: "The file is larger than 5 MB.",
     proofInvalidType: "Only JPG, PNG, WEBP or PDF files are allowed.",
     viewProof: "View proof",
+    proofUploadFailed: "The receipt could not be uploaded. Try again.",
   },
   checklist: {
     title: "Checklist & Timeline",
@@ -469,8 +470,8 @@ const id: ModuleCopy = {
     proofLabel: "Bukti pembayaran",
     proofHint: "JPG, PNG, WEBP, atau PDF, maksimal 5 MB",
     proofTooLarge: "Ukuran file melebihi 5 MB.",
-    proofInvalidType: "Hanya file JPG, PNG, WEBP, atau PDF yang diperbolehkan.",
-    viewProof: "Lihat bukti",
+    proofInvalidType: "Bukti harus berformat JPG, PNG, WEBP, atau PDF.",
+    proofUploadFailed: "Bukti gagal diunggah. Coba lagi.",
   },
   checklist: {
     title: "Checklist & Timeline",
