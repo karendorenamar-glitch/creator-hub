@@ -66,6 +66,7 @@ export function VendorGroups({
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [picFilter, setPicFilter] = useState("all");
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
   const [groupModal, setGroupModal] = useState<{
@@ -106,6 +107,9 @@ export function VendorGroups({
   const needle = query.trim().toLowerCase();
   const visible = groups.filter((group) => {
     if (statusFilter !== "all" && group.status !== statusFilter) return false;
+    if (picFilter !== "all" && (group.pic_internal ?? "") !== picFilter) {
+      return false;
+    }
     if (!needle) return true;
     const options = vendorsByGroup.get(group.id) ?? [];
     return [group.name, group.category, group.pic_internal, ...options.flatMap((o) => [o.name, o.contact_name, o.phone])]
@@ -144,6 +148,20 @@ export function VendorGroups({
             className={`${inputClass} pl-9`}
           />
         </div>
+        <select
+          value={picFilter}
+          onChange={(event) => setPicFilter(event.target.value)}
+          aria-label={copy.vendors.picInternal}
+          className={`${inputClass} w-auto min-w-40`}
+        >
+          <option value="all">{copy.vendors.allPicInternal}</option>
+          {picOptions.map((person) => (
+            <option key={person} value={person}>
+              {person}
+            </option>
+          ))}
+        </select>
+
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
@@ -340,6 +358,17 @@ export function VendorGroups({
         onClose={() => setPaymentVendor(null)}
         copy={copy}
         vendorId={paymentVendor?.id ?? null}
+        price={
+          paymentVendor
+            ? (paymentVendor.agreed_price ?? paymentVendor.quoted_price) ?? null
+            : null
+        }
+        history={
+          paymentVendor
+            ? payments.filter((row) => row.vendor_id === paymentVendor.id)
+            : []
+        }
+        locale={locale}
         vendorName={paymentVendor?.name || copy.vendors.unnamed}
         suggestedAmount={Math.max(
           0,
@@ -402,6 +431,9 @@ function OptionList({
               <form action={action} className="flex items-center gap-2">
                 <input type="hidden" name="groupId" value={group.id} />
                 <input type="hidden" name="vendorId" value={option.id} />
+                {isSelected ? null : (
+                  <input type="hidden" name="confirm" value="yes" />
+                )}
                 <button
                   type="submit"
                   disabled={pending}

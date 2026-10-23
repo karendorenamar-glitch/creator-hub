@@ -300,6 +300,9 @@ export function VendorManager({
         onClose={() => setPaymentVendor(null)}
         copy={copy}
         vendorId={paymentVendor?.id ?? null}
+        price={null}
+        history={[]}
+        locale={locale}
         vendorName={paymentVendor?.name || copy.vendors.unnamed}
         suggestedAmount={Math.max(
           0,

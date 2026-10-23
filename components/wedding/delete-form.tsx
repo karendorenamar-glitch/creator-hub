@@ -5,7 +5,7 @@ import { Trash2 } from "lucide-react";
 import type { ActionResult } from "@/lib/wedding/action-context";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
-type DeleteAction = (formData: FormData) => Promise<ActionResult>;
+type DeleteAction = (formData: FormData) => Promise<ActionResult> | Promise<void> | void;
 
 /**
  * Two-step delete. RLS still decides whether the delete is allowed; if it is
@@ -23,8 +23,11 @@ export function DeleteForm({
   label?: string;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const [state, formAction, pending] = useActionState(
-    async (_prev: ActionResult, formData: FormData) => action(formData),
+  const [state, formAction, pending] = useActionState<ActionResult, FormData>(
+    async (_prev, formData) => {
+      await action(formData);
+      return null;
+    },
     null,
   );
 

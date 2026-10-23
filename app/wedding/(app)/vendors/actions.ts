@@ -362,10 +362,10 @@ export async function addVendorPaymentAction(
 
 export async function deleteVendorPaymentAction(
   formData: FormData,
-): Promise<ActionResult> {
+): Promise<void> {
   const ctx = await context();
   const id = text(formData, "id");
-  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+  if (!isUuid(id)) return;
 
   // Read vendor_id BEFORE deleting so the group status can be recalculated.
   const { data: existing } = await ctx.supabase
@@ -381,7 +381,7 @@ export async function deleteVendorPaymentAction(
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 
-  if (error) return { error: actionError(error, ctx.copy) };
+  if (error) return;
 
   // Best effort: remove the stored proof as well.
   if (existing?.proof_path) {
@@ -394,7 +394,7 @@ export async function deleteVendorPaymentAction(
   }
 
   revalidateVendorPages();
-  return null;
+  return;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -602,6 +602,25 @@ export async function selectVendorOptionAction(
     .maybeSingle();
 
   if (group?.selected_vendor_id && group.selected_vendor_id !== vendorId) {
+    // The previous vendor keeps its payment history. Switching only changes
+    // which option is the active commitment.
+    const { data: previousPayments } = await ctx.supabase
+      .from("vendor_payments")
+      .select("id")
+      .eq("vendor_id", group.selected_vendor_id)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .limit(1);
+
+    if (previousPayments && previousPayments.length > 0) {
+      const confirmed = text(formData, "confirm") === "yes";
+      if (!confirmed) {
+        return {
+          error:
+            "Vendor sebelumnya sudah memiliki pembayaran. Riwayatnya tetap tersimpan. Konfirmasi untuk mengganti vendor terpilih.",
+        };
+      }
+    }
+
     await ctx.supabase
       .from("vendors")
       .update({ selection_status: "alternatif" })
