@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import {
   createVendorAction,
   updateVendorAction,
@@ -12,32 +12,35 @@ import {
   ModalFooter,
   inputClass,
 } from "@/components/wedding/form-kit";
-import type { Vendor } from "@/lib/wedding/db-types";
-import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import type { BudgetVendor } from "@/lib/wedding/budget-calc";
+
+const CATEGORY_SUGGESTIONS = [
+  "Venue",
+  "Dekorasi",
+  "Catering",
+  "MUA",
+  "Fotografi",
+  "Busana",
+  "Undangan",
+  "Entertainment",
+  "Souvenir",
+  "Lainnya",
+];
 
 export function VendorFormModal({
   open,
   onClose,
   copy,
   vendor,
-  locale,
-  picOptions,
-  groupId,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
-  vendor: Vendor | null;
-  locale: "en" | "id";
-  picOptions: string[];
-  groupId?: string | null;
+  vendor: BudgetVendor | null;
 }) {
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
-  const [status, setStatus] = useState<string>(
-    vendor?.selection_status ?? "alternatif",
-  );
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -52,27 +55,25 @@ export function VendorFormModal({
     >
       <form action={formAction} className="space-y-4">
         {vendor ? <input type="hidden" name="id" value={vendor.id} /> : null}
-        {groupId ? <input type="hidden" name="groupId" value={groupId} /> : null}
         <FormAlert error={state?.error} />
 
+        <p className="rounded-xl border border-olive-100 bg-olive-50/60 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+          {copy.vendors.confirmedHint}
+        </p>
+
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label={`${copy.vendors.name}`}
-            htmlFor="vendor-name"
-          >
+          <Field label={copy.vendors.name} htmlFor="vendor-name">
             <input
               id="vendor-name"
               name="name"
+              required
               maxLength={120}
               defaultValue={vendor?.name ?? ""}
               className={inputClass}
             />
           </Field>
 
-          <Field
-            label={`${copy.vendors.category}`}
-            htmlFor="vendor-category"
-          >
+          <Field label={copy.vendors.category} htmlFor="vendor-category">
             <input
               id="vendor-category"
               name="category"
@@ -83,28 +84,13 @@ export function VendorFormModal({
               className={inputClass}
             />
             <datalist id="vendor-category-suggestions">
-              {[
-                "Venue",
-                "Catering",
-                "Dekorasi",
-                "MUA",
-                "Wedding Organizer",
-                "Fotografi",
-                "Videografi",
-                "Busana",
-                "Undangan",
-                "Entertainment",
-                "Souvenir",
-              ].map((item) => (
+              {CATEGORY_SUGGESTIONS.map((item) => (
                 <option key={item} value={item} />
               ))}
             </datalist>
           </Field>
 
-          <Field
-            label={`${copy.vendors.picVendor}`}
-            htmlFor="vendor-contact"
-          >
+          <Field label={copy.vendors.picVendor} htmlFor="vendor-contact">
             <input
               id="vendor-contact"
               name="contactName"
@@ -114,10 +100,7 @@ export function VendorFormModal({
             />
           </Field>
 
-          <Field
-            label={`${copy.vendors.picPhone}`}
-            htmlFor="vendor-phone"
-          >
+          <Field label={copy.vendors.picPhone} htmlFor="vendor-phone">
             <input
               id="vendor-phone"
               name="phone"
@@ -128,113 +111,25 @@ export function VendorFormModal({
             />
           </Field>
 
-          <Field label={copy.vendors.picInternal} htmlFor="vendor-pic-internal">
-            <select
-              id="vendor-pic-internal"
-              name="picInternal"
-              defaultValue={vendor?.pic_internal ?? ""}
-              className={inputClass}
-            >
-              <option value="">{copy.vendors.picInternalPlaceholder}</option>
-              {picOptions.map((person) => (
-                <option key={person} value={person}>
-                  {person}
-                </option>
-              ))}
-            </select>
-          </Field>
-
           <Field
-            label={`${copy.vendors.estimate} (IDR)`}
-            htmlFor="vendor-total"
+            label={`${copy.vendors.agreedPrice} (IDR)`}
+            htmlFor="vendor-agreed-price"
           >
             <input
-              id="vendor-total"
+              id="vendor-agreed-price"
               name="agreedPrice"
               type="number"
               min={0}
               step={1}
               inputMode="numeric"
-              defaultValue={vendor?.agreed_price ?? vendor?.quoted_price ?? ""}
+              required
+              defaultValue={vendor?.agreed_price ?? ""}
               className={inputClass}
             />
           </Field>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={copy.vendors.paymentStatus} htmlFor="vendor-status">
-            <select
-              id="vendor-status"
-              name="selectionStatus"
-              value={status}
-              onChange={(event) =>
-                setStatus(event.target.value as typeof status)
-              }
-              className={inputClass}
-            >
-              {Object.keys(labelGroups.selectionStatus).map((value) => (
-                <option key={value} value={value}>
-                  {label("selectionStatus", value, locale)}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        {status !== "diskusi" ? (
-          <div className="space-y-4 rounded-2xl border border-olive-200 bg-olive-50/60 p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
-              {copy.vendors.payments}
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label={copy.vendors.paymentAmount}
-                htmlFor="vendor-paid-amount"
-              >
-                <input
-                  id="vendor-paid-amount"
-                  name="paidAmount"
-                  type="number"
-                  min={0}
-                  step={1}
-                  inputMode="numeric"
-                  placeholder="0"
-                  className={inputClass}
-                />
-              </Field>
-              <Field
-                label={copy.vendors.paymentDate}
-                htmlFor="vendor-paid-on"
-              >
-                <input
-                  id="vendor-paid-on"
-                  name="paidOn"
-                  type="date"
-                  defaultValue={new Date().toISOString().slice(0, 10)}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-            <Field
-              label={copy.vendors.proofLabel}
-              htmlFor="vendor-proof"
-              hint={copy.vendors.proofHint}
-            >
-              <input
-                id="vendor-proof"
-                name="proof"
-                type="file"
-                accept="image/png,image/jpeg,image/webp,application/pdf"
-                className="w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-olive-700"
-              />
-            </Field>
-          </div>
-        ) : null}
-
-        <Field
-          label={`${copy.vendors.notes}`}
-          htmlFor="vendor-notes"
-        >
+        <Field label={copy.vendors.notes} htmlFor="vendor-notes">
           <textarea
             id="vendor-notes"
             name="notes"

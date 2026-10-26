@@ -28,6 +28,38 @@ export function parseMoney(value: string): number | null {
   return Number.isSafeInteger(amount) ? amount : null;
 }
 
+/**
+ * Strict whole-Rupiah parser for new payments, agreed prices, and target
+ * budgets. Accepts digits with optional thousand separators; rejects negative
+ * signs, scientific notation, letters, and amounts outside numeric(14,0).
+ */
+export function parseWholeRupiah(
+  value: string,
+  options: { allowZero?: boolean } = {},
+): number | null {
+  const allowZero = options.allowZero ?? true;
+  const normalized = value.trim().replace(/\./g, "").replace(/\s/g, "");
+  if (!/^\d+$/.test(normalized)) return null;
+
+  const amount = Number(normalized);
+  if (!Number.isSafeInteger(amount) || amount > 99_999_999_999_999) {
+    return null;
+  }
+  if (!allowZero && amount <= 0) return null;
+  return amount;
+}
+
+/**
+ * Payment amount posted by the payment modal (`paymentAmount`), with a fallback
+ * to the legacy field name (`amount`). Requires a positive whole Rupiah value.
+ */
+export function readPaymentAmount(formData: FormData): number | null {
+  return parseWholeRupiah(
+    text(formData, "paymentAmount") || text(formData, "amount"),
+    { allowZero: false },
+  );
+}
+
 export function parseCount(value: string): number | null {
   if (!value) return null;
   const digits = value.replace(/[^\d]/g, "");
@@ -36,10 +68,21 @@ export function parseCount(value: string): number | null {
   return Number.isSafeInteger(count) && count >= 0 ? count : null;
 }
 
-export function isDateString(value: string): boolean {
+export function isRealDate(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false;
-  const date = new Date(`${value}T00:00:00`);
-  return !Number.isNaN(date.getTime());
+
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+export function isDateString(value: string): boolean {
+  return isRealDate(value);
 }
 
 export function isHttpUrl(value: string): boolean {

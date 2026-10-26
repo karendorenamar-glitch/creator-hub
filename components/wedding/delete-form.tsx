@@ -16,18 +16,19 @@ export function DeleteForm({
   id,
   copy,
   label,
+  confirmMessage,
+  confirmLabel,
 }: {
   action: DeleteAction;
   id: string;
   copy: ModuleCopy;
   label?: string;
+  confirmMessage?: string;
+  confirmLabel?: string;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(
-    async (_prev, formData) => {
-      await action(formData);
-      return null;
-    },
+    async (_prev, formData) => (await action(formData)) ?? null,
     null,
   );
 
@@ -54,13 +55,15 @@ export function DeleteForm({
       {state?.error ? (
         <span className="w-full text-xs text-rose-600">{state.error}</span>
       ) : null}
-      <span className="text-xs text-rose-600">{copy.form.confirmDelete}</span>
+      <span className="text-xs text-rose-600">
+        {confirmMessage ?? copy.form.confirmDelete}
+      </span>
       <button
         type="submit"
         disabled={pending}
         className="rounded-lg bg-rose-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-rose-700 disabled:opacity-60"
       >
-        {pending ? copy.form.saving : copy.form.yesDelete}
+        {pending ? copy.form.saving : (confirmLabel ?? copy.form.yesDelete)}
       </button>
       <button
         type="button"

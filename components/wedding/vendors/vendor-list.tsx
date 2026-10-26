@@ -1,0 +1,355 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { History, Pencil, RotateCcw, Wallet } from "lucide-react";
+import {
+  archiveVendorAction,
+  restoreVendorAction,
+} from "@/app/wedding/(app)/vendors/actions";
+import { AddButton } from "@/components/wedding/form-kit";
+import { DeleteForm } from "@/components/wedding/delete-form";
+import { Badge, Card } from "@/components/wedding/ui";
+import { VendorFormModal } from "@/components/wedding/vendors/vendor-form-modal";
+import { PaymentFormModal } from "@/components/wedding/vendors/payment-form-modal";
+import type {
+  BudgetVendor,
+  DerivedPaymentStatus,
+  VendorPaymentSummary,
+} from "@/lib/wedding/budget-calc";
+import type {
+  VendorPayment,
+  VendorPaymentProof,
+} from "@/lib/wedding/db-types";
+import { formatIDR } from "@/lib/wedding/format";
+import { groupProofsByPayment } from "@/lib/wedding/payment-proofs";
+import type { ModuleCopy } from "@/lib/wedding/module-copy";
+
+function statusLabel(status: DerivedPaymentStatus, copy: ModuleCopy) {
+  switch (status) {
+    case "dp":
+      return copy.vendors.statusDp;
+    case "termin_lanjutan":
+      return copy.vendors.statusTerminLanjutan;
+    case "lunas":
+      return copy.vendors.statusLunas;
+    case "incomplete":
+      return copy.vendors.statusIncomplete;
+    default:
+      return copy.vendors.statusDiskusi;
+  }
+}
+
+function statusTone(status: DerivedPaymentStatus) {
+  if (status === "lunas") return "success" as const;
+  if (status === "incomplete" || status === "termin_lanjutan") {
+    return "warning" as const;
+  }
+  return "muted" as const;
+}
+
+function VendorRow({
+  vendor,
+  summary,
+  copy,
+  archived,
+  onEdit,
+  onPayment,
+  onHistory,
+}: {
+  vendor: BudgetVendor;
+  summary: VendorPaymentSummary;
+  copy: ModuleCopy;
+  archived: boolean;
+  onEdit: () => void;
+  onPayment: () => void;
+  onHistory: () => void;
+}) {
+  const price = vendor.agreed_price;
+  return (
+    <div className="rounded-2xl border border-olive-100 bg-white px-4 py-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-ink">
+            {vendor.name?.trim() || copy.vendors.unnamed}
+            <span className="ml-2 text-xs font-normal text-ink-soft">
+              {vendor.category || copy.vendors.uncategorized}
+            </span>
+          </p>
+          <p className="mt-0.5 truncate text-xs text-ink-soft">
+            {copy.vendors.picVendor}: {vendor.contact_name || copy.form.none}
+            {vendor.phone ? ` · ${vendor.phone}` : ""}
+          </p>
+          {price === null ? (
+            <p className="mt-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-700">
+              {copy.vendors.missingAgreedPrice}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="text-right">
+            <p className="text-sm font-medium text-ink">
+              {price === null ? copy.vendors.priceUnknown : formatIDR(price)}
+            </p>
+            <p className="text-xs text-ink-soft">
+              {copy.vendors.totalPaid}: {formatIDR(summary.totalPaid)}
+            </p>
+            <p className="text-xs text-ink-soft">
+              {copy.vendors.remainingPayment}:{" "}
+              {formatIDR(summary.remainingPayment)}
+            </p>
+            {summary.overpayment > 0 ? (
+              <p className="text-xs font-medium text-amber-700">
+                {copy.vendors.overpayment}: {formatIDR(summary.overpayment)}
+              </p>
+            ) : null}
+          </div>
+          <Badge tone={statusTone(summary.paymentStatus)}>
+            {statusLabel(summary.paymentStatus, copy)}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-olive-100 pt-2">
+        {!archived ? (
+          <>
+            <button
+              type="button"
+              onClick={onEdit}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50"
+            >
+              <Pencil className="size-3.5" aria-hidden />
+              {copy.form.edit}
+            </button>
+            <button
+              type="button"
+              onClick={onPayment}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100"
+            >
+              <Wallet className="size-3.5" aria-hidden />
+              {copy.vendors.recordPayment}
+            </button>
+          </>
+        ) : null}
+        <button
+          type="button"
+          onClick={onHistory}
+          className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50"
+        >
+          <History className="size-3.5" aria-hidden />
+          {copy.vendors.paymentHistory}
+        </button>
+        {archived ? (
+          <form action={restoreVendorAction} className="inline-flex">
+            <input type="hidden" name="id" value={vendor.id} />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-olive-700 hover:bg-olive-50"
+            >
+              <RotateCcw className="size-3.5" aria-hidden />
+              {copy.vendors.restore}
+            </button>
+          </form>
+        ) : (
+          <DeleteForm
+            action={archiveVendorAction}
+            id={vendor.id}
+            copy={copy}
+            label={copy.vendors.archive}
+            confirmMessage={copy.vendors.archiveConfirm}
+            confirmLabel={copy.vendors.yesArchive}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function VendorList({
+  activeVendors,
+  archivedVendors,
+  payments,
+  proofs,
+  proofUrls,
+  summaryByVendor,
+  copy,
+  locale,
+}: {
+  activeVendors: BudgetVendor[];
+  archivedVendors: BudgetVendor[];
+  payments: VendorPayment[];
+  proofs: VendorPaymentProof[];
+  proofUrls: Record<string, string>;
+  summaryByVendor: Record<string, VendorPaymentSummary>;
+  copy: ModuleCopy;
+  locale: "en" | "id";
+}) {
+  const [vendorModal, setVendorModal] = useState<{
+    open: boolean;
+    editing: BudgetVendor | null;
+  }>({ open: false, editing: null });
+  const [paymentModal, setPaymentModal] = useState<{
+    open: boolean;
+    vendor: BudgetVendor | null;
+    payment: VendorPayment | null;
+    readOnly: boolean;
+    historyOnly: boolean;
+    idempotencyKey: string;
+  }>({
+    open: false,
+    vendor: null,
+    payment: null,
+    readOnly: false,
+    historyOnly: false,
+    idempotencyKey: "",
+  });
+
+  const paymentsByVendor = useMemo(() => {
+    const map = new Map<string, VendorPayment[]>();
+    for (const payment of payments) {
+      const bucket = map.get(payment.vendor_id) ?? [];
+      bucket.push(payment);
+      map.set(payment.vendor_id, bucket);
+    }
+    return map;
+  }, [payments]);
+
+  const proofsByPayment = useMemo(
+    () => groupProofsByPayment(proofs),
+    [proofs],
+  );
+
+  function emptySummary(): VendorPaymentSummary {
+    return {
+      paymentCount: 0,
+      totalPaid: 0,
+      remainingPayment: 0,
+      overpayment: 0,
+      paymentStatus: "diskusi",
+    };
+  }
+
+  function openPayment(
+    vendor: BudgetVendor,
+    readOnly: boolean,
+    historyOnly = false,
+  ) {
+    setPaymentModal({
+      open: true,
+      vendor,
+      payment: null,
+      readOnly,
+      historyOnly,
+      idempotencyKey: readOnly ? "" : crypto.randomUUID(),
+    });
+  }
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-heading text-lg font-semibold text-ink">
+          {copy.vendors.title}
+        </h2>
+        <AddButton
+          label={copy.vendors.add}
+          onClick={() => setVendorModal({ open: true, editing: null })}
+        />
+      </div>
+
+      {activeVendors.length === 0 ? (
+        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-10 text-center text-sm text-ink-soft">
+          {copy.vendors.noVendors}
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {activeVendors.map((vendor) => (
+            <VendorRow
+              key={vendor.id}
+              vendor={vendor}
+              summary={summaryByVendor[vendor.id] ?? emptySummary()}
+              copy={copy}
+              archived={false}
+              onEdit={() => setVendorModal({ open: true, editing: vendor })}
+              onPayment={() => openPayment(vendor, false)}
+              onHistory={() => openPayment(vendor, false, true)}
+            />
+          ))}
+        </div>
+      )}
+
+      {archivedVendors.length > 0 ? (
+        <Card className="space-y-3">
+          <h3 className="font-heading text-base font-semibold text-ink">
+            {copy.vendors.archived}
+          </h3>
+          <p className="text-xs text-ink-soft">{copy.vendors.archivedHint}</p>
+          <div className="space-y-3">
+            {archivedVendors.map((vendor) => (
+              <VendorRow
+                key={vendor.id}
+                vendor={vendor}
+                summary={summaryByVendor[vendor.id] ?? emptySummary()}
+                copy={copy}
+                archived
+                onEdit={() => undefined}
+                onPayment={() => undefined}
+                onHistory={() => openPayment(vendor, true)}
+              />
+            ))}
+          </div>
+        </Card>
+      ) : null}
+
+      <VendorFormModal
+        key={vendorModal.editing?.id ?? "new-vendor"}
+        open={vendorModal.open}
+        onClose={() => setVendorModal({ open: false, editing: null })}
+        copy={copy}
+        vendor={vendorModal.editing}
+      />
+
+      <PaymentFormModal
+        key={`${paymentModal.vendor?.id ?? "none"}-${paymentModal.payment?.id ?? "new"}-${paymentModal.readOnly}-${paymentModal.historyOnly}`}
+        open={paymentModal.open}
+        onClose={() =>
+          setPaymentModal({
+            open: false,
+            vendor: null,
+            payment: null,
+            readOnly: false,
+            historyOnly: false,
+            idempotencyKey: "",
+          })
+        }
+        copy={copy}
+        locale={locale}
+        vendor={paymentModal.vendor}
+        payment={paymentModal.payment}
+        proofs={
+          paymentModal.payment
+            ? (proofsByPayment[paymentModal.payment.id] ?? [])
+            : []
+        }
+        history={
+          paymentModal.vendor
+            ? (paymentsByVendor.get(paymentModal.vendor.id) ?? [])
+            : []
+        }
+        proofsByPayment={proofsByPayment}
+        proofUrls={proofUrls}
+        idempotencyKey={paymentModal.idempotencyKey}
+        readOnly={paymentModal.readOnly}
+        historyOnly={paymentModal.historyOnly}
+        onEditPayment={(payment) =>
+          setPaymentModal((current) => ({
+            ...current,
+            payment,
+            historyOnly: false,
+            readOnly: false,
+          }))
+        }
+      />
+    </>
+  );
+}
+

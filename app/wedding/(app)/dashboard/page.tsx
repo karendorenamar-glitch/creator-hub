@@ -7,6 +7,7 @@ import {
   Clock,
   ListOrdered,
   Users,
+  Wallet,
 } from "lucide-react";
 import {
   Badge,
@@ -18,7 +19,8 @@ import {
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 import { moduleCopy } from "@/lib/wedding/module-copy";
-import { daysFromToday, formatIDR, formatWeddingDate, percentOf } from "@/lib/wedding/format";
+import { daysFromToday, formatIDR, formatWeddingDate } from "@/lib/wedding/format";
+import { loadBudgetData } from "@/lib/wedding/budget-data";
 import { coupleNames, loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
@@ -33,32 +35,21 @@ export default async function DashboardPage() {
   const moduleText = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  const [guestsResult, vendorsResult, tasksResult, paymentsResult] =
-    await Promise.all([
-      supabase.from("guests").select("id, rsvp_status"),
-      supabase
-        .from("vendors")
-        .select("id, name, agreed_price, quoted_price"),
-      supabase
-        .from("checklist_tasks")
-        .select("id, title, status, due_date, priority")
-        .order("due_date", { ascending: true, nullsFirst: false }),
-      supabase
-        .from("vendor_payments")
-        .select("id, vendor_id, amount, paid_on")
-        .order("paid_on", { ascending: false }),
-    ]);
+  const [budgetData, guestsResult, tasksResult] = await Promise.all([
+    loadBudgetData(
+      session.wedding.id,
+      Number(session.wedding.total_budget ?? 0),
+    ),
+    supabase.from("guests").select("id, rsvp_status"),
+    supabase
+      .from("checklist_tasks")
+      .select("id, title, status, due_date, priority")
+      .order("due_date", { ascending: true, nullsFirst: false }),
+  ]);
 
   const guests = guestsResult.data ?? [];
-  const vendors = vendorsResult.data ?? [];
   const tasks = tasksResult.data ?? [];
-
-  const payments = paymentsResult.data ?? [];
-
-  const totalBudget = Number(session.wedding.total_budget ?? 0);
-  const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount ?? 0), 0);
-  const remaining = totalBudget - totalPaid;
-  const usedPercent = percentOf(totalPaid, totalBudget);
+  const calc = budgetData.calc;
 
   const attending = guests.filter((g) => g.rsvp_status === "attending").length;
   const pendingRsvp = guests.filter((g) => g.rsvp_status === "pending").length;
@@ -68,27 +59,26 @@ export default async function DashboardPage() {
 
   const upcomingTasks = tasks.filter((t) => t.status !== "done" && t.due_date).slice(0, 5);
 
-  const paidByVendor = new Map<string, number>();
-  for (const payment of payments) {
-    paidByVendor.set(
-      payment.vendor_id,
-      (paidByVendor.get(payment.vendor_id) ?? 0) + Number(payment.amount ?? 0),
-    );
-  }
-
-  const outstandingVendors = vendors
+  const outstandingVendors = calc.activeVendors
     .map((vendor) => ({
       id: vendor.id,
       name: vendor.name?.trim() || moduleText.vendors.unnamed,
-      remaining: Math.max(
-        0,
-        Number(vendor.agreed_price ?? vendor.quoted_price ?? 0) -
-          (paidByVendor.get(vendor.id) ?? 0),
-      ),
+      remaining: calc.summaryByVendor.get(vendor.id)?.remainingPayment ?? 0,
     }))
     .filter((vendor) => vendor.remaining > 0)
     .sort((a, b) => b.remaining - a.remaining)
     .slice(0, 5);
+
+  const targetLabel =
+    calc.targetStatus === "under"
+      ? moduleText.budget.targetUnder
+      : calc.targetStatus === "on"
+        ? moduleText.budget.targetOn
+        : calc.targetStatus === "over"
+          ? moduleText.budget.targetOver
+          : calc.targetStatus === "provisional"
+            ? moduleText.budget.targetProvisional
+            : moduleText.budget.targetUnset;
 
   const daysToWedding = daysFromToday(session.wedding.wedding_date);
   const weddingDateLabel = formatWeddingDate(session.wedding.wedding_date, locale);
@@ -125,22 +115,28 @@ export default async function DashboardPage() {
         </Card>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label={copy.dashboard.totalBudget}
-          value={formatIDR(totalBudget)}
+          value={formatIDR(calc.targetBudget)}
+          hint={targetLabel}
           icon={<CalendarDays className="size-4" aria-hidden />}
         />
         <StatCard
+          label={copy.dashboard.vendorBudget}
+          value={formatIDR(calc.vendorBudget)}
+          icon={<Wallet className="size-4" aria-hidden />}
+        />
+        <StatCard
           label={copy.dashboard.spent}
-          value={formatIDR(totalPaid)}
+          value={formatIDR(calc.totalPaid)}
           tone="champagne"
           icon={<CheckCircle2 className="size-4" aria-hidden />}
         />
         <StatCard
-          label={copy.dashboard.remaining}
-          value={formatIDR(remaining)}
-          hint={totalBudget > 0 ? undefined : copy.dashboard.emptyBudget}
+          label={copy.dashboard.remainingPayment}
+          value={formatIDR(calc.remainingPayment)}
+          hint={calc.overpayment > 0 ? copy.dashboard.overpayment : undefined}
           icon={<Clock className="size-4" aria-hidden />}
         />
         <Card className="flex flex-col justify-between gap-3 p-5">
@@ -154,14 +150,34 @@ export default async function DashboardPage() {
           </div>
           <div>
             <p className="text-2xl font-semibold tracking-tight text-ink">
-              {usedPercent}%
+              {calc.paymentPercentage}%
             </p>
             <div className="mt-2">
-              <Progress value={usedPercent} />
+              <Progress value={calc.paymentPercentage} />
             </div>
           </div>
         </Card>
       </section>
+
+      {calc.overpayment > 0 ? (
+        <Card className="border-amber-200 bg-amber-50/70 text-sm text-amber-900">
+          {copy.dashboard.overpayment}: {formatIDR(calc.overpayment)}
+        </Card>
+      ) : null}
+
+      {!calc.vendorBudgetComplete ? (
+        <Card className="border-amber-200 bg-amber-50/70">
+          <p className="text-sm font-medium text-amber-900">
+            {moduleText.budget.budgetIncomplete.replace(
+              "{count}",
+              String(calc.missingAgreedPriceCount),
+            )}
+          </p>
+          <p className="mt-1 text-xs text-amber-800">
+            {moduleText.budget.budgetIncompleteHint}
+          </p>
+        </Card>
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2">
         <Card>
@@ -201,7 +217,13 @@ export default async function DashboardPage() {
             </span>
           </p>
           <div className="mt-3">
-            <Progress value={percentOf(doneTasks, tasks.length)} />
+            <Progress
+              value={
+                tasks.length > 0
+                  ? Math.round((doneTasks / tasks.length) * 100)
+                  : 0
+              }
+            />
           </div>
         </Card>
       </section>
@@ -274,7 +296,9 @@ export default async function DashboardPage() {
         </Card>
       </section>
 
-      {guests.length === 0 && vendors.length === 0 && tasks.length === 0 ? (
+      {guests.length === 0 &&
+      calc.activeVendors.length === 0 &&
+      tasks.length === 0 ? (
         <Card className="bg-gradient-to-br from-white via-cream to-olive-50">
           <h2 className="font-heading text-lg font-semibold text-ink">
             {copy.dashboard.setupTitle}

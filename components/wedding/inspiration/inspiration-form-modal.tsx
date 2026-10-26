@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   createInspirationAction,
   updateInspirationAction,
@@ -15,13 +15,17 @@ import {
 } from "@/components/wedding/form-kit";
 import type { InspirationItem } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { validateInspirationImageFile } from "@/lib/wedding/uploads";
 
 const CATEGORY_SUGGESTIONS = [
+  "Venue",
   "Dekorasi",
-  "Attire",
+  "Catering",
   "MUA",
-  "Hair do",
-  "Wedding ring",
+  "Fotografer",
+  "Busana",
+  "Undangan",
+  "Lainnya",
 ];
 
 const fileClass =
@@ -42,6 +46,7 @@ export function InspirationFormModal({
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
   const [state, formAction, pending] = useActionState(action, null);
+  const [fileError, setFileError] = useState<string | null>(null);
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -61,7 +66,7 @@ export function InspirationFormModal({
 
         <form action={formAction} className="space-y-4">
         {item ? <input type="hidden" name="id" value={item.id} /> : null}
-        <FormAlert error={state?.error} />
+        <FormAlert error={state?.error ?? fileError ?? undefined} />
 
         <Field label={copy.inspiration.titleLabel} htmlFor="inspiration-title">
           <input
@@ -106,8 +111,21 @@ export function InspirationFormModal({
             name="images"
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png"
             className={fileClass}
+            onChange={(event) => {
+              const files = Array.from(event.currentTarget.files ?? []);
+              const invalid = files
+                .map((file) => validateInspirationImageFile(file))
+                .find((result) => !result.ok);
+              setFileError(
+                invalid && !invalid.ok
+                  ? invalid.error === "too_large"
+                    ? copy.inspiration.imageTooLarge
+                    : copy.inspiration.imageInvalidType
+                  : null,
+              );
+            }}
           />
           {item?.image_path ? (
             <p className="text-xs text-ink-soft">
@@ -129,20 +147,6 @@ export function InspirationFormModal({
             placeholder="https://"
             maxLength={1000}
             defaultValue={item?.link_url ?? ""}
-            className={inputClass}
-          />
-        </Field>
-
-        <Field
-          label={`${copy.checklist.description} (${copy.form.optional})`}
-          htmlFor="inspiration-description"
-        >
-          <textarea
-            id="inspiration-description"
-            name="description"
-            rows={2}
-            maxLength={2000}
-            defaultValue={item?.description ?? ""}
             className={inputClass}
           />
         </Field>

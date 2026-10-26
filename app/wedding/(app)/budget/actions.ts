@@ -14,6 +14,7 @@ import {
   optionalText,
   optionalUuid,
   parseMoney,
+  parseWholeRupiah,
   paymentStatusFor,
   text,
 } from "@/lib/wedding/validation";
@@ -33,7 +34,9 @@ export async function updateBudgetAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
-  const amount = parseMoney(text(formData, "totalBudget"));
+  const raw = text(formData, "totalBudget");
+  // Empty means "unset", stored as 0. Reject negatives/scientific notation.
+  const amount = raw === "" ? 0 : parseWholeRupiah(raw, { allowZero: true });
 
   if (amount === null) return { error: ctx.copy.form.invalidNumber };
 

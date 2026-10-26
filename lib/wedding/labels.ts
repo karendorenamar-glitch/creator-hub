@@ -11,7 +11,7 @@ const selectionStatus = {
 
 const paymentKind = {
   dp: ["Down payment (DP)", "DP"],
-  lanjutan: ["Further payment", "Pembayaran Lanjutan"],
+  lanjutan: ["Termin Lanjutan", "Termin Lanjutan"],
   pelunasan: ["Final payment", "Pelunasan"],
 } as const;
 

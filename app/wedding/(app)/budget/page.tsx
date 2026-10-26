@@ -1,14 +1,13 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
-import { VendorGroups } from "@/components/wedding/vendors/vendor-groups";
+import { TargetBudgetStatusCard } from "@/components/wedding/budget/target-budget-status";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { loadBudgetData } from "@/lib/wedding/budget-data";
 import { formatIDR } from "@/lib/wedding/format";
-import { label } from "@/lib/wedding/labels";
 import { moduleCopy } from "@/lib/wedding/module-copy";
-import { budgetMessage, calculateBudget } from "@/lib/wedding/budget-calc";
 import { loadWeddingSession } from "@/lib/wedding/session";
-import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Anggaran Menikah" };
 
@@ -18,146 +17,95 @@ export default async function BudgetPage() {
 
   const locale = await getLocale();
   const copy = moduleCopy[locale];
-  const supabase = await createWeddingClient();
-
-  const [groupsResult, vendorsResult, paymentsResult] = await Promise.all([
-    supabase
-      .from("vendor_groups")
-      .select("*")
-      .is("archived_at", null)
-      .order("created_at", { ascending: true }),
-    supabase.from("vendors").select("*").is("archived_at", null),
-    supabase
-      .from("vendor_payments")
-      .select("*")
-      .order("paid_on", { ascending: false }),
-  ]);
-
-  const groups = groupsResult.data ?? [];
-  const vendors = vendorsResult.data ?? [];
-  const payments = paymentsResult.data ?? [];
-  const calc = calculateBudget({
-    groups: groups.map((group) => ({
-      id: group.id,
-      selected_vendor_id: group.selected_vendor_id,
-      status: group.status,
-    })),
-    vendors: vendors.map((vendor) => ({
-      id: vendor.id,
-      agreed_price: vendor.agreed_price,
-      quoted_price: vendor.quoted_price,
-      selection_status: vendor.selection_status,
-    })),
-    payments: payments.map((payment) => ({
-      vendor_id: payment.vendor_id,
-      amount: Number(payment.amount),
-    })),
-    target: Number(session.wedding.total_budget ?? 0),
-  });
-
-  const target = Number(session.wedding.total_budget ?? 0);
-
-  const {
-    committedCost,
-    committedPaid,
-    outstandingBill,
-    remaining,
-    paidPercent,
-    overpaid,
-    overBudget,
-    unknownPriceGroups,
-    statusTotals,
-    statusVendors,
-  } = calc;
-
-  const partnerOne = session.wedding.partner_one_name;
-  const partnerTwo = session.wedding.partner_two_name?.trim() ?? "";
-  const picOptions = [
-    partnerOne,
-    partnerTwo,
-    `Ortu ${partnerOne}`,
-    partnerTwo ? `Ortu ${partnerTwo}` : "",
-  ].filter(Boolean);
+  const targetBudget = Number(session.wedding.total_budget ?? 0);
+  const data = await loadBudgetData(session.wedding.id, targetBudget);
+  const { calc } = data;
 
   return (
     <div className="space-y-7">
       <PageHeader title={copy.budget.title} subtitle={copy.budget.subtitle} />
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={copy.budget.totalBudget} value={formatIDR(target)} />
-        <Card className="flex flex-col gap-3 p-5">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
-              {copy.budget.vendorCommitments}
-            </p>
-            <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">
-              {formatIDR(committedCost)}
-            </p>
-            {unknownPriceGroups > 0 ? (
-              <p className="mt-0.5 text-xs text-ink-soft">
-                {unknownPriceGroups} {copy.vendors.priceUnknown}
-              </p>
-            ) : null}
-          </div>
+      <section className="space-y-4">
+        <Card>
+          <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+            {copy.budget.targetBudget}
+          </p>
+          <TotalBudgetForm copy={copy} totalBudget={targetBudget} />
+        </Card>
 
-          <dl className="space-y-1 border-t border-olive-100 pt-3 text-xs">
-            {(["diskusi", "dp", "lunas"] as const).map((status) => (
-              <div key={status} className="flex items-baseline justify-between gap-2">
-                <dt className="text-ink-soft">
-                  {label("paymentStatus", status, locale)}
-                  {" "}
-                  <span className="text-ink-soft/60">
-                    ({statusVendors[status] ?? 0})
-                  </span>
-                </dt>
-                <dd className="font-medium text-ink">
-                  {formatIDR(statusTotals[status] ?? 0)}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </Card>
-        <StatCard
-          label={copy.budget.remainingBill}
-          value={formatIDR(outstandingBill)}
-          hint={overpaid ? copy.budget.overpaidWarning : undefined}
+        <TargetBudgetStatusCard
+          status={calc.targetStatus}
+          difference={calc.targetDifference}
+          targetBudget={calc.targetBudget}
+          vendorBudget={calc.vendorBudget}
+          missingAgreedPriceCount={calc.missingAgreedPriceCount}
+          copy={copy}
         />
-        <Card className="flex flex-col justify-between gap-3 p-5">
-          <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
-            {copy.budget.percentPaid}
-          </p>
-          <p className="text-xs leading-relaxed text-ink-soft">
-            {budgetMessage(target, committedCost)}
-          </p>
-          <div>
-            <p className="text-2xl font-semibold tracking-tight text-ink">
-              {paidPercent}%
-            </p>
-            <div className="mt-2">
-              <Progress value={paidPercent} />
-            </div>
-            <p className="mt-1 text-xs text-ink-soft">
-              {copy.vendors.totalPaid}: {formatIDR(committedPaid)}
-              {committedPaid === 0 ? ` (${copy.budget.noPaymentYet})` : ""}
-            </p>
-          </div>
-        </Card>
       </section>
 
-      <Card>
-        <TotalBudgetForm copy={copy} totalBudget={target} />
+      {!calc.vendorBudgetComplete ? (
+        <Card className="border-amber-200 bg-amber-50/70">
+          <p className="text-sm font-medium text-amber-900">
+            {copy.budget.budgetIncomplete.replace(
+              "{count}",
+              String(calc.missingAgreedPriceCount),
+            )}
+          </p>
+          <p className="mt-1 text-xs text-amber-800">
+            {copy.budget.budgetIncompleteHint}
+          </p>
+        </Card>
+      ) : null}
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label={copy.budget.vendorBudget}
+          value={formatIDR(calc.vendorBudget)}
+        />
+        <StatCard
+          label={copy.budget.totalPaid}
+          value={formatIDR(calc.totalPaid)}
+          tone="champagne"
+        />
+        <StatCard
+          label={copy.budget.remainingPayment}
+          value={formatIDR(calc.remainingPayment)}
+        />
+        <StatCard
+          label={copy.budget.overpayment}
+          value={formatIDR(calc.overpayment)}
+          tone={calc.overpayment > 0 ? "champagne" : undefined}
+        />
+      </section>
+
+      <Card className="flex flex-col gap-3">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+              {copy.budget.paymentPercentage}
+            </p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+              {calc.paymentPercentage}%
+            </p>
+          </div>
+          <p className="text-xs text-ink-soft">
+            {copy.budget.totalPaid}: {formatIDR(calc.totalPaid)}
+          </p>
+        </div>
+        <Progress value={calc.paymentPercentage} />
+        {calc.overpayment > 0 ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            {copy.budget.overpaidWarning}: {formatIDR(calc.overpayment)}
+          </p>
+        ) : null}
       </Card>
 
-      <Card>
-        <VendorGroups
-          groups={groups}
-          vendors={vendors}
-          payments={payments}
-          copy={copy}
-          locale={locale}
-          picOptions={picOptions}
-        />
-      </Card>
+      <Link
+        href="/wedding/vendors"
+        className="inline-flex text-sm font-medium text-olive-700 hover:underline"
+      >
+        {copy.budget.manageVendors}
+      </Link>
     </div>
   );
 }

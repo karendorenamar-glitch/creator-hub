@@ -125,6 +125,18 @@ export type VendorPayment = {
   notes: string | null;
   payment_kind: "dp" | "lanjutan" | "pelunasan";
   proof_path: string | null;
+  idempotency_key: string | null;
+  created_at: string;
+};
+
+export type VendorPaymentProof = {
+  id: string;
+  wedding_id: string;
+  payment_id: string;
+  path: string;
+  mime_type: "image/png" | "image/jpeg" | "application/pdf";
+  original_name: string | null;
+  sort_order: number;
   created_at: string;
 };
 
@@ -320,6 +332,18 @@ export type InspirationItem = {
   updated_at: string;
 };
 
+export type InspirationVendorOption = {
+  id: string;
+  wedding_id: string;
+  item_id: string;
+  vendor_name: string;
+  instagram_url: string | null;
+  reference_price: number | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type AppSettings = {
   id: boolean;
   require_subscription: boolean;
@@ -346,11 +370,13 @@ export type WeddingDatabase = {
       vendors: Table<Vendor>;
       vendor_groups: Table<VendorGroup>;
       vendor_payments: Table<VendorPayment>;
+      vendor_payment_proofs: Table<VendorPaymentProof>;
       expenses: Table<Expense>;
       guests: Table<Guest>;
       checklist_tasks: Table<ChecklistTask>;
       inspiration_items: Table<InspirationItem>;
       inspiration_photos: Table<InspirationPhoto>;
+      inspiration_vendor_options: Table<InspirationVendorOption>;
       invitations: Table<Invitation>;
       invitation_rsvps: Table<InvitationRsvp>;
       music_tracks: Table<MusicTrack>;

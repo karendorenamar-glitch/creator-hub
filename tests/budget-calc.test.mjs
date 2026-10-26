@@ -1,249 +1,202 @@
-import { calculateBudget } from '../lib/wedding/budget-calc.ts';
+import {
+  calculateBudget,
+  derivePaymentStatus,
+} from "../lib/wedding/budget-calc.ts";
 
-let pass = 0, fail = 0;
+let pass = 0;
+let fail = 0;
+
 function t(name, got, want) {
   const ok = JSON.stringify(got) === JSON.stringify(want);
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}`);
-  if (ok) pass++; else { fail++; console.log('   got :', JSON.stringify(got), '\n   want:', JSON.stringify(want)); }
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}`);
+  if (ok) {
+    pass += 1;
+  } else {
+    fail += 1;
+    console.log("   got :", JSON.stringify(got), "\n   want:", JSON.stringify(want));
+  }
 }
 
-// Kasus 1: tanpa pembayaran sama sekali
-let r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
-  vendors: [{ id: 'v1', agreed_price: 10_000_000, quoted_price: 12_000_000, selection_status: 'terpilih' }],
-  payments: [], target: 50_000_000,
-});
-t('tanpa bayar: committedCost', r.committedCost, 10_000_000);
-t('tanpa bayar: committedPaid', r.committedPaid, 0);
-t('tanpa bayar: outstandingBill', r.outstandingBill, 10_000_000);
-t('tanpa bayar: paidPercent bukan 100', r.paidPercent, 0);
-t('tanpa bayar: remainingBudget', r.remainingBudget, 40_000_000);
-
-// Kasus 2: DP sebagian
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
-  vendors: [{ id: 'v1', agreed_price: 10_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [{ vendor_id: 'v1', amount: 4_000_000 }], target: 50_000_000,
-});
-t('DP sebagian: committedCost', r.committedCost, 10_000_000);
-t('DP sebagian: committedPaid', r.committedPaid, 4_000_000);
-t('DP sebagian: outstandingBill', r.outstandingBill, 6_000_000);
-t('DP sebagian: paidPercent', r.paidPercent, 40);
-t('DP sebagian: statusTotals.dp', r.statusTotals.dp, 10_000_000);
-
-// Kasus 3: pelunasan penuh
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'lunas' }],
-  vendors: [{ id: 'v1', agreed_price: 10_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [{ vendor_id: 'v1', amount: 4_000_000 }, { vendor_id: 'v1', amount: 6_000_000 }],
-  target: 50_000_000,
-});
-t('lunas: committedPaid', r.committedPaid, 10_000_000);
-t('lunas: outstandingBill', r.outstandingBill, 0);
-t('lunas: paidPercent', r.paidPercent, 100);
-t('lunas: statusTotals.lunas', r.statusTotals.lunas, 10_000_000);
-
-// Kasus 4: vendor Diskusi (harga tetap dihitung, tapi tidak ada pembayaran)
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' }],
-  vendors: [{ id: 'v1', agreed_price: 8_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [], target: 50_000_000,
-});
-t('diskusi terpilih: committedCost', r.committedCost, 8_000_000);
-t('diskusi terpilih: statusTotals.diskusi', r.statusTotals.diskusi, 8_000_000);
-t('diskusi: paidPercent', r.paidPercent, 0);
-
-// Kasus 5: vendor alternatif tidak dipilih -> tidak dihitung
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
-  vendors: [
-    { id: 'v1', agreed_price: 10_000_000, quoted_price: null, selection_status: 'terpilih' },
-    { id: 'v2', agreed_price: 20_000_000, quoted_price: null },
-  ],
-  payments: [{ vendor_id: 'v1', amount: 1_000_000 }], target: 50_000_000,
-});
-t('alternatif tidak dipilih: committedCost', r.committedCost, 10_000_000);
-t('alternatif tidak dipilih: committedPaid', r.committedPaid, 1_000_000);
-
-// Kasus 6: pembayaran di vendor yang TIDAK dipilih -> tidak dihitung
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
-  vendors: [
-    { id: 'v1', agreed_price: 10_000_000, quoted_price: null, selection_status: 'terpilih' },
-    { id: 'v2', agreed_price: 20_000_000, quoted_price: null },
-  ],
-  payments: [{ vendor_id: 'v2', amount: 5_000_000 }], target: 50_000_000,
-});
-t('bayar di alternatif: committedPaid', r.committedPaid, 0);
-t('bayar di alternatif: committedCost', r.committedCost, 10_000_000);
-
-// Kasus 7: kelebihan bayar -> outstanding negatif & terlihat
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'lunas' }],
-  vendors: [{ id: 'v1', agreed_price: 10_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [{ vendor_id: 'v1', amount: 12_000_000 }], target: 50_000_000,
-});
-t('kelebihan bayar: outstandingBill', r.outstandingBill, -2_000_000);
-t('kelebihan bayar: overpaid', r.overpaid, true);
-t('kelebihan bayar: paidPercent', r.paidPercent, 120);
-
-// Kasus 8: fallback ke quoted_price
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' }],
-  vendors: [{ id: 'v1', agreed_price: null, quoted_price: 15_000_000 }],
-  payments: [], target: 50_000_000,
-});
-t('fallback quoted tanpa bayar: committedCost', r.committedCost, 15_000_000);
-
-// fallback quoted dengan pembayaran -> masuk
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
-  vendors: [{ id: 'v1', agreed_price: null, quoted_price: 15_000_000 }],
-  payments: [{ vendor_id: 'v1', amount: 3_000_000 }], target: 50_000_000,
-});
-t('fallback quoted dengan bayar: committedCost', r.committedCost, 15_000_000);
-
-// Kasus 9: target terlampaui
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'lunas' }],
-  vendors: [{ id: 'v1', agreed_price: 60_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [{ vendor_id: 'v1', amount: 60_000_000 }], target: 50_000_000,
-});
-t('target terlampaui: remainingBudget', r.remainingBudget, -10_000_000);
-t('target terlampaui: overBudget', r.overBudget, true);
-
-
-// Kasus 10: kategori Diskusi (belum ada pembayaran) TIDAK masuk anggaran
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' }],
-  vendors: [{ id: 'v1', agreed_price: 8_000_000, quoted_price: null, selection_status: 'alternatif' }],
-  payments: [], target: 50_000_000,
-});
-t('alternatif tidak masuk: committedCost', r.committedCost, 0);
-t('alternatif tidak masuk: committedPaid', r.committedPaid, 0);
-t('alternatif tidak masuk: outstandingBill', r.outstandingBill, 0);
-t('alternatif tidak masuk: remainingBudget utuh', r.remainingBudget, 50_000_000);
-t('alternatif tidak masuk: statusTotals.diskusi', r.statusTotals.diskusi, 0);
-t('alternatif tidak masuk: statusVendors tetap 1', r.statusVendors.diskusi, 1);
-
-// Kasus 11: kategori tanpa vendor terpilih TIDAK masuk anggaran
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: null, status: 'diskusi' }],
-  vendors: [{ id: 'v1', agreed_price: 9_000_000, quoted_price: null }],
-  payments: [{ vendor_id: 'v1', amount: 3_000_000 }], target: 50_000_000,
-});
-t('tanpa vendor terpilih: committedCost', r.committedCost, 0);
-t('tanpa vendor terpilih: committedPaid', r.committedPaid, 0);
-t('tanpa vendor terpilih: remainingBudget utuh', r.remainingBudget, 50_000_000);
-
-// Kasus 12: sudah DP -> masuk anggaran
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
-  vendors: [{ id: 'v1', agreed_price: 10_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [{ vendor_id: 'v1', amount: 4_000_000 }], target: 50_000_000,
-});
-t('sudah DP: committedCost', r.committedCost, 10_000_000);
-t('sudah DP: committedPaid', r.committedPaid, 4_000_000);
-t('sudah DP: remainingBudget', r.remainingBudget, 40_000_000);
-
-// Kasus 13: dua kategori, satu Diskusi satu DP -> hanya DP yang dihitung
-r = calculateBudget({
-  groups: [
-    { id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' },
-    { id: 'g2', selected_vendor_id: 'v2', status: 'dp' },
-  ],
-  vendors: [
-    { id: 'v1', agreed_price: 8_000_000, quoted_price: null, selection_status: 'alternatif' },
-    { id: 'v2', agreed_price: 12_000_000, quoted_price: null, selection_status: 'terpilih' },
-  ],
-  payments: [{ vendor_id: 'v2', amount: 5_000_000 }],
-  target: 50_000_000,
-});
-t('campuran: committedCost hanya DP', r.committedCost, 12_000_000);
-t('campuran: committedPaid hanya DP', r.committedPaid, 5_000_000);
-t('campuran: sisa tagihan', r.outstandingBill, 7_000_000);
-
-// ============ SKENARIO A-H (spesifikasi produk) ============
-console.log('\n--- Skenario A-H ---');
-function budgetMessage(target, committed) {
-  const diff = target - committed;
-  if (diff > 0) return `Kamu menghemat biaya sebesar Rp${diff.toLocaleString('id-ID')}.`;
-  if (diff === 0) return 'Budget sesuai.';
-  return `Budget melebihi anggaran sebesar Rp${Math.abs(diff).toLocaleString('id-ID')}.`;
+function vendor(overrides = {}) {
+  return {
+    id: "v1",
+    name: "Vendor",
+    agreed_price: 10_000_000,
+    archived_at: null,
+    selection_status: "terpilih",
+    ...overrides,
+  };
 }
 
-// A: belum ada vendor terpilih (semua Masih Dipikirkan)
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' }],
-  vendors: [{ id: 'v1', agreed_price: 30_000_000, quoted_price: null, selection_status: 'alternatif' }],
-  payments: [], target: 100_000_000,
-});
-t('A committedCost 0', r.committedCost, 0);
-t('A committedPaid 0', r.committedPaid, 0);
-t('A outstandingBill 0', r.outstandingBill, 0);
-t('A paidPercent 0', r.paidPercent, 0);
-t('A pesan budget', budgetMessage(100_000_000, r.committedCost), 'Kamu menghemat biaya sebesar Rp100.000.000.');
+function payment(overrides = {}) {
+  return {
+    id: "p1",
+    vendor_id: "v1",
+    amount: 1_000_000,
+    payment_kind: "dp",
+    ...overrides,
+  };
+}
 
-// B: vendor terpilih tanpa pembayaran
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'diskusi' }],
-  vendors: [{ id: 'v1', agreed_price: 30_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [], target: 100_000_000,
-});
-t('B committedCost', r.committedCost, 30_000_000);
-t('B committedPaid', r.committedPaid, 0);
-t('B outstandingBill', r.outstandingBill, 30_000_000);
-t('B paidPercent 0', r.paidPercent, 0);
-t('B pesan budget', budgetMessage(100_000_000, r.committedCost), 'Kamu menghemat biaya sebesar Rp70.000.000.');
+function calc(vendors, payments = [], targetBudget = 0) {
+  return calculateBudget({ vendors, payments, targetBudget });
+}
 
-// C: DP sebagian 5jt dari harga 30jt
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'dp' }],
-  vendors: [{ id: 'v1', agreed_price: 30_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [{ vendor_id: 'v1', amount: 5_000_000 }], target: 100_000_000,
-});
-t('C committedCost', r.committedCost, 30_000_000);
-t('C committedPaid', r.committedPaid, 5_000_000);
-t('C outstandingBill', r.outstandingBill, 25_000_000);
-t('C paidPercent 16.67', r.paidPercent, 16.67);
-t('C pesan budget', budgetMessage(100_000_000, r.committedCost), 'Kamu menghemat biaya sebesar Rp70.000.000.');
+// 1. Vendor with no payments still contributes its agreed price.
+let r = calc([vendor()]);
+t("no payment: vendorBudget", r.vendorBudget, 10_000_000);
+t("no payment: totalPaid", r.totalPaid, 0);
+t("no payment: remaining", r.remainingPayment, 10_000_000);
+t("no payment: status", r.statusByVendor.get("v1"), "diskusi");
+t("no payment: percentage", r.paymentPercentage, 0);
 
-// D: beberapa transaksi (DP + lanjutan + pelunasan)
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'v1', status: 'lunas' }],
-  vendors: [{ id: 'v1', agreed_price: 30_000_000, quoted_price: null, selection_status: 'terpilih' }],
-  payments: [
-    { vendor_id: 'v1', amount: 5_000_000 },
-    { vendor_id: 'v1', amount: 10_000_000 },
-    { vendor_id: 'v1', amount: 15_000_000 },
+// 2. Multiple payments sum exactly once.
+r = calc(
+  [vendor()],
+  [
+    payment({ id: "p1", amount: 2_000_000, payment_kind: "dp" }),
+    payment({ id: "p2", amount: 3_000_000, payment_kind: "lanjutan" }),
   ],
-  target: 100_000_000,
-});
-t('D committedCost', r.committedCost, 30_000_000);
-t('D committedPaid', r.committedPaid, 30_000_000);
-t('D outstandingBill', r.outstandingBill, 0);
-t('D paidPercent 100', r.paidPercent, 100);
+);
+t("multiple payments: totalPaid", r.totalPaid, 5_000_000);
+t("multiple payments: remaining", r.remainingPayment, 5_000_000);
+t("multiple payments: status", r.statusByVendor.get("v1"), "termin_lanjutan");
 
-// E: vendor alternatif (A dan C tidak dipilih)
-r = calculateBudget({
-  groups: [{ id: 'g1', selected_vendor_id: 'vB', status: 'dp' }],
-  vendors: [
-    { id: 'vA', agreed_price: 20_000_000, quoted_price: null, selection_status: 'alternatif' },
-    { id: 'vB', agreed_price: 30_000_000, quoted_price: null, selection_status: 'terpilih' },
-    { id: 'vC', agreed_price: 40_000_000, quoted_price: null, selection_status: 'alternatif' },
+// 3. Full payment -> Lunas.
+r = calc([vendor()], [payment({ amount: 10_000_000 })]);
+t("full payment: status", r.statusByVendor.get("v1"), "lunas");
+t("full payment: remaining", r.remainingPayment, 0);
+t("full payment: overpayment", r.overpayment, 0);
+
+// 4. Overpayment is separate and remaining never negative.
+r = calc([vendor()], [payment({ amount: 12_000_000 })]);
+t("overpayment: status", r.statusByVendor.get("v1"), "lunas");
+t("overpayment: remaining", r.remainingPayment, 0);
+t("overpayment: overpayment", r.overpayment, 2_000_000);
+
+// 5. Incomplete Pelunasan must not be Lunas.
+r = calc(
+  [vendor()],
+  [
+    payment({ id: "p1", amount: 2_000_000, payment_kind: "dp" }),
+    payment({ id: "p2", amount: 3_000_000, payment_kind: "pelunasan" }),
   ],
-  payments: [{ vendor_id: 'vB', amount: 10_000_000 }],
-  target: 100_000_000,
+);
+t("incomplete pelunasan: status", r.statusByVendor.get("v1"), "termin_lanjutan");
+t("incomplete pelunasan: remaining", r.remainingPayment, 5_000_000);
+
+// 6. DP only, not fully paid.
+r = calc([vendor()], [payment({ amount: 2_000_000, payment_kind: "dp" })]);
+t("dp only: status", r.statusByVendor.get("v1"), "dp");
+
+// 7. Zero-price vendor with no payment remains Diskusi.
+r = calc([vendor({ agreed_price: 0 })]);
+t("zero price no payment: status", r.statusByVendor.get("v1"), "diskusi");
+t("zero price no payment: vendorBudget", r.vendorBudget, 0);
+t("zero price no payment: percentage", r.paymentPercentage, 0);
+t("zero price no payment: not lunas", r.statusByVendor.get("v1") !== "lunas", true);
+
+// 8. Zero-price vendor with payment -> Lunas + overpayment.
+r = calc([vendor({ agreed_price: 0 })], [payment({ amount: 500_000 })]);
+t("zero price paid: status", r.statusByVendor.get("v1"), "lunas");
+t("zero price paid: overpayment", r.overpayment, 500_000);
+
+// 9. Missing agreed price -> incomplete, never Lunas, quoted is ignored.
+r = calc(
+  [vendor({ agreed_price: null, quoted_price: 99_000_000 })],
+  [payment({ amount: 5_000_000 })],
+  100_000_000,
+);
+t("missing price: status", r.statusByVendor.get("v1"), "incomplete");
+t("missing price: vendorBudget uses no quote", r.vendorBudget, 0);
+t("missing price: incomplete flag", r.vendorBudgetComplete, false);
+t("missing price: missing count", r.missingAgreedPriceCount, 1);
+t("missing price: target provisional", r.targetStatus, "provisional");
+t("missing price: status never lunas", r.statusByVendor.get("v1") !== "lunas", true);
+
+// 10. Archived vendors excluded from active totals, history retained.
+r = calc(
+  [vendor({ archived_at: "2026-01-01T00:00:00Z" })],
+  [payment({ amount: 4_000_000 })],
+);
+t("archived: vendorBudget", r.vendorBudget, 0);
+t("archived: totalPaid", r.totalPaid, 0);
+t("archived: archivedPaid", r.archivedPaid, 4_000_000);
+t("archived: active count", r.activeVendors.length, 0);
+t("archived: archived count", r.archivedVendors.length, 1);
+
+// 11. Legacy alternative without payments is hidden; with payments is active.
+r = calc([vendor({ selection_status: "alternatif" })]);
+t("legacy alternative no payment: hidden", r.activeVendors.length, 0);
+t("legacy alternative no payment: budget", r.vendorBudget, 0);
+
+r = calc(
+  [vendor({ selection_status: "alternatif" })],
+  [payment({ amount: 1_000_000 })],
+);
+t("legacy alternative with payment: active", r.activeVendors.length, 1);
+t("legacy alternative with payment: budget", r.vendorBudget, 10_000_000);
+
+// 12. Duplicate vendor row and duplicate payment id counted once.
+r = calc(
+  [vendor(), vendor()],
+  [payment({ id: "p1", amount: 2_000_000 }), payment({ id: "p1", amount: 2_000_000 })],
+);
+t("duplicate vendor: budget", r.vendorBudget, 10_000_000);
+t("duplicate payment: totalPaid", r.totalPaid, 2_000_000);
+
+// 13. Target statuses.
+r = calc([vendor()], [], 12_000_000);
+t("target under", r.targetStatus, "under");
+t("target under difference", r.targetDifference, 2_000_000);
+
+r = calc([vendor()], [], 10_000_000);
+t("target on", r.targetStatus, "on");
+t("target on difference", r.targetDifference, 0);
+
+r = calc([vendor()], [], 8_000_000);
+t("target over", r.targetStatus, "over");
+t("target over difference", r.targetDifference, 2_000_000);
+
+r = calc([vendor()], [], 0);
+t("target unset", r.targetStatus, "unset");
+t("target unset difference", r.targetDifference, null);
+
+// 14. Editing Target Budget must not change payment metrics.
+const baseVendors = [vendor()];
+const basePayments = [payment({ amount: 3_000_000 })];
+const a = calc(baseVendors, basePayments, 0);
+const b = calc(baseVendors, basePayments, 50_000_000);
+t("target independence: vendorBudget", b.vendorBudget, a.vendorBudget);
+t("target independence: totalPaid", b.totalPaid, a.totalPaid);
+t("target independence: remaining", b.remainingPayment, a.remainingPayment);
+t("target independence: overpayment", b.overpayment, a.overpayment);
+t("target independence: percentage", b.paymentPercentage, a.paymentPercentage);
+t("target independence: status changes", a.targetStatus !== b.targetStatus, true);
+
+// 15. Inspiration-like extra property must not affect the result.
+const withoutInspiration = calc(baseVendors, basePayments, 50_000_000);
+const withExtra = calculateBudget({
+  vendors: baseVendors,
+  payments: basePayments,
+  targetBudget: 50_000_000,
+  inspirationReferencePrice: 999_000_000,
 });
-t('E committedCost hanya B', r.committedCost, 30_000_000);
-t('E committedPaid', r.committedPaid, 10_000_000);
-t('E outstandingBill', r.outstandingBill, 20_000_000);
+t("inspiration ignored: vendorBudget", withExtra.vendorBudget, withoutInspiration.vendorBudget);
+t("inspiration ignored: totalPaid", withExtra.totalPaid, withoutInspiration.totalPaid);
+t("inspiration ignored: target", withExtra.targetStatus, withoutInspiration.targetStatus);
 
-// F: budget sesuai
-t('F pesan budget sesuai', budgetMessage(50_000_000, 50_000_000), 'Budget sesuai.');
-
-// G: melebihi budget
-t('G pesan melebihi', budgetMessage(100_000_000, 120_000_000), 'Budget melebihi anggaran sebesar Rp20.000.000.');
+// 16. Direct derived-status checks.
+t("derive no payments", derivePaymentStatus(10_000_000, []), "diskusi");
+t("derive zero no payments", derivePaymentStatus(0, []), "diskusi");
+t("derive missing price", derivePaymentStatus(null, [payment()]), "incomplete");
+t("derive partial dp", derivePaymentStatus(10_000_000, [payment({ amount: 1 })]), "dp");
+t("derive partial final", derivePaymentStatus(10_000_000, [
+  payment({ amount: 1, payment_kind: "pelunasan" }),
+]), "termin_lanjutan");
+t("derive fully paid", derivePaymentStatus(10_000_000, [
+  payment({ amount: 10_000_000 }),
+]), "lunas");
 
 console.log(`\nTOTAL: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -26,8 +26,15 @@ export default async function InspirationPage() {
     .select("id, item_id, path")
     .order("sort_order", { ascending: true });
 
+  const { data: optionRows, error: optionError } = await supabase
+    .from("inspiration_vendor_options")
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
   const items = data ?? [];
   const photos = photoRows ?? [];
+  const options = optionError ? [] : (optionRows ?? []);
   const categoriesUsed = new Set(items.map((item) => item.category)).size;
 
   const photosByItem: Record<string, { id: string; path: string }[]> = {};
@@ -36,6 +43,11 @@ export default async function InspirationPage() {
       id: photo.id,
       path: photo.path,
     });
+  }
+
+  const optionsByItem: Record<string, typeof options> = {};
+  for (const option of options) {
+    (optionsByItem[option.item_id] ??= []).push(option);
   }
 
   const imagePaths = Array.from(
@@ -82,6 +94,7 @@ export default async function InspirationPage() {
         <InspirationManager
           items={items}
           photosByItem={photosByItem}
+          optionsByItem={optionsByItem}
           imageUrls={imageUrls}
           copy={copy}
         />

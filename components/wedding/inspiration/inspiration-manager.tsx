@@ -8,13 +8,15 @@ import { DeleteForm } from "@/components/wedding/delete-form";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { InspirationFormModal } from "@/components/wedding/inspiration/inspiration-form-modal";
 import { InspirationLightbox } from "@/components/wedding/inspiration/inspiration-lightbox";
-import type { InspirationItem } from "@/lib/wedding/db-types";
+import { InspirationVendorOptions } from "@/components/wedding/inspiration/inspiration-vendor-options";
+import type { InspirationItem, InspirationVendorOption } from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 function InspirationCard({
   item,
   photos,
+  options,
   imageUrls,
   copy,
   onEdit,
@@ -22,6 +24,7 @@ function InspirationCard({
 }: {
   item: InspirationItem;
   photos: { id: string; path: string }[];
+  options: InspirationVendorOption[];
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
   onEdit: (item: InspirationItem) => void;
@@ -81,9 +84,9 @@ function InspirationCard({
 
       <div className="flex flex-1 flex-col gap-2 p-3">
         <p className="text-sm font-medium text-ink">{item.title}</p>
-        {item.description ? (
+        {item.notes ?? item.description ? (
           <p className="line-clamp-2 text-xs leading-relaxed text-ink-soft">
-            {item.description}
+            {item.notes ?? item.description}
           </p>
         ) : null}
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
@@ -118,6 +121,11 @@ function InspirationCard({
           </button>
           <DeleteForm action={deleteInspirationAction} id={item.id} copy={copy} />
         </div>
+        <InspirationVendorOptions
+          itemId={item.id}
+          options={options}
+          copy={copy}
+        />
       </div>
     </div>
   );
@@ -126,11 +134,13 @@ function InspirationCard({
 export function InspirationManager({
   items,
   photosByItem,
+  optionsByItem,
   imageUrls,
   copy,
 }: {
   items: InspirationItem[];
   photosByItem: Record<string, { id: string; path: string }[]>;
+  optionsByItem: Record<string, InspirationVendorOption[]>;
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
 }) {
@@ -231,6 +241,7 @@ export function InspirationManager({
                     key={item.id}
                     item={item}
                     photos={photosByItem[item.id] ?? []}
+                    options={optionsByItem[item.id] ?? []}
                     imageUrls={imageUrls}
                     copy={copy}
                     onEdit={openEdit}

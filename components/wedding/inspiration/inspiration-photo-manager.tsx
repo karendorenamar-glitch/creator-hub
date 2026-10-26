@@ -41,7 +41,7 @@ function PhotoRow({
             <input
               type="file"
               name="image"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png"
               className="hidden"
               onChange={(event) => {
                 if (event.currentTarget.files?.length) {

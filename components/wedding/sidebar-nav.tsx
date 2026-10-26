@@ -12,6 +12,7 @@ import {
   Mail,
   ShieldCheck,
   Settings,
+  Store,
   Users,
   Wallet,
 } from "lucide-react";
@@ -28,6 +29,7 @@ type NavKey = keyof WeddingCopy["nav"];
 const NAV: { key: NavKey; href: string; Icon: typeof LayoutDashboard }[] = [
   { key: "dashboard", href: "/wedding/dashboard", Icon: LayoutDashboard },
   { key: "budget", href: "/wedding/budget", Icon: Wallet },
+  { key: "vendors", href: "/wedding/vendors", Icon: Store },
   { key: "guests", href: "/wedding/guests", Icon: Users },
   { key: "checklist", href: "/wedding/checklist", Icon: ListOrdered },
   { key: "inspiration", href: "/wedding/inspiration", Icon: Images },
