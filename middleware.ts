@@ -35,17 +35,26 @@ async function updateSession(request: NextRequest) {
 
 
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request);
   const { pathname } = request.nextUrl;
+  const isPublicWeddingPath =
+    pathname === "/wedding/login" ||
+    pathname === "/wedding/signup" ||
+    pathname === "/wedding/forgot-password" ||
+    pathname === "/wedding/reset-password";
+  const hasAuthCookie = request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.includes("-auth-token"));
+
+  // Public auth screens do not need a remote Supabase round trip unless a
+  // session cookie exists and needs refreshing.
+  if (isPublicWeddingPath && !hasAuthCookie) {
+    return NextResponse.next({ request });
+  }
+
+  const { response, user } = await updateSession(request);
 
   // Wedding planner has its own sign-in screen and its own route tree.
   if (pathname === "/wedding" || pathname.startsWith("/wedding/")) {
-    const isPublicWeddingPath =
-      pathname === "/wedding/login" ||
-      pathname === "/wedding/signup" ||
-      pathname === "/wedding/forgot-password" ||
-      pathname === "/wedding/reset-password";
-
     if (!user && !isPublicWeddingPath) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/wedding/login";

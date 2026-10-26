@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 import type {
   Subscription,
@@ -30,8 +31,8 @@ export function isSubscriptionActive(
   return new Date(subscription.current_period_end).getTime() > Date.now();
 }
 
-/** Signed-in user, or null. Never throws for a missing session. */
-export async function getCurrentUser() {
+/** Signed-in user, or null. Cached per server request. */
+export const getCurrentUser = cache(async () => {
   try {
     const supabase = await createWeddingClient();
     const {
@@ -42,13 +43,14 @@ export async function getCurrentUser() {
   } catch {
     return null;
   }
-}
+});
 
 /**
- * The signed-in user's wedding, loaded through RLS with the anon key.
+ * The signed-in user's wedding, loaded through RLS with the anon key. Cached
+ * per server request so the app layout and page do not repeat the same queries.
  * Returns null when the user has no membership yet (needs onboarding).
  */
-export async function loadWeddingSession(): Promise<WeddingSession | null> {
+export const loadWeddingSession = cache(async (): Promise<WeddingSession | null> => {
   const user = await getCurrentUser();
   if (!user) return null;
 
@@ -63,41 +65,41 @@ export async function loadWeddingSession(): Promise<WeddingSession | null> {
 
     if (!membership) return null;
 
-    const { data: wedding } = await supabase
-      .from("weddings")
-      .select("*")
-      .eq("id", membership.wedding_id)
-      .maybeSingle();
-
-    if (!wedding) return null;
-
     const [
+      { data: wedding },
       { data: subscription },
       { data: members },
       { data: settings },
       { data: entitlement },
     ] = await Promise.all([
-        supabase
-          .from("subscriptions")
-          .select("*")
-          .eq("wedding_id", wedding.id)
-          .maybeSingle(),
-        supabase
-          .from("wedding_members")
-          .select("*")
-          .eq("wedding_id", wedding.id)
-          .order("created_at", { ascending: true }),
-        supabase
-          .from("app_settings")
-          .select("require_subscription")
-          .eq("id", true)
-          .maybeSingle(),
-        supabase
-          .from("user_entitlements")
-          .select("user_id, lifetime_access_granted_at")
-          .eq("user_id", user.id)
-          .maybeSingle(),
-      ]);
+      supabase
+        .from("weddings")
+        .select("*")
+        .eq("id", membership.wedding_id)
+        .maybeSingle(),
+      supabase
+        .from("subscriptions")
+        .select("*")
+        .eq("wedding_id", membership.wedding_id)
+        .maybeSingle(),
+      supabase
+        .from("wedding_members")
+        .select("*")
+        .eq("wedding_id", membership.wedding_id)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("app_settings")
+        .select("require_subscription")
+        .eq("id", true)
+        .maybeSingle(),
+      supabase
+        .from("user_entitlements")
+        .select("user_id, lifetime_access_granted_at")
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+
+    if (!wedding) return null;
 
     // Safe default: if the settings row is missing (migration 004 not run yet),
     // behave as before and require an active subscription.
@@ -121,7 +123,7 @@ export async function loadWeddingSession(): Promise<WeddingSession | null> {
   } catch {
     return null;
   }
-}
+});
 
 export function coupleNames(wedding: Wedding): string {
   const second = wedding.partner_two_name?.trim();
