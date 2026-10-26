@@ -142,6 +142,120 @@ function InspirationCard({
   );
 }
 
+type GalleryPhoto = {
+  key: string;
+  url: string;
+  item: InspirationItem;
+};
+
+function galleryPhotosForItem(
+  item: InspirationItem,
+  photos: { id: string; path: string }[],
+  imageUrls: Record<string, string>,
+): GalleryPhoto[] {
+  const photoUrls = photos
+    .map((photo) => imageUrls[photo.path])
+    .filter((url): url is string => Boolean(url));
+  const coverUrl = item.image_path ? imageUrls[item.image_path] : undefined;
+  const urls = coverUrl
+    ? [coverUrl, ...photoUrls.filter((url) => url !== coverUrl)]
+    : photoUrls.length > 0
+      ? photoUrls
+      : item.image_url && isHttpUrl(item.image_url)
+        ? [item.image_url]
+        : [];
+
+  return urls.map((url, index) => ({
+    key: `${item.id}-${index}-${url}`,
+    url,
+    item,
+  }));
+}
+
+function CategoryPhotoTile({
+  photo,
+  copy,
+  onOpen,
+}: {
+  photo: GalleryPhoto;
+  copy: ModuleCopy;
+  onOpen: (item: InspirationItem) => void;
+}) {
+  const [broken, setBroken] = useState(false);
+  const category = photo.item.category?.trim() || copy.form.none;
+
+  return (
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(photo.item)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(photo.item);
+        }
+      }}
+      aria-label={`${copy.inspiration.viewDetail}: ${photo.item.title}`}
+      className="group mb-4 break-inside-avoid cursor-pointer rounded-[1.5rem] border border-petal-100/70 bg-white p-1.5 shadow-[0_20px_50px_-45px_rgba(87,66,63,0.55)] transition duration-300 hover:-translate-y-0.5 hover:border-petal-200 hover:shadow-[0_28px_60px_-42px_rgba(87,66,63,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive-400 focus-visible:ring-offset-2"
+    >
+      <div className="overflow-hidden rounded-[1.15rem] bg-gradient-to-br from-petal-50 via-cream to-olive-50">
+        {broken ? (
+          <div className="flex min-h-48 flex-col items-center justify-center gap-2 px-4 text-center text-ink-soft">
+            <ImageOff className="size-5 text-petal-300" aria-hidden />
+            <span className="text-[11px]">{copy.inspiration.uploadLabel}</span>
+          </div>
+        ) : (
+          <img
+            src={photo.url}
+            alt={photo.item.title}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setBroken(true)}
+            className="h-auto w-full object-contain transition duration-500 group-hover:scale-[1.01]"
+          />
+        )}
+      </div>
+      <div className="flex items-start justify-between gap-2 px-2 pb-1 pt-2.5">
+        <div className="min-w-0">
+          <p className="line-clamp-1 text-xs font-medium text-ink">
+            {photo.item.title}
+          </p>
+          <p className="mt-0.5 line-clamp-1 text-[10px] uppercase tracking-[0.12em] text-ink-soft">
+            {category}
+          </p>
+        </div>
+        <ArrowUpRight
+          className="mt-0.5 size-3.5 shrink-0 text-olive-600"
+          aria-hidden
+        />
+      </div>
+    </article>
+  );
+}
+
+function CategoryPhotoGallery({
+  photos,
+  copy,
+  onOpen,
+}: {
+  photos: GalleryPhoto[];
+  copy: ModuleCopy;
+  onOpen: (item: InspirationItem) => void;
+}) {
+  return (
+    <div className="columns-1 gap-4 sm:columns-2 xl:columns-3 2xl:columns-4">
+      {photos.map((photo) => (
+        <CategoryPhotoTile
+          key={photo.key}
+          photo={photo}
+          copy={copy}
+          onOpen={onOpen}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function InspirationManager({
   items,
   photosByItem,
@@ -201,6 +315,13 @@ export function InspirationManager({
         .includes(normalizedSearch);
     });
   }, [items, categoryFilter, normalizedSearch, optionsByItem]);
+
+  const categoryPhotos = useMemo(() => {
+    if (categoryFilter === "all") return [];
+    return filtered.flatMap((item) =>
+      galleryPhotosForItem(item, photosByItem[item.id] ?? [], imageUrls),
+    );
+  }, [categoryFilter, filtered, imageUrls, photosByItem]);
 
   function openCreate() {
     setEditing(null);
@@ -273,7 +394,9 @@ export function InspirationManager({
             ) : null}
           </div>
           <p className="shrink-0 text-xs text-ink-soft">
-            {filtered.length} / {items.length}
+            {categoryFilter === "all"
+              ? `${filtered.length} / ${items.length}`
+              : `${categoryPhotos.length} ${copy.inspiration.photosCount}`}
           </p>
         </div>
 
@@ -343,6 +466,26 @@ export function InspirationManager({
             {copy.inspiration.clearFilters}
           </button>
         </div>
+      ) : categoryFilter !== "all" ? (
+        categoryPhotos.length === 0 ? (
+          <div className="rounded-[2rem] border border-dashed border-petal-200 bg-white/60 px-6 py-12 text-center">
+            <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-petal-50 text-petal-400">
+              <Images className="size-5" aria-hidden />
+            </span>
+            <h2 className="mt-3 font-heading text-xl text-cocoa">
+              {copy.inspiration.noPhotosInCategory}
+            </h2>
+            <p className="mt-2 text-sm text-ink-soft">
+              {copy.inspiration.noPhotosHint}
+            </p>
+          </div>
+        ) : (
+          <CategoryPhotoGallery
+            photos={categoryPhotos}
+            copy={copy}
+            onOpen={setDetail}
+          />
+        )
       ) : (
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {filtered.map((item) => (
