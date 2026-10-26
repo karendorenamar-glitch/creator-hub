@@ -77,6 +77,11 @@ export function VendorFormModal({
   const [completed, setCompleted] = useState(
     Boolean(vendor?.collaboration_completed_at),
   );
+  const [showPaymentForm, setShowPaymentForm] = useState(
+    summary?.paymentStatus === "dp" ||
+      summary?.paymentStatus === "termin_lanjutan" ||
+      summary?.paymentStatus === "lunas",
+  );
   const [initialKind, setInitialKind] = useState<
     "dp" | "lanjutan" | "pelunasan"
   >("dp");
@@ -159,6 +164,20 @@ export function VendorFormModal({
               className={inputClass}
             />
           </Field>
+
+          {vendor && summary ? (
+            <Field
+              label={copy.vendors.paymentStatus}
+              htmlFor="vendor-payment-status"
+            >
+              <div id="vendor-payment-status" className="pt-1">
+                <PaymentStatusBadge
+                  status={summary.paymentStatus}
+                  copy={copy}
+                />
+              </div>
+            </Field>
+          ) : null}
 
           <Field
             label={`${copy.vendors.agreedPrice} (IDR)`}
@@ -325,10 +344,6 @@ export function VendorFormModal({
               <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
                 {copy.vendors.currentPaymentSummary}
               </p>
-              <PaymentStatusBadge
-                status={summary.paymentStatus}
-                copy={copy}
-              />
             </div>
             <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
               <p className="flex justify-between gap-2">
@@ -376,6 +391,8 @@ export function VendorFormModal({
             copy={copy}
             locale={locale}
             idempotencyKey={idempotencyKey}
+            showForm={showPaymentForm}
+            onRequestPayment={() => setShowPaymentForm(true)}
             onOpenHistory={onOpenHistory}
             onSaved={onPaymentSaved}
           />

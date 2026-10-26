@@ -236,6 +236,8 @@ const en = {
     addPayment: "Add payment",
     addPaymentHint:
       "This records a new transaction. Save vendor detail changes separately above.",
+    paymentHistoryHint:
+      "Payment transactions for this vendor stay visible here.",
     savePayment: "Save payment",
     viewPaymentHistory: "View payment history",
     recentPayments: "Recent transactions",
@@ -619,6 +621,8 @@ const id: ModuleCopy = {
     addPayment: "Tambah pembayaran",
     addPaymentHint:
       "Ini membuat transaksi baru. Simpan perubahan detail vendor secara terpisah di atas.",
+    paymentHistoryHint:
+      "Transaksi pembayaran vendor ini tetap terlihat di sini.",
     savePayment: "Simpan pembayaran",
     viewPaymentHistory: "Lihat riwayat pembayaran",
     recentPayments: "Transaksi terbaru",

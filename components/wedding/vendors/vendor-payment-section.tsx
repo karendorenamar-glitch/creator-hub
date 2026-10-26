@@ -22,6 +22,8 @@ export function VendorPaymentSection({
   copy,
   locale,
   idempotencyKey,
+  showForm,
+  onRequestPayment,
   onOpenHistory,
   onSaved,
 }: {
@@ -32,6 +34,8 @@ export function VendorPaymentSection({
   copy: ModuleCopy;
   locale: "en" | "id";
   idempotencyKey: string;
+  showForm: boolean;
+  onRequestPayment: () => void;
   onOpenHistory: () => void;
   onSaved: () => void;
 }) {
@@ -53,110 +57,125 @@ export function VendorPaymentSection({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
-            {copy.vendors.addPayment}
+            {showForm ? copy.vendors.addPayment : copy.vendors.paymentHistory}
           </p>
           <p className="mt-1 text-xs text-ink-soft">
-            {copy.vendors.addPaymentHint}
+            {showForm
+              ? copy.vendors.addPaymentHint
+              : copy.vendors.paymentHistoryHint}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={onOpenHistory}
-          className="rounded-lg border border-olive-200 bg-white px-3 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-50"
-        >
-          {copy.vendors.viewPaymentHistory}
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {!showForm ? (
+            <button
+              type="button"
+              onClick={onRequestPayment}
+              className="rounded-lg bg-olive-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-olive-700"
+            >
+              {copy.vendors.recordPayment}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={onOpenHistory}
+            className="rounded-lg border border-olive-200 bg-white px-3 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-50"
+          >
+            {copy.vendors.viewPaymentHistory}
+          </button>
+        </div>
       </div>
 
-      <form action={formAction} className="space-y-3">
-        <input type="hidden" name="vendorId" value={vendor.id} />
-        <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-        <FormAlert error={state?.error} />
+      {showForm ? (
+        <form action={formAction} className="space-y-3">
+          <input type="hidden" name="vendorId" value={vendor.id} />
+          <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+          <FormAlert error={state?.error} />
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Field label={copy.vendors.paymentKind} htmlFor="vendor-payment-kind">
-            <select
-              id="vendor-payment-kind"
-              name="paymentKind"
-              value={kind}
-              onChange={(event) =>
-                setKind(event.target.value as typeof kind)
-              }
-              className={inputClass}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label={copy.vendors.paymentKind} htmlFor="vendor-payment-kind">
+              <select
+                id="vendor-payment-kind"
+                name="paymentKind"
+                value={kind}
+                onChange={(event) =>
+                  setKind(event.target.value as typeof kind)
+                }
+                className={inputClass}
+              >
+                {Object.keys(labelGroups.paymentKind).map((value) => (
+                  <option key={value} value={value}>
+                    {label("paymentKind", value, locale)}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field
+              label={copy.vendors.paymentAmount}
+              htmlFor="vendor-payment-amount"
             >
-              {Object.keys(labelGroups.paymentKind).map((value) => (
-                <option key={value} value={value}>
-                  {label("paymentKind", value, locale)}
-                </option>
-              ))}
-            </select>
-          </Field>
+              <input
+                id="vendor-payment-amount"
+                name="paymentAmount"
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                required
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label={copy.vendors.paymentDate} htmlFor="vendor-payment-date">
+              <input
+                id="vendor-payment-date"
+                name="paidOn"
+                type="date"
+                required
+                defaultValue={new Date().toISOString().slice(0, 10)}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field
+              label={`${copy.vendors.paymentNotes} (${copy.form.optional})`}
+              htmlFor="vendor-payment-notes"
+            >
+              <input
+                id="vendor-payment-notes"
+                name="paymentNotes"
+                maxLength={1000}
+                className={inputClass}
+              />
+            </Field>
+          </div>
 
           <Field
-            label={copy.vendors.paymentAmount}
-            htmlFor="vendor-payment-amount"
+            label={`${copy.vendors.proofLabel} (${copy.form.optional})`}
+            htmlFor="vendor-payment-proof"
+            hint={copy.vendors.proofHint}
           >
             <input
-              id="vendor-payment-amount"
-              name="paymentAmount"
-              type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
-              required
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
-              className={inputClass}
+              id="vendor-payment-proof"
+              name="proof"
+              type="file"
+              multiple
+              accept={PAYMENT_PROOF_TYPES.join(",")}
+              className="w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:text-olive-700"
             />
           </Field>
 
-          <Field label={copy.vendors.paymentDate} htmlFor="vendor-payment-date">
-            <input
-              id="vendor-payment-date"
-              name="paidOn"
-              type="date"
-              required
-              defaultValue={new Date().toISOString().slice(0, 10)}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field
-            label={`${copy.vendors.paymentNotes} (${copy.form.optional})`}
-            htmlFor="vendor-payment-notes"
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
           >
-            <input
-              id="vendor-payment-notes"
-              name="paymentNotes"
-              maxLength={1000}
-              className={inputClass}
-            />
-          </Field>
-        </div>
-
-        <Field
-          label={`${copy.vendors.proofLabel} (${copy.form.optional})`}
-          htmlFor="vendor-payment-proof"
-          hint={copy.vendors.proofHint}
-        >
-          <input
-            id="vendor-payment-proof"
-            name="proof"
-            type="file"
-            multiple
-            accept={PAYMENT_PROOF_TYPES.join(",")}
-            className="w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:text-olive-700"
-          />
-        </Field>
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
-        >
-          {pending ? copy.form.saving : copy.vendors.savePayment}
-        </button>
-      </form>
+            {pending ? copy.form.saving : copy.vendors.savePayment}
+          </button>
+        </form>
+      ) : null}
 
       <div className="space-y-2 border-t border-olive-100 pt-3">
         <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
