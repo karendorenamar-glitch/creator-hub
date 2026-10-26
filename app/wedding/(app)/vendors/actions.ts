@@ -22,6 +22,7 @@ import {
 } from "@/lib/wedding/validation";
 
 const PAYMENT_KINDS = ["dp", "lanjutan", "pelunasan"] as const;
+const VENDOR_STATUS_INTENTS = ["diskusi", "dp", "termin_lanjutan", "lunas"] as const;
 
 async function context() {
   const ctx = await getActionContext();
@@ -84,9 +85,30 @@ export async function createVendorAction(
   const parsed = readVendor(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  // The status selected in the add form is only a UI intent; it is never
+  // stored. It controls whether an initial payment is required, while the
+  // actual status is always derived from transactions after save.
+  const statusIntent = enumValue(
+    formData,
+    "paymentStatusIntent",
+    VENDOR_STATUS_INTENTS,
+    "diskusi",
+  );
+
   // Optional initial payment in the same form. Validate before creating the
   // vendor so an invalid amount/date cannot leave a half-created vendor.
   const hasInitialPayment = text(formData, "paymentAmount") !== "";
+  if (
+    statusIntent !== "diskusi" &&
+    !hasInitialPayment &&
+    !(
+      parsed.values.agreed_price === 0 &&
+      parsed.values.collaboration_completed &&
+      statusIntent === "lunas"
+    )
+  ) {
+    return { error: ctx.copy.vendors.paymentRequiredForStatus };
+  }
   if (hasInitialPayment) {
     const payment = readPayment(formData, ctx.copy);
     if (!payment.ok) return { error: payment.error };

@@ -218,6 +218,10 @@ const en = {
       "Adding a vendor here means you have confirmed this vendor. Its agreed price is included in your Vendor Budget.",
     agreedPrice: "Agreed price",
     agreedPriceHint: "Leave blank if the price is not agreed yet.",
+    statusIntentHint:
+      "Choose a status to open the payment form. The saved status still follows the actual transactions.",
+    paymentRequiredForStatus:
+      "Enter the initial payment amount for DP, Termin Lanjutan, or Lunas.",
     vendorBudget: "Vendor Budget",
     remainingPayment: "Remaining Payment",
     overpayment: "Overpayment",
@@ -603,6 +607,10 @@ const id: ModuleCopy = {
       "Menambahkan vendor di sini berarti vendor sudah dikonfirmasi. Harga kesepakatannya masuk ke Budget Vendor.",
     agreedPrice: "Harga kesepakatan",
     agreedPriceHint: "Kosongkan jika harga belum disepakati.",
+    statusIntentHint:
+      "Pilih status untuk membuka form pembayaran. Status tersimpan tetap mengikuti transaksi aktual.",
+    paymentRequiredForStatus:
+      "Isi nominal pembayaran awal untuk DP, Termin Lanjutan, atau Lunas.",
     vendorBudget: "Budget Vendor",
     remainingPayment: "Sisa Pembayaran",
     overpayment: "Kelebihan Bayar",

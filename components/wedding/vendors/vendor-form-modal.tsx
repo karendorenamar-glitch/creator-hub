@@ -86,6 +86,9 @@ export function VendorFormModal({
     "dp" | "lanjutan" | "pelunasan"
   >("dp");
   const [initialAmount, setInitialAmount] = useState("");
+  const [statusIntent, setStatusIntent] = useState<
+    "diskusi" | "dp" | "termin_lanjutan" | "lunas"
+  >("diskusi");
 
   useEffect(() => {
     // Keep an existing vendor editor open after saving details so the payment
@@ -165,7 +168,38 @@ export function VendorFormModal({
             />
           </Field>
 
-          {vendor && summary ? (
+          {!vendor ? (
+            <Field
+              label={copy.vendors.paymentStatus}
+              htmlFor="vendor-payment-status-intent"
+              hint={copy.vendors.statusIntentHint}
+            >
+              <select
+                id="vendor-payment-status-intent"
+                name="paymentStatusIntent"
+                value={statusIntent}
+                onChange={(event) => {
+                  const next = event.target.value as typeof statusIntent;
+                  setStatusIntent(next);
+                  setInitialKind(
+                    next === "termin_lanjutan"
+                      ? "lanjutan"
+                      : next === "lunas"
+                        ? "pelunasan"
+                        : "dp",
+                  );
+                }}
+                className={inputClass}
+              >
+                <option value="diskusi">{copy.vendors.statusDiskusi}</option>
+                <option value="dp">{copy.vendors.statusDp}</option>
+                <option value="termin_lanjutan">
+                  {copy.vendors.statusTerminLanjutan}
+                </option>
+                <option value="lunas">{copy.vendors.statusLunas}</option>
+              </select>
+            </Field>
+          ) : vendor && summary ? (
             <Field
               label={copy.vendors.paymentStatus}
               htmlFor="vendor-payment-status"
@@ -229,7 +263,7 @@ export function VendorFormModal({
           />
         </Field>
 
-        {!vendor ? (
+        {!vendor && statusIntent !== "diskusi" ? (
           <div className="space-y-3 rounded-2xl border border-olive-100 bg-olive-50/40 p-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
@@ -279,6 +313,7 @@ export function VendorFormModal({
                   min={1}
                   step={1}
                   inputMode="numeric"
+                  required={!(price === "0" && completed && statusIntent === "lunas")}
                   value={initialAmount}
                   onChange={(event) => setInitialAmount(event.target.value)}
                   className={inputClass}
