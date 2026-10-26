@@ -27,10 +27,11 @@ import { createWeddingClient } from "@/lib/wedding/supabase";
 export const metadata = { title: "Dashboard" };
 
 export default async function DashboardPage() {
-  const session = await loadWeddingSession();
+  const [session, locale] = await Promise.all([
+    loadWeddingSession(),
+    getLocale(),
+  ]);
   if (!session) redirect("/wedding/onboarding");
-
-  const locale = await getLocale();
   const copy = weddingCopy[locale];
   const moduleText = moduleCopy[locale];
   const supabase = await createWeddingClient();

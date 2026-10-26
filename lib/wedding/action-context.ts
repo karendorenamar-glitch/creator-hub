@@ -17,10 +17,11 @@ export type ActionContext = {
 
 /** Session + localized copy + RLS-scoped client, or null when signed out. */
 export async function getActionContext(): Promise<ActionContext | null> {
-  const session = await loadWeddingSession();
+  const [session, locale] = await Promise.all([
+    loadWeddingSession(),
+    getLocale(),
+  ]);
   if (!session) return null;
-
-  const locale = await getLocale();
 
   return {
     session,
@@ -70,6 +71,7 @@ export function revalidateWedding(...paths: string[]) {
   for (const path of paths) {
     revalidatePath(path);
   }
-  // Dashboard totals and the sidebar summary depend on the same rows.
+  // Dashboard totals and the sidebar summary depend on the same rows. Keep
+  // this invalidation; the page/query parallelism above is the real latency win.
   revalidatePath("/wedding/dashboard");
 }

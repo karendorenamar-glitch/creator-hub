@@ -179,7 +179,7 @@ export function WeddingLanding() {
                       <div className="mt-3 grid grid-cols-3 gap-2">
                         {[
                           ["Total biaya", "Rp 150 jt"],
-                          ["Terpakai", "Rp 45 jt"],
+                          ["Terbayar", "Rp 45 jt"],
                           ["Sisa", "Rp 105 jt"],
                         ].map(([label, value]) => (
                           <div key={label} className="rounded-xl border border-blush/70 bg-white/80 px-2 py-2">
@@ -191,7 +191,7 @@ export function WeddingLanding() {
 
                       <div className="mt-3">
                         <div className="flex justify-between text-[9px] text-cocoa/50">
-                          <span>Anggaran terpakai</span>
+                          <span>Biaya terbayar</span>
                           <span>30%</span>
                         </div>
                         <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-blush/60">

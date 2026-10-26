@@ -10,12 +10,14 @@ export function FormModal({
   title,
   children,
   wide = false,
+  extraWide = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   wide?: boolean;
+  extraWide?: boolean;
 }) {
   useEffect(() => {
     if (!open) return;
@@ -51,7 +53,7 @@ export function FormModal({
         aria-modal="true"
         aria-label={title}
         className={`relative flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-3xl border border-olive-100 bg-cream shadow-2xl sm:rounded-3xl ${
-          wide ? "sm:max-w-2xl" : "sm:max-w-lg"
+          extraWide ? "sm:max-w-4xl" : wide ? "sm:max-w-2xl" : "sm:max-w-lg"
         }`}
       >
         <div className="flex items-center justify-between border-b border-olive-100 px-5 py-4">

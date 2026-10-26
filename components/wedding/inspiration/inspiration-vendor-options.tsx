@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { ExternalLink, Pencil } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Sparkles } from "lucide-react";
 import {
   createInspirationVendorOptionAction,
   deleteInspirationVendorOptionAction,
@@ -10,16 +10,15 @@ import {
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { FormModal } from "@/components/wedding/form-modal";
 import {
-  AddButton,
   Field,
   FormAlert,
   ModalFooter,
   inputClass,
 } from "@/components/wedding/form-kit";
-import { Badge } from "@/components/wedding/ui";
 import type { InspirationVendorOption } from "@/lib/wedding/db-types";
 import { formatIDR } from "@/lib/wedding/format";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { isHttpUrl } from "@/lib/wedding/validation";
 
 function OptionFormModal({
   open,
@@ -131,80 +130,105 @@ export function InspirationVendorOptions({
   }>({ open: false, editing: null });
 
   return (
-    <div className="space-y-2 border-t border-olive-100 pt-2">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
-          {copy.inspiration.vendorOptions}
-        </p>
-        <AddButton
-          label={copy.inspiration.addVendorOption}
+    <div className="space-y-3 border-t border-petal-100/80 pt-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="flex items-center gap-2 font-heading text-base text-ink">
+            <Sparkles className="size-4 text-champagne" aria-hidden />
+            {copy.inspiration.vendorOptions}
+          </h3>
+          {options.length > 0 ? (
+            <p className="mt-1 text-xs text-ink-soft">
+              {options.length} {copy.inspiration.vendorOptions.toLowerCase()}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
           onClick={() => setModal({ open: true, editing: null })}
-        />
+          className="inline-flex items-center gap-1.5 rounded-xl border border-olive-200 bg-white px-3 py-2 text-xs font-medium text-olive-700 transition-colors hover:bg-olive-50"
+        >
+          <Plus className="size-3.5" aria-hidden />
+          {copy.inspiration.addVendorOption}
+        </button>
       </div>
 
       {options.length === 0 ? (
-        <p className="text-xs text-ink-soft">
-          {copy.inspiration.noVendorOptions}
-        </p>
+        <div className="rounded-2xl border border-dashed border-petal-200 bg-petal-50/35 px-4 py-5 text-center">
+          <p className="text-sm text-ink-soft">{copy.inspiration.noVendorOptions}</p>
+        </div>
       ) : (
-        <ul className="space-y-1.5">
+        <div className="grid gap-2 sm:grid-cols-2">
           {options.map((option, optionIndex) => {
             const displayName = option.vendor_name.trim();
             const unnamed =
               !displayName ||
               displayName === copy.inspiration.untitledVendorOption;
+            const instagram = option.instagram_url && isHttpUrl(option.instagram_url)
+              ? option.instagram_url
+              : null;
+
             return (
-            <li
-              key={option.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-olive-50/50 px-2.5 py-1.5"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-xs font-medium text-ink">
-                  <span className="mr-1 text-ink-soft">
-                    {copy.inspiration.untitledVendorOption} {optionIndex + 1}:
-                  </span>
-                  {unnamed ? copy.inspiration.noReferencePrice : displayName}
-                </p>
-                <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-ink-soft">
-                  <Badge tone="muted">
+              <article
+                key={option.id}
+                className="rounded-2xl border border-petal-100/80 bg-cream/60 p-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-[9px] font-medium uppercase tracking-[0.16em] text-ink-soft">
+                      {copy.inspiration.untitledVendorOption} {optionIndex + 1}
+                    </p>
+                    <p className="mt-1 truncate text-sm font-medium text-ink">
+                      {unnamed ? copy.inspiration.noReferencePrice : displayName}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setModal({ open: true, editing: option })}
+                      aria-label={copy.form.edit}
+                      className="rounded-lg p-1.5 text-ink-soft transition-colors hover:bg-olive-50 hover:text-ink"
+                    >
+                      <Pencil className="size-3.5" aria-hidden />
+                    </button>
+                    <DeleteForm
+                      action={deleteInspirationVendorOptionAction}
+                      id={option.id}
+                      copy={copy}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-ink-soft">
+                  <span className="rounded-full border border-petal-100 bg-white/70 px-2 py-1">
                     {copy.inspiration.referencePrice}:{" "}
-                    {option.reference_price !== null
-                      ? formatIDR(option.reference_price)
-                      : copy.inspiration.noReferencePrice}
-                  </Badge>
-                  {option.instagram_url ? (
+                    <span className="font-medium text-ink">
+                      {option.reference_price !== null
+                        ? formatIDR(option.reference_price)
+                        : copy.inspiration.noReferencePrice}
+                    </span>
+                  </span>
+                  {instagram ? (
                     <a
-                      href={option.instagram_url}
+                      href={instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-olive-700 hover:underline"
+                      className="inline-flex items-center gap-1 rounded-full border border-olive-100 bg-white/70 px-2 py-1 text-olive-700 hover:border-olive-200 hover:underline"
                     >
                       <ExternalLink className="size-3" aria-hidden />
                       Instagram
                     </a>
                   ) : null}
                 </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setModal({ open: true, editing: option })}
-                  className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-ink-soft hover:bg-olive-50"
-                >
-                  <Pencil className="size-3" aria-hidden />
-                  {copy.form.edit}
-                </button>
-                <DeleteForm
-                  action={deleteInspirationVendorOptionAction}
-                  id={option.id}
-                  copy={copy}
-                />
-              </div>
-            </li>
+              </article>
             );
           })}
-        </ul>
+        </div>
       )}
+
+      <p className="text-[11px] leading-relaxed text-ink-soft">
+        {copy.inspiration.referenceOnly}
+      </p>
 
       <OptionFormModal
         key={modal.editing?.id ?? "new-option"}
@@ -217,4 +241,3 @@ export function InspirationVendorOptions({
     </div>
   );
 }
-

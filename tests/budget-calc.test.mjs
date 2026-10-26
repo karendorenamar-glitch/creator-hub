@@ -200,6 +200,18 @@ r = calc([vendor()], [], 8_000_000);
 t("target over", r.targetStatus, "over");
 t("target over difference", r.targetDifference, 2_000_000);
 
+// 13b. Other Budget is part of the Target Budget comparison.
+const targetOther = [
+  { id: "c1", name: "Transport", amount: 2_000_000, paidAmount: 0 },
+];
+r = calc([vendor()], [], 12_000_000, targetOther);
+t("target includes other budget", r.targetStatus, "on");
+t("target includes other budget difference", r.targetDifference, 0);
+
+r = calc([vendor()], [], 11_000_000, targetOther);
+t("target other budget over", r.targetStatus, "over");
+t("target other budget over difference", r.targetDifference, 1_000_000);
+
 r = calc([vendor()], [], 0);
 t("target unset", r.targetStatus, "unset");
 t("target unset difference", r.targetDifference, null);

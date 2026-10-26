@@ -28,21 +28,22 @@ export default async function WeddingAppLayout({
     redirect("/checkout");
   }
 
-  const locale = await getLocale();
+  // Locale lookup and the optional admin badge are independent. Running them
+  // together removes one serial round trip from every app page.
+  const [locale, isAdmin] = await Promise.all([
+    getLocale(),
+    (async () => {
+      const { createWeddingClient } = await import("@/lib/wedding/supabase");
+      const supabase = await createWeddingClient();
+      const { data } = await supabase
+        .from("admins")
+        .select("user_id")
+        .eq("user_id", session.userId)
+        .maybeSingle();
+      return Boolean(data);
+    })(),
+  ]);
   const copy = weddingCopy[locale];
-
-  // Sidebar shows the Admin link only for accounts listed in public.admins.
-  let isAdmin = false;
-  if (session) {
-    const { createWeddingClient } = await import("@/lib/wedding/supabase");
-    const supabase = await createWeddingClient();
-    const { data } = await supabase
-      .from("admins")
-      .select("user_id")
-      .eq("user_id", session.userId)
-      .maybeSingle();
-    isAdmin = Boolean(data);
-  }
 
   return (
     <WeddingShell

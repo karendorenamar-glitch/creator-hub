@@ -8,10 +8,13 @@ import { loadWeddingSession } from "@/lib/wedding/session";
 export const metadata = { title: "Wedding Settings" };
 
 export default async function WeddingSettingsPage() {
-  const session = await loadWeddingSession();
+  const [session, locale] = await Promise.all([
+    loadWeddingSession(),
+    getLocale(),
+  ]);
   if (!session) redirect("/wedding/onboarding");
 
-  const copy = weddingCopy[await getLocale()];
+  const copy = weddingCopy[locale];
   const wedding = session.wedding;
 
   return (

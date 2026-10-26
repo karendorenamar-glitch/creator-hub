@@ -2,156 +2,23 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
-import { ExternalLink, Eye, ImageOff, Info, Pencil } from "lucide-react";
-import { deleteInspirationAction } from "@/app/wedding/(app)/inspiration/actions";
-import { DeleteForm } from "@/components/wedding/delete-form";
-import { AddButton, inputClass } from "@/components/wedding/form-kit";
-import { InspirationFormModal } from "@/components/wedding/inspiration/inspiration-form-modal";
-import { InspirationLightbox } from "@/components/wedding/inspiration/inspiration-lightbox";
+import {
+  ArrowUpRight,
+  ImageOff,
+  Images,
+  Search,
+  Sparkles,
+  X,
+} from "lucide-react";
+import { AddButton } from "@/components/wedding/form-kit";
 import { InspirationDetailModal } from "@/components/wedding/inspiration/inspiration-detail-modal";
-import type { InspirationItem, InspirationVendorOption } from "@/lib/wedding/db-types";
+import { InspirationFormModal } from "@/components/wedding/inspiration/inspiration-form-modal";
+import type {
+  InspirationItem,
+  InspirationVendorOption,
+} from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
-
-function InspirationCard({
-  item,
-  photos,
-  imageUrls,
-  copy,
-  onOpen,
-  onEdit,
-  onView,
-}: {
-  item: InspirationItem;
-  photos: { id: string; path: string }[];
-  imageUrls: Record<string, string>;
-  copy: ModuleCopy;
-  onOpen: (item: InspirationItem) => void;
-  onEdit: (item: InspirationItem) => void;
-  onView: (urls: string[]) => void;
-}) {
-  const [broken, setBroken] = useState(false);
-  const safeLink = item.link_url && isHttpUrl(item.link_url) ? item.link_url : null;
-  const photoUrls = photos
-    .map((photo) => imageUrls[photo.path])
-    .filter((url): url is string => Boolean(url));
-  const coverUrl = item.image_path ? imageUrls[item.image_path] : undefined;
-  const galleryUrls = coverUrl
-    ? [coverUrl, ...photoUrls.filter((url) => url !== coverUrl)]
-    : photoUrls;
-  const mainUrl =
-    galleryUrls[0] ??
-    (item.image_url && isHttpUrl(item.image_url) ? item.image_url : null);
-  const extraCount = Math.max(0, galleryUrls.length - 1);
-
-  return (
-    <div
-      className="flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-olive-100 bg-white transition-shadow hover:shadow-md"
-      role="button"
-      tabIndex={0}
-      onClick={() => onOpen(item)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onOpen(item);
-        }
-      }}
-    >
-      {mainUrl && !broken ? (
-        <div className="relative flex aspect-[4/5] w-full items-center justify-center bg-olive-50/60 p-1">
-          <img
-            src={mainUrl}
-            alt={item.title}
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={() => setBroken(true)}
-            className="max-h-full max-w-full object-contain"
-          />
-          {extraCount > 0 ? (
-            <span className="absolute right-2 top-2 rounded-full bg-ink/70 px-2 py-0.5 text-xs font-medium text-white">
-              +{extraCount}
-            </span>
-          ) : null}
-        </div>
-      ) : (
-        <div className="flex aspect-[4/5] w-full flex-col items-center justify-center gap-2 bg-olive-50 text-olive-300">
-          <ImageOff className="size-8" aria-hidden />
-          <span className="text-xs text-ink-soft">
-            {copy.inspiration.uploadLabel}
-          </span>
-        </div>
-      )}
-
-      {galleryUrls.length > 1 ? (
-        <div className="grid grid-cols-4 gap-1 p-1">
-          {galleryUrls.slice(1, 5).map((url, index) => (
-            <img
-              key={`${item.id}-thumb-${index}`}
-              src={url}
-              alt=""
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              className="aspect-square w-full rounded-md bg-olive-50 object-contain"
-            />
-          ))}
-        </div>
-      ) : null}
-
-      <div className="flex flex-1 flex-col gap-2 p-3">
-        <p className="text-sm font-medium text-ink">{item.title}</p>
-        {item.notes ?? item.description ? (
-          <p className="line-clamp-2 text-xs leading-relaxed text-ink-soft">
-            {item.notes ?? item.description}
-          </p>
-        ) : null}
-        <div
-          className="mt-auto flex flex-wrap items-center gap-2 pt-1"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={() => onOpen(item)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-olive-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-olive-700"
-          >
-            <Info className="size-3.5" aria-hidden />
-            {copy.inspiration.viewDetail}
-          </button>
-          {galleryUrls.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => onView(galleryUrls)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-olive-700"
-            >
-              <Eye className="size-3.5" aria-hidden />
-              {copy.inspiration.view}
-            </button>
-          ) : null}
-          {safeLink ? (
-            <a
-              href={safeLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100"
-            >
-              <ExternalLink className="size-3.5" aria-hidden />
-              {copy.inspiration.openLink}
-            </a>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => onEdit(item)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50 hover:text-ink"
-          >
-            <Pencil className="size-3.5" aria-hidden />
-            {copy.form.edit}
-          </button>
-          <DeleteForm action={deleteInspirationAction} id={item.id} copy={copy} />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const STANDARD_CATEGORIES = [
   "Dekorasi",
@@ -166,6 +33,114 @@ const STANDARD_CATEGORIES = [
   "Souvenir",
   "Entertainment",
 ];
+
+function InspirationCard({
+  item,
+  photos,
+  optionsCount,
+  imageUrls,
+  copy,
+  onOpen,
+}: {
+  item: InspirationItem;
+  photos: { id: string; path: string }[];
+  optionsCount: number;
+  imageUrls: Record<string, string>;
+  copy: ModuleCopy;
+  onOpen: (item: InspirationItem) => void;
+}) {
+  const [broken, setBroken] = useState(false);
+  const photoUrls = photos
+    .map((photo) => imageUrls[photo.path])
+    .filter((url): url is string => Boolean(url));
+  const coverUrl = item.image_path ? imageUrls[item.image_path] : undefined;
+  const galleryUrls = coverUrl
+    ? [coverUrl, ...photoUrls.filter((url) => url !== coverUrl)]
+    : photoUrls;
+  const mainUrl =
+    galleryUrls[0] ??
+    (item.image_url && isHttpUrl(item.image_url) ? item.image_url : null);
+  const photoCount = galleryUrls.length;
+  const hasPhoto = Boolean(mainUrl) && !broken;
+  const category = item.category?.trim() || copy.form.none;
+  const notes = item.notes?.trim() || item.description?.trim() || null;
+
+  return (
+    <article
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(item)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(item);
+        }
+      }}
+      aria-label={`${copy.inspiration.viewDetail}: ${item.title}`}
+      className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-[1.75rem] border border-petal-100/80 bg-white text-left shadow-[0_22px_55px_-46px_rgba(87,66,63,0.55)] transition duration-300 hover:-translate-y-1 hover:border-petal-200 hover:shadow-[0_30px_65px_-42px_rgba(87,66,63,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olive-400 focus-visible:ring-offset-2"
+    >
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-gradient-to-br from-petal-50 via-cream to-olive-50">
+        {hasPhoto ? (
+          <img
+            src={mainUrl ?? ""}
+            alt={item.title}
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setBroken(true)}
+            className="h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-5 text-center text-ink-soft">
+            <span className="flex size-12 items-center justify-center rounded-full bg-white/75 text-petal-400 shadow-sm">
+              <ImageOff className="size-5" aria-hidden />
+            </span>
+            <span className="text-xs">{copy.inspiration.uploadLabel}</span>
+          </div>
+        )}
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-ink/50 via-ink/10 to-transparent" />
+        <span className="absolute left-3 top-3 rounded-full border border-white/50 bg-white/85 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.12em] text-cocoa/75 backdrop-blur-sm">
+          {category}
+        </span>
+        {photoCount > 1 ? (
+          <span className="absolute right-3 top-3 rounded-full bg-ink/55 px-2.5 py-1 text-[10px] font-medium text-white backdrop-blur-sm">
+            {photoCount} {copy.inspiration.photosCount}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2.5 p-4">
+        <h3 className="line-clamp-2 font-heading text-lg leading-snug text-ink">
+          {item.title}
+        </h3>
+        {notes ? (
+          <p className="line-clamp-2 text-xs leading-relaxed text-ink-soft">
+            {notes}
+          </p>
+        ) : null}
+
+        <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-petal-100/70 pt-3 text-[11px] text-ink-soft">
+          {photoCount > 0 ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Images className="size-3.5 text-petal-400" aria-hidden />
+              {photoCount} {copy.inspiration.photosCount}
+            </span>
+          ) : null}
+          {optionsCount > 0 ? (
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles className="size-3.5 text-champagne" aria-hidden />
+              {optionsCount} {copy.inspiration.vendorOptions.toLowerCase()}
+            </span>
+          ) : null}
+          <span className="ml-auto inline-flex items-center gap-1 font-medium text-olive-700">
+            {copy.inspiration.viewDetail}
+            <ArrowUpRight className="size-3.5" aria-hidden />
+          </span>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export function InspirationManager({
   items,
@@ -183,30 +158,49 @@ export function InspirationManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<InspirationItem | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [viewer, setViewer] = useState<{
-    title: string;
-    urls: string[];
-  } | null>(null);
+  const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<InspirationItem | null>(null);
 
-  const filtered = useMemo(
-    () =>
-      categoryFilter === "all"
-        ? items
-        : items.filter((item) => (item.category ?? "") === categoryFilter),
-    [items, categoryFilter],
+  const categoriesUsed = useMemo(() => {
+    const used = items
+      .map((item) => item.category?.trim())
+      .filter((category): category is string => Boolean(category));
+    return Array.from(new Set(used)).sort((a, b) => a.localeCompare(b));
+  }, [items]);
+
+  const formCategories = useMemo(
+    () => Array.from(new Set([...STANDARD_CATEGORIES, ...categoriesUsed])),
+    [categoriesUsed],
   );
 
-  const groups = useMemo(() => {
-    const map = new Map<string, InspirationItem[]>();
-    for (const item of filtered) {
-      const key = item.category?.trim() || copy.form.none;
-      const bucket = map.get(key) ?? [];
-      bucket.push(item);
-      map.set(key, bucket);
-    }
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [filtered, copy.form.none]);
+  const normalizedSearch = search.trim().toLowerCase();
+  const filtered = useMemo(() => {
+    return items.filter((item) => {
+      if (
+        categoryFilter !== "all" &&
+        (item.category?.trim() ?? "") !== categoryFilter
+      ) {
+        return false;
+      }
+      if (!normalizedSearch) return true;
+
+      const vendorText = (optionsByItem[item.id] ?? [])
+        .map((option) => option.vendor_name)
+        .join(" ");
+      return [
+        item.title,
+        item.category,
+        item.notes,
+        item.description,
+        item.link_url,
+        vendorText,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedSearch);
+    });
+  }, [items, categoryFilter, normalizedSearch, optionsByItem]);
 
   function openCreate() {
     setEditing(null);
@@ -219,78 +213,148 @@ export function InspirationManager({
     setModalOpen(true);
   }
 
+  function clearFilters() {
+    setSearch("");
+    setCategoryFilter("all");
+  }
+
   const activeDetail = detail
     ? (items.find((item) => item.id === detail.id) ?? null)
     : null;
 
-  const categories = useMemo(() => {
-    const used = items
-      .map((item) => item.category?.trim())
-      .filter((category): category is string => Boolean(category));
-    return Array.from(new Set([...STANDARD_CATEGORIES, ...used]));
-  }, [items]);
+  const activePhotos = editing
+    ? (photosByItem[editing.id] ?? [])
+        .map((photo) => ({ id: photo.id, url: imageUrls[photo.path] }))
+        .filter((photo) => Boolean(photo.url))
+    : [];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-heading text-lg font-semibold text-ink">
-          {copy.inspiration.title}
-        </h2>
+    <div className="space-y-7">
+      <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+        <div className="max-w-2xl">
+          <p className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.24em] text-petal-500">
+            <Sparkles className="size-3.5" aria-hidden />
+            {copy.inspiration.pageEyebrow}
+          </p>
+          <h1 className="mt-2 font-heading text-3xl leading-tight text-cocoa sm:text-4xl">
+            {copy.inspiration.title}
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-ink-soft sm:text-base">
+            {copy.inspiration.subtitle}
+          </p>
+        </div>
         <AddButton label={copy.inspiration.add} onClick={openCreate} />
       </div>
 
-      <select
-        value={categoryFilter}
-        onChange={(event) => setCategoryFilter(event.target.value)}
-        aria-label={copy.inspiration.category}
-        className={`${inputClass} w-auto min-w-44`}
-      >
-        <option value="all">{copy.inspiration.allCategories}</option>
-        {categories.map((category) => (
-          <option key={category} value={category}>
-            {category}
-          </option>
-        ))}
-      </select>
+      <div className="rounded-[1.75rem] border border-petal-100/80 bg-white/75 p-3 shadow-[0_20px_55px_-50px_rgba(87,66,63,0.5)] backdrop-blur-sm sm:p-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search
+              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
+              aria-hidden
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={copy.inspiration.searchPlaceholder}
+              aria-label={copy.inspiration.searchPlaceholder}
+              className="w-full rounded-2xl border border-petal-100 bg-cream/70 py-3 pl-10 pr-10 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/70 focus:border-olive-300 focus:ring-2 focus:ring-olive-100"
+            />
+            {search ? (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label={copy.inspiration.clearFilters}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-ink-soft hover:bg-olive-50 hover:text-ink"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            ) : null}
+          </div>
+          <p className="shrink-0 text-xs text-ink-soft">
+            {filtered.length} / {items.length}
+          </p>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="mr-1 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-soft">
+            {copy.inspiration.filterLabel}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCategoryFilter("all")}
+            className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+              categoryFilter === "all"
+                ? "border-olive-600 bg-olive-600 text-white"
+                : "border-petal-100 bg-white/70 text-ink-soft hover:border-olive-200 hover:text-ink"
+            }`}
+          >
+            {copy.inspiration.allCategories}
+          </button>
+          {categoriesUsed.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setCategoryFilter(category)}
+              className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
+                categoryFilter === category
+                  ? "border-olive-600 bg-olive-600 text-white"
+                  : "border-petal-100 bg-white/70 text-ink-soft hover:border-olive-200 hover:text-ink"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {items.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-10 text-center text-sm text-ink-soft">
-          {copy.inspiration.noItems}
-        </p>
-      ) : groups.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-10 text-center text-sm text-ink-soft">
-          {copy.inspiration.emptyFilter}
-        </p>
+        <div className="relative overflow-hidden rounded-[2rem] border border-dashed border-petal-200 bg-gradient-to-br from-petal-50 via-white to-olive-50 px-6 py-14 text-center">
+          <div className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-petal-100/60 blur-2xl" />
+          <div className="relative mx-auto flex max-w-md flex-col items-center">
+            <span className="flex size-16 items-center justify-center rounded-full border border-petal-200 bg-white/80 text-petal-400 shadow-sm">
+              <Images className="size-7" aria-hidden />
+            </span>
+            <h2 className="mt-4 font-heading text-2xl text-cocoa">
+              {copy.inspiration.noItems}
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-ink-soft">
+              {copy.inspiration.noItemsHint}
+            </p>
+            <div className="mt-5">
+              <AddButton label={copy.inspiration.add} onClick={openCreate} />
+            </div>
+          </div>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-[2rem] border border-dashed border-petal-200 bg-white/60 px-6 py-12 text-center">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-petal-50 text-petal-400">
+            <Search className="size-5" aria-hidden />
+          </span>
+          <h2 className="mt-3 font-heading text-xl text-cocoa">
+            {copy.inspiration.emptySearch}
+          </h2>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="mt-4 rounded-full border border-olive-200 px-4 py-2 text-xs font-medium text-olive-700 hover:bg-olive-50"
+          >
+            {copy.inspiration.clearFilters}
+          </button>
+        </div>
       ) : (
-        <div className="grid items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-          {groups.map(([category, groupItems]) => (
-            <section
-              key={category}
-              className="rounded-2xl border border-olive-100 bg-white/70 p-4"
-            >
-              <div className="mb-3 flex items-center gap-3">
-                <h3 className="font-heading text-base font-semibold text-ink">
-                  {category}
-                </h3>
-                <span className="rounded-full bg-olive-50 px-2 py-0.5 text-xs text-olive-700">
-                  {groupItems.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {groupItems.map((item) => (
-                  <InspirationCard
-                    key={item.id}
-                    item={item}
-                    photos={photosByItem[item.id] ?? []}
-                    imageUrls={imageUrls}
-                    copy={copy}
-                    onOpen={setDetail}
-                    onEdit={openEdit}
-                    onView={(urls) => setViewer({ title: item.title, urls })}
-                  />
-                ))}
-              </div>
-            </section>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {filtered.map((item) => (
+            <InspirationCard
+              key={item.id}
+              item={item}
+              photos={photosByItem[item.id] ?? []}
+              optionsCount={(optionsByItem[item.id] ?? []).length}
+              imageUrls={imageUrls}
+              copy={copy}
+              onOpen={setDetail}
+            />
           ))}
         </div>
       )}
@@ -301,10 +365,9 @@ export function InspirationManager({
         onClose={() => setModalOpen(false)}
         copy={copy}
         item={editing}
-        photos={(photosByItem[editing?.id ?? ""] ?? [])
-          .map((photo) => ({ id: photo.id, url: imageUrls[photo.path] }))
-          .filter((photo) => Boolean(photo.url))}
-        categories={categories}
+        photos={activePhotos}
+        categories={formCategories}
+        options={editing ? (optionsByItem[editing.id] ?? []) : []}
       />
 
       <InspirationDetailModal
@@ -316,14 +379,6 @@ export function InspirationManager({
         imageUrls={imageUrls}
         copy={copy}
         onEdit={openEdit}
-      />
-
-      <InspirationLightbox
-        open={Boolean(viewer)}
-        onClose={() => setViewer(null)}
-        title={viewer?.title ?? ""}
-        urls={viewer?.urls ?? []}
-        copy={copy}
       />
     </div>
   );

@@ -14,10 +14,11 @@ import { createWeddingClient } from "@/lib/wedding/supabase";
 export const metadata = { title: "Checklist & Timeline" };
 
 export default async function ChecklistPage() {
-  const session = await loadWeddingSession();
+  const [session, locale] = await Promise.all([
+    loadWeddingSession(),
+    getLocale(),
+  ]);
   if (!session) redirect("/wedding/onboarding");
-
-  const locale = await getLocale();
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 

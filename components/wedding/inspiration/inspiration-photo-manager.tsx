@@ -69,12 +69,12 @@ function PhotoRow({
 
   return (
     <div className="space-y-1">
-      <div className="overflow-hidden rounded-lg border border-olive-100 bg-olive-50">
+      <div className="overflow-hidden rounded-xl border border-petal-100 bg-olive-50">
         <img
           src={photo.url}
           alt=""
           loading="lazy"
-          className="h-20 w-full object-contain"
+          className="aspect-[4/3] w-full object-cover"
         />
       </div>
       <div className="flex flex-wrap items-center justify-between gap-1">
@@ -168,7 +168,7 @@ export function InspirationPhotoManager({
   if (!itemId && photos.length === 0) return null;
 
   return (
-    <div className="space-y-2 rounded-2xl border border-olive-100 bg-white p-3">
+    <div className="space-y-3 rounded-2xl border border-petal-100/80 bg-white/80 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
           {copy.inspiration.currentPhotos}
@@ -176,7 +176,7 @@ export function InspirationPhotoManager({
         {itemId ? <AddPhotoForm itemId={itemId} copy={copy} /> : null}
       </div>
       {photos.length > 0 ? (
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {photos.map((photo) => (
             <PhotoRow key={photo.id} photo={photo} copy={copy} />
           ))}

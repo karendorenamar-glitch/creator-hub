@@ -12,7 +12,7 @@
  *  - Total Paid = sum of real payment rows for active confirmed vendors.
  *  - Lunas requires actual payments to cover a known positive agreed price, or
  *    an explicit completion flag for an agreed_price = 0 collaboration.
- *  - Target Budget compares to Vendor Budget only, never to Total Paid.
+ *  - Target Budget compares to Vendor Budget + Budget Lainnya, never to Total Paid.
  */
 
 export type BudgetPaymentKind = "dp" | "lanjutan" | "pelunasan";
@@ -167,14 +167,14 @@ export function derivePaymentStatus(
 
 function targetStatusFor(
   targetBudget: number,
-  vendorBudget: number,
+  plannedBudget: number,
   complete: boolean,
 ): { status: TargetBudgetStatus; difference: number | null } {
   if (!Number.isFinite(targetBudget) || targetBudget <= 0) {
     return { status: "unset", difference: null };
   }
 
-  const difference = targetBudget - vendorBudget;
+  const difference = targetBudget - plannedBudget;
 
   if (!complete) {
     // Keep the numeric difference available for display, but do not present a
@@ -296,7 +296,7 @@ export function calculateBudget(input: {
   const vendorBudgetComplete = missingAgreedPriceCount === 0;
   const target = targetStatusFor(
     targetBudget,
-    vendorBudget,
+    plannedBudget,
     vendorBudgetComplete,
   );
 

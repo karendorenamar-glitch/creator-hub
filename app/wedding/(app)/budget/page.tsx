@@ -13,10 +13,11 @@ import { loadWeddingSession } from "@/lib/wedding/session";
 export const metadata = { title: "Anggaran Menikah" };
 
 export default async function BudgetPage() {
-  const session = await loadWeddingSession();
+  const [session, locale] = await Promise.all([
+    loadWeddingSession(),
+    getLocale(),
+  ]);
   if (!session) redirect("/wedding/onboarding");
-
-  const locale = await getLocale();
   const copy = moduleCopy[locale];
   const targetBudget = Number(session.wedding.total_budget ?? 0);
   const data = await loadVendorsPageData(session.wedding.id, targetBudget);
@@ -39,6 +40,7 @@ export default async function BudgetPage() {
           difference={calc.targetDifference}
           targetBudget={calc.targetBudget}
           vendorBudget={calc.vendorBudget}
+          otherCostsTotal={calc.otherCostsTotal}
           missingAgreedPriceCount={calc.missingAgreedPriceCount}
           copy={copy}
         />
@@ -64,6 +66,11 @@ export default async function BudgetPage() {
           value={formatIDR(calc.vendorBudget)}
         />
         <StatCard
+          label={copy.budget.otherCostsTotal}
+          value={formatIDR(calc.otherCostsTotal)}
+          tone={calc.otherCostsTotal > 0 ? "champagne" : undefined}
+        />
+        <StatCard
           label={copy.budget.totalPaid}
           value={formatIDR(calc.totalPaid)}
           tone="champagne"
@@ -71,11 +78,6 @@ export default async function BudgetPage() {
         <StatCard
           label={copy.budget.remainingPayment}
           value={formatIDR(calc.remainingPayment)}
-        />
-        <StatCard
-          label={copy.budget.otherCostsTotal}
-          value={formatIDR(calc.otherCostsTotal)}
-          tone={calc.otherCostsTotal > 0 ? "champagne" : undefined}
         />
       </section>
 

@@ -89,7 +89,14 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Only routes that need auth/session refresh. The landing page and static
+  // assets must not pay a Supabase auth round trip on every visit.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/wedding",
+    "/wedding/:path*",
+    "/checkout",
+    "/checkout/:path*",
+    "/admin",
+    "/admin/:path*",
   ],
 };

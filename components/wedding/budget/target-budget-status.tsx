@@ -38,6 +38,7 @@ export function TargetBudgetStatusCard({
   difference,
   targetBudget,
   vendorBudget,
+  otherCostsTotal,
   missingAgreedPriceCount,
   copy,
 }: {
@@ -45,6 +46,7 @@ export function TargetBudgetStatusCard({
   difference: number | null;
   targetBudget: number;
   vendorBudget: number;
+  otherCostsTotal: number;
   missingAgreedPriceCount: number;
   copy: ModuleCopy;
 }) {
@@ -89,6 +91,8 @@ export function TargetBudgetStatusCard({
           </p>
           <p className="mt-1 opacity-70">{copy.budget.vendorBudget}</p>
           <p className="font-medium">{formatIDR(vendorBudget)}</p>
+          <p className="mt-1 opacity-70">{copy.budget.otherCostsTotal}</p>
+          <p className="font-medium">{formatIDR(otherCostsTotal)}</p>
         </div>
       </div>
     </Card>

@@ -11,10 +11,11 @@ import { loadWeddingSession } from "@/lib/wedding/session";
 export const metadata = { title: "Vendor" };
 
 export default async function VendorsPage() {
-  const session = await loadWeddingSession();
+  const [session, locale] = await Promise.all([
+    loadWeddingSession(),
+    getLocale(),
+  ]);
   if (!session) redirect("/wedding/onboarding");
-
-  const locale = await getLocale();
   const copy = moduleCopy[locale];
   const data = await loadVendorsPageData(session.wedding.id, 0);
   const { calc } = data;

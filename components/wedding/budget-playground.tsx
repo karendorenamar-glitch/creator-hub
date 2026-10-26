@@ -87,7 +87,7 @@ export function BudgetPlayground() {
         <div className="flex items-center justify-between text-xs text-ink-soft">
           <span className="inline-flex items-center gap-1">
             <Sparkles className="size-3.5 text-olive-500" aria-hidden />
-            Anggaran terpakai
+            Biaya terbayar
           </span>
           <span className="font-medium text-ink">{percent}%</span>
         </div>
