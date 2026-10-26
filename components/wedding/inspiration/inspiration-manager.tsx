@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useMemo, useState } from "react";
-import { ExternalLink, Eye, ImageOff, Pencil } from "lucide-react";
+import { ExternalLink, Eye, ImageOff, Info, Pencil } from "lucide-react";
 import { deleteInspirationAction } from "@/app/wedding/(app)/inspiration/actions";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
@@ -109,6 +109,14 @@ function InspirationCard({
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
+          <button
+            type="button"
+            onClick={() => onOpen(item)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-olive-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-olive-700"
+          >
+            <Info className="size-3.5" aria-hidden />
+            {copy.inspiration.viewDetail}
+          </button>
           {galleryUrls.length > 0 ? (
             <button
               type="button"
