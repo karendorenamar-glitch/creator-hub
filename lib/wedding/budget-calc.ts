@@ -52,6 +52,13 @@ export type BudgetPayment = {
   payment_kind?: BudgetPaymentKind;
 };
 
+export type BudgetOtherCost = {
+  id?: string;
+  name: string;
+  amount: number;
+  paid: boolean;
+};
+
 export type VendorPaymentSummary = {
   paymentCount: number;
   totalPaid: number;
@@ -62,6 +69,8 @@ export type VendorPaymentSummary = {
 
 export type BudgetResult = {
   vendorBudget: number;
+  otherCostsTotal: number;
+  otherCostsPaid: number;
   totalPaid: number;
   remainingPayment: number;
   overpayment: number;
@@ -78,6 +87,7 @@ export type BudgetResult = {
   activeVendors: BudgetVendor[];
   archivedVendors: BudgetVendor[];
   archivedPaid: number;
+  otherCosts: BudgetOtherCost[];
 
   paidByVendor: Map<string, number>;
   remainingByVendor: Map<string, number>;
@@ -180,6 +190,7 @@ function targetStatusFor(
 export function calculateBudget(input: {
   vendors: BudgetVendor[];
   payments: BudgetPayment[];
+  otherCosts?: BudgetOtherCost[];
   targetBudget?: number | null;
 }): BudgetResult {
   // Deduplicate vendors by id so the same vendor cannot be counted twice.
@@ -217,7 +228,7 @@ export function calculateBudget(input: {
   const archivedVendors: BudgetVendor[] = [];
 
   let vendorBudget = 0;
-  let totalPaid = 0;
+  let vendorPaid = 0;
   let missingAgreedPriceCount = 0;
   let archivedPaid = 0;
 
@@ -258,15 +269,26 @@ export function calculateBudget(input: {
 
     activeVendors.push(vendor);
     vendorBudget += price ?? 0;
-    totalPaid += paid;
+    vendorPaid += paid;
     if (price === null) missingAgreedPriceCount += 1;
   }
 
-  const remainingPayment = Math.max(0, vendorBudget - totalPaid);
-  const overpayment = Math.max(0, totalPaid - vendorBudget);
+  const otherCosts = input.otherCosts ?? [];
+  const otherCostsTotal = otherCosts.reduce(
+    (sum, cost) => sum + amountOf(cost.amount),
+    0,
+  );
+  const otherCostsPaid = otherCosts.reduce(
+    (sum, cost) => sum + (cost.paid ? amountOf(cost.amount) : 0),
+    0,
+  );
+  const totalPaid = vendorPaid + otherCostsPaid;
+  const plannedBudget = vendorBudget + otherCostsTotal;
+  const remainingPayment = Math.max(0, plannedBudget - totalPaid);
+  const overpayment = Math.max(0, totalPaid - plannedBudget);
   const paymentPercentage =
-    vendorBudget > 0
-      ? Math.round((totalPaid / vendorBudget) * 10000) / 100
+    plannedBudget > 0
+      ? Math.round((totalPaid / plannedBudget) * 10000) / 100
       : 0;
 
   const targetBudget = Math.max(0, amountOf(input.targetBudget));
@@ -279,6 +301,8 @@ export function calculateBudget(input: {
 
   return {
     vendorBudget,
+    otherCostsTotal,
+    otherCostsPaid,
     totalPaid,
     remainingPayment,
     overpayment,
@@ -291,6 +315,7 @@ export function calculateBudget(input: {
     activeVendors,
     archivedVendors,
     archivedPaid,
+    otherCosts,
     paidByVendor,
     remainingByVendor,
     overpaymentByVendor,

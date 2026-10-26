@@ -100,6 +100,21 @@ const en = {
     totalPaid: "Total Paid",
     remainingPayment: "Remaining Payment",
     overpayment: "Overpayment",
+    otherCosts: "Other Costs",
+    otherCostsTotal: "Total Other Costs",
+    otherCostsHint:
+      "Costs outside vendors, such as transport, administration, or additional decoration.",
+    addOtherCost: "Add Other Cost",
+    editOtherCost: "Edit Other Cost",
+    otherCostName: "Cost name",
+    otherCostAmount: "Price",
+    otherCostStatus: "Status",
+    otherCostPaid: "Paid",
+    otherCostUnpaid: "Unpaid",
+    noOtherCosts: "No other costs yet.",
+    deleteOtherCostConfirm: "Delete this other cost?",
+    autoCalculatedInfo:
+      "Vendor Budget, Total Paid, Remaining Payment, Payment Percentage, and Total Other Costs are calculated automatically.",
     paymentPercentage: "Payment Percentage",
     budgetIncomplete:
       "Vendor Budget is incomplete: {count} vendor(s) missing an agreed price.",
@@ -491,6 +506,21 @@ const id: ModuleCopy = {
     totalPaid: "Total Dibayar",
     remainingPayment: "Sisa Pembayaran",
     overpayment: "Kelebihan Bayar",
+    otherCosts: "Biaya Lainnya",
+    otherCostsTotal: "Total Biaya Lainnya",
+    otherCostsHint:
+      "Biaya di luar vendor, seperti transport, administrasi, atau dekorasi tambahan.",
+    addOtherCost: "Tambah Biaya Lainnya",
+    editOtherCost: "Ubah Biaya Lainnya",
+    otherCostName: "Biaya",
+    otherCostAmount: "Harga",
+    otherCostStatus: "Status",
+    otherCostPaid: "Terbayar",
+    otherCostUnpaid: "Belum terbayar",
+    noOtherCosts: "Belum ada biaya lainnya.",
+    deleteOtherCostConfirm: "Hapus biaya lainnya ini?",
+    autoCalculatedInfo:
+      "Budget Vendor, Total Dibayar, Sisa Pembayaran, Persentase Pembayaran, dan Total Biaya Lainnya dihitung otomatis.",
     paymentPercentage: "Persentase Pembayaran",
     budgetIncomplete:
       "Budget Vendor belum lengkap: {count} vendor belum punya harga kesepakatan.",

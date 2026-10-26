@@ -7,6 +7,7 @@ import {
   revalidateWedding,
   type ActionResult,
 } from "@/lib/wedding/action-context";
+import type { PaymentStatus } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import {
   isDateString,
@@ -209,6 +210,114 @@ export async function updateExpenseAction(
 
   budgetPaths();
   return { success: ctx.copy.form.saved };
+}
+
+
+type OtherCostValues = {
+  name: string;
+  amount: number;
+  paid: boolean;
+};
+
+function readOtherCost(
+  formData: FormData,
+  copy: ModuleCopy,
+): { ok: true; values: OtherCostValues } | { ok: false; error: string } {
+  const name = text(formData, "name").slice(0, 120);
+  if (!name) return { ok: false, error: copy.form.required };
+
+  const amount = parseWholeRupiah(text(formData, "amount"), {
+    allowZero: true,
+  });
+  if (amount === null) {
+    return { ok: false, error: copy.form.invalidNumber };
+  }
+
+  return {
+    ok: true,
+    values: {
+      name,
+      amount,
+      paid: text(formData, "paid") === "yes",
+    },
+  };
+}
+
+function otherCostRow(values: OtherCostValues) {
+  return {
+    name: values.name,
+    amount: values.amount,
+    amount_paid: values.paid ? values.amount : 0,
+    deposit_amount: 0,
+    payment_status: (values.paid ? "lunas" : "diskusi") as PaymentStatus,
+    category_id: null,
+    vendor_id: null,
+    due_date: null,
+    notes: null,
+  };
+}
+
+export async function createOtherCostAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const parsed = readOtherCost(formData, ctx.copy);
+  if (!parsed.ok) return { error: parsed.error };
+
+  const { error } = await ctx.supabase.from("expenses").insert({
+    wedding_id: ctx.session.wedding.id,
+    ...otherCostRow(parsed.values),
+  });
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  budgetPaths();
+  return { success: ctx.copy.form.saved };
+}
+
+export async function updateOtherCostAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const parsed = readOtherCost(formData, ctx.copy);
+  if (!parsed.ok) return { error: parsed.error };
+
+  const { error } = await ctx.supabase
+    .from("expenses")
+    .update(otherCostRow(parsed.values))
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .is("vendor_id", null);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  budgetPaths();
+  return { success: ctx.copy.form.saved };
+}
+
+export async function deleteOtherCostAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const { error } = await ctx.supabase
+    .from("expenses")
+    .delete()
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .is("vendor_id", null);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  budgetPaths();
+  return null;
 }
 
 export async function deleteExpenseAction(

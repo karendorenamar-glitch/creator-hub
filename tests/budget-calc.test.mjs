@@ -39,8 +39,8 @@ function payment(overrides = {}) {
   };
 }
 
-function calc(vendors, payments = [], targetBudget = 0) {
-  return calculateBudget({ vendors, payments, targetBudget });
+function calc(vendors, payments = [], targetBudget = 0, otherCosts = []) {
+  return calculateBudget({ vendors, payments, otherCosts, targetBudget });
 }
 
 // 1. Vendor with no payments still contributes its agreed price.
@@ -228,7 +228,40 @@ t("inspiration ignored: vendorBudget", withExtra.vendorBudget, withoutInspiratio
 t("inspiration ignored: totalPaid", withExtra.totalPaid, withoutInspiration.totalPaid);
 t("inspiration ignored: target", withExtra.targetStatus, withoutInspiration.targetStatus);
 
-// 16. Direct derived-status checks.
+// 16. Other costs: unpaid costs affect the plan but not Total Paid.
+const unpaidOther = [
+  { id: "c1", name: "Transport", amount: 2_000_000, paid: false },
+];
+r = calc([vendor()], [], 0, unpaidOther);
+t("other unpaid: total", r.otherCostsTotal, 2_000_000);
+t("other unpaid: paid subtotal", r.otherCostsPaid, 0);
+t("other unpaid: totalPaid", r.totalPaid, 0);
+t("other unpaid: remaining includes cost", r.remainingPayment, 12_000_000);
+t("other unpaid: percentage", r.paymentPercentage, 0);
+
+// 17. Paid other costs move Total Paid and the automatic percentage.
+const paidOther = [
+  { id: "c1", name: "Transport", amount: 2_000_000, paid: true },
+];
+r = calc([vendor()], [], 0, paidOther);
+t("other paid: subtotal", r.otherCostsPaid, 2_000_000);
+t("other paid: totalPaid", r.totalPaid, 2_000_000);
+t("other paid: remaining", r.remainingPayment, 10_000_000);
+t("other paid: percentage", r.paymentPercentage, 16.67);
+
+// 18. Vendor payments plus paid other costs can reach 100%.
+r = calc([vendor()], [payment({ amount: 10_000_000 })], 0, paidOther);
+t("all paid: totalPaid", r.totalPaid, 12_000_000);
+t("all paid: remaining", r.remainingPayment, 0);
+t("all paid: percentage", r.paymentPercentage, 100);
+
+// 19. Overpayment is measured against vendor + other planned costs.
+r = calc([vendor()], [payment({ amount: 11_000_000 })], 0, paidOther);
+t("other overpayment: totalPaid", r.totalPaid, 13_000_000);
+t("other overpayment: remaining", r.remainingPayment, 0);
+t("other overpayment: overpayment", r.overpayment, 1_000_000);
+
+// 20. Direct derived-status checks.
 t("derive no payments", derivePaymentStatus(10_000_000, []), "diskusi");
 t("derive zero no payments", derivePaymentStatus(0, []), "diskusi");
 t("derive missing price", derivePaymentStatus(null, [payment()]), "incomplete");

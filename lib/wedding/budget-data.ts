@@ -4,6 +4,7 @@ import type {
 } from "@/lib/wedding/db-types";
 import {
   calculateBudget,
+  type BudgetOtherCost,
   type BudgetPayment,
   type BudgetResult,
   type BudgetVendor,
@@ -14,6 +15,7 @@ import { PAYMENT_PROOF_BUCKET } from "@/lib/wedding/uploads";
 export type BudgetData = {
   vendors: BudgetVendor[];
   payments: BudgetPayment[];
+  otherCosts: BudgetOtherCost[];
   calc: BudgetResult;
 };
 
@@ -22,6 +24,7 @@ export type VendorsPageData = {
   payments: VendorPayment[];
   proofs: VendorPaymentProof[];
   proofUrls: Record<string, string>;
+  otherCosts: BudgetOtherCost[];
   calc: BudgetResult;
 };
 
@@ -31,13 +34,32 @@ function numeric(value: number | string | null | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function mapOtherCosts(
+  rows:
+    | {
+        id: string;
+        name: string;
+        amount: number | string | null;
+        payment_status: string;
+      }[]
+    | null
+    | undefined,
+): BudgetOtherCost[] {
+  return (rows ?? []).map((row) => ({
+    id: row.id,
+    name: row.name,
+    amount: numeric(row.amount) ?? 0,
+    paid: row.payment_status === "lunas" || row.payment_status === "paid",
+  }));
+}
+
 export async function loadBudgetData(
   weddingId: string,
   targetBudget: number,
 ): Promise<BudgetData> {
   const supabase = await createWeddingClient();
 
-  const [vendorsResult, paymentsResult] = await Promise.all([
+  const [vendorsResult, paymentsResult, otherCostsResult] = await Promise.all([
     supabase
       .from("vendors")
       .select(
@@ -48,10 +70,21 @@ export async function loadBudgetData(
       .from("vendor_payments")
       .select("id, vendor_id, amount, payment_kind")
       .eq("wedding_id", weddingId),
+    supabase
+      .from("expenses")
+      .select("id, name, amount, payment_status")
+      .eq("wedding_id", weddingId)
+      .is("vendor_id", null)
+      .order("created_at", { ascending: true }),
   ]);
 
   if (vendorsResult.error) throw new Error(vendorsResult.error.message);
   if (paymentsResult.error) throw new Error(paymentsResult.error.message);
+
+  // Other costs live in the existing expenses table with vendor_id = NULL.
+  const otherCosts = otherCostsResult.error
+    ? []
+    : mapOtherCosts(otherCostsResult.data);
 
   const vendors: BudgetVendor[] = (vendorsResult.data ?? []).map((vendor) => ({
     id: vendor.id,
@@ -78,9 +111,11 @@ export async function loadBudgetData(
   return {
     vendors,
     payments,
+    otherCosts,
     calc: calculateBudget({
       vendors,
       payments,
+      otherCosts,
       targetBudget,
     }),
   };
@@ -92,29 +127,36 @@ export async function loadVendorsPageData(
 ): Promise<VendorsPageData> {
   const supabase = await createWeddingClient();
 
-  const [vendorsResult, paymentsResult, proofsResult] = await Promise.all([
-    supabase
-      .from("vendors")
-      .select(
-        "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status, collaboration_completed_at",
-      )
-      .eq("wedding_id", weddingId)
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("vendor_payments")
-      .select(
-        "id, wedding_id, vendor_id, amount, paid_on, method, notes, payment_kind, proof_path, created_at",
-      )
-      .eq("wedding_id", weddingId)
-      .order("paid_on", { ascending: true }),
-    supabase
-      .from("vendor_payment_proofs")
-      .select(
-        "id, wedding_id, payment_id, path, mime_type, original_name, sort_order, created_at",
-      )
-      .eq("wedding_id", weddingId)
-      .order("sort_order", { ascending: true }),
-  ]);
+  const [vendorsResult, paymentsResult, proofsResult, otherCostsResult] =
+    await Promise.all([
+      supabase
+        .from("vendors")
+        .select(
+          "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status, collaboration_completed_at",
+        )
+        .eq("wedding_id", weddingId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("vendor_payments")
+        .select(
+          "id, wedding_id, vendor_id, amount, paid_on, method, notes, payment_kind, proof_path, created_at",
+        )
+        .eq("wedding_id", weddingId)
+        .order("paid_on", { ascending: true }),
+      supabase
+        .from("vendor_payment_proofs")
+        .select(
+          "id, wedding_id, payment_id, path, mime_type, original_name, sort_order, created_at",
+        )
+        .eq("wedding_id", weddingId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("expenses")
+        .select("id, name, amount, payment_status")
+        .eq("wedding_id", weddingId)
+        .is("vendor_id", null)
+        .order("created_at", { ascending: true }),
+    ]);
 
   if (vendorsResult.error) throw new Error(vendorsResult.error.message);
   if (paymentsResult.error) throw new Error(paymentsResult.error.message);
@@ -124,6 +166,9 @@ export async function loadVendorsPageData(
   const proofs: VendorPaymentProof[] = proofsResult.error
     ? []
     : (proofsResult.data ?? []);
+  const otherCosts = otherCostsResult.error
+    ? []
+    : mapOtherCosts(otherCostsResult.data);
 
   const vendors: BudgetVendor[] = (vendorsResult.data ?? []).map((vendor) => ({
     id: vendor.id,
@@ -179,9 +224,11 @@ export async function loadVendorsPageData(
     payments,
     proofs,
     proofUrls,
+    otherCosts,
     calc: calculateBudget({
       vendors,
       payments: budgetPayments,
+      otherCosts,
       targetBudget,
     }),
   };

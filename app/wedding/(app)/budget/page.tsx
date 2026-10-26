@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { OtherCostManager } from "@/components/wedding/budget/other-cost-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
 import { TargetBudgetStatusCard } from "@/components/wedding/budget/target-budget-status";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
@@ -72,9 +73,9 @@ export default async function BudgetPage() {
           value={formatIDR(calc.remainingPayment)}
         />
         <StatCard
-          label={copy.budget.overpayment}
-          value={formatIDR(calc.overpayment)}
-          tone={calc.overpayment > 0 ? "champagne" : undefined}
+          label={copy.budget.otherCostsTotal}
+          value={formatIDR(calc.otherCostsTotal)}
+          tone={calc.otherCostsTotal > 0 ? "champagne" : undefined}
         />
       </section>
 
@@ -93,11 +94,12 @@ export default async function BudgetPage() {
           </p>
         </div>
         <Progress value={calc.paymentPercentage} />
-        {calc.overpayment > 0 ? (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            {copy.budget.overpaidWarning}: {formatIDR(calc.overpayment)}
-          </p>
-        ) : null}
+      </Card>
+
+      <Card className="border-olive-100 bg-olive-50/50">
+        <p className="text-xs leading-relaxed text-ink-soft">
+          {copy.budget.autoCalculatedInfo}
+        </p>
       </Card>
 
       <Card className="space-y-4">
@@ -111,6 +113,10 @@ export default async function BudgetPage() {
           copy={copy}
           locale={locale}
         />
+      </Card>
+
+      <Card className="space-y-4">
+        <OtherCostManager otherCosts={data.otherCosts} copy={copy} />
       </Card>
     </div>
   );
