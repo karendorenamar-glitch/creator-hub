@@ -148,7 +148,12 @@ export function InspirationVendorOptions({
         </p>
       ) : (
         <ul className="space-y-1.5">
-          {options.map((option, optionIndex) => (
+          {options.map((option, optionIndex) => {
+            const displayName = option.vendor_name.trim();
+            const unnamed =
+              !displayName ||
+              displayName === copy.inspiration.untitledVendorOption;
+            return (
             <li
               key={option.id}
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-olive-50/50 px-2.5 py-1.5"
@@ -158,8 +163,7 @@ export function InspirationVendorOptions({
                   <span className="mr-1 text-ink-soft">
                     {copy.inspiration.untitledVendorOption} {optionIndex + 1}:
                   </span>
-                  {option.vendor_name.trim() ||
-                    copy.inspiration.noReferencePrice}
+                  {unnamed ? copy.inspiration.noReferencePrice : displayName}
                 </p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-ink-soft">
                   <Badge tone="muted">
@@ -197,7 +201,8 @@ export function InspirationVendorOptions({
                 />
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 

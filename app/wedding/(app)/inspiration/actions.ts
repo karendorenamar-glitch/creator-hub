@@ -499,15 +499,24 @@ export async function createInspirationVendorOptionAction(
   const parsed = readVendorOption(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase
-    .from("inspiration_vendor_options")
-    .insert({
+  const save = (values: VendorOptionValues) =>
+    ctx.supabase.from("inspiration_vendor_options").insert({
       wedding_id: ctx.session.wedding.id,
       item_id: itemId,
-      ...parsed.values,
+      ...values,
     });
 
-  if (error) return { error: actionError(error, ctx.copy) };
+  let result = await save(parsed.values);
+  // 026 relaxes the old non-empty-name constraint. Until it is applied, keep
+  // the form usable by storing the neutral option label instead of failing.
+  if (result.error?.code === "23514" && !parsed.values.vendor_name) {
+    result = await save({
+      ...parsed.values,
+      vendor_name: ctx.copy.inspiration.untitledVendorOption,
+    });
+  }
+
+  if (result.error) return { error: actionError(result.error, ctx.copy) };
 
   revalidateWedding("/wedding/inspiration");
   return { success: ctx.copy.form.saved };
@@ -524,13 +533,22 @@ export async function updateInspirationVendorOptionAction(
   const parsed = readVendorOption(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase
-    .from("inspiration_vendor_options")
-    .update(parsed.values)
-    .eq("id", id)
-    .eq("wedding_id", ctx.session.wedding.id);
+  const save = (values: VendorOptionValues) =>
+    ctx.supabase
+      .from("inspiration_vendor_options")
+      .update(values)
+      .eq("id", id)
+      .eq("wedding_id", ctx.session.wedding.id);
 
-  if (error) return { error: actionError(error, ctx.copy) };
+  let result = await save(parsed.values);
+  if (result.error?.code === "23514" && !parsed.values.vendor_name) {
+    result = await save({
+      ...parsed.values,
+      vendor_name: ctx.copy.inspiration.untitledVendorOption,
+    });
+  }
+
+  if (result.error) return { error: actionError(result.error, ctx.copy) };
 
   revalidateWedding("/wedding/inspiration");
   return { success: ctx.copy.form.saved };
