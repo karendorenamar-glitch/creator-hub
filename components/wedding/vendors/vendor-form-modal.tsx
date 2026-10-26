@@ -252,17 +252,6 @@ export function VendorFormModal({
           </label>
         ) : null}
 
-        <Field label={copy.vendors.notes} htmlFor="vendor-notes">
-          <textarea
-            id="vendor-notes"
-            name="notes"
-            rows={3}
-            maxLength={4000}
-            defaultValue={vendor?.notes ?? ""}
-            className={inputClass}
-          />
-        </Field>
-
         {!vendor && statusIntent !== "diskusi" ? (
           <div className="space-y-3 rounded-2xl border border-olive-100 bg-olive-50/40 p-4">
             <div>
@@ -362,6 +351,17 @@ export function VendorFormModal({
             </Field>
           </div>
         ) : null}
+
+        <Field label={copy.vendors.notes} htmlFor="vendor-notes">
+          <textarea
+            id="vendor-notes"
+            name="notes"
+            rows={3}
+            maxLength={4000}
+            defaultValue={vendor?.notes ?? ""}
+            className={inputClass}
+          />
+        </Field>
 
         <ModalFooter
           pending={pending}
