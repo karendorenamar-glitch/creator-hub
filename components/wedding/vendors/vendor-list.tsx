@@ -24,19 +24,6 @@ import { formatIDR } from "@/lib/wedding/format";
 import { groupProofsByPayment } from "@/lib/wedding/payment-proofs";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
-function collaborationLabel(vendor: BudgetVendor, copy: ModuleCopy) {
-  switch (vendor.collaboration_type) {
-    case "endorsement":
-      return copy.vendors.collaborationEndorsement;
-    case "sponsorship":
-      return copy.vendors.collaborationSponsorship;
-    case "barter":
-      return copy.vendors.collaborationBarter;
-    default:
-      return copy.vendors.collaborationPaid;
-  }
-}
-
 function VendorRow({
   vendor,
   summary,
@@ -60,8 +47,7 @@ function VendorRow({
           <p className="truncate text-sm font-medium text-ink">
             {vendor.name?.trim() || copy.vendors.unnamed}
             <span className="ml-2 text-xs font-normal text-ink-soft">
-              {vendor.category || copy.vendors.uncategorized} ·{" "}
-              {collaborationLabel(vendor, copy)}
+              {vendor.category || copy.vendors.uncategorized}
             </span>
           </p>
           <p className="mt-0.5 truncate text-xs text-ink-soft">

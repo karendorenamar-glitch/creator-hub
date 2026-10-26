@@ -2,6 +2,8 @@
 
 Migration `023_vendor_collaboration.sql` must be applied to production before this code is deployed.
 
+> Historical note: the `collaboration_type` column added by 023 is no longer used by the product and is removed by migration 024. `collaboration_completed_at` remains.
+
 It is additive and does not rewrite existing vendor, payment, proof, or Inspiration data:
 
 - adds `vendors.collaboration_type` with default `paid` and allowed values

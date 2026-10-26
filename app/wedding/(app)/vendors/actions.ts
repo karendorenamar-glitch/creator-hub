@@ -22,7 +22,6 @@ import {
 } from "@/lib/wedding/validation";
 
 const PAYMENT_KINDS = ["dp", "lanjutan", "pelunasan"] as const;
-const COLLABORATION_TYPES = ["paid", "endorsement", "sponsorship", "barter"] as const;
 
 async function context() {
   const ctx = await getActionContext();
@@ -43,7 +42,6 @@ type VendorValues = {
   phone: string | null;
   notes: string | null;
   agreed_price: number | null;
-  collaboration_type: (typeof COLLABORATION_TYPES)[number];
   collaboration_completed: boolean;
 };
 
@@ -72,12 +70,6 @@ function readVendor(
       phone: optionalText(formData, "phone", 40),
       notes: optionalText(formData, "notes", 4000),
       agreed_price: agreedPrice,
-      collaboration_type: enumValue(
-        formData,
-        "collaborationType",
-        COLLABORATION_TYPES,
-        "paid",
-      ),
       collaboration_completed:
         text(formData, "collaborationCompleted") === "yes",
     },

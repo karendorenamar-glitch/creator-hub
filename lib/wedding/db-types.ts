@@ -104,7 +104,6 @@ export type Vendor = {
   pic_internal: string | null;
   group_id: string | null;
   selection_status: "alternatif" | "terpilih";
-  collaboration_type: "paid" | "endorsement" | "sponsorship" | "barter";
   collaboration_completed_at: string | null;
   archived_at: string | null;
   quotation_path: string | null;

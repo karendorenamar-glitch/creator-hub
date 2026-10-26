@@ -31,12 +31,6 @@ export type TargetBudgetStatus =
   | "unset"
   | "provisional";
 
-export type CollaborationType =
-  | "paid"
-  | "endorsement"
-  | "sponsorship"
-  | "barter";
-
 export type BudgetVendor = {
   id: string;
   name?: string | null;
@@ -46,7 +40,6 @@ export type BudgetVendor = {
   notes?: string | null;
   agreed_price: number | null;
   archived_at: string | null;
-  collaboration_type?: CollaborationType;
   collaboration_completed_at?: string | null;
   /** Legacy compatibility flag; never shown as a workflow in the new UI. */
   selection_status?: "alternatif" | "terpilih";

@@ -227,14 +227,9 @@ const en = {
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
     statusIncomplete: "Harga Belum Diisi",
-    collaborationType: "Collaboration type",
-    collaborationPaid: "Paid",
-    collaborationEndorsement: "Endorsement",
-    collaborationSponsorship: "Sponsorship",
-    collaborationBarter: "Barter",
-    markCompleted: "Mark this collaboration as completed",
+    markCompleted: "Mark this Rp0 vendor as completed",
     markCompletedHint:
-      "For a Rp0 endorsement, sponsorship, or barter. This confirms completion without recording cash paid.",
+      "For a Rp0 vendor. This confirms completion without recording cash paid.",
     initialPayment: "Initial payment (optional)",
     initialPaymentHint:
       "Leave the amount empty to save the vendor only. A transaction is created only when you enter a valid amount.",
@@ -615,14 +610,9 @@ const id: ModuleCopy = {
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
     statusIncomplete: "Harga Belum Diisi",
-    collaborationType: "Jenis kolaborasi",
-    collaborationPaid: "Berbayar",
-    collaborationEndorsement: "Endorsement",
-    collaborationSponsorship: "Sponsorship",
-    collaborationBarter: "Barter",
-    markCompleted: "Tandai kolaborasi ini selesai",
+    markCompleted: "Tandai vendor Rp0 ini selesai",
     markCompletedHint:
-      "Untuk endorsement, sponsorship, atau barter Rp0. Ini menandai selesai tanpa mencatat uang tunai.",
+      "Untuk vendor Rp0. Ini menandai selesai tanpa mencatat uang tunai.",
     initialPayment: "Pembayaran awal (opsional)",
     initialPaymentHint:
       "Biarkan nominal kosong untuk menyimpan vendor saja. Transaksi hanya dibuat jika nominal valid diisi.",

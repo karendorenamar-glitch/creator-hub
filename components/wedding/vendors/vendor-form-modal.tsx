@@ -40,26 +40,6 @@ const CATEGORY_SUGGESTIONS = [
   "Lainnya",
 ];
 
-const COLLABORATION_OPTIONS = [
-  "paid",
-  "endorsement",
-  "sponsorship",
-  "barter",
-] as const;
-
-function collaborationLabel(value: string, copy: ModuleCopy) {
-  switch (value) {
-    case "endorsement":
-      return copy.vendors.collaborationEndorsement;
-    case "sponsorship":
-      return copy.vendors.collaborationSponsorship;
-    case "barter":
-      return copy.vendors.collaborationBarter;
-    default:
-      return copy.vendors.collaborationPaid;
-  }
-}
-
 export function VendorFormModal({
   open,
   onClose,
@@ -93,9 +73,6 @@ export function VendorFormModal({
     vendor?.agreed_price === null || vendor?.agreed_price === undefined
       ? ""
       : String(vendor.agreed_price),
-  );
-  const [collaborationType, setCollaborationType] = useState(
-    vendor?.collaboration_type ?? "paid",
   );
   const [completed, setCompleted] = useState(
     Boolean(vendor?.collaboration_completed_at),
@@ -201,28 +178,6 @@ export function VendorFormModal({
             />
           </Field>
 
-          <Field
-            label={copy.vendors.collaborationType}
-            htmlFor="vendor-collaboration"
-          >
-            <select
-              id="vendor-collaboration"
-              name="collaborationType"
-              value={collaborationType}
-              onChange={(event) =>
-                setCollaborationType(
-                  event.target.value as typeof collaborationType,
-                )
-              }
-              className={inputClass}
-            >
-              {COLLABORATION_OPTIONS.map((value) => (
-                <option key={value} value={value}>
-                  {collaborationLabel(value, copy)}
-                </option>
-              ))}
-            </select>
-          </Field>
         </div>
 
         {zeroPrice ? (
