@@ -186,9 +186,27 @@ export type Guest = {
   updated_at: string;
 };
 
+export type ChecklistKind = "custom" | "builtin_kua";
+
+export type Checklist = {
+  id: string;
+  wedding_id: string;
+  title: string;
+  kind: ChecklistKind;
+  template_key: string | null;
+  template_year: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ChecklistTask = {
   id: string;
   wedding_id: string;
+  checklist_id: string | null;
+  group_name: string | null;
+  sort_order: number;
+  template_item_key: string | null;
+  is_required: boolean;
   title: string;
   description: string | null;
   stage: string;
@@ -374,6 +392,7 @@ export type WeddingDatabase = {
       vendor_payment_proofs: Table<VendorPaymentProof>;
       expenses: Table<Expense>;
       guests: Table<Guest>;
+      checklists: Table<Checklist>;
       checklist_tasks: Table<ChecklistTask>;
       inspiration_items: Table<InspirationItem>;
       inspiration_photos: Table<InspirationPhoto>;

@@ -26,11 +26,15 @@ export function TaskManager({
   copy,
   locale,
   assignees,
+  title,
+  subtitle,
 }: {
   tasks: ChecklistTask[];
   copy: ModuleCopy;
   locale: "en" | "id";
   assignees: { id: string; label: string }[];
+  title?: string;
+  subtitle?: string;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ChecklistTask | null>(null);
@@ -79,9 +83,14 @@ export function TaskManager({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-heading text-lg font-semibold text-ink">
-          {copy.checklist.title}
-        </h2>
+        <div>
+          <h2 className="font-heading text-lg font-semibold text-ink">
+            {title ?? copy.checklist.title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-1 text-xs text-ink-soft">{subtitle}</p>
+          ) : null}
+        </div>
         <AddButton label={copy.checklist.add} onClick={openCreate} />
       </div>
 

@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
+import { ChecklistBoard } from "@/components/wedding/checklist/checklist-board";
 import { TaskManager } from "@/components/wedding/checklist/task-manager";
+import { TimelineList } from "@/components/wedding/checklist/timeline-list";
 import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { ensureKuaChecklist } from "@/lib/wedding/checklists";
+import type { Checklist, ChecklistTask } from "@/lib/wedding/db-types";
 import { daysFromToday } from "@/lib/wedding/format";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
@@ -17,12 +21,39 @@ export default async function ChecklistPage() {
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  const { data } = await supabase
-    .from("checklist_tasks")
-    .select("*")
-    .order("due_date", { ascending: true, nullsFirst: false });
+  await ensureKuaChecklist(supabase, session.wedding.id);
 
-  const tasks = data ?? [];
+  const [{ data: checklistRows }, { data: taskRows }] = await Promise.all([
+    supabase
+      .from("checklists")
+      .select("*")
+      .eq("wedding_id", session.wedding.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("checklist_tasks")
+      .select("*")
+      .eq("wedding_id", session.wedding.id)
+      .order("sort_order", { ascending: true })
+      .order("due_date", { ascending: true, nullsFirst: false }),
+  ]);
+
+  const lists = (checklistRows ?? []) as Checklist[];
+  const tasks = (taskRows ?? []) as ChecklistTask[];
+  const itemsByChecklist = new Map<string, ChecklistTask[]>();
+  for (const task of tasks) {
+    if (!task.checklist_id) continue;
+    const bucket = itemsByChecklist.get(task.checklist_id) ?? [];
+    bucket.push(task);
+    itemsByChecklist.set(task.checklist_id, bucket);
+  }
+  const checklists = lists.map((checklist) => ({
+    ...checklist,
+    items: itemsByChecklist.get(checklist.id) ?? [],
+  }));
+  const legacyTasks = tasks.filter((task) => !task.checklist_id);
+  const timelineTasks = tasks
+    .filter((task) => task.due_date)
+    .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
   const done = tasks.filter((task) => task.status === "done").length;
   const pending = tasks.length - done;
   const overdue = tasks.filter((task) => {
@@ -63,13 +94,30 @@ export default async function ChecklistPage() {
       </section>
 
       <Card>
+        <ChecklistBoard
+          checklists={checklists}
+          copy={copy}
+          locale={locale}
+        />
+      </Card>
+
+      <Card>
         <TaskManager
-          tasks={tasks}
+          tasks={legacyTasks}
           copy={copy}
           locale={locale}
           assignees={assignees}
+          title={copy.checklist.otherTasks}
+          subtitle={copy.checklist.otherTasksHint}
         />
       </Card>
+
+      <TimelineList
+        tasks={timelineTasks}
+        checklists={lists}
+        copy={copy}
+        locale={locale}
+      />
     </div>
   );
 }
