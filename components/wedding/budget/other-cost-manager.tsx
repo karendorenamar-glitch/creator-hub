@@ -75,7 +75,7 @@ function OtherCostFormModal({
             name="amount"
             type="number"
             min={0}
-            step={1000}
+            step={1}
             inputMode="numeric"
             required
             defaultValue={cost?.amount ?? ""}
@@ -109,7 +109,7 @@ function OtherCostFormModal({
               name="amountPaid"
               type="number"
               min={1}
-              step={1000}
+              step={1}
               inputMode="numeric"
               required
               defaultValue={initialStatus === "partial" ? cost?.paidAmount || "" : ""}
