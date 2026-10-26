@@ -90,9 +90,9 @@ const en = {
     targetOver: "OVERBUDGET",
     targetUnset: "BELUM ADA TARGET",
     targetProvisional: "SEMENTARA",
-    targetUnderDetail: "{amount} more than Vendor Budget.",
-    targetOnDetail: "Target Budget equals Vendor Budget.",
-    targetOverDetail: "Vendor Budget exceeds Target Budget by {amount}.",
+    targetUnderDetail: "{amount} less than the original target.",
+    targetOnDetail: "Vendor Budget equals the original target.",
+    targetOverDetail: "Vendor Budget exceeds the original target by {amount}.",
     targetUnsetDetail: "Set a Target Budget to see the comparison.",
     targetProvisionalDetail:
       "Target comparison is temporary: {count} vendor(s) still need an agreed price.",
@@ -198,9 +198,9 @@ const en = {
 
     search: "Search vendors",
     proofLabel: "Payment proof",
-    proofHint: "JPG, PNG, WEBP or PDF, max 5 MB",
+    proofHint: "JPG, PNG or PDF, max 5 MB. Existing WEBP files remain viewable.",
     proofTooLarge: "The file is larger than 5 MB.",
-    proofInvalidType: "Only JPG, PNG, WEBP or PDF files are allowed.",
+    proofInvalidType: "Only JPG, PNG or PDF files can be uploaded.",
     viewProof: "View proof",
     proofUploadFailed: "The receipt could not be uploaded. Try again.",
     paymentHistory: "Payment history",
@@ -217,6 +217,7 @@ const en = {
     confirmedHint:
       "Adding a vendor here means you have confirmed this vendor. Its agreed price is included in your Vendor Budget.",
     agreedPrice: "Agreed price",
+    agreedPriceHint: "Leave blank if the price is not agreed yet.",
     vendorBudget: "Vendor Budget",
     remainingPayment: "Remaining Payment",
     overpayment: "Overpayment",
@@ -226,6 +227,24 @@ const en = {
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
     statusIncomplete: "Harga Belum Diisi",
+    collaborationType: "Collaboration type",
+    collaborationPaid: "Paid",
+    collaborationEndorsement: "Endorsement",
+    collaborationSponsorship: "Sponsorship",
+    collaborationBarter: "Barter",
+    markCompleted: "Mark this collaboration as completed",
+    markCompletedHint:
+      "For a Rp0 endorsement, sponsorship, or barter. This confirms completion without recording cash paid.",
+    initialPayment: "Initial payment (optional)",
+    initialPaymentHint:
+      "Leave the amount empty to save the vendor only. A transaction is created only when you enter a valid amount.",
+    addPayment: "Add payment",
+    addPaymentHint:
+      "This records a new transaction. Save vendor detail changes separately above.",
+    savePayment: "Save payment",
+    viewPaymentHistory: "View payment history",
+    recentPayments: "Recent transactions",
+    currentPaymentSummary: "Current payment summary",
     missingAgreedPrice:
       "Agreed price is not set. This vendor is excluded from the complete Vendor Budget.",
     budgetIncomplete: "Vendor Budget is incomplete: {count} vendor(s) missing an agreed price.",
@@ -461,9 +480,9 @@ const id: ModuleCopy = {
     targetOver: "OVERBUDGET",
     targetUnset: "BELUM ADA TARGET",
     targetProvisional: "SEMENTARA",
-    targetUnderDetail: "{amount} lebih hemat dari Budget Vendor.",
-    targetOnDetail: "Target Budget sama dengan Budget Vendor.",
-    targetOverDetail: "Budget Vendor melebihi Target Budget sebesar {amount}.",
+    targetUnderDetail: "{amount} lebih hemat dari target awal.",
+    targetOnDetail: "Budget Vendor sama dengan target awal.",
+    targetOverDetail: "Budget Vendor melebihi target awal sebesar {amount}.",
     targetUnsetDetail: "Isi Target Budget untuk melihat perbandingan.",
     targetProvisionalDetail:
       "Perbandingan target masih sementara: {count} vendor belum punya harga kesepakatan.",
@@ -568,9 +587,9 @@ const id: ModuleCopy = {
 
     search: "Cari vendor",
     proofLabel: "Bukti pembayaran",
-    proofHint: "JPG, PNG, WEBP, atau PDF, maksimal 5 MB",
+    proofHint: "JPG, PNG, atau PDF, maksimal 5 MB. File WEBP lama tetap bisa dilihat.",
     proofTooLarge: "Ukuran file melebihi 5 MB.",
-    proofInvalidType: "Bukti harus berformat JPG, PNG, WEBP, atau PDF.",
+    proofInvalidType: "Hanya file JPG, PNG, atau PDF yang bisa diunggah.",
     proofUploadFailed: "Bukti gagal diunggah. Coba lagi.",
     paymentHistory: "Riwayat pembayaran",
     allPicInternal: "Semua PIC",
@@ -586,6 +605,7 @@ const id: ModuleCopy = {
     confirmedHint:
       "Menambahkan vendor di sini berarti vendor sudah dikonfirmasi. Harga kesepakatannya masuk ke Budget Vendor.",
     agreedPrice: "Harga kesepakatan",
+    agreedPriceHint: "Kosongkan jika harga belum disepakati.",
     vendorBudget: "Budget Vendor",
     remainingPayment: "Sisa Pembayaran",
     overpayment: "Kelebihan Bayar",
@@ -595,6 +615,24 @@ const id: ModuleCopy = {
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
     statusIncomplete: "Harga Belum Diisi",
+    collaborationType: "Jenis kolaborasi",
+    collaborationPaid: "Berbayar",
+    collaborationEndorsement: "Endorsement",
+    collaborationSponsorship: "Sponsorship",
+    collaborationBarter: "Barter",
+    markCompleted: "Tandai kolaborasi ini selesai",
+    markCompletedHint:
+      "Untuk endorsement, sponsorship, atau barter Rp0. Ini menandai selesai tanpa mencatat uang tunai.",
+    initialPayment: "Pembayaran awal (opsional)",
+    initialPaymentHint:
+      "Biarkan nominal kosong untuk menyimpan vendor saja. Transaksi hanya dibuat jika nominal valid diisi.",
+    addPayment: "Tambah pembayaran",
+    addPaymentHint:
+      "Ini membuat transaksi baru. Simpan perubahan detail vendor secara terpisah di atas.",
+    savePayment: "Simpan pembayaran",
+    viewPaymentHistory: "Lihat riwayat pembayaran",
+    recentPayments: "Transaksi terbaru",
+    currentPaymentSummary: "Ringkasan pembayaran saat ini",
     missingAgreedPrice:
       "Harga kesepakatan belum diisi. Vendor ini belum masuk Budget Vendor yang lengkap.",
     budgetIncomplete:

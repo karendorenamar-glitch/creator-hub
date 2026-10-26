@@ -12,6 +12,7 @@ import {
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { FormModal } from "@/components/wedding/form-modal";
 import { Badge } from "@/components/wedding/ui";
+import { PaymentStatusBadge } from "@/components/wedding/vendors/payment-status-badge";
 import {
   Field,
   FormAlert,
@@ -34,24 +35,6 @@ import {
 
 const fileClass =
   "w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-olive-700";
-
-function statusLabel(
-  status: ReturnType<typeof derivePaymentStatus>,
-  copy: ModuleCopy,
-) {
-  switch (status) {
-    case "dp":
-      return copy.vendors.statusDp;
-    case "termin_lanjutan":
-      return copy.vendors.statusTerminLanjutan;
-    case "lunas":
-      return copy.vendors.statusLunas;
-    case "incomplete":
-      return copy.vendors.statusIncomplete;
-    default:
-      return copy.vendors.statusDiskusi;
-  }
-}
 
 export function PaymentFormModal({
   open,
@@ -112,7 +95,11 @@ export function PaymentFormModal({
     outstanding !== null &&
     entered > 0 &&
     entered < outstanding;
-  const status = derivePaymentStatus(price, history);
+  const status = derivePaymentStatus(
+    price,
+    history,
+    vendor?.collaboration_completed_at ?? null,
+  );
   const legacyProofVisible = Boolean(
     payment?.proof_path &&
       !proofs.some((proof) => proof.path === payment.proof_path),
@@ -137,9 +124,7 @@ export function PaymentFormModal({
             <p className="text-sm font-medium text-ink">
               {vendor?.name || copy.vendors.unnamed}
             </p>
-            <Badge tone={status === "lunas" ? "success" : "muted"}>
-              {statusLabel(status, copy)}
-            </Badge>
+            <PaymentStatusBadge status={status} copy={copy} />
           </div>
           <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
             <div>

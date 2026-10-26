@@ -1,19 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { History, Pencil, RotateCcw, Wallet } from "lucide-react";
+import { History, Pencil, RotateCcw } from "lucide-react";
 import {
   archiveVendorAction,
   restoreVendorAction,
 } from "@/app/wedding/(app)/vendors/actions";
 import { AddButton } from "@/components/wedding/form-kit";
 import { DeleteForm } from "@/components/wedding/delete-form";
-import { Badge, Card } from "@/components/wedding/ui";
+import { Card } from "@/components/wedding/ui";
+import { PaymentStatusBadge } from "@/components/wedding/vendors/payment-status-badge";
 import { VendorFormModal } from "@/components/wedding/vendors/vendor-form-modal";
 import { PaymentFormModal } from "@/components/wedding/vendors/payment-form-modal";
 import type {
   BudgetVendor,
-  DerivedPaymentStatus,
   VendorPaymentSummary,
 } from "@/lib/wedding/budget-calc";
 import type {
@@ -24,27 +24,17 @@ import { formatIDR } from "@/lib/wedding/format";
 import { groupProofsByPayment } from "@/lib/wedding/payment-proofs";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
-function statusLabel(status: DerivedPaymentStatus, copy: ModuleCopy) {
-  switch (status) {
-    case "dp":
-      return copy.vendors.statusDp;
-    case "termin_lanjutan":
-      return copy.vendors.statusTerminLanjutan;
-    case "lunas":
-      return copy.vendors.statusLunas;
-    case "incomplete":
-      return copy.vendors.statusIncomplete;
+function collaborationLabel(vendor: BudgetVendor, copy: ModuleCopy) {
+  switch (vendor.collaboration_type) {
+    case "endorsement":
+      return copy.vendors.collaborationEndorsement;
+    case "sponsorship":
+      return copy.vendors.collaborationSponsorship;
+    case "barter":
+      return copy.vendors.collaborationBarter;
     default:
-      return copy.vendors.statusDiskusi;
+      return copy.vendors.collaborationPaid;
   }
-}
-
-function statusTone(status: DerivedPaymentStatus) {
-  if (status === "lunas") return "success" as const;
-  if (status === "incomplete" || status === "termin_lanjutan") {
-    return "warning" as const;
-  }
-  return "muted" as const;
 }
 
 function VendorRow({
@@ -53,7 +43,6 @@ function VendorRow({
   copy,
   archived,
   onEdit,
-  onPayment,
   onHistory,
 }: {
   vendor: BudgetVendor;
@@ -61,7 +50,6 @@ function VendorRow({
   copy: ModuleCopy;
   archived: boolean;
   onEdit: () => void;
-  onPayment: () => void;
   onHistory: () => void;
 }) {
   const price = vendor.agreed_price;
@@ -72,7 +60,8 @@ function VendorRow({
           <p className="truncate text-sm font-medium text-ink">
             {vendor.name?.trim() || copy.vendors.unnamed}
             <span className="ml-2 text-xs font-normal text-ink-soft">
-              {vendor.category || copy.vendors.uncategorized}
+              {vendor.category || copy.vendors.uncategorized} ·{" "}
+              {collaborationLabel(vendor, copy)}
             </span>
           </p>
           <p className="mt-0.5 truncate text-xs text-ink-soft">
@@ -96,7 +85,7 @@ function VendorRow({
             </p>
             <p className="text-xs text-ink-soft">
               {copy.vendors.remainingPayment}:{" "}
-              {formatIDR(summary.remainingPayment)}
+              {price === null ? "—" : formatIDR(summary.remainingPayment)}
             </p>
             {summary.overpayment > 0 ? (
               <p className="text-xs font-medium text-amber-700">
@@ -104,9 +93,10 @@ function VendorRow({
               </p>
             ) : null}
           </div>
-          <Badge tone={statusTone(summary.paymentStatus)}>
-            {statusLabel(summary.paymentStatus, copy)}
-          </Badge>
+          <PaymentStatusBadge
+            status={summary.paymentStatus}
+            copy={copy}
+          />
         </div>
       </div>
 
@@ -120,14 +110,6 @@ function VendorRow({
             >
               <Pencil className="size-3.5" aria-hidden />
               {copy.form.edit}
-            </button>
-            <button
-              type="button"
-              onClick={onPayment}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100"
-            >
-              <Wallet className="size-3.5" aria-hidden />
-              {copy.vendors.recordPayment}
             </button>
           </>
         ) : null}
@@ -187,7 +169,8 @@ export function VendorList({
   const [vendorModal, setVendorModal] = useState<{
     open: boolean;
     editing: BudgetVendor | null;
-  }>({ open: false, editing: null });
+    idempotencyKey: string;
+  }>({ open: false, editing: null, idempotencyKey: "" });
   const [paymentModal, setPaymentModal] = useState<{
     open: boolean;
     vendor: BudgetVendor | null;
@@ -252,7 +235,13 @@ export function VendorList({
         </h2>
         <AddButton
           label={copy.vendors.add}
-          onClick={() => setVendorModal({ open: true, editing: null })}
+          onClick={() =>
+            setVendorModal({
+              open: true,
+              editing: null,
+              idempotencyKey: crypto.randomUUID(),
+            })
+          }
         />
       </div>
 
@@ -269,8 +258,13 @@ export function VendorList({
               summary={summaryByVendor[vendor.id] ?? emptySummary()}
               copy={copy}
               archived={false}
-              onEdit={() => setVendorModal({ open: true, editing: vendor })}
-              onPayment={() => openPayment(vendor, false)}
+              onEdit={() =>
+                setVendorModal({
+                  open: true,
+                  editing: vendor,
+                  idempotencyKey: crypto.randomUUID(),
+                })
+              }
               onHistory={() => openPayment(vendor, false, true)}
             />
           ))}
@@ -292,7 +286,6 @@ export function VendorList({
                 copy={copy}
                 archived
                 onEdit={() => undefined}
-                onPayment={() => undefined}
                 onHistory={() => openPayment(vendor, true)}
               />
             ))}
@@ -301,11 +294,35 @@ export function VendorList({
       ) : null}
 
       <VendorFormModal
-        key={vendorModal.editing?.id ?? "new-vendor"}
+        key={`${vendorModal.editing?.id ?? "new-vendor"}-${vendorModal.idempotencyKey}`}
         open={vendorModal.open}
-        onClose={() => setVendorModal({ open: false, editing: null })}
+        onClose={() =>
+          setVendorModal({ open: false, editing: null, idempotencyKey: "" })
+        }
         copy={copy}
+        locale={locale}
         vendor={vendorModal.editing}
+        payments={
+          vendorModal.editing
+            ? (paymentsByVendor.get(vendorModal.editing.id) ?? [])
+            : []
+        }
+        proofsByPayment={proofsByPayment}
+        proofUrls={proofUrls}
+        summary={
+          vendorModal.editing
+            ? summaryByVendor[vendorModal.editing.id]
+            : undefined
+        }
+        idempotencyKey={vendorModal.idempotencyKey}
+        onOpenHistory={() => {
+          const vendor = vendorModal.editing;
+          setVendorModal({ open: false, editing: null, idempotencyKey: "" });
+          if (vendor) openPayment(vendor, false, true);
+        }}
+        onPaymentSaved={() =>
+          setVendorModal({ open: false, editing: null, idempotencyKey: "" })
+        }
       />
 
       <PaymentFormModal

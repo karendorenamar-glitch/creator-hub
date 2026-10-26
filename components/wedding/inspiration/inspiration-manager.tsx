@@ -35,10 +35,14 @@ function InspirationCard({
   const photoUrls = photos
     .map((photo) => imageUrls[photo.path])
     .filter((url): url is string => Boolean(url));
+  const coverUrl = item.image_path ? imageUrls[item.image_path] : undefined;
+  const galleryUrls = coverUrl
+    ? [coverUrl, ...photoUrls.filter((url) => url !== coverUrl)]
+    : photoUrls;
   const mainUrl =
-    photoUrls[0] ??
+    galleryUrls[0] ??
     (item.image_url && isHttpUrl(item.image_url) ? item.image_url : null);
-  const extraCount = Math.max(0, photoUrls.length - 1);
+  const extraCount = Math.max(0, galleryUrls.length - 1);
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-olive-100 bg-white">
@@ -67,9 +71,9 @@ function InspirationCard({
         </div>
       )}
 
-      {photoUrls.length > 1 ? (
+      {galleryUrls.length > 1 ? (
         <div className="grid grid-cols-4 gap-1 p-1">
-          {photoUrls.slice(1, 5).map((url, index) => (
+          {galleryUrls.slice(1, 5).map((url, index) => (
             <img
               key={`${item.id}-thumb-${index}`}
               src={url}
@@ -90,10 +94,10 @@ function InspirationCard({
           </p>
         ) : null}
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-          {photoUrls.length > 0 ? (
+          {galleryUrls.length > 0 ? (
             <button
               type="button"
-              onClick={() => onView(photoUrls)}
+              onClick={() => onView(galleryUrls)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-olive-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-olive-700"
             >
               <Eye className="size-3.5" aria-hidden />

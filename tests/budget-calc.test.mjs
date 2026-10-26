@@ -2,6 +2,7 @@ import {
   calculateBudget,
   derivePaymentStatus,
 } from "../lib/wedding/budget-calc.ts";
+import { moduleCopy } from "../lib/wedding/module-copy.ts";
 
 let pass = 0;
 let fail = 0;
@@ -101,6 +102,45 @@ r = calc([vendor({ agreed_price: 0 })], [payment({ amount: 500_000 })]);
 t("zero price paid: status", r.statusByVendor.get("v1"), "lunas");
 t("zero price paid: overpayment", r.overpayment, 500_000);
 
+// 8b. Explicit zero-price collaboration completion -> Lunas without cash.
+r = calc([vendor({ agreed_price: 0, collaboration_completed_at: "2026-05-01T00:00:00Z" })]);
+t("zero completed: status", r.statusByVendor.get("v1"), "lunas");
+t("zero completed: totalPaid stays 0", r.totalPaid, 0);
+t("zero completed: overpayment stays 0", r.overpayment, 0);
+t("zero completed: vendorBudget 0 but complete", r.vendorBudget, 0);
+t("zero completed: budget complete", r.vendorBudgetComplete, true);
+
+// 8c. Completion is not cash, even when a cash payment also exists.
+r = calc(
+  [vendor({ agreed_price: 0, collaboration_completed_at: "2026-05-01T00:00:00Z" })],
+  [payment({ amount: 500_000 })],
+);
+t("zero completed cash: status", r.statusByVendor.get("v1"), "lunas");
+t("zero completed cash: totalPaid only cash", r.totalPaid, 500_000);
+t("zero completed cash: overpayment", r.overpayment, 500_000);
+
+// 8d. Positive price ignores collaboration completion; payments still decide.
+r = calc([vendor({ collaboration_completed_at: "2026-05-01T00:00:00Z" })]);
+t("positive completed no cash: status", r.statusByVendor.get("v1"), "diskusi");
+
+// 8e. Changing Rp0 to a positive agreed price recalculates correctly.
+r = calc([
+  vendor({
+    agreed_price: 7_500_000,
+    collaboration_completed_at: "2026-05-01T00:00:00Z",
+  }),
+]);
+t("zero-to-positive: status diskusi", r.statusByVendor.get("v1"), "diskusi");
+t("zero-to-positive: budget", r.vendorBudget, 7_500_000);
+
+// 8f. Completion on a positive-price vendor must never force Lunas.
+r = calc(
+  [vendor({ collaboration_completed_at: "2026-05-01T00:00:00Z" })],
+  [payment({ amount: 5_000_000, payment_kind: "pelunasan" })],
+);
+t("positive completed partial: status", r.statusByVendor.get("v1"), "termin_lanjutan");
+t("positive completed partial: remaining", r.remainingPayment, 5_000_000);
+
 // 9. Missing agreed price -> incomplete, never Lunas, quoted is ignored.
 r = calc(
   [vendor({ agreed_price: null, quoted_price: 99_000_000 })],
@@ -149,6 +189,8 @@ t("duplicate payment: totalPaid", r.totalPaid, 2_000_000);
 r = calc([vendor()], [], 12_000_000);
 t("target under", r.targetStatus, "under");
 t("target under difference", r.targetDifference, 2_000_000);
+t("target under wording ID", moduleCopy.id.budget.targetUnderDetail, "{amount} lebih hemat dari target awal.");
+t("target under wording EN", moduleCopy.en.budget.targetUnderDetail, "{amount} less than the original target.");
 
 r = calc([vendor()], [], 10_000_000);
 t("target on", r.targetStatus, "on");
@@ -197,6 +239,10 @@ t("derive partial final", derivePaymentStatus(10_000_000, [
 t("derive fully paid", derivePaymentStatus(10_000_000, [
   payment({ amount: 10_000_000 }),
 ]), "lunas");
+t("derive zero completed", derivePaymentStatus(0, [], "2026-05-01T00:00:00Z"), "lunas");
+t("derive zero incomplete", derivePaymentStatus(0, [], null), "diskusi");
+t("derive missing price completed", derivePaymentStatus(null, [], "2026-05-01T00:00:00Z"), "incomplete");
+t("derive positive completed ignored", derivePaymentStatus(5_000_000, [], "2026-05-01T00:00:00Z"), "diskusi");
 
 console.log(`\nTOTAL: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

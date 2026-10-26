@@ -41,7 +41,7 @@ export async function loadBudgetData(
     supabase
       .from("vendors")
       .select(
-        "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status",
+        "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status, collaboration_type, collaboration_completed_at",
       )
       .eq("wedding_id", weddingId),
     supabase
@@ -63,6 +63,8 @@ export async function loadBudgetData(
     agreed_price: numeric(vendor.agreed_price),
     archived_at: vendor.archived_at,
     selection_status: vendor.selection_status,
+    collaboration_type: vendor.collaboration_type,
+    collaboration_completed_at: vendor.collaboration_completed_at,
   }));
 
   const payments: BudgetPayment[] = (paymentsResult.data ?? []).map(
@@ -95,7 +97,7 @@ export async function loadVendorsPageData(
     supabase
       .from("vendors")
       .select(
-        "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status",
+        "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status, collaboration_type, collaboration_completed_at",
       )
       .eq("wedding_id", weddingId)
       .order("created_at", { ascending: true }),
@@ -134,6 +136,8 @@ export async function loadVendorsPageData(
     agreed_price: numeric(vendor.agreed_price),
     archived_at: vendor.archived_at,
     selection_status: vendor.selection_status,
+    collaboration_type: vendor.collaboration_type,
+    collaboration_completed_at: vendor.collaboration_completed_at,
   }));
 
   const payments: VendorPayment[] = (paymentsResult.data ?? []).map(

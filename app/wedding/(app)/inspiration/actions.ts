@@ -229,7 +229,7 @@ export async function deleteInspirationPhotoAction(
 
   const { data: photo } = await ctx.supabase
     .from("inspiration_photos")
-    .select("path")
+    .select("path, item_id")
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id)
     .maybeSingle();
@@ -244,6 +244,23 @@ export async function deleteInspirationPhotoAction(
 
   if (photo?.path) {
     await ctx.supabase.storage.from(IMAGE_BUCKET).remove([photo.path]);
+  }
+
+  if (photo?.item_id) {
+    const { data: nextPhoto } = await ctx.supabase
+      .from("inspiration_photos")
+      .select("path")
+      .eq("item_id", photo.item_id)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .order("sort_order", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    await ctx.supabase
+      .from("inspiration_items")
+      .update({ image_path: nextPhoto?.path ?? null })
+      .eq("id", photo.item_id)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .eq("image_path", photo.path);
   }
 
   revalidateWedding("/wedding/inspiration");
@@ -332,10 +349,12 @@ export async function replaceInspirationPhotoAction(
 
   const { data: existing } = await ctx.supabase
     .from("inspiration_photos")
-    .select("path")
+    .select("path, item_id")
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id)
     .maybeSingle();
+
+  if (!existing) return { error: ctx.copy.errors.notFound };
 
   const uploaded = await uploadFile(ctx, file);
   if (!uploaded.ok) return { error: uploaded.error };
@@ -349,6 +368,15 @@ export async function replaceInspirationPhotoAction(
   if (error) {
     await ctx.supabase.storage.from(IMAGE_BUCKET).remove([uploaded.path]);
     return { error: actionError(error, ctx.copy) };
+  }
+
+  if (existing?.item_id) {
+    await ctx.supabase
+      .from("inspiration_items")
+      .update({ image_path: uploaded.path })
+      .eq("id", existing.item_id)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .eq("image_path", existing.path);
   }
 
   if (existing?.path) {

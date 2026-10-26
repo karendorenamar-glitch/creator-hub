@@ -22,6 +22,7 @@ import {
 } from "@/lib/wedding/validation";
 
 const PAYMENT_KINDS = ["dp", "lanjutan", "pelunasan"] as const;
+const COLLABORATION_TYPES = ["paid", "endorsement", "sponsorship", "barter"] as const;
 
 async function context() {
   const ctx = await getActionContext();
@@ -41,7 +42,9 @@ type VendorValues = {
   contact_name: string | null;
   phone: string | null;
   notes: string | null;
-  agreed_price: number;
+  agreed_price: number | null;
+  collaboration_type: (typeof COLLABORATION_TYPES)[number];
+  collaboration_completed: boolean;
 };
 
 function readVendor(
@@ -51,11 +54,13 @@ function readVendor(
   const name = text(formData, "name").slice(0, 120);
   if (!name) return { ok: false, error: copy.form.required };
 
-  const agreedPrice = parseWholeRupiah(text(formData, "agreedPrice"), {
-    allowZero: true,
-  });
-  if (agreedPrice === null) {
-    return { ok: false, error: copy.form.invalidNumber };
+  const rawAgreedPrice = text(formData, "agreedPrice");
+  let agreedPrice: number | null = null;
+  if (rawAgreedPrice !== "") {
+    agreedPrice = parseWholeRupiah(rawAgreedPrice, { allowZero: true });
+    if (agreedPrice === null) {
+      return { ok: false, error: copy.form.invalidNumber };
+    }
   }
 
   return {
@@ -67,6 +72,14 @@ function readVendor(
       phone: optionalText(formData, "phone", 40),
       notes: optionalText(formData, "notes", 4000),
       agreed_price: agreedPrice,
+      collaboration_type: enumValue(
+        formData,
+        "collaborationType",
+        COLLABORATION_TYPES,
+        "paid",
+      ),
+      collaboration_completed:
+        text(formData, "collaborationCompleted") === "yes",
     },
   };
 }
@@ -79,13 +92,67 @@ export async function createVendorAction(
   const parsed = readVendor(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase.from("vendors").insert({
-    wedding_id: ctx.session.wedding.id,
-    ...parsed.values,
-    selection_status: "terpilih",
-  });
+  // Optional initial payment in the same form. Validate before creating the
+  // vendor so an invalid amount/date cannot leave a half-created vendor.
+  const hasInitialPayment = text(formData, "paymentAmount") !== "";
+  if (hasInitialPayment) {
+    const payment = readPayment(formData, ctx.copy);
+    if (!payment.ok) return { error: payment.error };
+  }
 
-  if (error) return { error: actionError(error, ctx.copy) };
+  const { collaboration_completed, ...vendorFields } = parsed.values;
+  const completedAt =
+    parsed.values.agreed_price === 0 && collaboration_completed
+      ? new Date().toISOString()
+      : null;
+
+  const { data: created, error } = await ctx.supabase
+    .from("vendors")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      ...vendorFields,
+      collaboration_completed_at: completedAt,
+      selection_status: "terpilih",
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) {
+    return { error: actionError(error ?? { message: "" }, ctx.copy) };
+  }
+
+  if (hasInitialPayment) {
+    formData.set("vendorId", created.id);
+    const paymentResult = await createVendorPaymentAction(null, formData);
+    if (paymentResult?.error) {
+      // Compensate: do not leave a vendor created without its intended payment.
+      await ctx.supabase
+        .from("vendors")
+        .delete()
+        .eq("id", created.id)
+        .eq("wedding_id", ctx.session.wedding.id);
+      revalidateVendorPages();
+      return paymentResult;
+    }
+
+    // A duplicate idempotency key can return success without inserting a row
+    // for this new vendor. Never leave that vendor behind.
+    const { count } = await ctx.supabase
+      .from("vendor_payments")
+      .select("id", { count: "exact", head: true })
+      .eq("vendor_id", created.id)
+      .eq("wedding_id", ctx.session.wedding.id);
+
+    if (count === 0) {
+      await ctx.supabase
+        .from("vendors")
+        .delete()
+        .eq("id", created.id)
+        .eq("wedding_id", ctx.session.wedding.id);
+      revalidateVendorPages();
+      return { error: ctx.copy.errors.generic };
+    }
+  }
 
   revalidateVendorPages();
   return { success: ctx.copy.form.saved };
@@ -102,9 +169,32 @@ export async function updateVendorAction(
   const parsed = readVendor(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const { data: existing } = await ctx.supabase
+    .from("vendors")
+    .select("collaboration_completed_at")
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+
+  if (!existing) return { error: ctx.copy.errors.notFound };
+
+  const { collaboration_completed, ...vendorFields } = parsed.values;
+
+  // Preserve completion on ordinary detail edits. Only an explicit checkbox
+  // state on a zero-price vendor can set or clear it.
+  let completedAt = existing.collaboration_completed_at;
+  if (parsed.values.agreed_price === 0) {
+    completedAt = collaboration_completed
+      ? (existing.collaboration_completed_at ?? new Date().toISOString())
+      : null;
+  }
+
   const { error } = await ctx.supabase
     .from("vendors")
-    .update(parsed.values)
+    .update({
+      ...vendorFields,
+      collaboration_completed_at: completedAt,
+    })
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 

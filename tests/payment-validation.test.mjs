@@ -1,4 +1,5 @@
 import {
+  isHttpUrl,
   isRealDate,
   parseWholeRupiah,
 } from "../lib/wedding/validation.ts";
@@ -120,6 +121,12 @@ t(
   ),
   { ok: false, error: "too_large" },
 );
+
+// Inspiration vendor options are reference-only: URL and price validation.
+t("inspiration reference price zero", parseWholeRupiah("0", { allowZero: true }), 0);
+t("inspiration reference price negative", parseWholeRupiah("-1", { allowZero: true }), null);
+t("instagram https url", isHttpUrl("https://instagram.com/example"), true);
+t("instagram non-http url", isHttpUrl("javascript:alert(1)"), false);
 
 // Proof files stay linked to their own transaction.
 const grouped = groupProofsByPayment([

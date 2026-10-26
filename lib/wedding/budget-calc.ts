@@ -10,7 +10,8 @@
  *  - Vendor Budget = sum of agreed prices for active confirmed vendors.
  *    Missing agreed prices contribute 0 and make the budget incomplete.
  *  - Total Paid = sum of real payment rows for active confirmed vendors.
- *  - Lunas requires actual payments to cover a known agreed price.
+ *  - Lunas requires actual payments to cover a known positive agreed price, or
+ *    an explicit completion flag for an agreed_price = 0 collaboration.
  *  - Target Budget compares to Vendor Budget only, never to Total Paid.
  */
 
@@ -30,6 +31,12 @@ export type TargetBudgetStatus =
   | "unset"
   | "provisional";
 
+export type CollaborationType =
+  | "paid"
+  | "endorsement"
+  | "sponsorship"
+  | "barter";
+
 export type BudgetVendor = {
   id: string;
   name?: string | null;
@@ -39,6 +46,8 @@ export type BudgetVendor = {
   notes?: string | null;
   agreed_price: number | null;
   archived_at: string | null;
+  collaboration_type?: CollaborationType;
+  collaboration_completed_at?: string | null;
   /** Legacy compatibility flag; never shown as a workflow in the new UI. */
   selection_status?: "alternatif" | "terpilih";
 };
@@ -112,7 +121,8 @@ function priceOf(vendor: BudgetVendor): number | null {
  *
  * Precedence:
  *  1. Missing agreed price -> incomplete (never Lunas).
- *  2. No payment rows -> Diskusi (also for a known zero price).
+ *  2. No payment rows -> Diskusi, except an explicitly completed zero-price
+ *     endorsement/sponsorship/barter collaboration -> Lunas.
  *  3. Actual payments cover a known price -> Lunas (overpayment separate).
  *  4. A continuation/final transaction exists -> Termin Lanjutan.
  *  5. Otherwise -> DP.
@@ -120,6 +130,7 @@ function priceOf(vendor: BudgetVendor): number | null {
 export function derivePaymentStatus(
   agreedPrice: number | null,
   payments: Array<Pick<BudgetPayment, "amount" | "payment_kind">>,
+  collaborationCompletedAt: string | null = null,
 ): DerivedPaymentStatus {
   if (agreedPrice === null || agreedPrice === undefined) {
     return "incomplete";
@@ -129,7 +140,11 @@ export function derivePaymentStatus(
   if (!Number.isFinite(price) || price < 0) return "incomplete";
 
   const positivePayments = payments.filter((p) => amountOf(p.amount) > 0);
-  if (positivePayments.length === 0) return "diskusi";
+  if (positivePayments.length === 0) {
+    // Explicit zero-price endorsement/barter completion is Lunas without cash.
+    if (price === 0 && collaborationCompletedAt) return "lunas";
+    return "diskusi";
+  }
 
   const totalPaid = positivePayments.reduce(
     (sum, payment) => sum + amountOf(payment.amount),
@@ -222,7 +237,11 @@ export function calculateBudget(input: {
     );
     const remaining = price === null ? 0 : Math.max(0, price - paid);
     const overpayment = price === null ? 0 : Math.max(0, paid - price);
-    const status = derivePaymentStatus(price, payments);
+    const status = derivePaymentStatus(
+      price,
+      payments,
+      vendor.collaboration_completed_at ?? null,
+    );
 
     paidByVendor.set(vendor.id, paid);
     remainingByVendor.set(vendor.id, remaining);

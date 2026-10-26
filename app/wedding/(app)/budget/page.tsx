@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
 import { TargetBudgetStatusCard } from "@/components/wedding/budget/target-budget-status";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
+import { VendorList } from "@/components/wedding/vendors/vendor-list";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { loadBudgetData } from "@/lib/wedding/budget-data";
+import { loadVendorsPageData } from "@/lib/wedding/budget-data";
 import { formatIDR } from "@/lib/wedding/format";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
@@ -18,7 +18,7 @@ export default async function BudgetPage() {
   const locale = await getLocale();
   const copy = moduleCopy[locale];
   const targetBudget = Number(session.wedding.total_budget ?? 0);
-  const data = await loadBudgetData(session.wedding.id, targetBudget);
+  const data = await loadVendorsPageData(session.wedding.id, targetBudget);
   const { calc } = data;
 
   return (
@@ -100,12 +100,18 @@ export default async function BudgetPage() {
         ) : null}
       </Card>
 
-      <Link
-        href="/wedding/vendors"
-        className="inline-flex text-sm font-medium text-olive-700 hover:underline"
-      >
-        {copy.budget.manageVendors}
-      </Link>
+      <Card className="space-y-4">
+        <VendorList
+          activeVendors={calc.activeVendors}
+          archivedVendors={calc.archivedVendors}
+          payments={data.payments}
+          proofs={data.proofs}
+          proofUrls={data.proofUrls}
+          summaryByVendor={Object.fromEntries(calc.summaryByVendor)}
+          copy={copy}
+          locale={locale}
+        />
+      </Card>
     </div>
   );
 }

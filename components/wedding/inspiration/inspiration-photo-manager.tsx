@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { useActionState, useRef } from "react";
+import { useActionState, useRef, useState } from "react";
 import {
   deleteInspirationPhotoAction,
   replaceInspirationPhotoAction,
@@ -9,6 +9,7 @@ import {
 import { DeleteForm } from "@/components/wedding/delete-form";
 import type { ActionResult } from "@/lib/wedding/action-context";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { validateInspirationImageFile } from "@/lib/wedding/uploads";
 
 function PhotoRow({
   photo,
@@ -22,6 +23,7 @@ function PhotoRow({
     replaceInspirationPhotoAction,
     null as ActionResult,
   );
+  const [clientError, setClientError] = useState<string | null>(null);
 
   return (
     <div className="space-y-1">
@@ -44,9 +46,20 @@ function PhotoRow({
               accept="image/jpeg,image/png"
               className="hidden"
               onChange={(event) => {
-                if (event.currentTarget.files?.length) {
-                  formRef.current?.requestSubmit();
+                const file = event.currentTarget.files?.[0];
+                if (!file) return;
+                const check = validateInspirationImageFile(file);
+                if (!check.ok) {
+                  setClientError(
+                    check.error === "too_large"
+                      ? copy.inspiration.imageTooLarge
+                      : copy.inspiration.imageInvalidType,
+                  );
+                  event.currentTarget.value = "";
+                  return;
                 }
+                setClientError(null);
+                formRef.current?.requestSubmit();
               }}
             />
           </label>
@@ -57,8 +70,10 @@ function PhotoRow({
           copy={copy}
         />
       </div>
-      {state?.error ? (
-        <p className="text-[11px] text-rose-600">{state.error}</p>
+      {clientError || state?.error ? (
+        <p className="text-[11px] text-rose-600">
+          {clientError ?? state?.error}
+        </p>
       ) : null}
     </div>
   );
