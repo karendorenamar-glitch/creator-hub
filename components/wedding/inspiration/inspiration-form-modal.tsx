@@ -15,18 +15,8 @@ import {
 } from "@/components/wedding/form-kit";
 import type { InspirationItem } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { compressInspirationImage } from "@/lib/wedding/image-compress";
 import { validateInspirationImageFile } from "@/lib/wedding/uploads";
-
-const CATEGORY_SUGGESTIONS = [
-  "Venue",
-  "Dekorasi",
-  "Catering",
-  "MUA",
-  "Fotografer",
-  "Busana",
-  "Undangan",
-  "Lainnya",
-];
 
 const fileClass =
   "w-full rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm text-ink-soft file:mr-3 file:rounded-lg file:border-0 file:bg-olive-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-olive-700";
@@ -37,20 +27,29 @@ export function InspirationFormModal({
   copy,
   item,
   photos,
+  categories,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   item: InspirationItem | null;
   photos: { id: string; url: string }[];
+  categories: string[];
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
   const [state, formAction, pending] = useActionState(action, null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (state?.success) onClose();
   }, [state, onClose]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   return (
     <FormModal
@@ -61,10 +60,20 @@ export function InspirationFormModal({
     >
       <div className="space-y-4">
         {item ? (
-          <InspirationPhotoManager photos={photos} copy={copy} />
+          <InspirationPhotoManager
+            itemId={item?.id ?? null}
+            photos={photos}
+            copy={copy}
+          />
         ) : null}
 
-        <form action={formAction} className="space-y-4">
+        <form
+          action={formAction}
+          onSubmit={(event) => {
+            if (fileError) event.preventDefault();
+          }}
+          className="space-y-4"
+        >
         {item ? <input type="hidden" name="id" value={item.id} /> : null}
         <FormAlert error={state?.error ?? fileError ?? undefined} />
 
@@ -85,20 +94,19 @@ export function InspirationFormModal({
           htmlFor="inspiration-category"
           hint={copy.inspiration.categoryHint}
         >
-          <input
+          <select
             id="inspiration-category"
             name="category"
-            list="inspiration-category-suggestions"
-            maxLength={80}
-            placeholder="Dekorasi"
             defaultValue={item?.category ?? ""}
             className={inputClass}
-          />
-          <datalist id="inspiration-category-suggestions">
-            {CATEGORY_SUGGESTIONS.map((option) => (
-              <option key={option} value={option} />
+          >
+            <option value="">{copy.form.none}</option>
+            {categories.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
             ))}
-          </datalist>
+          </select>
         </Field>
 
         <Field
@@ -108,29 +116,64 @@ export function InspirationFormModal({
         >
           <input
             id="inspiration-photo"
-            name="images"
+            name="image"
             type="file"
-            multiple
             accept="image/jpeg,image/png"
             className={fileClass}
-            onChange={(event) => {
-              const files = Array.from(event.currentTarget.files ?? []);
-              const invalid = files
-                .map((file) => validateInspirationImageFile(file))
-                .find((result) => !result.ok);
-              setFileError(
-                invalid && !invalid.ok
-                  ? invalid.error === "too_large"
+            onChange={async (event) => {
+              const input = event.currentTarget;
+              const file = input.files?.[0];
+              if (!file) {
+                setPreviewUrl(null);
+                return;
+              }
+              const validation = validateInspirationImageFile(file);
+              if (!validation.ok) {
+                setFileError(
+                  validation.error === "too_large"
                     ? copy.inspiration.imageTooLarge
-                    : copy.inspiration.imageInvalidType
-                  : null,
-              );
+                    : copy.inspiration.imageInvalidType,
+                );
+                setPreviewUrl(null);
+                input.value = "";
+                return;
+              }
+
+              const compressed = await compressInspirationImage(file);
+              const finalCheck = validateInspirationImageFile(compressed);
+              if (!finalCheck.ok) {
+                setFileError(copy.inspiration.imageTooLarge);
+                setPreviewUrl(null);
+                input.value = "";
+                return;
+              }
+
+              try {
+                const transfer = new DataTransfer();
+                transfer.items.add(compressed);
+                input.files = transfer.files;
+              } catch {
+                // The original file remains selected if the browser cannot
+                // replace an input's FileList; server validation still applies.
+              }
+
+              setFileError(null);
+              const objectUrl = URL.createObjectURL(compressed);
+              setPreviewUrl((current) => {
+                if (current) URL.revokeObjectURL(current);
+                return objectUrl;
+              });
             }}
           />
-          {item?.image_path ? (
-            <p className="text-xs text-ink-soft">
-              {copy.inspiration.uploadHint}
-            </p>
+          {previewUrl ? (
+            <div className="mt-2 overflow-hidden rounded-xl border border-olive-100 bg-olive-50">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={previewUrl}
+                alt={copy.inspiration.uploadLabel}
+                className="max-h-48 w-full object-contain"
+              />
+            </div>
           ) : null}
         </Field>
 

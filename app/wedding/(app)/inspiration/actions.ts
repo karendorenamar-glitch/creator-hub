@@ -334,6 +334,63 @@ async function uploadFile(
   return { ok: true, path };
 }
 
+export async function addInspirationPhotoAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const itemId = text(formData, "itemId");
+  if (!isUuid(itemId)) return { error: ctx.copy.errors.notFound };
+
+  const { data: item } = await ctx.supabase
+    .from("inspiration_items")
+    .select("id, image_path")
+    .eq("id", itemId)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+  if (!item) return { error: ctx.copy.errors.notFound };
+
+  const file = formData.get("image");
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: ctx.copy.form.required };
+  }
+
+  const uploaded = await uploadFile(ctx, file);
+  if (!uploaded.ok) return { error: uploaded.error };
+
+  const { data: last } = await ctx.supabase
+    .from("inspiration_photos")
+    .select("sort_order")
+    .eq("item_id", itemId)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const { error } = await ctx.supabase.from("inspiration_photos").insert({
+    wedding_id: ctx.session.wedding.id,
+    item_id: itemId,
+    path: uploaded.path,
+    sort_order: (last?.sort_order ?? -1) + 1,
+  });
+
+  if (error) {
+    await ctx.supabase.storage.from(IMAGE_BUCKET).remove([uploaded.path]);
+    return { error: actionError(error, ctx.copy) };
+  }
+
+  if (!item.image_path) {
+    await ctx.supabase
+      .from("inspiration_items")
+      .update({ image_path: uploaded.path })
+      .eq("id", itemId)
+      .eq("wedding_id", ctx.session.wedding.id);
+  }
+
+  revalidateWedding("/wedding/inspiration");
+  return { success: ctx.copy.form.saved };
+}
+
 export async function replaceInspirationPhotoAction(
   _prev: ActionResult,
   formData: FormData,
@@ -399,7 +456,6 @@ function readVendorOption(
   copy: ModuleCopy,
 ): { ok: true; values: VendorOptionValues } | { ok: false; error: string } {
   const vendorName = text(formData, "vendorName").slice(0, 120);
-  if (!vendorName) return { ok: false, error: copy.form.required };
 
   const instagramUrl = optionalText(formData, "instagramUrl", 1000);
   if (instagramUrl && !isHttpUrl(instagramUrl)) {

@@ -62,7 +62,6 @@ function OptionFormModal({
           <input
             id="option-name"
             name="vendorName"
-            required
             maxLength={120}
             defaultValue={option?.vendor_name ?? ""}
             className={inputClass}
@@ -149,22 +148,26 @@ export function InspirationVendorOptions({
         </p>
       ) : (
         <ul className="space-y-1.5">
-          {options.map((option) => (
+          {options.map((option, optionIndex) => (
             <li
               key={option.id}
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-olive-50/50 px-2.5 py-1.5"
             >
               <div className="min-w-0">
                 <p className="truncate text-xs font-medium text-ink">
-                  {option.vendor_name}
+                  <span className="mr-1 text-ink-soft">
+                    {copy.inspiration.untitledVendorOption} {optionIndex + 1}:
+                  </span>
+                  {option.vendor_name.trim() ||
+                    copy.inspiration.noReferencePrice}
                 </p>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-ink-soft">
-                  {option.reference_price !== null ? (
-                    <Badge tone="muted">
-                      {copy.inspiration.referencePrice}:{" "}
-                      {formatIDR(option.reference_price)}
-                    </Badge>
-                  ) : null}
+                  <Badge tone="muted">
+                    {copy.inspiration.referencePrice}:{" "}
+                    {option.reference_price !== null
+                      ? formatIDR(option.reference_price)
+                      : copy.inspiration.noReferencePrice}
+                  </Badge>
                   {option.instagram_url ? (
                     <a
                       href={option.instagram_url}

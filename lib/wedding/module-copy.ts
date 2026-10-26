@@ -355,10 +355,11 @@ const en = {
     linkHint: "Optional link to the original post",
     emptyFilter: "No inspiration matches this category.",
     uploadLabel: "Upload photo",
-    uploadHint: "JPG or PNG, max 8 MB",
+    uploadHint:
+      "JPG or PNG, max 8 MB per photo. Upload one photo at a time if you want to add more than one.",
     imageTooLarge: "The photo is larger than 8 MB.",
     imageInvalidType: "Only JPG or PNG photos are allowed.",
-    categoryHint: "Pick a suggestion or type your own",
+    categoryHint: "Choose one of the available categories.",
     view: "View",
     photosCount: "photos",
     replace: "Replace",
@@ -372,6 +373,11 @@ const en = {
     referenceOnly:
       "Reference only. Vendor options and their prices never enter Vendor Budget, payments, or Target Budget.",
     noVendorOptions: "No vendor options yet.",
+    untitledVendorOption: "Vendor option",
+    noReferencePrice: "Not filled",
+    viewDetail: "View detail",
+    detailTitle: "Inspiration detail",
+    deleteInspiration: "Delete inspiration",
   },
   invitation: {
     title: "E-Invitation",
@@ -793,10 +799,11 @@ const id: ModuleCopy = {
     linkHint: "Tautan opsional ke unggahan asli",
     emptyFilter: "Tidak ada inspirasi untuk kategori ini.",
     uploadLabel: "Upload foto",
-    uploadHint: "JPG atau PNG, maksimal 8 MB",
+    uploadHint:
+      "Format foto JPG atau PNG, maksimal 8 MB per foto. Upload foto satu per satu jika ingin menambahkan lebih dari satu foto.",
     imageTooLarge: "Ukuran foto melebihi 8 MB.",
     imageInvalidType: "Hanya foto JPG atau PNG yang diperbolehkan.",
-    categoryHint: "Pilih saran atau ketik sendiri",
+    categoryHint: "Pilih salah satu kategori yang tersedia.",
     view: "Lihat",
     photosCount: "foto",
     replace: "Ganti",
@@ -810,6 +817,11 @@ const id: ModuleCopy = {
     referenceOnly:
       "Hanya referensi. Opsi vendor dan harganya tidak pernah masuk Budget Vendor, pembayaran, atau Target Budget.",
     noVendorOptions: "Belum ada opsi vendor.",
+    untitledVendorOption: "Opsi Vendor",
+    noReferencePrice: "Belum diisi",
+    viewDetail: "Lihat detail",
+    detailTitle: "Detail inspirasi",
+    deleteInspiration: "Hapus inspirasi",
   },
   invitation: {
     title: "E-Invitation",

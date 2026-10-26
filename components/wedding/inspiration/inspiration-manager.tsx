@@ -8,7 +8,7 @@ import { DeleteForm } from "@/components/wedding/delete-form";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { InspirationFormModal } from "@/components/wedding/inspiration/inspiration-form-modal";
 import { InspirationLightbox } from "@/components/wedding/inspiration/inspiration-lightbox";
-import { InspirationVendorOptions } from "@/components/wedding/inspiration/inspiration-vendor-options";
+import { InspirationDetailModal } from "@/components/wedding/inspiration/inspiration-detail-modal";
 import type { InspirationItem, InspirationVendorOption } from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
@@ -16,17 +16,17 @@ import type { ModuleCopy } from "@/lib/wedding/module-copy";
 function InspirationCard({
   item,
   photos,
-  options,
   imageUrls,
   copy,
+  onOpen,
   onEdit,
   onView,
 }: {
   item: InspirationItem;
   photos: { id: string; path: string }[];
-  options: InspirationVendorOption[];
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
+  onOpen: (item: InspirationItem) => void;
   onEdit: (item: InspirationItem) => void;
   onView: (urls: string[]) => void;
 }) {
@@ -45,7 +45,18 @@ function InspirationCard({
   const extraCount = Math.max(0, galleryUrls.length - 1);
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-olive-100 bg-white">
+    <div
+      className="flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-olive-100 bg-white transition-shadow hover:shadow-md"
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(item)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(item);
+        }
+      }}
+    >
       {mainUrl && !broken ? (
         <div className="relative flex aspect-[4/5] w-full items-center justify-center bg-olive-50/60 p-1">
           <img
@@ -93,7 +104,11 @@ function InspirationCard({
             {item.notes ?? item.description}
           </p>
         ) : null}
-        <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
+        <div
+          className="mt-auto flex flex-wrap items-center gap-2 pt-1"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
           {galleryUrls.length > 0 ? (
             <button
               type="button"
@@ -125,15 +140,24 @@ function InspirationCard({
           </button>
           <DeleteForm action={deleteInspirationAction} id={item.id} copy={copy} />
         </div>
-        <InspirationVendorOptions
-          itemId={item.id}
-          options={options}
-          copy={copy}
-        />
       </div>
     </div>
   );
 }
+
+const STANDARD_CATEGORIES = [
+  "Dekorasi",
+  "Wedding Ring",
+  "MUA",
+  "Gaun Pengantin",
+  "Venue",
+  "Undangan",
+  "Fotografi",
+  "Catering",
+  "Busana",
+  "Souvenir",
+  "Entertainment",
+];
 
 export function InspirationManager({
   items,
@@ -155,14 +179,7 @@ export function InspirationManager({
     title: string;
     urls: string[];
   } | null>(null);
-
-  const categories = useMemo(
-    () =>
-      Array.from(
-        new Set(items.map((item) => item.category?.trim()).filter(Boolean) as string[]),
-      ).sort((a, b) => a.localeCompare(b)),
-    [items],
-  );
+  const [detail, setDetail] = useState<InspirationItem | null>(null);
 
   const filtered = useMemo(
     () =>
@@ -189,9 +206,21 @@ export function InspirationManager({
   }
 
   function openEdit(item: InspirationItem) {
+    setDetail(null);
     setEditing(item);
     setModalOpen(true);
   }
+
+  const activeDetail = detail
+    ? (items.find((item) => item.id === detail.id) ?? null)
+    : null;
+
+  const categories = useMemo(() => {
+    const used = items
+      .map((item) => item.category?.trim())
+      .filter((category): category is string => Boolean(category));
+    return Array.from(new Set([...STANDARD_CATEGORIES, ...used]));
+  }, [items]);
 
   return (
     <div className="space-y-5">
@@ -245,9 +274,9 @@ export function InspirationManager({
                     key={item.id}
                     item={item}
                     photos={photosByItem[item.id] ?? []}
-                    options={optionsByItem[item.id] ?? []}
                     imageUrls={imageUrls}
                     copy={copy}
+                    onOpen={setDetail}
                     onEdit={openEdit}
                     onView={(urls) => setViewer({ title: item.title, urls })}
                   />
@@ -267,6 +296,18 @@ export function InspirationManager({
         photos={(photosByItem[editing?.id ?? ""] ?? [])
           .map((photo) => ({ id: photo.id, url: imageUrls[photo.path] }))
           .filter((photo) => Boolean(photo.url))}
+        categories={categories}
+      />
+
+      <InspirationDetailModal
+        open={Boolean(activeDetail)}
+        onClose={() => setDetail(null)}
+        item={activeDetail}
+        photos={activeDetail ? (photosByItem[activeDetail.id] ?? []) : []}
+        options={activeDetail ? (optionsByItem[activeDetail.id] ?? []) : []}
+        imageUrls={imageUrls}
+        copy={copy}
+        onEdit={openEdit}
       />
 
       <InspirationLightbox
