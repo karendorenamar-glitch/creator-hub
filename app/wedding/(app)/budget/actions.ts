@@ -10,6 +10,7 @@ import {
 import type { PaymentStatus } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import {
+  enumValue,
   isDateString,
   isUuid,
   optionalText,
@@ -213,10 +214,13 @@ export async function updateExpenseAction(
 }
 
 
+const OTHER_COST_STATUSES = ["unpaid", "partial", "paid"] as const;
+
 type OtherCostValues = {
   name: string;
   amount: number;
-  paid: boolean;
+  paidAmount: number;
+  status: (typeof OTHER_COST_STATUSES)[number];
 };
 
 function readOtherCost(
@@ -233,12 +237,31 @@ function readOtherCost(
     return { ok: false, error: copy.form.invalidNumber };
   }
 
+  const status = enumValue(
+    formData,
+    "status",
+    OTHER_COST_STATUSES,
+    "unpaid",
+  );
+  let paidAmount = 0;
+
+  if (status === "paid") {
+    paidAmount = amount;
+  } else if (status === "partial") {
+    const parsedPaid = parseWholeRupiah(text(formData, "amountPaid"));
+    if (parsedPaid === null || parsedPaid <= 0 || parsedPaid >= amount) {
+      return { ok: false, error: copy.budget.otherCostPartialInvalid };
+    }
+    paidAmount = parsedPaid;
+  }
+
   return {
     ok: true,
     values: {
       name,
       amount,
-      paid: text(formData, "paid") === "yes",
+      paidAmount,
+      status,
     },
   };
 }
@@ -247,9 +270,13 @@ function otherCostRow(values: OtherCostValues) {
   return {
     name: values.name,
     amount: values.amount,
-    amount_paid: values.paid ? values.amount : 0,
+    amount_paid: values.paidAmount,
     deposit_amount: 0,
-    payment_status: (values.paid ? "lunas" : "diskusi") as PaymentStatus,
+    payment_status: (values.status === "paid"
+      ? "lunas"
+      : values.status === "partial"
+        ? "dp"
+        : "diskusi") as PaymentStatus,
     category_id: null,
     vendor_id: null,
     due_date: null,

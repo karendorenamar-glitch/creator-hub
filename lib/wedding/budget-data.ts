@@ -41,16 +41,24 @@ function mapOtherCosts(
         name: string;
         amount: number | string | null;
         payment_status: string;
+        amount_paid: number | string | null;
       }[]
     | null
     | undefined,
 ): BudgetOtherCost[] {
-  return (rows ?? []).map((row) => ({
-    id: row.id,
-    name: row.name,
-    amount: numeric(row.amount) ?? 0,
-    paid: row.payment_status === "lunas" || row.payment_status === "paid",
-  }));
+  return (rows ?? []).map((row) => {
+    const amount = numeric(row.amount) ?? 0;
+    const paidAmount = Math.min(
+      Math.max(numeric(row.amount_paid) ?? 0, 0),
+      Math.max(amount, 0),
+    );
+    return {
+      id: row.id,
+      name: row.name,
+      amount,
+      paidAmount,
+    };
+  });
 }
 
 export async function loadBudgetData(
@@ -72,7 +80,7 @@ export async function loadBudgetData(
       .eq("wedding_id", weddingId),
     supabase
       .from("expenses")
-      .select("id, name, amount, payment_status")
+      .select("id, name, amount, amount_paid, payment_status")
       .eq("wedding_id", weddingId)
       .is("vendor_id", null)
       .order("created_at", { ascending: true }),
@@ -152,7 +160,7 @@ export async function loadVendorsPageData(
         .order("sort_order", { ascending: true }),
       supabase
         .from("expenses")
-        .select("id, name, amount, payment_status")
+        .select("id, name, amount, amount_paid, payment_status")
         .eq("wedding_id", weddingId)
         .is("vendor_id", null)
         .order("created_at", { ascending: true }),

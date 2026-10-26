@@ -109,8 +109,12 @@ const en = {
     otherCostName: "Cost name",
     otherCostAmount: "Price",
     otherCostStatus: "Status",
-    otherCostPaid: "Paid",
-    otherCostUnpaid: "Unpaid",
+    otherCostPaid: "Lunas",
+    otherCostUnpaid: "Belum bayar",
+    otherCostPartial: "Terbayar sebagian",
+    otherCostAmountPaid: "Amount paid",
+    otherCostPartialInvalid:
+      "The amount paid must be greater than 0 and less than the price.",
     noOtherCosts: "No other costs yet.",
     deleteOtherCostConfirm: "Delete this other cost?",
     autoCalculatedInfo:
@@ -515,8 +519,12 @@ const id: ModuleCopy = {
     otherCostName: "Biaya",
     otherCostAmount: "Harga",
     otherCostStatus: "Status",
-    otherCostPaid: "Terbayar",
-    otherCostUnpaid: "Belum terbayar",
+    otherCostPaid: "Lunas",
+    otherCostUnpaid: "Belum bayar",
+    otherCostPartial: "Terbayar sebagian",
+    otherCostAmountPaid: "Jumlah dibayar",
+    otherCostPartialInvalid:
+      "Jumlah dibayar harus lebih dari 0 dan kurang dari harga.",
     noOtherCosts: "Belum ada biaya lainnya.",
     deleteOtherCostConfirm: "Hapus biaya lainnya ini?",
     autoCalculatedInfo:

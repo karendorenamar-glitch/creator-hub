@@ -230,7 +230,7 @@ t("inspiration ignored: target", withExtra.targetStatus, withoutInspiration.targ
 
 // 16. Other costs: unpaid costs affect the plan but not Total Paid.
 const unpaidOther = [
-  { id: "c1", name: "Transport", amount: 2_000_000, paid: false },
+  { id: "c1", name: "Transport", amount: 2_000_000, paidAmount: 0 },
 ];
 r = calc([vendor()], [], 0, unpaidOther);
 t("other unpaid: total", r.otherCostsTotal, 2_000_000);
@@ -239,9 +239,20 @@ t("other unpaid: totalPaid", r.totalPaid, 0);
 t("other unpaid: remaining includes cost", r.remainingPayment, 12_000_000);
 t("other unpaid: percentage", r.paymentPercentage, 0);
 
+// 16b. Partial other costs add only the amount actually paid and reduce the remainder.
+const partialOther = [
+  { id: "c1", name: "Transport", amount: 2_000_000, paidAmount: 500_000 },
+];
+r = calc([vendor()], [], 0, partialOther);
+t("other partial: total", r.otherCostsTotal, 2_000_000);
+t("other partial: paid subtotal", r.otherCostsPaid, 500_000);
+t("other partial: totalPaid", r.totalPaid, 500_000);
+t("other partial: remaining", r.remainingPayment, 11_500_000);
+t("other partial: percentage", r.paymentPercentage, 4.17);
+
 // 17. Paid other costs move Total Paid and the automatic percentage.
 const paidOther = [
-  { id: "c1", name: "Transport", amount: 2_000_000, paid: true },
+  { id: "c1", name: "Transport", amount: 2_000_000, paidAmount: 2_000_000 },
 ];
 r = calc([vendor()], [], 0, paidOther);
 t("other paid: subtotal", r.otherCostsPaid, 2_000_000);

@@ -56,7 +56,7 @@ export type BudgetOtherCost = {
   id?: string;
   name: string;
   amount: number;
-  paid: boolean;
+  paidAmount: number;
 };
 
 export type VendorPaymentSummary = {
@@ -279,7 +279,8 @@ export function calculateBudget(input: {
     0,
   );
   const otherCostsPaid = otherCosts.reduce(
-    (sum, cost) => sum + (cost.paid ? amountOf(cost.amount) : 0),
+    (sum, cost) =>
+      sum + Math.min(amountOf(cost.paidAmount), amountOf(cost.amount)),
     0,
   );
   const totalPaid = vendorPaid + otherCostsPaid;

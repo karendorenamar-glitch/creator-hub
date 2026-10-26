@@ -34,6 +34,15 @@ function OtherCostFormModal({
 }) {
   const action = cost ? updateOtherCostAction : createOtherCostAction;
   const [state, formAction, pending] = useActionState(action, null);
+  const initialStatus =
+    cost && cost.amount > 0 && cost.paidAmount >= cost.amount
+      ? "paid"
+      : cost && cost.paidAmount > 0
+        ? "partial"
+        : "unpaid";
+  const [status, setStatus] = useState<"unpaid" | "partial" | "paid">(
+    initialStatus,
+  );
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -77,14 +86,37 @@ function OtherCostFormModal({
         <Field label={copy.budget.otherCostStatus} htmlFor="other-cost-status">
           <select
             id="other-cost-status"
-            name="paid"
-            defaultValue={cost?.paid ? "yes" : "no"}
+            name="status"
+            value={status}
+            onChange={(event) =>
+              setStatus(event.target.value as typeof status)
+            }
             className={inputClass}
           >
-            <option value="no">{copy.budget.otherCostUnpaid}</option>
-            <option value="yes">{copy.budget.otherCostPaid}</option>
+            <option value="unpaid">{copy.budget.otherCostUnpaid}</option>
+            <option value="partial">{copy.budget.otherCostPartial}</option>
+            <option value="paid">{copy.budget.otherCostPaid}</option>
           </select>
         </Field>
+
+        {status === "partial" ? (
+          <Field
+            label={`${copy.budget.otherCostAmountPaid} (IDR)`}
+            htmlFor="other-cost-amount-paid"
+          >
+            <input
+              id="other-cost-amount-paid"
+              name="amountPaid"
+              type="number"
+              min={1}
+              step={1000}
+              inputMode="numeric"
+              required
+              defaultValue={initialStatus === "partial" ? cost?.paidAmount || "" : ""}
+              className={inputClass}
+            />
+          </Field>
+        ) : null}
 
         <ModalFooter
           pending={pending}
@@ -144,13 +176,26 @@ export function OtherCostManager({
                 </p>
                 <p className="mt-0.5 text-xs text-ink-soft">
                   {formatIDR(cost.amount)}
+                  {cost.paidAmount > 0
+                    ? ` · ${formatIDR(cost.paidAmount)} ${copy.budget.paidOf}`
+                    : ""}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge tone={cost.paid ? "success" : "warning"}>
-                  {cost.paid
+                <Badge
+                  tone={
+                    cost.amount > 0 && cost.paidAmount >= cost.amount
+                      ? "success"
+                      : cost.paidAmount > 0
+                        ? "warning"
+                        : "muted"
+                  }
+                >
+                  {cost.amount > 0 && cost.paidAmount >= cost.amount
                     ? copy.budget.otherCostPaid
-                    : copy.budget.otherCostUnpaid}
+                    : cost.paidAmount > 0
+                      ? copy.budget.otherCostPartial
+                      : copy.budget.otherCostUnpaid}
                 </Badge>
                 <button
                   type="button"
