@@ -56,12 +56,16 @@ function TableFormModal({
   copy,
   eventId,
   table,
+  mode,
+  defaultY,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   eventId: string;
   table: SeatingTable | null;
+  mode: "chairs" | "tables";
+  defaultY?: number;
 }) {
   const [state, formAction, pending] = useActionState(saveTableAction, null);
 
@@ -73,15 +77,37 @@ function TableFormModal({
     <FormModal
       open={open}
       onClose={onClose}
-      title={table ? copy.seating.editTable : copy.seating.addTable}
+      title={
+        mode === "chairs"
+          ? table
+            ? copy.seating.editRow
+            : copy.seating.addRow
+          : table
+            ? copy.seating.editTable
+            : copy.seating.addTable
+      }
     >
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="eventId" value={eventId} />
         {table ? <input type="hidden" name="id" value={table.id} /> : null}
         <input type="hidden" name="x" value={table?.canvas_x ?? 50} />
-        <input type="hidden" name="y" value={table?.canvas_y ?? 50} />
+        <input
+          type="hidden"
+          name="y"
+          value={table?.canvas_y ?? defaultY ?? 50}
+        />
+        {mode === "chairs" ? (
+          <>
+            <input type="hidden" name="shape" value="rect" />
+            <input type="hidden" name="width" value="35" />
+            <input type="hidden" name="height" value="8" />
+          </>
+        ) : null}
         <FormAlert error={state?.error} success={state?.success} />
-        <Field label={copy.seating.tableName} htmlFor="seating-table-name">
+        <Field
+          label={mode === "chairs" ? copy.seating.rowName : copy.seating.tableName}
+          htmlFor="seating-table-name"
+        >
           <input
             id="seating-table-name"
             name="name"
@@ -92,6 +118,7 @@ function TableFormModal({
           />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
+          {mode === "tables" ? (
           <Field label={copy.seating.tableShape} htmlFor="seating-table-shape">
             <select
               id="seating-table-shape"
@@ -103,7 +130,13 @@ function TableFormModal({
               <option value="rect">{copy.seating.rect}</option>
             </select>
           </Field>
-          <Field label={copy.seating.capacity} htmlFor="seating-table-capacity">
+          ) : null}
+          <Field
+            label={
+              mode === "chairs" ? copy.seating.rowCapacity : copy.seating.capacity
+            }
+            htmlFor="seating-table-capacity"
+          >
             <input
               id="seating-table-capacity"
               name="capacity"
@@ -111,10 +144,11 @@ function TableFormModal({
               min={0}
               max={100}
               required
-              defaultValue={table?.capacity ?? 8}
+              defaultValue={table?.capacity ?? (mode === "chairs" ? 10 : 8)}
               className={inputClass}
             />
           </Field>
+          {mode === "tables" ? (
           <Field label={copy.seating.width} htmlFor="seating-table-width">
             <input
               id="seating-table-width"
@@ -127,6 +161,8 @@ function TableFormModal({
               className={inputClass}
             />
           </Field>
+          ) : null}
+          {mode === "tables" ? (
           <Field label={copy.seating.height} htmlFor="seating-table-height">
             <input
               id="seating-table-height"
@@ -139,6 +175,7 @@ function TableFormModal({
               className={inputClass}
             />
           </Field>
+          ) : null}
         </div>
         <ModalFooter
           pending={pending}
@@ -322,11 +359,13 @@ export function SeatingPlanner({
 
   const eventLabel = (event: SeatingEvent) =>
     event.event_type === "akad" ? copy.seating.akad : copy.seating.dinner;
+  const isCeremony = selectedEvent?.event_type === "akad";
 
   async function assignGuest(
     guestId: string,
     tableId: string,
     allowOverCapacity = false,
+    seatIndex: number | null = null,
   ) {
     if (!selectedEvent || busy) return;
     const table = tableById.get(tableId);
@@ -351,6 +390,7 @@ export function SeatingPlanner({
     formData.set("eventId", selectedEvent.id);
     formData.set("tableId", tableId);
     formData.set("guestId", guestId);
+    if (seatIndex !== null) formData.set("seatIndex", String(seatIndex));
     if (allowOverCapacity) formData.set("allowOverCapacity", "1");
     const result = await assignGuestAction(null, formData);
     setBusy(false);
@@ -495,7 +535,7 @@ export function SeatingPlanner({
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          label={copy.seating.totalTables}
+          label={isCeremony ? copy.seating.totalRows : copy.seating.totalTables}
           value={String(stats.totalTables)}
         />
         <StatCard
@@ -684,7 +724,7 @@ export function SeatingPlanner({
                   className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700"
                 >
                   <Plus className="size-4" aria-hidden />
-                  {copy.seating.addTable}
+                  {isCeremony ? copy.seating.addRow : copy.seating.addTable}
                 </button>
               </div>
             </div>
@@ -717,7 +757,152 @@ export function SeatingPlanner({
                   </p>
                 ) : null}
 
-                {eventTables.map((table) => {
+                {isCeremony
+                  ? eventTables.map((row) => {
+                      const people = stats.peopleByTable.get(row.id) ?? 0;
+                      const full = people >= Number(row.capacity);
+                      const partial = people > 0 && !full;
+                      const occupiedSeats = new Map(
+                        eventAssignments
+                          .filter(
+                            (assignment) =>
+                              assignment.table_id === row.id &&
+                              assignment.seat_index !== null,
+                          )
+                          .map((assignment) => [
+                            assignment.seat_index as number,
+                            guestById.get(assignment.guest_id),
+                          ]),
+                      );
+                      return (
+                        <div
+                          key={row.id}
+                          role="button"
+                          tabIndex={0}
+                          onPointerDown={(event) =>
+                            moveTablePointerDown(event, row)
+                          }
+                          onPointerMove={moveTablePointerMove}
+                          onPointerUp={moveTablePointerUp}
+                          onPointerCancel={moveTablePointerUp}
+                          onClick={() => {
+                            if (suppressClick.current) {
+                              suppressClick.current = false;
+                              return;
+                            }
+                            if (selectedGuestId) {
+                              void assignGuest(selectedGuestId, row.id);
+                            } else {
+                              setSelectedTableId(row.id);
+                            }
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              setSelectedTableId(row.id);
+                            }
+                          }}
+                          onDragOver={(event) => {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = "move";
+                          }}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            const guestId =
+                              event.dataTransfer.getData("text/guest-id");
+                            if (guestId) void assignGuest(guestId, row.id);
+                          }}
+                          className={`absolute z-20 flex cursor-grab touch-none flex-col items-center justify-center rounded-xl border-2 px-2 py-1 shadow-sm transition-colors active:cursor-grabbing ${
+                            full
+                              ? "border-petal-300 bg-petal-100/90"
+                              : partial
+                                ? "border-champagne/70 bg-sand-100/90"
+                                : "border-olive-200 bg-white/95"
+                          }`}
+                          style={{
+                            left: `${row.canvas_x}%`,
+                            top: `${row.canvas_y}%`,
+                            width: `${row.width}%`,
+                            height: `${row.height}%`,
+                            transform: "translate(-50%, -50%)",
+                          }}
+                        >
+                          <GripVertical
+                            className="absolute right-1 top-1 size-3 text-ink-soft/50"
+                            aria-hidden
+                          />
+                          <div className="flex max-w-full items-center justify-center gap-1">
+                            {Array.from({
+                              length: Math.min(12, Math.max(1, row.capacity)),
+                            }).map((_, index) => {
+                              const occupant = occupiedSeats.get(index);
+                              const occupied = Boolean(occupant) || index < people;
+                              return (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  aria-label={`${row.name} ${index + 1}`}
+                                  title={
+                                    occupant
+                                      ? occupant.name
+                                      : `${row.name} ${index + 1}`
+                                  }
+                                  onPointerDown={(event) =>
+                                    event.stopPropagation()
+                                  }
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    if (selectedGuestId) {
+                                      void assignGuest(
+                                        selectedGuestId,
+                                        row.id,
+                                        false,
+                                        index,
+                                      );
+                                    } else {
+                                      setSelectedTableId(row.id);
+                                    }
+                                  }}
+                                  onDragOver={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    event.dataTransfer.dropEffect = "move";
+                                  }}
+                                  onDrop={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    const guestId =
+                                      event.dataTransfer.getData(
+                                        "text/guest-id",
+                                      );
+                                    if (guestId) {
+                                      void assignGuest(
+                                        guestId,
+                                        row.id,
+                                        false,
+                                        index,
+                                      );
+                                    }
+                                  }}
+                                  className={`size-3.5 rounded-sm border transition-colors ${
+                                    occupied
+                                      ? "border-petal-400 bg-petal-400"
+                                      : "border-petal-300 bg-petal-50 hover:bg-petal-100"
+                                  }`}
+                                />
+                              );
+                            })}
+                          </div>
+                          <span className="mt-1 max-w-full truncate text-[10px] font-semibold text-ink">
+                            {row.name} · {people}/{row.capacity}
+                          </span>
+                        </div>
+                      );
+                    })
+                  : null}
+
+                {!isCeremony
+                  ? eventTables.map((table) => {
                   const people = stats.peopleByTable.get(table.id) ?? 0;
                   const isFull = people >= Number(table.capacity);
                   const isPartial = people > 0 && !isFull;
@@ -788,7 +973,8 @@ export function SeatingPlanner({
                       </span>
                     </div>
                   );
-                })}
+                })
+                  : null}
               </div>
             </div>
 
@@ -918,6 +1104,8 @@ export function SeatingPlanner({
             onClose={() => setTableModal({ open: false, editing: null })}
             copy={copy}
             eventId={selectedEvent.id}
+            mode={isCeremony ? "chairs" : "tables"}
+            defaultY={18 + eventTables.length * 13}
             table={tableModal.editing}
           />
         </div>

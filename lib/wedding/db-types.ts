@@ -228,6 +228,7 @@ export type SeatingAssignment = {
   event_id: string;
   table_id: string;
   guest_id: string;
+  seat_index: number | null;
   created_at: string;
 };
 

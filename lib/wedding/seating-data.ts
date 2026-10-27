@@ -95,12 +95,48 @@ export async function loadSeatingData(
     supabase.from("guests").select("*").eq("wedding_id", weddingId),
   ]);
 
+  let tables = tablesResult.data ?? [];
+  const akadEvent = events.find((event) => event.event_type === "akad");
+  const hasAkadRows = akadEvent
+    ? tables.some((table) => table.event_id === akadEvent.id)
+    : true;
+
+  // Akad is a chair-only layout. Seed rows once when the event is first opened;
+  // the rows are still the same wedding-scoped seating records used by dinner,
+  // but the UI renders them as rows of chairs instead of tables.
+  if (akadEvent && !hasAkadRows) {
+    const rows = Array.from({ length: 5 }, (_, index) => ({
+      wedding_id: weddingId,
+      event_id: akadEvent.id,
+      name: `Row ${index + 1}`,
+      shape: "rect" as const,
+      capacity: 10,
+      canvas_x: 50,
+      canvas_y: 16 + index * 14,
+      width: 35,
+      height: 8,
+      sort_order: index,
+    }));
+    const { error: rowError } = await supabase
+      .from("seating_tables")
+      .insert(rows);
+    if (!rowError) {
+      const refreshedTables = await supabase
+        .from("seating_tables")
+        .select("*")
+        .eq("wedding_id", weddingId)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true });
+      tables = refreshedTables.data ?? tables;
+    }
+  }
+
   const firstError =
     tablesResult.error ?? assignmentsResult.error ?? guestsResult.error;
 
   return {
     events,
-    tables: tablesResult.data ?? [],
+    tables,
     assignments: assignmentsResult.data ?? [],
     guests: guestsResult.data ?? [],
     migrationRequired: firstError ? isMissingTable(firstError) : false,
