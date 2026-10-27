@@ -23,6 +23,7 @@ export type Wedding = {
   wedding_date: string | null;
   location: string | null;
   estimated_guest_count: number | null;
+  room_target?: number | null;
   total_budget: number;
   lifetime_access_granted_at?: string | null;
   lifetime_access_payment_id?: string | null;

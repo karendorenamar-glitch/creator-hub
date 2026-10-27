@@ -7,6 +7,7 @@ import {
   deleteRoomAction,
   removeRoomGuestAction,
   saveRoomAction,
+  saveRoomTargetAction,
 } from "@/app/wedding/(app)/rooms/actions";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import {
@@ -267,11 +268,13 @@ export function RoomManager({
   rooms,
   assignments,
   guests,
+  roomTarget,
   copy,
 }: {
   rooms: Room[];
   assignments: RoomAssignment[];
   guests: Guest[];
+  roomTarget: number | null;
   copy: ModuleCopy;
 }) {
   const [filter, setFilter] = useState<RoomFilter>("all");
@@ -281,6 +284,13 @@ export function RoomManager({
     editing: null,
   });
   const [assignRoom, setAssignRoom] = useState<Room | null>(null);
+  const [targetState, targetAction, targetPending] = useActionState(
+    saveRoomTargetAction,
+    null,
+  );
+  const [targetValue, setTargetValue] = useState(
+    roomTarget === null ? "" : String(roomTarget),
+  );
 
   const guestById = useMemo(
     () => new Map(guests.map((guest) => [guest.id, guest])),
@@ -311,6 +321,13 @@ export function RoomManager({
     }
     return map;
   }, [assignments, guestById]);
+
+  const occupiedRooms = rooms.filter(
+    (room) => (peopleByRoom.get(room.id) ?? 0) > 0,
+  ).length;
+  const emptyRooms = rooms.length - occupiedRooms;
+  const totalRoomTarget = roomTarget ?? rooms.length;
+  const remainingRooms = Math.max(0, totalRoomTarget - occupiedRooms);
 
   const assignedPeople = useMemo(
     () =>
@@ -390,11 +407,62 @@ export function RoomManager({
 
   return (
     <div className="space-y-5">
+      <Card className="border-olive-100 bg-olive-50/40">
+        <form action={targetAction} className="space-y-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+                {copy.rooms.roomTarget}
+              </p>
+              <p className="mt-1 text-xs text-ink-soft">{copy.rooms.roomTargetHint}</p>
+            </div>
+            <div className="flex items-end gap-2">
+              <input
+                name="roomTarget"
+                type="number"
+                min={0}
+                max={1000}
+                value={targetValue}
+                onChange={(event) => setTargetValue(event.target.value)}
+                placeholder="0"
+                className={`${inputClass} w-28`}
+              />
+              <button
+                type="submit"
+                disabled={targetPending}
+                className="rounded-xl bg-olive-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-olive-700 disabled:opacity-60"
+              >
+                {targetPending ? copy.form.saving : copy.rooms.saveRoomTarget}
+              </button>
+            </div>
+          </div>
+          <FormAlert error={targetState?.error} success={targetState?.success} />
+        </form>
+      </Card>
+
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard label={copy.rooms.totalRooms} value={String(rooms.length)} />
+        <StatCard
+          label={copy.rooms.totalRooms}
+          value={String(totalRoomTarget)}
+          hint={roomTarget === null ? copy.rooms.roomTargetUnset : copy.rooms.roomTargetManual}
+        />
+        <StatCard
+          label={copy.rooms.filledRooms}
+          value={String(occupiedRooms)}
+          hint={`${emptyRooms} ${copy.rooms.emptyRooms.toLowerCase()}`}
+          tone="champagne"
+        />
         <StatCard label={copy.rooms.totalCapacity} value={String(totalCapacity)} />
         <StatCard label={copy.rooms.assignedGuests} value={String(assignedPeople)} tone="champagne" />
-        <StatCard label={copy.rooms.availableSpaces} value={String(Math.max(0, totalCapacity - assignedPeople))} />
+        <StatCard
+          label={copy.rooms.remainingRooms}
+          value={String(remainingRooms)}
+          hint={
+            roomTarget !== null && roomTarget < occupiedRooms
+              ? copy.rooms.remainingRooms
+              : undefined
+          }
+        />
         <StatCard label={copy.rooms.breakfastEntitlements} value={String(breakfastEntitlements)} hint={`${breakfastUnconfigured} ${copy.rooms.breakfastUnconfiguredCount.toLowerCase()}`} />
         <StatCard label={copy.rooms.roomsWithoutBreakfast} value={String(roomsWithoutBreakfast)} tone="neutral" />
         <Card className="sm:col-span-2 xl:col-span-3">

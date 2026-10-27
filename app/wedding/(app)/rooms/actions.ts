@@ -228,3 +228,26 @@ export async function removeRoomGuestAction(
   revalidateRooms();
   return { success: ctx.copy.rooms.removeGuest };
 }
+
+
+export async function saveRoomTargetAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  void _prev;
+  const raw = text(formData, "roomTarget");
+  const target = raw ? parseCount(raw) : null;
+  if (raw && (target === null || target > 1000)) {
+    return { error: ctx.copy.form.invalidNumber };
+  }
+
+  const { error } = await ctx.supabase
+    .from("weddings")
+    .update({ room_target: target })
+    .eq("id", ctx.weddingId);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+  revalidateRooms();
+  return { success: ctx.copy.form.saved };
+}

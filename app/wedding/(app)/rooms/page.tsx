@@ -34,6 +34,7 @@ export default async function RoomsPage() {
           rooms={data.rooms}
           assignments={data.assignments}
           guests={data.guests}
+          roomTarget={session.wedding.room_target ?? null}
           copy={copy}
         />
       )}
