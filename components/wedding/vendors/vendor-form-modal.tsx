@@ -97,10 +97,11 @@ export function VendorFormModal({
   >("diskusi");
 
   useEffect(() => {
-    // Keep an existing vendor editor open after saving details so the payment
-    // section below remains usable in the same combined workflow.
-    if (state?.success && !vendor) onClose();
-  }, [state, onClose, vendor]);
+    // Always close after a successful save. Keeping the portal open used to
+    // leave the page behind an invisible blocking overlay, making the whole app
+    // feel unresponsive after saving an existing vendor.
+    if (state?.success) onClose();
+  }, [state, onClose]);
 
   const zeroPrice = price !== "" && Number(price) === 0;
 

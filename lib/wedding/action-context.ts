@@ -95,7 +95,12 @@ export function revalidateWedding(...paths: string[]) {
   for (const path of paths) {
     revalidatePath(path);
   }
-  // Dashboard totals and the sidebar summary depend on the same rows. Keep
-  // this invalidation; the page/query parallelism above is the real latency win.
-  revalidatePath("/wedding/dashboard");
+
+  // Only invalidate dashboard when the action can change its totals/content.
+  // Inspiration and vendor-option saves do not touch dashboard data, so they
+  // should not pay another full route revalidation.
+  const affectsDashboard = paths.some((path) =>
+    ["/wedding/budget", "/wedding/checklist", "/wedding/guests"].includes(path),
+  );
+  if (affectsDashboard) revalidatePath("/wedding/dashboard");
 }
