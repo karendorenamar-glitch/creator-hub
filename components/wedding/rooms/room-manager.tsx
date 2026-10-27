@@ -205,16 +205,21 @@ function AssignRoomGuestModal({
     if (!room || busy) return;
     setBusy(true);
     setError(null);
-    const formData = new FormData();
-    formData.set("roomId", room.id);
-    formData.set("guestId", guestId);
-    const result = await assignRoomGuestAction(formData);
-    setBusy(false);
-    if (result?.error) {
-      setError(result.error);
-      return;
+    try {
+      const formData = new FormData();
+      formData.set("roomId", room.id);
+      formData.set("guestId", guestId);
+      const result = await assignRoomGuestAction(formData);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      onClose();
+    } catch {
+      setError(copy.errors.generic);
+    } finally {
+      setBusy(false);
     }
-    onClose();
   }
 
   return (

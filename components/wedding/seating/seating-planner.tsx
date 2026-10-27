@@ -149,32 +149,10 @@ function TableFormModal({
             />
           </Field>
           {mode === "tables" ? (
-          <Field label={copy.seating.width} htmlFor="seating-table-width">
-            <input
-              id="seating-table-width"
-              name="width"
-              type="number"
-              min={4}
-              max={35}
-              step={0.5}
-              defaultValue={table?.width ?? 12}
-              className={inputClass}
-            />
-          </Field>
-          ) : null}
-          {mode === "tables" ? (
-          <Field label={copy.seating.height} htmlFor="seating-table-height">
-            <input
-              id="seating-table-height"
-              name="height"
-              type="number"
-              min={4}
-              max={35}
-              step={0.5}
-              defaultValue={table?.height ?? 12}
-              className={inputClass}
-            />
-          </Field>
+            <>
+              <input type="hidden" name="width" value={table?.width ?? 12} />
+              <input type="hidden" name="height" value={table?.height ?? 12} />
+            </>
           ) : null}
         </div>
         <ModalFooter
@@ -268,6 +246,7 @@ export function SeatingPlanner({
     events.find((event) => event.id === selectedEventId) ?? events[0];
   const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [sideFilter, setSideFilter] = useState<"all" | "bride" | "groom">("all");
@@ -385,30 +364,40 @@ export function SeatingPlanner({
 
     setBusy(true);
     setError(null);
-    const formData = new FormData();
-    formData.set("eventId", selectedEvent.id);
-    formData.set("tableId", tableId);
-    formData.set("guestId", guestId);
-    if (allowOverCapacity) formData.set("allowOverCapacity", "1");
-    const result = await assignGuestAction(null, formData);
-    setBusy(false);
-    if (result?.error) {
-      setError(result.error);
-      return;
+    try {
+      const formData = new FormData();
+      formData.set("eventId", selectedEvent.id);
+      formData.set("tableId", tableId);
+      formData.set("guestId", guestId);
+      if (allowOverCapacity) formData.set("allowOverCapacity", "1");
+      const result = await assignGuestAction(null, formData);
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+      setSelectedTableId(tableId);
+    } catch {
+      setError(copy.errors.generic);
+    } finally {
+      setBusy(false);
     }
-    setSelectedTableId(tableId);
   }
 
   async function removeGuest(guestId: string) {
     if (!selectedEvent || busy) return;
     setBusy(true);
     setError(null);
-    const formData = new FormData();
-    formData.set("eventId", selectedEvent.id);
-    formData.set("guestId", guestId);
-    const result = await unassignGuestAction(formData);
-    setBusy(false);
-    if (result?.error) setError(result.error);
+    try {
+      const formData = new FormData();
+      formData.set("eventId", selectedEvent.id);
+      formData.set("guestId", guestId);
+      const result = await unassignGuestAction(formData);
+      if (result?.error) setError(result.error);
+    } catch {
+      setError(copy.errors.generic);
+    } finally {
+      setBusy(false);
+    }
   }
 
   function moveTablePointerDown(
@@ -508,6 +497,7 @@ export function SeatingPlanner({
               onClick={() => {
                 setSelectedEventId(event.id);
                 setSelectedTableId(null);
+                setDetailsOpen(false);
               }}
               className={`rounded-3xl border p-4 text-left transition-colors ${
                 active
@@ -786,12 +776,14 @@ export function SeatingPlanner({
                               void assignGuest(selectedGuestId, row.id);
                             } else {
                               setSelectedTableId(row.id);
+                              setDetailsOpen(true);
                             }
                           }}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
                               event.preventDefault();
                               setSelectedTableId(row.id);
+                              setDetailsOpen(true);
                             }
                           }}
                           onDragOver={(event) => {
@@ -851,6 +843,7 @@ export function SeatingPlanner({
                                       void assignGuest(selectedGuestId, row.id);
                                     } else {
                                       setSelectedTableId(row.id);
+                                      setDetailsOpen(true);
                                     }
                                   }}
                                   onDragOver={(event) => {
@@ -919,12 +912,14 @@ export function SeatingPlanner({
                           void assignGuest(selectedGuestId, table.id);
                         } else {
                           setSelectedTableId(table.id);
+                          setDetailsOpen(true);
                         }
                       }}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
                           setSelectedTableId(table.id);
+                          setDetailsOpen(true);
                         }
                       }}
                       onDragOver={(event) => {
@@ -1126,6 +1121,119 @@ export function SeatingPlanner({
             defaultY={18 + eventTables.length * 13}
             table={tableModal.editing}
           />
+
+          <FormModal
+            open={detailsOpen && Boolean(selectedTable)}
+            onClose={() => setDetailsOpen(false)}
+            title={selectedTable?.name ?? copy.seating.details}
+            wide
+          >
+            {selectedTable ? (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-sm text-ink-soft">
+                    {copy.seating.occupancy}:{" "}
+                    {stats.peopleByTable.get(selectedTable.id) ?? 0} /{" "}
+                    {selectedTable.capacity} · {copy.seating.remaining}:{" "}
+                    {Math.max(
+                      0,
+                      selectedTable.capacity -
+                        (stats.peopleByTable.get(selectedTable.id) ?? 0),
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDetailsOpen(false);
+                      setTableModal({ open: true, editing: selectedTable });
+                    }}
+                    className="rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50"
+                  >
+                    {isCeremony ? copy.seating.editRow : copy.form.edit}
+                  </button>
+                </div>
+
+                {error ? (
+                  <p className="rounded-xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    {error}
+                  </p>
+                ) : null}
+
+                <select
+                  defaultValue=""
+                  disabled={busy}
+                  onChange={(event) => {
+                    const guestId = event.target.value;
+                    event.currentTarget.value = "";
+                    if (guestId) void assignGuest(guestId, selectedTable.id);
+                  }}
+                  aria-label={copy.seating.addGuest}
+                  className={inputClass}
+                >
+                  <option value="">{copy.seating.addGuest}</option>
+                  {guests
+                    .filter(
+                      (guest) =>
+                        assignmentByGuest.get(guest.id)?.table_id !==
+                        selectedTable.id,
+                    )
+                    .map((guest) => (
+                      <option key={guest.id} value={guest.id}>
+                        {guest.name} ({guestPeopleCount(guest)} pax)
+                      </option>
+                    ))}
+                </select>
+
+                <div className="space-y-2">
+                  {eventAssignments.filter(
+                    (item) => item.table_id === selectedTable.id,
+                  ).length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
+                      {copy.seating.emptyTable}
+                    </p>
+                  ) : (
+                    eventAssignments
+                      .filter((item) => item.table_id === selectedTable.id)
+                      .map((assignment) => {
+                        const guest = guestById.get(assignment.guest_id);
+                        if (!guest) return null;
+                        return (
+                          <div
+                            key={assignment.id}
+                            className="flex items-center justify-between gap-2 rounded-xl border border-olive-100 px-3 py-2"
+                          >
+                            <span className="min-w-0 truncate text-sm text-ink">
+                              {guest.name}{" "}
+                              <span className="text-xs text-ink-soft">
+                                ({guestPeopleCount(guest)} pax)
+                              </span>
+                            </span>
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => void removeGuest(guest.id)}
+                              className="shrink-0 text-xs font-medium text-rose-600 hover:underline disabled:opacity-60"
+                            >
+                              {copy.seating.remove}
+                            </button>
+                          </div>
+                        );
+                      })
+                  )}
+                </div>
+
+                <div className="border-t border-olive-100 pt-3">
+                  <DeleteForm
+                    action={deleteTableAction}
+                    id={selectedTable.id}
+                    copy={copy}
+                    label={isCeremony ? copy.seating.chairRows : copy.seating.deleteTable}
+                    confirmMessage={copy.seating.deleteTableConfirm}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </FormModal>
         </div>
       </div>
     </div>
