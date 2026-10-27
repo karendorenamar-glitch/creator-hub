@@ -39,6 +39,12 @@ export type WeddingMember = {
   created_at: string;
 };
 
+/** Explicit admin allow-list row (public.admins). */
+export type Admin = {
+  user_id: string;
+  created_at: string;
+};
+
 export type WeddingInvite = {
   id: string;
   wedding_id: string;
@@ -501,6 +507,7 @@ export type WeddingDatabase = {
   public: {
     Tables: {
       app_settings: Table<AppSettings>;
+      admins: Table<Admin>;
       weddings: Table<Wedding>;
       wedding_members: Table<WeddingMember>;
       wedding_invites: Table<WeddingInvite>;

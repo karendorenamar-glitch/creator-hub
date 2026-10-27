@@ -1,7 +1,12 @@
 import Link from "next/link";
+import { DeleteUserButton } from "@/components/wedding/admin/delete-user-button";
 import { Badge, Card } from "@/components/wedding/ui";
 import { createAdminServiceClient, requireAdmin } from "@/lib/wedding/admin";
-import { formatDateTime, formatIDR } from "@/lib/wedding/format";
+import {
+  formatDateTime,
+  formatIDR,
+  formatWeddingDate,
+} from "@/lib/wedding/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
@@ -11,12 +16,28 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 20;
 const NO_IDS = ["00000000-0000-0000-0000-000000000000"];
 
+type WeddingRow = {
+  id: string;
+  partner_one_name: string;
+  partner_two_name: string | null;
+  wedding_date: string | null;
+  total_budget: number;
+  estimated_guest_count: number | null;
+};
+
+type PaymentSummary = {
+  approved: number;
+  pending: number;
+  rejected: number;
+  total: number;
+};
+
 export default async function AdminUsersPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  await requireAdmin();
+  const { userId: currentAdminId } = await requireAdmin();
   const locale = await getLocale();
   const { q, page } = await searchParams;
 
@@ -73,19 +94,44 @@ export default async function AdminUsersPage({
       .in("user_id", ids),
   ]);
 
-  const weddingsByUser = new Map<string, number>();
+  const weddingIds = Array.from(
+    new Set((memberships ?? []).map((row) => row.wedding_id)),
+  );
+
+  const [{ data: weddingRows }, { data: adminRows }] = await Promise.all([
+    weddingIds.length
+      ? supabase
+          .from("weddings")
+          .select(
+            "id, partner_one_name, partner_two_name, wedding_date, total_budget, estimated_guest_count",
+          )
+          .in("id", weddingIds)
+      : Promise.resolve({ data: [] as WeddingRow[] }),
+    supabase.from("admins").select("user_id").in("user_id", ids),
+  ]);
+
+  const weddingById = new Map(
+    (weddingRows ?? []).map((row) => [row.id, row as WeddingRow]),
+  );
+  const weddingsByUser = new Map<string, WeddingRow[]>();
   for (const row of memberships ?? []) {
-    weddingsByUser.set(row.user_id, (weddingsByUser.get(row.user_id) ?? 0) + 1);
+    const wedding = weddingById.get(row.wedding_id);
+    if (!wedding) continue;
+    const list = weddingsByUser.get(row.user_id) ?? [];
+    list.push(wedding);
+    weddingsByUser.set(row.user_id, list);
   }
 
-  const paymentsByUser = new Map<
-    string,
-    { approved: number; pending: number; total: number }
-  >();
+  const protectedAdminIds = new Set(
+    (adminRows ?? []).map((row) => row.user_id),
+  );
+
+  const paymentsByUser = new Map<string, PaymentSummary>();
   for (const row of payments ?? []) {
     const entry = paymentsByUser.get(row.user_id) ?? {
       approved: 0,
       pending: 0,
+      rejected: 0,
       total: 0,
     };
     if (row.status === "approved") {
@@ -93,6 +139,7 @@ export default async function AdminUsersPage({
       entry.total += Number(row.amount_idr);
     }
     if (row.status === "pending_review") entry.pending += 1;
+    if (row.status === "rejected") entry.rejected += 1;
     paymentsByUser.set(row.user_id, entry);
   }
 
@@ -107,8 +154,9 @@ export default async function AdminUsersPage({
         </p>
         <h1 className="mt-2 font-heading text-3xl">Direktori Pengguna</h1>
         <p className="text-sm text-cocoa/60">
-          {total} akun{search ? ` cocok dengan “${search}”` : ""}. Email dibaca
-          di server dengan service role setelah verifikasi admin.
+          {total} akun{search ? ` cocok dengan “${search}”` : ""}. Email, waktu
+          daftar, login terakhir, kelengkapan wedding plan, dan pembayaran
+          dibaca server-side dengan service role setelah verifikasi admin.
         </p>
       </div>
 
@@ -143,18 +191,28 @@ export default async function AdminUsersPage({
         </Card>
       ) : (
         <Card className="overflow-x-auto p-0">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[1040px] text-left text-sm">
             <thead className="bg-blush/30 text-xs uppercase tracking-[0.08em] text-cocoa/55">
               <tr>
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Terdaftar</th>
-                <th className="px-4 py-3">Wedding</th>
+                <th className="px-4 py-3">Login terakhir</th>
+                <th className="px-4 py-3">Wedding plan</th>
                 <th className="px-4 py-3">Pembayaran</th>
+                <th className="px-4 py-3">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-blush/50">
               {pageUsers.map((user) => {
                 const pay = paymentsByUser.get(user.id);
+                const userWeddings = weddingsByUser.get(user.id) ?? [];
+                const wedding = userWeddings[0];
+                const weddingDate = wedding
+                  ? formatWeddingDate(wedding.wedding_date, locale)
+                  : null;
+                const isProtected =
+                  user.id === currentAdminId || protectedAdminIds.has(user.id);
+
                 return (
                   <tr key={user.id}>
                     <td className="px-4 py-3">
@@ -168,8 +226,32 @@ export default async function AdminUsersPage({
                     <td className="px-4 py-3 text-cocoa/65">
                       {formatDateTime(user.created_at, locale)}
                     </td>
+                    <td className="px-4 py-3 text-cocoa/65">
+                      {user.last_sign_in_at
+                        ? formatDateTime(user.last_sign_in_at, locale)
+                        : "Belum pernah"}
+                    </td>
                     <td className="px-4 py-3 text-cocoa/80">
-                      {weddingsByUser.get(user.id) ?? 0}
+                      {wedding ? (
+                        <div className="space-y-1">
+                          <Badge tone="success">Sudah isi</Badge>
+                          <p className="text-xs font-medium text-cocoa">
+                            {wedding.partner_one_name}
+                            {wedding.partner_two_name
+                              ? ` & ${wedding.partner_two_name}`
+                              : ""}
+                          </p>
+                          <p className="text-[11px] leading-snug text-cocoa/50">
+                            {weddingDate ?? "Tanggal belum diisi"} ·{" "}
+                            {formatIDR(Number(wedding.total_budget))}
+                            {wedding.estimated_guest_count !== null
+                              ? ` · ${wedding.estimated_guest_count} tamu`
+                              : ""}
+                          </p>
+                        </div>
+                      ) : (
+                        <Badge tone="muted">Belum isi</Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-1.5">
@@ -183,8 +265,25 @@ export default async function AdminUsersPage({
                             {pay.pending} menunggu
                           </Badge>
                         ) : null}
+                        {pay?.rejected ? (
+                          <Badge tone="warning">
+                            {pay.rejected} ditolak
+                          </Badge>
+                        ) : null}
                         {!pay ? <Badge tone="muted">belum ada</Badge> : null}
                       </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      {isProtected ? (
+                        <Badge tone="muted">
+                          {user.id === currentAdminId ? "akun ini" : "admin"}
+                        </Badge>
+                      ) : (
+                        <DeleteUserButton
+                          userId={user.id}
+                          email={user.email ?? null}
+                        />
+                      )}
                     </td>
                   </tr>
                 );
@@ -220,7 +319,10 @@ export default async function AdminUsersPage({
 
       <p className="text-xs text-cocoa/45">
         Daftar dibatasi 1000 akun terbaru per pembacaan. Tidak ada data
-        autentikasi sensitif (password, token) yang ditampilkan.
+        autentikasi sensitif (password, token) yang ditampilkan. Tombol{" "}
+        <strong>Hapus akun</strong> melakukan hard delete di Supabase Auth:
+        wedding milik akun, membership, pembayaran, dan entitlement ikut
+        terhapus. Akun admin dan akun yang sedang dipakai dilindungi.
       </p>
 
     </div>
