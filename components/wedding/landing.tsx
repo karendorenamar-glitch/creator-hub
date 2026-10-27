@@ -109,9 +109,9 @@ export function WeddingLanding() {
               </Reveal>
               <Reveal delay={0.1}>
                 <p className="mt-5 max-w-xl text-base leading-relaxed text-cocoa/70">
-                  Kelola anggaran, pantau pengeluaran, temukan inspirasi, atur
-                  vendor, dan checklist persiapan pernikahan dalam satu ruang yang
-                  dirancang dengan indah.
+                  Kelola anggaran dan pengeluaran, atur vendor, susun daftar tamu
+                  dan checklist, temukan inspirasi, serta buat undangan pernikahan
+                  digital dalam satu ruang yang dirancang dengan indah.
                 </p>
               </Reveal>
               <Reveal delay={0.15}>
@@ -457,9 +457,9 @@ export function WeddingLanding() {
                 <ul className="mx-auto mt-6 grid max-w-sm gap-2 text-left text-sm text-cocoa/75">
                   {[
                     "Anggaran, pengeluaran, dan pembayaran vendor",
-                    "Pengelolaan vendor",
+                    "Pengelolaan vendor dan daftar tamu",
                     "Checklist dan linimasa persiapan",
-                    "Daftar tamu dan RSVP",
+                    "Undangan pernikahan digital",
                     "Papan inspirasi pernikahan",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2">

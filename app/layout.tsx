@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import {
+  KEFOO_DESCRIPTION,
+  KEFOO_KEYWORDS,
+  KEFOO_OG_IMAGE,
+  KEFOO_SITE_URL,
+  KEFOO_TITLE,
+} from "@/lib/wedding/seo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -13,47 +20,34 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const siteDescription =
-  "Kefoo Wedding Planner — atur anggaran, vendor, tamu, checklist, dan inspirasi pernikahan dalam satu tempat.";
+const siteDescription = KEFOO_DESCRIPTION;
 
-const ogImage = {
-  url: "/og-image.jpg",
-  width: 831,
-  height: 831,
-  alt: "Kefoo Wedding Planner",
-};
+const ogImage = KEFOO_OG_IMAGE;
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://kefoo.tech"),
+  metadataBase: new URL(KEFOO_SITE_URL),
 
   title: {
-    default: "Kefoo Wedding Planner",
+    default: KEFOO_TITLE,
     template: "%s | Kefoo",
   },
 
   description: siteDescription,
-
-  keywords: [
-    "wedding planner",
-    "anggaran pernikahan",
-    "daftar tamu pernikahan",
-    "manajemen vendor pernikahan",
-    "checklist pernikahan",
-  ],
+  keywords: KEFOO_KEYWORDS,
 
   openGraph: {
-    title: "Kefoo Wedding Planner",
+    title: KEFOO_TITLE,
     description: siteDescription,
-    url: "https://kefoo.tech",
+    url: KEFOO_SITE_URL,
     siteName: "Kefoo",
-    locale: "en_US",
+    locale: "id_ID",
     type: "website",
     images: [ogImage],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Kefoo Wedding Planner",
+    title: KEFOO_TITLE,
     description: siteDescription,
     images: [ogImage.url],
   },
@@ -66,7 +60,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-white font-sans text-foreground">

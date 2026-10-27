@@ -1,19 +1,32 @@
 import type { Metadata } from "next";
 import { WeddingLanding } from "@/components/wedding/landing";
-
-const homeTitle = "Kefoo Wedding Planner — Rencanakan Pernikahan dengan Tenang";
-const homeDescription =
-  "Atur anggaran, kelola pengeluaran, pantau pembayaran vendor, dan susun persiapan pernikahan dalam satu tempat.";
+import {
+  KEFOO_DESCRIPTION,
+  KEFOO_KEYWORDS,
+  KEFOO_OG_IMAGE,
+  KEFOO_SITE_URL,
+  KEFOO_TITLE,
+} from "@/lib/wedding/seo";
 
 export const metadata: Metadata = {
-  title: { absolute: homeTitle },
-  description: homeDescription,
+  title: { absolute: KEFOO_TITLE },
+  description: KEFOO_DESCRIPTION,
+  keywords: KEFOO_KEYWORDS,
   alternates: { canonical: "/" },
   openGraph: {
-    title: homeTitle,
-    description: homeDescription,
+    title: KEFOO_TITLE,
+    description: KEFOO_DESCRIPTION,
+    url: KEFOO_SITE_URL,
+    siteName: "Kefoo",
     locale: "id_ID",
     type: "website",
+    images: [KEFOO_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: KEFOO_TITLE,
+    description: KEFOO_DESCRIPTION,
+    images: [KEFOO_OG_IMAGE.url],
   },
 };
 
