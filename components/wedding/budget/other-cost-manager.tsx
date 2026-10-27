@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 import {
   createOtherCostAction,
@@ -130,6 +130,23 @@ function OtherCostFormModal({
   );
 }
 
+function otherCostStatus(cost: BudgetOtherCost) {
+  if (cost.amount > 0 && cost.paidAmount >= cost.amount) return "paid" as const;
+  if (cost.paidAmount > 0) return "partial" as const;
+  return "unpaid" as const;
+}
+
+function otherCostRank(cost: BudgetOtherCost) {
+  switch (otherCostStatus(cost)) {
+    case "paid":
+      return 0;
+    case "partial":
+      return 1;
+    default:
+      return 2;
+  }
+}
+
 export function OtherCostManager({
   otherCosts,
   copy,
@@ -141,6 +158,16 @@ export function OtherCostManager({
     open: boolean;
     editing: BudgetOtherCost | null;
   }>({ open: false, editing: null });
+
+  const sortedOtherCosts = useMemo(
+    () =>
+      [...otherCosts].sort((a, b) => {
+        const rankDiff = otherCostRank(a) - otherCostRank(b);
+        if (rankDiff !== 0) return rankDiff;
+        return a.name.localeCompare(b.name);
+      }),
+    [otherCosts],
+  );
 
   return (
     <div className="space-y-4">
@@ -164,59 +191,74 @@ export function OtherCostManager({
           {copy.budget.noOtherCosts}
         </p>
       ) : (
-        <ul className="divide-y divide-olive-100 rounded-2xl border border-olive-100 bg-white">
-          {otherCosts.map((cost) => (
-            <li
-              key={cost.id ?? `${cost.name}-${cost.amount}`}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-ink">
-                  {cost.name}
-                </p>
-                <p className="mt-0.5 text-xs text-ink-soft">
-                  {formatIDR(cost.amount)}
-                  {cost.paidAmount > 0
-                    ? ` · ${formatIDR(cost.paidAmount)} ${copy.budget.paidOf}`
-                    : ""}
-                </p>
+        <div className="space-y-3">
+          {sortedOtherCosts.map((cost) => {
+            const status = otherCostStatus(cost);
+            const remaining = Math.max(0, cost.amount - cost.paidAmount);
+            return (
+              <div
+                key={cost.id ?? `${cost.name}-${cost.amount}`}
+                className="rounded-2xl border border-olive-100 bg-white px-4 py-3"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-ink">
+                      {cost.name}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-ink">
+                        {formatIDR(cost.amount)}
+                      </p>
+                      <p className="text-xs text-ink-soft">
+                        {copy.budget.totalPaid}: {formatIDR(cost.paidAmount)}
+                      </p>
+                      <p className="text-xs text-ink-soft">
+                        {copy.budget.remainingPayment}: {formatIDR(remaining)}
+                      </p>
+                    </div>
+                    <Badge
+                      tone={
+                        status === "paid"
+                          ? "success"
+                          : status === "partial"
+                            ? "warning"
+                            : "muted"
+                      }
+                    >
+                      {status === "paid"
+                        ? copy.budget.otherCostPaid
+                        : status === "partial"
+                          ? copy.budget.otherCostPartial
+                          : copy.budget.otherCostUnpaid}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-olive-100 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setModal({ open: true, editing: cost })}
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50"
+                  >
+                    <Pencil className="size-3.5" aria-hidden />
+                    {copy.form.edit}
+                  </button>
+                  {cost.id ? (
+                    <DeleteForm
+                      action={deleteOtherCostAction}
+                      id={cost.id}
+                      copy={copy}
+                      confirmMessage={copy.budget.deleteOtherCostConfirm}
+                    />
+                  ) : null}
+                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  tone={
-                    cost.amount > 0 && cost.paidAmount >= cost.amount
-                      ? "success"
-                      : cost.paidAmount > 0
-                        ? "warning"
-                        : "muted"
-                  }
-                >
-                  {cost.amount > 0 && cost.paidAmount >= cost.amount
-                    ? copy.budget.otherCostPaid
-                    : cost.paidAmount > 0
-                      ? copy.budget.otherCostPartial
-                      : copy.budget.otherCostUnpaid}
-                </Badge>
-                <button
-                  type="button"
-                  onClick={() => setModal({ open: true, editing: cost })}
-                  className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50"
-                >
-                  <Pencil className="size-3.5" aria-hidden />
-                  {copy.form.edit}
-                </button>
-                {cost.id ? (
-                  <DeleteForm
-                    action={deleteOtherCostAction}
-                    id={cost.id}
-                    copy={copy}
-                    confirmMessage={copy.budget.deleteOtherCostConfirm}
-                  />
-                ) : null}
-              </div>
-            </li>
-          ))}
-        </ul>
+            );
+          })}
+        </div>
       )}
 
       <OtherCostFormModal

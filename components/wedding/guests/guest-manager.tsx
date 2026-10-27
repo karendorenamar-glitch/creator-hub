@@ -34,17 +34,24 @@ export function GuestManager({
   const [groupFilter, setGroupFilter] = useState("all");
   const [rsvpFilter, setRsvpFilter] = useState("all");
 
-  const groups = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          guests
-            .map((guest) => guest.guest_group?.trim())
-            .filter((group): group is string => Boolean(group)),
-        ),
-      ).sort((a, b) => a.localeCompare(b)),
-    [guests],
-  );
+  const groupPeople = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const guest of guests) {
+      const group = guest.guest_group?.trim();
+      if (!group) continue;
+      counts.set(group, (counts.get(group) ?? 0) + guestPeopleCount(guest));
+    }
+    return new Map(
+      Array.from(counts.entries()).sort(([a], [b]) => a.localeCompare(b)),
+    );
+  }, [guests]);
+  const groups = useMemo(() => Array.from(groupPeople.keys()), [groupPeople]);
+
+  function groupPeopleLabel(count: number) {
+    return count === 1
+      ? copy.guests.onePerson
+      : copy.guests.groupPeople.replace("{count}", String(count));
+  }
 
   const needle = query.trim().toLowerCase();
   const filtered = guests.filter((guest) => {
@@ -55,7 +62,10 @@ export function GuestManager({
         .toLowerCase();
       if (!haystack.includes(needle)) return false;
     }
-    if (groupFilter !== "all" && (guest.guest_group ?? "") !== groupFilter) {
+    if (
+      groupFilter !== "all" &&
+      (guest.guest_group ?? "").trim() !== groupFilter
+    ) {
       return false;
     }
     if (rsvpFilter !== "all" && guest.rsvp_status !== rsvpFilter) return false;
@@ -106,7 +116,7 @@ export function GuestManager({
           <option value="all">{copy.guests.allGroups}</option>
           {groups.map((group) => (
             <option key={group} value={group}>
-              {group}
+              {group} · {groupPeopleLabel(groupPeople.get(group) ?? 0)}
             </option>
           ))}
         </select>
@@ -124,6 +134,17 @@ export function GuestManager({
           ))}
         </select>
       </div>
+
+      {groupFilter !== "all" ? (
+        <p className="rounded-xl border border-olive-100 bg-olive-50/50 px-3 py-2 text-sm text-ink-soft">
+          <span className="font-medium text-ink">{groupFilter}</span>
+          <span className="mx-1.5">·</span>
+          {copy.guests.groupTotal.replace(
+            "{count}",
+            groupPeopleLabel(groupPeople.get(groupFilter) ?? 0),
+          )}
+        </p>
+      ) : null}
 
       {guests.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-olive-200 bg-olive-50/50 px-4 py-8 text-center text-sm text-ink-soft">
