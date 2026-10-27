@@ -3,7 +3,7 @@ export const KEFOO_SITE_URL = "https://www.kefoo.tech";
 export const KEFOO_TITLE = "Kefoo — Wedding Planner & Budget Tracker";
 
 export const KEFOO_DESCRIPTION =
-  "Plan your dream wedding with Kefoo. Track your budget, manage vendors and guests, organize your checklist, and create beautiful digital invitations — all in one place.";
+  "Plan your dream wedding with Kefoo. Track your budget, manage vendors and guests, organize your checklist, seating, and inspiration — all in one place.";
 
 export const KEFOO_KEYWORDS = [
   "Wedding planner",
@@ -13,15 +13,15 @@ export const KEFOO_KEYWORDS = [
   "Wedding expense tracker",
   "Wedding vendor management",
   "Wedding guest list",
+  "Wedding seating chart",
   "Wedding checklist",
-  "Digital wedding invitation",
   "Wedding planning organizer",
   "Aplikasi wedding planner",
   "Aplikasi perencanaan pernikahan",
   "Budget pernikahan",
   "Anggaran pernikahan",
-  "Checklist pernikahan",
-  "Undangan pernikahan digital",
+  "Checklist Pernikahan",
+  "Susunan Kursi Pernikahan",
 ];
 
 export const KEFOO_OG_IMAGE = {

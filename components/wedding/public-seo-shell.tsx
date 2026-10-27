@@ -53,7 +53,7 @@ export function PublicSeoShell({ children }: { children: ReactNode }) {
             <BrandLogo />
             <p className="mt-3 max-w-md text-sm leading-relaxed text-cocoa/60">
               Wedding planner untuk anggaran, vendor, tamu, checklist, dan
-              undangan pernikahan digital.
+              susunan kursi pernikahan.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-cocoa/60">
