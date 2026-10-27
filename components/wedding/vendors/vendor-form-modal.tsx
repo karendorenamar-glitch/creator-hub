@@ -94,7 +94,7 @@ export function VendorFormModal({
   >("dp");
   const [initialAmount, setInitialAmount] = useState("");
   const [statusIntent, setStatusIntent] = useState<
-    "diskusi" | "dp" | "termin_lanjutan" | "lunas"
+    "diskusi" | "dp" | "termin_lanjutan" | "lunas" | "donor"
   >("diskusi");
   const [resetBusy, setResetBusy] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -231,6 +231,7 @@ export function VendorFormModal({
                   {copy.vendors.statusTerminLanjutan}
                 </option>
                 <option value="lunas">{copy.vendors.statusLunas}</option>
+                <option value="donor">{copy.vendors.statusDonor}</option>
               </select>
             </Field>
           ) : vendor && summary ? (
@@ -243,6 +244,20 @@ export function VendorFormModal({
                   status={summary.paymentStatus}
                   copy={copy}
                 />
+                <span className="block text-[10px] font-medium uppercase tracking-[0.08em] text-ink-soft">
+                  {copy.vendors.fundingSource}
+                </span>
+                <select
+                  name="fundingSource"
+                  defaultValue={
+                    vendor.funded_by_donor ? "donor" : "cash"
+                  }
+                  className={inputClass}
+                  aria-label={copy.vendors.fundingSource}
+                >
+                  <option value="cash">{copy.vendors.fundingCash}</option>
+                  <option value="donor">{copy.vendors.fundingDonor}</option>
+                </select>
                 {summary.paymentStatus !== "diskusi" ? (
                   <button
                     type="button"
@@ -301,7 +316,7 @@ export function VendorFormModal({
           </label>
         ) : null}
 
-        {!vendor && statusIntent !== "diskusi" ? (
+        {!vendor && statusIntent !== "diskusi" && statusIntent !== "donor" ? (
           <div className="space-y-3 rounded-2xl border border-olive-100 bg-olive-50/40 p-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">

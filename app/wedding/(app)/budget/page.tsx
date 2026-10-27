@@ -94,6 +94,10 @@ export default async function BudgetPage({
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
+          label={copy.budget.totalCost}
+          value={formatIDR(calc.vendorBudget + calc.otherCostsTotal)}
+        />
+        <StatCard
           label={copy.budget.vendorBudget}
           value={formatIDR(calc.vendorBudget)}
         />
@@ -103,9 +107,23 @@ export default async function BudgetPage({
           tone={calc.otherCostsTotal > 0 ? "champagne" : undefined}
         />
         <StatCard
+          label={copy.budget.cashPaid}
+          value={formatIDR(calc.cashPaid)}
+          tone="champagne"
+        />
+        <StatCard
+          label={copy.budget.donorCovered}
+          value={formatIDR(calc.donorCovered)}
+          tone={calc.donorCovered > 0 ? "champagne" : undefined}
+        />
+        <StatCard
           label={copy.budget.totalPaid}
           value={formatIDR(calc.totalPaid)}
           tone="champagne"
+        />
+        <StatCard
+          label={copy.budget.donationAvailable}
+          value={formatIDR(calc.donationAvailable)}
         />
         <StatCard
           label={copy.budget.remainingPayment}
@@ -118,6 +136,13 @@ export default async function BudgetPage({
             copy={copy}
           />
         </StatCard>
+        {calc.donationShortfall > 0 ? (
+          <StatCard
+            label={copy.budget.donationShortfall}
+            value={formatIDR(calc.donationShortfall)}
+            tone="champagne"
+          />
+        ) : null}
       </section>
 
       <DonationManager
@@ -144,7 +169,13 @@ export default async function BudgetPage({
       </Card>
 
       <Card className="border-olive-100 bg-olive-50/50">
-        <p className="text-xs leading-relaxed text-ink-soft">
+        <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+          {copy.budget.formulaTitle}
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+          {copy.budget.formulaBody}
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-ink-soft">
           {copy.budget.autoCalculatedInfo}
         </p>
       </Card>

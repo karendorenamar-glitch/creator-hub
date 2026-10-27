@@ -99,6 +99,7 @@ export function PaymentFormModal({
     price,
     history,
     vendor?.collaboration_completed_at ?? null,
+    Boolean(vendor?.funded_by_donor),
   );
   const legacyProofVisible = Boolean(
     payment?.proof_path &&

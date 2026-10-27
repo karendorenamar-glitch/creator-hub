@@ -66,7 +66,7 @@ export function VendorPaymentSection({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {!showForm ? (
+          {!showForm && !vendor.funded_by_donor ? (
             <button
               type="button"
               onClick={onRequestPayment}
@@ -84,6 +84,12 @@ export function VendorPaymentSection({
           </button>
         </div>
       </div>
+
+      {vendor.funded_by_donor ? (
+        <p className="rounded-xl border border-violet-100 bg-violet-50/60 px-3 py-2 text-xs text-violet-900">
+          {copy.vendors.donorCannotPay}
+        </p>
+      ) : null}
 
       {showForm ? (
         <form action={formAction} className="space-y-3">

@@ -35,14 +35,16 @@ function OtherCostFormModal({
   const action = cost ? updateOtherCostAction : createOtherCostAction;
   const [state, formAction, pending] = useActionState(action, null);
   const initialStatus =
-    cost && cost.amount > 0 && cost.paidAmount >= cost.amount
-      ? "paid"
-      : cost && cost.paidAmount > 0
-        ? "partial"
-        : "unpaid";
-  const [status, setStatus] = useState<"unpaid" | "partial" | "paid">(
-    initialStatus,
-  );
+    cost?.fundedByDonor
+      ? "donor"
+      : cost && cost.amount > 0 && cost.paidAmount >= cost.amount
+        ? "paid"
+        : cost && cost.paidAmount > 0
+          ? "partial"
+          : "unpaid";
+  const [status, setStatus] = useState<
+    "unpaid" | "partial" | "paid" | "donor"
+  >(initialStatus);
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -96,6 +98,7 @@ function OtherCostFormModal({
             <option value="unpaid">{copy.budget.otherCostUnpaid}</option>
             <option value="partial">{copy.budget.otherCostPartial}</option>
             <option value="paid">{copy.budget.otherCostPaid}</option>
+            <option value="donor">{copy.budget.otherCostDonor}</option>
           </select>
         </Field>
 
@@ -131,6 +134,7 @@ function OtherCostFormModal({
 }
 
 function otherCostStatus(cost: BudgetOtherCost) {
+  if (cost.fundedByDonor) return "donor" as const;
   if (cost.amount > 0 && cost.paidAmount >= cost.amount) return "paid" as const;
   if (cost.paidAmount > 0) return "partial" as const;
   return "unpaid" as const;
@@ -140,10 +144,12 @@ function otherCostRank(cost: BudgetOtherCost) {
   switch (otherCostStatus(cost)) {
     case "paid":
       return 0;
-    case "partial":
+    case "donor":
       return 1;
-    default:
+    case "partial":
       return 2;
+    default:
+      return 3;
   }
 }
 
@@ -194,7 +200,9 @@ export function OtherCostManager({
         <div className="space-y-3">
           {sortedOtherCosts.map((cost) => {
             const status = otherCostStatus(cost);
-            const remaining = Math.max(0, cost.amount - cost.paidAmount);
+            const remaining = cost.fundedByDonor
+              ? 0
+              : Math.max(0, cost.amount - cost.paidAmount);
             return (
               <div
                 key={cost.id ?? `${cost.name}-${cost.amount}`}
@@ -215,13 +223,18 @@ export function OtherCostManager({
                       <p className="text-xs text-ink-soft">
                         {copy.budget.totalPaid}: {formatIDR(cost.paidAmount)}
                       </p>
+                      {cost.fundedByDonor ? (
+                        <p className="text-xs font-medium text-violet-700">
+                          {copy.budget.otherCostDonor}: {formatIDR(cost.amount)}
+                        </p>
+                      ) : null}
                       <p className="text-xs text-ink-soft">
                         {copy.budget.remainingPayment}: {formatIDR(remaining)}
                       </p>
                     </div>
                     <Badge
                       tone={
-                        status === "paid"
+                        status === "paid" || status === "donor"
                           ? "success"
                           : status === "partial"
                             ? "warning"
@@ -230,9 +243,11 @@ export function OtherCostManager({
                     >
                       {status === "paid"
                         ? copy.budget.otherCostPaid
-                        : status === "partial"
-                          ? copy.budget.otherCostPartial
-                          : copy.budget.otherCostUnpaid}
+                        : status === "donor"
+                          ? copy.budget.otherCostDonor
+                          : status === "partial"
+                            ? copy.budget.otherCostPartial
+                            : copy.budget.otherCostUnpaid}
                     </Badge>
                   </div>
                 </div>

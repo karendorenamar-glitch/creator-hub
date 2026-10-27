@@ -23,7 +23,7 @@ import {
 } from "@/lib/wedding/validation";
 
 const PAYMENT_KINDS = ["dp", "lanjutan", "pelunasan"] as const;
-const VENDOR_STATUS_INTENTS = ["diskusi", "dp", "termin_lanjutan", "lunas"] as const;
+const VENDOR_STATUS_INTENTS = ["diskusi", "dp", "termin_lanjutan", "lunas", "donor"] as const;
 
 async function context() {
   const ctx = await getActionContext();
@@ -99,8 +99,12 @@ export async function createVendorAction(
   // Optional initial payment in the same form. Validate before creating the
   // vendor so an invalid amount/date cannot leave a half-created vendor.
   const hasInitialPayment = text(formData, "paymentAmount") !== "";
+  if (statusIntent === "donor" && hasInitialPayment) {
+    return { error: ctx.copy.vendors.donorHasPayments };
+  }
   if (
     statusIntent !== "diskusi" &&
+    statusIntent !== "donor" &&
     !hasInitialPayment &&
     !(
       parsed.values.agreed_price === 0 &&
@@ -157,16 +161,29 @@ export async function createVendorAction(
     }
   }
 
-  const { data: created, error } = await ctx.supabase
+  const values = {
+    wedding_id: ctx.session.wedding.id,
+    ...vendorFields,
+    collaboration_completed_at: completedAt,
+    funded_by_donor: statusIntent === "donor",
+    selection_status: "terpilih" as const,
+  };
+  let { data: created, error } = await ctx.supabase
     .from("vendors")
-    .insert({
-      wedding_id: ctx.session.wedding.id,
-      ...vendorFields,
-      collaboration_completed_at: completedAt,
-      selection_status: "terpilih",
-    })
+    .insert(values)
     .select("id")
     .single();
+  if (error?.code === "42703") {
+    const { funded_by_donor, ...legacyValues } = values;
+    void funded_by_donor;
+    const retry = await ctx.supabase
+      .from("vendors")
+      .insert(legacyValues)
+      .select("id")
+      .single();
+    created = retry.data;
+    error = retry.error;
+  }
 
   if (error || !created) {
     return { error: actionError(error ?? { message: "" }, ctx.copy) };
@@ -234,16 +251,39 @@ export async function updateVendorAction(
   const parsed = readVendor(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { data: existing } = await ctx.supabase
+  let { data: existing } = await ctx.supabase
     .from("vendors")
-    .select("collaboration_completed_at")
+    .select("collaboration_completed_at, funded_by_donor")
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id)
     .maybeSingle();
+  if (!existing) {
+    const fallback = await ctx.supabase
+      .from("vendors")
+      .select("collaboration_completed_at")
+      .eq("id", id)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .maybeSingle();
+    existing = fallback.data
+      ? { ...fallback.data, funded_by_donor: false }
+      : null;
+  }
 
   if (!existing) return { error: ctx.copy.errors.notFound };
 
   const { collaboration_completed, ...vendorFields } = parsed.values;
+  const fundingSource = text(formData, "fundingSource") || "cash";
+  const fundedByDonor = fundingSource === "donor";
+  if (fundedByDonor) {
+    const { count } = await ctx.supabase
+      .from("vendor_payments")
+      .select("id", { count: "exact", head: true })
+      .eq("vendor_id", id)
+      .eq("wedding_id", ctx.session.wedding.id);
+    if ((count ?? 0) > 0) {
+      return { error: ctx.copy.vendors.donorHasPayments };
+    }
+  }
 
   // Preserve completion on ordinary detail edits. Only an explicit checkbox
   // state on a zero-price vendor can set or clear it.
@@ -254,14 +294,26 @@ export async function updateVendorAction(
       : null;
   }
 
-  const { error } = await ctx.supabase
+  const values = {
+    ...vendorFields,
+    collaboration_completed_at: completedAt,
+    funded_by_donor: fundedByDonor,
+  };
+  let { error } = await ctx.supabase
     .from("vendors")
-    .update({
-      ...vendorFields,
-      collaboration_completed_at: completedAt,
-    })
+    .update(values)
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
+  if (error?.code === "42703") {
+    const { funded_by_donor, ...legacyValues } = values;
+    void funded_by_donor;
+    const retry = await ctx.supabase
+      .from("vendors")
+      .update(legacyValues)
+      .eq("id", id)
+      .eq("wedding_id", ctx.session.wedding.id);
+    error = retry.error;
+  }
 
   if (error) return { error: actionError(error, ctx.copy) };
 
@@ -367,11 +419,18 @@ export async function resetVendorStatusAction(
     .eq("wedding_id", weddingId);
   if (error) return { error: actionError(error, ctx.copy) };
 
-  await ctx.supabase
+  const reset = await ctx.supabase
     .from("vendors")
-    .update({ collaboration_completed_at: null })
+    .update({ collaboration_completed_at: null, funded_by_donor: false })
     .eq("id", id)
     .eq("wedding_id", weddingId);
+  if (reset.error?.code === "42703") {
+    await ctx.supabase
+      .from("vendors")
+      .update({ collaboration_completed_at: null })
+      .eq("id", id)
+      .eq("wedding_id", weddingId);
+  }
   await removeStoredFiles(ctx, paths);
   revalidateVendorPages();
   return { success: ctx.copy.vendors.statusReset };
@@ -497,16 +556,28 @@ export async function createVendorPaymentAction(
   const vendorId = text(formData, "vendorId");
   if (!isUuid(vendorId)) return { error: ctx.copy.errors.notFound };
 
-  const { data: vendor } = await ctx.supabase
+  let { data: vendor } = await ctx.supabase
     .from("vendors")
-    .select("id, archived_at")
+    .select("id, archived_at, funded_by_donor")
     .eq("id", vendorId)
     .eq("wedding_id", weddingId)
     .maybeSingle();
+  if (!vendor) {
+    const fallback = await ctx.supabase
+      .from("vendors")
+      .select("id, archived_at")
+      .eq("id", vendorId)
+      .eq("wedding_id", weddingId)
+      .maybeSingle();
+    vendor = (fallback.data as typeof vendor) ?? null;
+  }
 
   if (!vendor) return { error: ctx.copy.errors.notFound };
   if (vendor.archived_at) {
     return { error: "Vendor yang diarsipkan tidak bisa menerima pembayaran baru." };
+  }
+  if (vendor.funded_by_donor) {
+    return { error: ctx.copy.vendors.donorHasPayments };
   }
 
   const parsed = readPayment(formData, ctx.copy);

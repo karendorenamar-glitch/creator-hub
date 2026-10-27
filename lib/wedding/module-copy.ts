@@ -129,6 +129,15 @@ const en = {
     otherCostPaid: "Lunas",
     otherCostUnpaid: "Belum bayar",
     otherCostPartial: "Terbayar sebagian",
+    otherCostDonor: "Dari donatur",
+    totalCost: "Total cost",
+    cashPaid: "Cash paid",
+    donorCovered: "Covered by donations",
+    donationAvailable: "Donation funds available",
+    donationShortfall: "Donation shortfall",
+    formulaTitle: "How these totals work",
+    formulaBody:
+      "Planned = vendors + other costs. Cash paid = vendor transactions + other cost amounts paid. Covered by donations = costs marked From donations. Total paid = cash + donor-covered. Remaining = planned - total paid - available donation funds. Available donation funds = donations - donor-covered costs.",
     otherCostAmountPaid: "Amount paid",
     otherCostPartialInvalid:
       "The amount paid must be greater than 0 and less than the price.",
@@ -491,6 +500,8 @@ const en = {
     overpayment: "Overpayment",
     paymentPercentage: "Payment Percentage",
     statusDiskusi: "Diskusi",
+    statusUnpaid: "Belum bayar",
+    statusPartial: "Terbayar sebagian",
     statusReset: "Status returned to Diskusi.",
     resetStatus: "Return to Diskusi",
     resetStatusConfirm:
@@ -498,6 +509,13 @@ const en = {
     statusDp: "DP",
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
+    statusDonor: "From donations",
+    fundingSource: "Payment source",
+    fundingCash: "Paying ourselves",
+    fundingDonor: "From donations",
+    donorHasPayments:
+      "A donor-funded vendor cannot have cash payments. Delete its payments or switch it back to self-paid.",
+    donorCannotPay: "This vendor is covered by donations. Switch the payment source to self-paid before recording cash.",
     statusIncomplete: "Harga Belum Diisi",
     markCompleted: "Mark this Rp0 vendor as completed",
     markCompletedHint:
@@ -837,6 +855,15 @@ const id: ModuleCopy = {
     otherCostPaid: "Lunas",
     otherCostUnpaid: "Belum bayar",
     otherCostPartial: "Terbayar sebagian",
+    otherCostDonor: "Dari donatur",
+    totalCost: "Total biaya",
+    cashPaid: "Dibayar tunai",
+    donorCovered: "Ditanggung donatur",
+    donationAvailable: "Dana donatur tersedia",
+    donationShortfall: "Kekurangan dana donatur",
+    formulaTitle: "Cara hitung total",
+    formulaBody:
+      "Total biaya = vendor + biaya lainnya. Dibayar tunai = transaksi vendor + nominal biaya lain yang sudah dibayar. Ditanggung donatur = biaya yang ditandai Dari donatur. Total terbayar = tunai + donatur. Sisa = total biaya - total terbayar - dana donasi yang masih tersedia. Dana donatur tersedia = total donasi - biaya yang ditandai dari donatur.",
     otherCostAmountPaid: "Jumlah dibayar",
     otherCostPartialInvalid:
       "Jumlah dibayar harus lebih dari 0 dan kurang dari harga.",
@@ -1197,6 +1224,8 @@ const id: ModuleCopy = {
     overpayment: "Kelebihan Bayar",
     paymentPercentage: "Persentase Pembayaran",
     statusDiskusi: "Diskusi",
+    statusUnpaid: "Belum bayar",
+    statusPartial: "Terbayar sebagian",
     statusReset: "Status dikembalikan ke Diskusi.",
     resetStatus: "Kembalikan ke Diskusi",
     resetStatusConfirm:
@@ -1204,6 +1233,13 @@ const id: ModuleCopy = {
     statusDp: "DP",
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
+    statusDonor: "Dari donatur",
+    fundingSource: "Sumber pembayaran",
+    fundingCash: "Bayar sendiri",
+    fundingDonor: "Dari donatur",
+    donorHasPayments:
+      "Vendor yang didanai donatur tidak boleh punya pembayaran tunai. Hapus pembayarannya atau ubah kembali ke bayar sendiri.",
+    donorCannotPay: "Vendor ini ditanggung donatur. Ubah sumber pembayaran ke bayar sendiri sebelum mencatat pembayaran tunai.",
     statusIncomplete: "Harga Belum Diisi",
     markCompleted: "Tandai vendor Rp0 ini selesai",
     markCompletedHint:

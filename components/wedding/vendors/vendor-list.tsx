@@ -122,6 +122,8 @@ function paymentStatusRank(status?: VendorPaymentSummary["paymentStatus"]) {
   switch (status) {
     case "lunas":
       return 0;
+    case "donor":
+      return 1;
     case "termin_lanjutan":
       return 1;
     case "dp":
@@ -223,6 +225,8 @@ export function VendorList({
   function emptySummary(): VendorPaymentSummary {
     return {
       paymentCount: 0,
+      cashPaid: 0,
+      donorFunded: 0,
       totalPaid: 0,
       remainingPayment: 0,
       overpayment: 0,

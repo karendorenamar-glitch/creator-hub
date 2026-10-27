@@ -22,6 +22,7 @@ export type DerivedPaymentStatus =
   | "dp"
   | "termin_lanjutan"
   | "lunas"
+  | "donor"
   | "incomplete";
 
 export type TargetBudgetStatus =
@@ -41,6 +42,7 @@ export type BudgetVendor = {
   agreed_price: number | null;
   archived_at: string | null;
   collaboration_completed_at?: string | null;
+  funded_by_donor?: boolean;
   /** Legacy compatibility flag; never shown as a workflow in the new UI. */
   selection_status?: "alternatif" | "terpilih";
 };
@@ -57,6 +59,7 @@ export type BudgetOtherCost = {
   name: string;
   amount: number;
   paidAmount: number;
+  fundedByDonor?: boolean;
 };
 
 export type BudgetDonation = {
@@ -65,6 +68,11 @@ export type BudgetDonation = {
 
 export type VendorPaymentSummary = {
   paymentCount: number;
+  /** Cash actually paid to the vendor. */
+  cashPaid: number;
+  /** Full agreed price covered by the donation pool. */
+  donorFunded: number;
+  /** Cash + donor-funded amount. */
   totalPaid: number;
   remainingPayment: number;
   overpayment: number;
@@ -75,8 +83,13 @@ export type BudgetResult = {
   vendorBudget: number;
   otherCostsTotal: number;
   otherCostsPaid: number;
+  cashPaid: number;
+  donorCovered: number;
   donationsTotal: number;
+  donationAvailable: number;
   donationExcess: number;
+  donationShortfall: number;
+  /** Cash paid + donor-funded costs. */
   totalPaid: number;
   remainingPayment: number;
   overpayment: number;
@@ -140,6 +153,7 @@ export function derivePaymentStatus(
   agreedPrice: number | null,
   payments: Array<Pick<BudgetPayment, "amount" | "payment_kind">>,
   collaborationCompletedAt: string | null = null,
+  fundedByDonor = false,
 ): DerivedPaymentStatus {
   if (agreedPrice === null || agreedPrice === undefined) {
     return "incomplete";
@@ -147,6 +161,7 @@ export function derivePaymentStatus(
 
   const price = Number(agreedPrice);
   if (!Number.isFinite(price) || price < 0) return "incomplete";
+  if (fundedByDonor) return "donor";
 
   const positivePayments = payments.filter((p) => amountOf(p.amount) > 0);
   if (positivePayments.length === 0) {
@@ -236,6 +251,7 @@ export function calculateBudget(input: {
 
   let vendorBudget = 0;
   let vendorPaid = 0;
+  let vendorDonorCovered = 0;
   let missingAgreedPriceCount = 0;
   let archivedPaid = 0;
 
@@ -246,12 +262,18 @@ export function calculateBudget(input: {
       (sum, payment) => sum + amountOf(payment.amount),
       0,
     );
-    const remaining = price === null ? 0 : Math.max(0, price - paid);
+    const donorFunded =
+      vendor.funded_by_donor && price !== null
+        ? Math.max(0, Math.max(0, price) - paid)
+        : 0;
+    const covered = paid + donorFunded;
+    const remaining = price === null ? 0 : Math.max(0, price - covered);
     const overpayment = price === null ? 0 : Math.max(0, paid - price);
     const status = derivePaymentStatus(
       price,
       payments,
       vendor.collaboration_completed_at ?? null,
+      Boolean(vendor.funded_by_donor),
     );
 
     paidByVendor.set(vendor.id, paid);
@@ -260,7 +282,9 @@ export function calculateBudget(input: {
     statusByVendor.set(vendor.id, status);
     summaryByVendor.set(vendor.id, {
       paymentCount: payments.length,
-      totalPaid: paid,
+      cashPaid: paid,
+      donorFunded,
+      totalPaid: covered,
       remainingPayment: remaining,
       overpayment,
       paymentStatus: status,
@@ -277,6 +301,7 @@ export function calculateBudget(input: {
     activeVendors.push(vendor);
     vendorBudget += price ?? 0;
     vendorPaid += paid;
+    vendorDonorCovered += donorFunded;
     if (price === null) missingAgreedPriceCount += 1;
   }
 
@@ -290,18 +315,37 @@ export function calculateBudget(input: {
       sum + Math.min(amountOf(cost.paidAmount), amountOf(cost.amount)),
     0,
   );
-  const totalPaid = vendorPaid + otherCostsPaid;
+  const otherDonorCovered = otherCosts.reduce(
+    (sum, cost) =>
+      sum +
+      (cost.fundedByDonor
+        ? Math.max(0, amountOf(cost.amount))
+        : 0),
+    0,
+  );
+  const cashPaid = vendorPaid + otherCostsPaid;
+  const donorCovered = vendorDonorCovered + otherDonorCovered;
+  const totalPaid = cashPaid + donorCovered;
   const plannedBudget = vendorBudget + otherCostsTotal;
   const donationsTotal = (input.donations ?? []).reduce(
     (sum, donation) => sum + Math.max(0, amountOf(donation.amount)),
     0,
   );
-  // Donations reduce what the couple still needs to pay. They are not vendor
-  // payments and never change Total Paid, vendor prices, or payment status.
-  const unpaidBeforeDonations = Math.max(0, plannedBudget - totalPaid);
-  const remainingPayment = Math.max(0, unpaidBeforeDonations - donationsTotal);
-  const donationExcess = Math.max(0, donationsTotal - unpaidBeforeDonations);
-  const overpayment = Math.max(0, totalPaid - plannedBudget);
+  const donationAvailable = Math.max(0, donationsTotal - donorCovered);
+  const uncoveredBeforeDonations = Math.max(0, plannedBudget - totalPaid);
+  const remainingPayment = Math.max(
+    0,
+    uncoveredBeforeDonations - donationAvailable,
+  );
+  const donationExcess = Math.max(
+    0,
+    donationAvailable - uncoveredBeforeDonations,
+  );
+  const donationShortfall = Math.max(0, donorCovered - donationsTotal);
+  const overpayment = Math.max(
+    0,
+    cashPaid - Math.max(0, plannedBudget - donorCovered),
+  );
   const paymentPercentage =
     plannedBudget > 0
       ? Math.round((totalPaid / plannedBudget) * 10000) / 100
@@ -319,8 +363,12 @@ export function calculateBudget(input: {
     vendorBudget,
     otherCostsTotal,
     otherCostsPaid,
+    cashPaid,
+    donorCovered,
     donationsTotal,
+    donationAvailable,
     donationExcess,
+    donationShortfall,
     totalPaid,
     remainingPayment,
     overpayment,

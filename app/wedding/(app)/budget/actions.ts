@@ -214,7 +214,7 @@ export async function updateExpenseAction(
 }
 
 
-const OTHER_COST_STATUSES = ["unpaid", "partial", "paid"] as const;
+const OTHER_COST_STATUSES = ["unpaid", "partial", "paid", "donor"] as const;
 
 type OtherCostValues = {
   name: string;
@@ -272,11 +272,12 @@ function otherCostRow(values: OtherCostValues) {
     amount: values.amount,
     amount_paid: values.paidAmount,
     deposit_amount: 0,
-    payment_status: (values.status === "paid"
+    payment_status: (values.status === "paid" || values.status === "donor"
       ? "lunas"
       : values.status === "partial"
         ? "dp"
         : "diskusi") as PaymentStatus,
+    funded_by_donor: values.status === "donor",
     category_id: null,
     vendor_id: null,
     due_date: null,
@@ -292,10 +293,17 @@ export async function createOtherCostAction(
   const parsed = readOtherCost(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase.from("expenses").insert({
+  const values = {
     wedding_id: ctx.session.wedding.id,
     ...otherCostRow(parsed.values),
-  });
+  };
+  let { error } = await ctx.supabase.from("expenses").insert(values);
+  if (error?.code === "42703") {
+    const { funded_by_donor, ...legacyValues } = values;
+    void funded_by_donor;
+    const retry = await ctx.supabase.from("expenses").insert(legacyValues);
+    error = retry.error;
+  }
 
   if (error) return { error: actionError(error, ctx.copy) };
 
@@ -314,12 +322,24 @@ export async function updateOtherCostAction(
   const parsed = readOtherCost(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase
+  const values = otherCostRow(parsed.values);
+  let { error } = await ctx.supabase
     .from("expenses")
-    .update(otherCostRow(parsed.values))
+    .update(values)
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id)
     .is("vendor_id", null);
+  if (error?.code === "42703") {
+    const { funded_by_donor, ...legacyValues } = values;
+    void funded_by_donor;
+    const retry = await ctx.supabase
+      .from("expenses")
+      .update(legacyValues)
+      .eq("id", id)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .is("vendor_id", null);
+    error = retry.error;
+  }
 
   if (error) return { error: actionError(error, ctx.copy) };
 

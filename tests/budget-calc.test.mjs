@@ -308,6 +308,44 @@ t("other overpayment: totalPaid", r.totalPaid, 13_000_000);
 t("other overpayment: remaining", r.remainingPayment, 0);
 t("other overpayment: overpayment", r.overpayment, 1_000_000);
 
+// 19b. Donor-funded vendor is covered without cash and consumes the donation pool.
+const donorVendor = vendor({ funded_by_donor: true });
+r = calc([donorVendor]);
+t("donor vendor: cash paid", r.cashPaid, 0);
+t("donor vendor: donor covered", r.donorCovered, 10_000_000);
+t("donor vendor: total paid", r.totalPaid, 10_000_000);
+t("donor vendor: remaining", r.remainingPayment, 0);
+t("donor vendor: status", r.statusByVendor.get("v1"), "donor");
+t("donor vendor: shortfall", r.donationShortfall, 10_000_000);
+
+r = calculateBudget({
+  vendors: [donorVendor],
+  payments: [],
+  donations: [{ amount: 10_000_000 }],
+  targetBudget: 0,
+});
+t("donor vendor funded: available donations", r.donationAvailable, 0);
+t("donor vendor funded: shortfall", r.donationShortfall, 0);
+t("donor vendor funded: remaining", r.remainingPayment, 0);
+
+const donorOther = [
+  {
+    id: "c1",
+    name: "Transport",
+    amount: 2_000_000,
+    paidAmount: 0,
+    fundedByDonor: true,
+  },
+];
+r = calc([vendor()], [], 0, donorOther);
+t("donor other: cash subtotal", r.otherCostsPaid, 0);
+t("donor other: donor covered", r.donorCovered, 2_000_000);
+t("donor other: total paid", r.totalPaid, 2_000_000);
+t("donor other: remaining", r.remainingPayment, 10_000_000);
+
+// 19c. Donor status is derived before cash status.
+t("derive donor", derivePaymentStatus(10_000_000, [], null, true), "donor");
+
 // 20. Direct derived-status checks.
 t("derive no payments", derivePaymentStatus(10_000_000, []), "diskusi");
 t("derive zero no payments", derivePaymentStatus(0, []), "diskusi");

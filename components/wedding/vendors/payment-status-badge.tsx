@@ -4,15 +4,17 @@ import type { ModuleCopy } from "@/lib/wedding/module-copy";
 function labelFor(status: DerivedPaymentStatus, copy: ModuleCopy) {
   switch (status) {
     case "dp":
-      return copy.vendors.statusDp;
+      return copy.vendors.statusPartial;
     case "termin_lanjutan":
-      return copy.vendors.statusTerminLanjutan;
+      return copy.vendors.statusPartial;
     case "lunas":
       return copy.vendors.statusLunas;
+    case "donor":
+      return copy.vendors.statusDonor;
     case "incomplete":
       return copy.vendors.statusIncomplete;
     default:
-      return copy.vendors.statusDiskusi;
+      return copy.vendors.statusUnpaid;
   }
 }
 
@@ -21,6 +23,7 @@ const toneClass: Record<DerivedPaymentStatus, string> = {
   dp: "border-sky-200 bg-sky-100 text-sky-950",
   termin_lanjutan: "border-sky-300 bg-sky-100 text-sky-950",
   lunas: "border-emerald-200 bg-emerald-100 text-emerald-950",
+  donor: "border-violet-200 bg-violet-100 text-violet-950",
   incomplete: "border-stone-300 bg-stone-100 text-stone-800",
 };
 

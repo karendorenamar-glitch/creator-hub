@@ -47,6 +47,7 @@ function mapOtherCosts(
         amount: number | string | null;
         payment_status: string;
         amount_paid: number | string | null;
+        funded_by_donor?: boolean;
       }[]
     | null
     | undefined,
@@ -62,6 +63,7 @@ function mapOtherCosts(
       name: row.name,
       amount,
       paidAmount,
+      fundedByDonor: Boolean(row.funded_by_donor),
     };
   });
 }
@@ -76,9 +78,7 @@ export async function loadBudgetData(
     await Promise.all([
       supabase
         .from("vendors")
-        .select(
-          "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status, collaboration_completed_at",
-        )
+        .select("*")
         .eq("wedding_id", weddingId),
       supabase
         .from("vendor_payments")
@@ -86,7 +86,7 @@ export async function loadBudgetData(
         .eq("wedding_id", weddingId),
       supabase
         .from("expenses")
-        .select("id, name, amount, amount_paid, payment_status")
+        .select("*")
         .eq("wedding_id", weddingId)
         .is("vendor_id", null)
         .order("created_at", { ascending: true }),
@@ -123,6 +123,7 @@ export async function loadBudgetData(
     archived_at: vendor.archived_at,
     selection_status: vendor.selection_status,
     collaboration_completed_at: vendor.collaboration_completed_at,
+    funded_by_donor: Boolean(vendor.funded_by_donor),
   }));
 
   const payments: BudgetPayment[] = (paymentsResult.data ?? []).map(
@@ -165,9 +166,7 @@ export async function loadVendorsPageData(
   ] = await Promise.all([
       supabase
         .from("vendors")
-        .select(
-          "id, name, category, contact_name, phone, notes, agreed_price, archived_at, selection_status, collaboration_completed_at",
-        )
+        .select("*")
         .eq("wedding_id", weddingId)
         .order("created_at", { ascending: true }),
       supabase
@@ -186,7 +185,7 @@ export async function loadVendorsPageData(
         .order("sort_order", { ascending: true }),
       supabase
         .from("expenses")
-        .select("id, name, amount, amount_paid, payment_status")
+        .select("*")
         .eq("wedding_id", weddingId)
         .is("vendor_id", null)
         .order("created_at", { ascending: true }),
@@ -227,6 +226,7 @@ export async function loadVendorsPageData(
     archived_at: vendor.archived_at,
     selection_status: vendor.selection_status,
     collaboration_completed_at: vendor.collaboration_completed_at,
+    funded_by_donor: Boolean(vendor.funded_by_donor),
   }));
 
   const payments: VendorPayment[] = (paymentsResult.data ?? []).map(

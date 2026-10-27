@@ -103,6 +103,7 @@ export type Vendor = {
   amount_paid: number;
   booking_status: BookingStatus;
   payment_status: PaymentStatus;
+  funded_by_donor: boolean;
   pic_internal: string | null;
   group_id: string | null;
   selection_status: "alternatif" | "terpilih";
@@ -167,6 +168,7 @@ export type Expense = {
   deposit_amount: number;
   amount_paid: number;
   payment_status: PaymentStatus;
+  funded_by_donor: boolean;
   due_date: string | null;
   notes: string | null;
   created_at: string;
