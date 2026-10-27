@@ -188,6 +188,77 @@ export type Guest = {
   updated_at: string;
 };
 
+
+export type SeatingEventType = "akad" | "dinner";
+export type SeatingTableShape = "round" | "rect";
+
+export type SeatingEvent = {
+  id: string;
+  wedding_id: string;
+  event_type: SeatingEventType;
+  name: string;
+  event_date: string | null;
+  start_time: string | null;
+  zoom: number;
+  pan_x: number;
+  pan_y: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SeatingTable = {
+  id: string;
+  wedding_id: string;
+  event_id: string;
+  name: string;
+  shape: SeatingTableShape;
+  capacity: number;
+  canvas_x: number;
+  canvas_y: number;
+  width: number;
+  height: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SeatingAssignment = {
+  id: string;
+  wedding_id: string;
+  event_id: string;
+  table_id: string;
+  guest_id: string;
+  created_at: string;
+};
+
+export type RoomType = "single" | "twin" | "double" | "suite" | "custom";
+export type BreakfastType = "none" | "included" | "custom" | "unconfigured";
+
+export type Room = {
+  id: string;
+  wedding_id: string;
+  name: string;
+  hotel_name: string | null;
+  room_type: RoomType;
+  capacity: number;
+  breakfast_type: BreakfastType;
+  breakfast_pax: number | null;
+  breakfast_notes: string | null;
+  check_in: string | null;
+  check_out: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type RoomAssignment = {
+  id: string;
+  wedding_id: string;
+  room_id: string;
+  guest_id: string;
+  created_at: string;
+};
+
 export type ChecklistKind = "custom" | "builtin_kua";
 
 export type Checklist = {
@@ -420,6 +491,11 @@ export type WeddingDatabase = {
       vendor_payment_proofs: Table<VendorPaymentProof>;
       expenses: Table<Expense>;
       guests: Table<Guest>;
+      seating_events: Table<SeatingEvent>;
+      seating_tables: Table<SeatingTable>;
+      seating_assignments: Table<SeatingAssignment>;
+      rooms: Table<Room>;
+      room_assignments: Table<RoomAssignment>;
       checklists: Table<Checklist>;
       checklist_tasks: Table<ChecklistTask>;
       inspiration_items: Table<InspirationItem>;

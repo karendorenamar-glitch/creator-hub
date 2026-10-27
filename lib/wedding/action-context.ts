@@ -55,6 +55,39 @@ export async function getActionContext(): Promise<ActionContext | null> {
   };
 }
 
+
+export type WeddingMutationContext = {
+  userId: string;
+  email: string | null;
+  weddingId: string;
+  locale: "en" | "id";
+  copy: ModuleCopy;
+  supabase: SupabaseClient<WeddingDatabase>;
+};
+
+export async function getWeddingMutationContext(): Promise<WeddingMutationContext | null> {
+  const [user, locale] = await Promise.all([getCurrentUser(), getLocale()]);
+  if (!user) return null;
+
+  const supabase = await createWeddingClient();
+  const { data: membership } = await supabase
+    .from("wedding_members")
+    .select("wedding_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!membership) return null;
+
+  return {
+    userId: user.id,
+    email: user.email,
+    weddingId: membership.wedding_id,
+    locale,
+    copy: moduleCopy[locale],
+    supabase,
+  };
+}
+
 type SupabaseError = { code?: string; message: string };
 
 /**
