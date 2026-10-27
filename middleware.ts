@@ -60,6 +60,12 @@ export async function middleware(request: NextRequest) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/wedding/login";
       loginUrl.search = "";
+      if (pathname.startsWith("/wedding/invite/")) {
+        loginUrl.searchParams.set(
+          "next",
+          `${pathname}${request.nextUrl.search}`,
+        );
+      }
       return NextResponse.redirect(loginUrl);
     }
 

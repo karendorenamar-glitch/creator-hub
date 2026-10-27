@@ -13,7 +13,7 @@ export type ActionResult = { error?: string; success?: string } | null;
 
 export type ActionSession = Pick<
   WeddingSession,
-  "userId" | "email" | "wedding"
+  "userId" | "email" | "wedding" | "role"
 >;
 
 export type ActionContext = {
@@ -31,7 +31,7 @@ export async function getActionContext(): Promise<ActionContext | null> {
   const supabase = await createWeddingClient();
   const { data: membership } = await supabase
     .from("wedding_members")
-    .select("wedding_id")
+    .select("wedding_id, role")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -48,13 +48,12 @@ export async function getActionContext(): Promise<ActionContext | null> {
   // Actions only need the workspace and copy. Subscription/access is enforced
   // by RLS on the mutation itself, so avoid loading five extra session tables.
   return {
-    session: { userId: user.id, email: user.email, wedding },
+    session: { userId: user.id, email: user.email, wedding, role: membership.role },
     locale,
     copy: moduleCopy[locale],
     supabase,
   };
 }
-
 
 export type WeddingMutationContext = {
   userId: string;
@@ -65,6 +64,10 @@ export type WeddingMutationContext = {
   supabase: SupabaseClient<WeddingDatabase>;
 };
 
+/**
+ * Lightweight context for feature actions that only need the wedding id.
+ * It still resolves membership through RLS before any mutation.
+ */
 export async function getWeddingMutationContext(): Promise<WeddingMutationContext | null> {
   const [user, locale] = await Promise.all([getCurrentUser(), getLocale()]);
   if (!user) return null;

@@ -87,7 +87,14 @@ export function SignInForm({ copy, next }: { copy: WeddingCopy; next?: string })
       </p>
       <p className="text-center text-sm text-ink-soft">
         {copy.auth.noAccount}{" "}
-        <Link href="/wedding/signup" className="font-medium text-olive-700 hover:underline">
+        <Link
+          href={
+            next
+              ? `/wedding/signup?next=${encodeURIComponent(next)}`
+              : "/wedding/signup"
+          }
+          className="font-medium text-olive-700 hover:underline"
+        >
           {copy.auth.createAccount}
         </Link>
       </p>

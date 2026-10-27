@@ -19,6 +19,15 @@ files in `supabase/*.sql` are untouched and must NOT be run on the new project.
 8. `008_inspiration_album.sql` - `inspiration_photos` table so each item can
    hold several photos (existing single photos are migrated into it)
 
+Later migrations (`009`-`028`) are documented in their `APPLY_*.md` files.
+The current invite migration is `029_link_based_invites.sql`: it makes invite
+email optional and adds `accept_wedding_invite_link()` for link-based partner
+invites. The current guest migration is `030_guest_side.sql`: it adds an
+additive `side` category (`bride`, `groom`, `unassigned`) without changing
+existing guest records or RLS policies. The seating/rooms migration is
+`031_seating_rooms.sql`: five additive tables with wedding-scoped composite
+foreign keys and the existing `wedding_has_access` RLS rule.
+
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing
 `vendors.amount_paid` values are preserved as one opening payment per vendor,
@@ -42,8 +51,11 @@ any error message verbatim.
 - A **wedding** is the workspace. Data belongs to a wedding, not to a user.
 - `wedding_members` links users to a wedding: one `owner` (creator) and at most
   one `partner` (max 2 members, enforced by trigger). No other roles.
-- The partner joins via an invite token, accepted by `accept_wedding_invite()`,
-  which checks the signed-in email matches the invite.
+- The partner joins via a secret invite token accepted by
+  `accept_wedding_invite_link()` (029) after signing in. The account email does
+  not need to match anything; the owner can revoke the link and it stays valid
+  until accepted or revoked. The old email-matched `accept_wedding_invite()`
+  remains for backwards compatibility but is not used by the current invite page.
 
 ## Security (RLS)
 
@@ -64,9 +76,10 @@ any error message verbatim.
 
 ## Concurrency and integrity hardening
 
-- **Invite acceptance rejects unknown email.** `accept_wedding_invite()` requires
-  the signed-in user to have a non-NULL email that matches the invite. A
-  phone-only account or a missing `auth.users` row fails closed.
+- **Invite acceptance is token-based.** `accept_wedding_invite_link()` requires a
+  signed-in user, a valid unused token, and one accepted invite. The signed-in
+  email is intentionally not compared; the token is the shared secret. Invitees
+  should treat the link like a password and owners can revoke it while pending.
 - **Max-2-members is race-safe.** The trigger locks the `weddings` row
   (`for update`) before counting, so two simultaneous accepts for the same
   wedding serialize. The count runs as a new statement and sees the winner's

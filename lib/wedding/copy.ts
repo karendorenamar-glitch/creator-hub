@@ -131,6 +131,35 @@ const en = {
     budgetInvalid: "Budget must be zero or more.",
     guestsInvalid: "Guest count must be zero or more.",
     dateInvalid: "Enter a valid date.",
+    inviteTitle: "Invite your partner",
+    inviteSubtitle:
+      "Your partner can open the same wedding dashboard after accepting the invitation.",
+    inviteCreate: "Create invitation link",
+    inviteHint:
+      "This link stays valid until it is accepted or revoked. Share it only with your partner. It is separate from your partner's normal login session.",
+    inviteReady: "Your invitation link is ready to share.",
+    inviteExisting:
+      "An invitation link is already active. Revoke it before creating a new one.",
+    inviteShare: "Invitation link",
+    inviteCopy: "Copy link",
+    inviteCopied: "Copied",
+    inviteExpires: "Expires",
+    inviteRevoke: "Revoke invitation",
+    inviteRevoked: "Invitation revoked.",
+    inviteCreated: "Invitation created. Share the link with your partner.",
+    inviteOwnerOnly: "Only the wedding owner can invite a partner.",
+    inviteAlreadyMember: "Your partner is already connected to this wedding.",
+    inviteLimit: "This wedding already has a partner.",
+    inviteAcceptTitle: "Partner invitation",
+    inviteAcceptBody:
+      "Sign in with your own account, then join to open the same wedding dashboard. Your email does not need to match anything.",
+    inviteAcceptButton: "Join this wedding",
+    inviteAccepting: "Joining...",
+    inviteAcceptLater: "Not now",
+    inviteAcceptInvalid: "This invitation is invalid or expired.",
+    inviteAcceptAlready: "This invitation has already been accepted.",
+    inviteAcceptOwner:
+      "You already own this wedding. Open the dashboard from your account instead.",
   },
   billing: {
     title: "Subscription",
@@ -314,6 +343,35 @@ const id: WeddingCopy = {
     budgetInvalid: "Anggaran harus nol atau lebih.",
     guestsInvalid: "Jumlah tamu harus nol atau lebih.",
     dateInvalid: "Masukkan tanggal yang valid.",
+    inviteTitle: "Undang Pasangan",
+    inviteSubtitle:
+      "Pasangan dapat membuka dashboard pernikahan yang sama setelah menerima undangan.",
+    inviteCreate: "Buat tautan undangan",
+    inviteHint:
+      "Tautan ini berlaku sampai dipakai atau dicabut. Bagikan hanya kepada pasangan Anda. Ini terpisah dari sesi login pasangan.",
+    inviteReady: "Tautan undangan siap dibagikan.",
+    inviteExisting:
+      "Tautan undangan masih aktif. Batalkan dulu sebelum membuat tautan baru.",
+    inviteShare: "Tautan undangan",
+    inviteCopy: "Salin tautan",
+    inviteCopied: "Tersalin",
+    inviteExpires: "Kedaluwarsa",
+    inviteRevoke: "Batalkan undangan",
+    inviteRevoked: "Undangan dibatalkan.",
+    inviteCreated: "Undangan dibuat. Bagikan tautan kepada pasangan Anda.",
+    inviteOwnerOnly: "Hanya pemilik wedding yang dapat mengundang pasangan.",
+    inviteAlreadyMember: "Pasangan Anda sudah terhubung ke wedding ini.",
+    inviteLimit: "Wedding ini sudah memiliki pasangan.",
+    inviteAcceptTitle: "Undangan Pasangan",
+    inviteAcceptBody:
+      "Login dengan akun Anda sendiri, lalu bergabung untuk membuka dashboard pernikahan yang sama. Email Anda tidak perlu sama dengan apa pun.",
+    inviteAcceptButton: "Gabung ke Wedding",
+    inviteAccepting: "Bergabung...",
+    inviteAcceptLater: "Nanti saja",
+    inviteAcceptInvalid: "Undangan tidak valid atau sudah kedaluwarsa.",
+    inviteAcceptAlready: "Undangan ini sudah pernah diterima.",
+    inviteAcceptOwner:
+      "Anda sudah memiliki wedding ini. Buka dashboard dari akun Anda.",
   },
   billing: {
     title: "Langganan",

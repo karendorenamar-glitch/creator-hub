@@ -46,7 +46,7 @@ export type WeddingInvite = {
   token: string;
   invited_by: string;
   accepted_at: string | null;
-  expires_at: string;
+  expires_at: string | null;
   created_at: string;
 };
 
