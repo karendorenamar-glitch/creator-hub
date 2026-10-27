@@ -39,7 +39,7 @@ function InspirationCard({
   onOpen,
 }: {
   item: InspirationItem;
-  photos: { id: string; path: string }[];
+  photos: { id: string; path: string; caption: string | null }[];
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
   onOpen: (item: InspirationItem) => void;
@@ -59,6 +59,9 @@ function InspirationCard({
   const hasPhoto = Boolean(mainUrl) && !broken;
   const category = item.category?.trim() || copy.form.none;
   const notes = item.notes?.trim() || item.description?.trim() || null;
+  const coverCaption = item.image_path
+    ? (photos.find((photo) => photo.path === item.image_path)?.caption ?? null)
+    : null;
 
   return (
     <article
@@ -108,6 +111,11 @@ function InspirationCard({
         <h3 className="line-clamp-2 font-heading text-lg leading-snug text-ink">
           {item.title}
         </h3>
+        {coverCaption ? (
+          <p className="line-clamp-1 text-[11px] font-medium text-rosewood">
+            {coverCaption}
+          </p>
+        ) : null}
         {notes ? (
           <p className="line-clamp-2 text-xs leading-relaxed text-ink-soft">
             {notes}
@@ -134,12 +142,13 @@ function InspirationCard({
 type GalleryPhoto = {
   key: string;
   url: string;
+  caption: string | null;
   item: InspirationItem;
 };
 
 function galleryPhotosForItem(
   item: InspirationItem,
-  photos: { id: string; path: string }[],
+  photos: { id: string; path: string; caption: string | null }[],
   imageUrls: Record<string, string>,
 ): GalleryPhoto[] {
   const photoUrls = photos
@@ -153,10 +162,14 @@ function galleryPhotosForItem(
       : item.image_url && isHttpUrl(item.image_url)
         ? [item.image_url]
         : [];
+  const captionsByPath = new Map(
+    photos.map((photo) => [imageUrls[photo.path], photo.caption] as const),
+  );
 
   return urls.map((url, index) => ({
     key: `${item.id}-${index}-${url}`,
     url,
+    caption: captionsByPath.get(url) ?? null,
     item,
   }));
 }
@@ -212,6 +225,11 @@ function CategoryPhotoTile({
           <p className="mt-0.5 line-clamp-1 text-[10px] uppercase tracking-[0.12em] text-ink-soft">
             {category}
           </p>
+          {photo.caption ? (
+            <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-ink-soft">
+              {photo.caption}
+            </p>
+          ) : null}
         </div>
         <ArrowUpRight
           className="mt-0.5 size-3.5 shrink-0 text-olive-600"
@@ -252,7 +270,10 @@ export function InspirationManager({
   copy,
 }: {
   items: InspirationItem[];
-  photosByItem: Record<string, { id: string; path: string }[]>;
+  photosByItem: Record<
+    string,
+    { id: string; path: string; caption: string | null }[]
+  >;
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
 }) {
@@ -328,7 +349,11 @@ export function InspirationManager({
 
   const activePhotos = editing
     ? (photosByItem[editing.id] ?? [])
-        .map((photo) => ({ id: photo.id, url: imageUrls[photo.path] }))
+        .map((photo) => ({
+          id: photo.id,
+          url: imageUrls[photo.path],
+          caption: photo.caption,
+        }))
         .filter((photo) => Boolean(photo.url))
     : [];
 

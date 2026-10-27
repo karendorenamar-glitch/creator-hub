@@ -104,6 +104,44 @@ function readItem(
   };
 }
 
+function isMissingCaptionColumn(error: { code?: string; message: string } | null) {
+  return Boolean(
+    error &&
+      (error.code === "PGRST204" || error.message.toLowerCase().includes("caption")),
+  );
+}
+
+type PhotoInsert = {
+  wedding_id: string;
+  item_id: string;
+  path: string;
+  caption?: string | null;
+  sort_order: number;
+};
+
+async function insertPhotoRows(
+  ctx: Ctx,
+  rows: PhotoInsert[],
+  selectId = false,
+) {
+  let result = await (selectId
+    ? ctx.supabase.from("inspiration_photos").insert(rows).select("id")
+    : ctx.supabase.from("inspiration_photos").insert(rows));
+
+  if (isMissingCaptionColumn(result.error)) {
+    const withoutCaption = rows.map((row) => {
+      const copy = { ...row };
+      delete copy.caption;
+      return copy;
+    });
+    result = await (selectId
+      ? ctx.supabase.from("inspiration_photos").insert(withoutCaption).select("id")
+      : ctx.supabase.from("inspiration_photos").insert(withoutCaption));
+  }
+
+  return result;
+}
+
 export async function createInspirationAction(
   _prev: ActionResult,
   formData: FormData,
@@ -114,6 +152,7 @@ export async function createInspirationAction(
 
   const images = await storeImages(ctx, formData);
   if (!images.ok) return { error: images.error };
+  const imageCaption = optionalText(formData, "imageCaption", 120);
 
   const { data: created, error } = await ctx.supabase
     .from("inspiration_items")
@@ -133,16 +172,16 @@ export async function createInspirationAction(
   }
 
   if (images.paths.length > 0) {
-    const { error: photoError } = await ctx.supabase
-      .from("inspiration_photos")
-      .insert(
-        images.paths.map((path, index) => ({
-          wedding_id: ctx.session.wedding.id,
-          item_id: created.id,
-          path,
-          sort_order: index,
-        })),
-      );
+    const { error: photoError } = await insertPhotoRows(
+      ctx,
+      images.paths.map((path, index) => ({
+        wedding_id: ctx.session.wedding.id,
+        item_id: created.id,
+        path,
+        caption: index === 0 ? imageCaption : null,
+        sort_order: index,
+      })),
+    );
 
     if (photoError) {
       await ctx.supabase
@@ -172,21 +211,22 @@ export async function updateInspirationAction(
 
   const images = await storeImages(ctx, formData);
   if (!images.ok) return { error: images.error };
+  const imageCaption = optionalText(formData, "imageCaption", 120);
 
   let newPhotoIds: string[] = [];
 
   if (images.paths.length > 0) {
-    const { data: inserted, error: photoError } = await ctx.supabase
-      .from("inspiration_photos")
-      .insert(
-        images.paths.map((path, index) => ({
-          wedding_id: ctx.session.wedding.id,
-          item_id: id,
-          path,
-          sort_order: 100 + index,
-        })),
-      )
-      .select("id");
+    const { data: inserted, error: photoError } = await insertPhotoRows(
+      ctx,
+      images.paths.map((path, index) => ({
+        wedding_id: ctx.session.wedding.id,
+        item_id: id,
+        path,
+        caption: index === 0 ? imageCaption : null,
+        sort_order: 100 + index,
+      })),
+      true,
+    );
 
     if (photoError) {
       await ctx.supabase.storage.from(IMAGE_BUCKET).remove(images.paths);
@@ -357,6 +397,7 @@ export async function addInspirationPhotoAction(
 
   const uploaded = await uploadFile(ctx, file);
   if (!uploaded.ok) return { error: uploaded.error };
+  const caption = optionalText(formData, "caption", 120);
 
   const { data: last } = await ctx.supabase
     .from("inspiration_photos")
@@ -367,12 +408,15 @@ export async function addInspirationPhotoAction(
     .limit(1)
     .maybeSingle();
 
-  const { error } = await ctx.supabase.from("inspiration_photos").insert({
-    wedding_id: ctx.session.wedding.id,
-    item_id: itemId,
-    path: uploaded.path,
-    sort_order: (last?.sort_order ?? -1) + 1,
-  });
+  const { error } = await insertPhotoRows(ctx, [
+    {
+      wedding_id: ctx.session.wedding.id,
+      item_id: itemId,
+      path: uploaded.path,
+      caption,
+      sort_order: (last?.sort_order ?? -1) + 1,
+    },
+  ]);
 
   if (error) {
     await ctx.supabase.storage.from(IMAGE_BUCKET).remove([uploaded.path]);
@@ -385,6 +429,32 @@ export async function addInspirationPhotoAction(
       .update({ image_path: uploaded.path })
       .eq("id", itemId)
       .eq("wedding_id", ctx.session.wedding.id);
+  }
+
+  revalidateWedding("/wedding/inspiration");
+  return { success: ctx.copy.form.saved };
+}
+
+export async function updateInspirationPhotoCaptionAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const caption = optionalText(formData, "caption", 120);
+  const { error } = await ctx.supabase
+    .from("inspiration_photos")
+    .update({ caption })
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+
+  if (error) {
+    if (isMissingCaptionColumn(error)) {
+      return { error: ctx.copy.inspiration.photoCaptionUnavailable };
+    }
+    return { error: actionError(error, ctx.copy) };
   }
 
   revalidateWedding("/wedding/inspiration");

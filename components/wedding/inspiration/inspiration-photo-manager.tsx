@@ -6,6 +6,7 @@ import {
   addInspirationPhotoAction,
   deleteInspirationPhotoAction,
   replaceInspirationPhotoAction,
+  updateInspirationPhotoCaptionAction,
 } from "@/app/wedding/(app)/inspiration/actions";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import type { ActionResult } from "@/lib/wedding/action-context";
@@ -57,12 +58,16 @@ function PhotoRow({
   photo,
   copy,
 }: {
-  photo: { id: string; url: string };
+  photo: { id: string; url: string; caption: string | null };
   copy: ModuleCopy;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(
     replaceInspirationPhotoAction,
+    null as ActionResult,
+  );
+  const [captionState, captionAction, captionPending] = useActionState(
+    updateInspirationPhotoCaptionAction,
     null as ActionResult,
   );
   const [clientError, setClientError] = useState<string | null>(null);
@@ -77,6 +82,27 @@ function PhotoRow({
           className="aspect-[4/3] w-full object-cover"
         />
       </div>
+      <form action={captionAction} className="flex items-center gap-1">
+        <input type="hidden" name="id" value={photo.id} />
+        <input
+          name="caption"
+          maxLength={120}
+          defaultValue={photo.caption ?? ""}
+          placeholder={copy.inspiration.photoCaptionPlaceholder}
+          aria-label={copy.inspiration.photoCaption}
+          className="min-w-0 flex-1 rounded-lg border border-olive-100 bg-white px-2 py-1 text-[11px] text-ink outline-none focus:border-olive-300"
+        />
+        <button
+          type="submit"
+          disabled={captionPending}
+          className="rounded-lg bg-olive-50 px-2 py-1 text-[11px] font-medium text-olive-700 hover:bg-olive-100 disabled:opacity-60"
+        >
+          {captionPending ? copy.form.saving : copy.form.save}
+        </button>
+      </form>
+      {captionState?.error ? (
+        <p className="text-[10px] text-rose-600">{captionState.error}</p>
+      ) : null}
       <div className="flex flex-wrap items-center justify-between gap-1">
         <form ref={formRef} action={formAction}>
           <input type="hidden" name="id" value={photo.id} />
@@ -130,23 +156,36 @@ function AddPhotoForm({
   }, [state]);
 
   return (
-    <form ref={formRef} action={formAction} className="space-y-1">
+    <form ref={formRef} action={formAction} className="space-y-2">
       <input type="hidden" name="itemId" value={itemId} />
-      <label className="inline-flex cursor-pointer items-center rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100">
-        {pending ? copy.form.saving : copy.inspiration.uploadLabel}
-        <input
-          type="file"
-          name="image"
-          accept="image/jpeg,image/png"
-          className="hidden"
-          onChange={async (event) => {
-            const input = event.currentTarget;
-            if (await preparePhoto(input, copy, setClientError)) {
-              formRef.current?.requestSubmit();
-            }
-          }}
-        />
-      </label>
+      <input
+        name="caption"
+        maxLength={120}
+        placeholder={copy.inspiration.photoCaptionPlaceholder}
+        aria-label={copy.inspiration.photoCaption}
+        className="w-full rounded-xl border border-petal-100 bg-cream/70 px-3 py-2 text-xs text-ink outline-none focus:border-olive-300"
+      />
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="inline-flex cursor-pointer items-center rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100">
+          {copy.inspiration.uploadLabel}
+          <input
+            type="file"
+            name="image"
+            accept="image/jpeg,image/png"
+            className="hidden"
+            onChange={async (event) => {
+              await preparePhoto(event.currentTarget, copy, setClientError);
+            }}
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-lg bg-olive-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-olive-700 disabled:opacity-60"
+        >
+          {pending ? copy.form.saving : copy.form.save}
+        </button>
+      </div>
       {clientError || state?.error ? (
         <p className="text-[11px] text-rose-600">
           {clientError ?? state?.error}
@@ -162,7 +201,7 @@ export function InspirationPhotoManager({
   copy,
 }: {
   itemId: string | null;
-  photos: { id: string; url: string }[];
+  photos: { id: string; url: string; caption: string | null }[];
   copy: ModuleCopy;
 }) {
   if (!itemId && photos.length === 0) return null;

@@ -33,7 +33,7 @@ export function InspirationFormModal({
   onClose: () => void;
   copy: ModuleCopy;
   item: InspirationItem | null;
-  photos: { id: string; url: string }[];
+  photos: { id: string; url: string; caption: string | null }[];
   categories: string[];
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
@@ -211,6 +211,20 @@ export function InspirationFormModal({
                     return objectUrl;
                   });
                 }}
+              />
+            </Field>
+
+            <Field
+              label={copy.inspiration.photoCaption}
+              htmlFor="inspiration-photo-caption"
+              hint={copy.inspiration.photoCaptionHint}
+            >
+              <input
+                id="inspiration-photo-caption"
+                name="imageCaption"
+                maxLength={120}
+                placeholder={copy.inspiration.photoCaptionPlaceholder}
+                className={inputClass}
               />
             </Field>
 

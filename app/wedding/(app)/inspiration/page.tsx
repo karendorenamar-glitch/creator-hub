@@ -25,18 +25,36 @@ export default async function InspirationPage() {
       .order("created_at", { ascending: false }),
     supabase
       .from("inspiration_photos")
-      .select("id, item_id, path")
+      .select("id, item_id, path, caption")
       .order("sort_order", { ascending: true }),
   ]);
 
   const items = itemsResult.data ?? [];
-  const photos = photosResult.data ?? [];
+  let photoRows = photosResult.data;
 
-  const photosByItem: Record<string, { id: string; path: string }[]> = {};
+  // Keep the page usable if migration 028 has not been applied yet.
+  if (photosResult.error) {
+    const { data: fallbackRows } = await supabase
+      .from("inspiration_photos")
+      .select("id, item_id, path")
+      .order("sort_order", { ascending: true });
+    photoRows = (fallbackRows ?? []).map((photo) => ({
+      ...photo,
+      caption: null,
+    }));
+  }
+
+  const photos = photoRows ?? [];
+
+  const photosByItem: Record<
+    string,
+    { id: string; path: string; caption: string | null }[]
+  > = {};
   for (const photo of photos) {
     (photosByItem[photo.item_id] ??= []).push({
       id: photo.id,
       path: photo.path,
+      caption: photo.caption ?? null,
     });
   }
 

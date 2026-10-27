@@ -138,7 +138,7 @@ export function WeddingLanding() {
                     <CalendarDays className="size-3.5" aria-hidden /> Menuju hari H
                   </p>
                   <p className="mt-1 font-heading text-xl text-cocoa">120 hari</p>
-                  <p className="text-[10px] text-cocoa/55">lagi · contoh tampilan</p>
+                  <p className="text-[10px] text-cocoa/55">lagi</p>
                 </div>
 
                 <div className="overflow-hidden rounded-[1.6rem] border border-champagne/50 bg-ivory shadow-[0_40px_90px_-65px_rgba(87,66,63,0.65)]">
@@ -171,9 +171,6 @@ export function WeddingLanding() {
                           <p className="font-heading text-sm text-cocoa">Hailey &amp; Justin</p>
                           <p className="text-[10px] text-cocoa/45">12 Mei 2027 · Jakarta</p>
                         </div>
-                        <span className="rounded-full bg-sage/60 px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-cocoa/60">
-                          Contoh data
-                        </span>
                       </div>
 
                       <div className="mt-3 grid grid-cols-3 gap-2">
@@ -289,8 +286,7 @@ export function WeddingLanding() {
                 ))}
               </div>
               <p className="mt-3 text-[11px] text-cocoa/50">
-                Contoh papan inspirasi. Di aplikasi, Anda mengunggah foto sendiri
-                dan menyimpannya per kategori.
+                Kumpulkan foto referensi sendiri dan simpan per kategori.
               </p>
             </Reveal>
           </div>
@@ -411,9 +407,6 @@ export function WeddingLanding() {
 
             </div>
 
-            <p className="mt-4 text-[11px] text-cocoa/45">
-              Semua angka di atas adalah contoh tampilan, bukan data pengguna.
-            </p>
           </div>
         </section>
 

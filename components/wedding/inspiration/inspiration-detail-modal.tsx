@@ -24,7 +24,7 @@ export function InspirationDetailModal({
   open: boolean;
   onClose: () => void;
   item: InspirationItem | null;
-  photos: { id: string; path: string }[];
+  photos: { id: string; path: string; caption: string | null }[];
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
   onEdit: (item: InspirationItem) => void;
@@ -49,6 +49,9 @@ export function InspirationDetailModal({
       : externalUrl
         ? [externalUrl]
         : [];
+  const captionByUrl = new Map(
+    photos.map((photo) => [imageUrls[photo.path], photo.caption] as const),
+  );
   const notes = item.notes?.trim() || item.description?.trim() || null;
   const category = item.category?.trim() || null;
   const safeLink =
@@ -83,21 +86,37 @@ export function InspirationDetailModal({
 
                 {galleryUrls.length > 1 ? (
                   <div className="grid grid-cols-4 gap-2">
-                    {galleryUrls.slice(1).map((url, index) => (
-                      <button
-                        key={`${item.id}-detail-${index}`}
-                        type="button"
-                        onClick={() => setViewer({ title: item.title, urls: galleryUrls })}
-                        className="overflow-hidden rounded-xl border border-petal-100 bg-olive-50/50 transition-colors hover:border-olive-300"
-                      >
-                        <img
-                          src={url}
-                          alt=""
-                          className="aspect-square w-full object-cover"
-                        />
-                      </button>
-                    ))}
+                    {galleryUrls.slice(1).map((url, index) => {
+                      const caption = captionByUrl.get(url);
+                      return (
+                        <div key={`${item.id}-detail-${index}`} className="min-w-0 space-y-1">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setViewer({ title: item.title, urls: galleryUrls })
+                            }
+                            className="block w-full overflow-hidden rounded-xl border border-petal-100 bg-olive-50/50 transition-colors hover:border-olive-300"
+                          >
+                            <img
+                              src={url}
+                              alt={caption ?? ""}
+                              className="aspect-square w-full object-cover"
+                            />
+                          </button>
+                          {caption ? (
+                            <p className="line-clamp-2 text-[10px] leading-snug text-ink-soft">
+                              {caption}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
                   </div>
+                ) : null}
+                {galleryUrls[0] && captionByUrl.get(galleryUrls[0]) ? (
+                  <p className="text-xs leading-relaxed text-ink-soft">
+                    {captionByUrl.get(galleryUrls[0])}
+                  </p>
                 ) : null}
               </>
             ) : (

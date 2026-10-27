@@ -333,6 +333,7 @@ export type InspirationPhoto = {
   wedding_id: string;
   item_id: string;
   path: string;
+  caption: string | null;
   sort_order: number;
   created_at: string;
 };

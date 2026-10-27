@@ -394,6 +394,11 @@ const en = {
     titleLabel: "Title",
     detailsSection: "Inspiration details",
     photoSection: "Reference photo",
+    photoCaption: "Photo label",
+    photoCaptionHint: "Example: dinner chair, welcome board",
+    photoCaptionPlaceholder: "dinner chair, welcome board...",
+    photoCaptionUnavailable:
+      "Photo captions require migration 028. Apply it to enable captions.",
     imageUrl: "Image URL",
     linkUrl: "Reference link",
     category: "Category",
@@ -896,6 +901,11 @@ const id: ModuleCopy = {
     titleLabel: "Judul",
     detailsSection: "Detail inspirasi",
     photoSection: "Foto referensi",
+    photoCaption: "Info foto",
+    photoCaptionHint: "Contoh: dinner chair, welcome board",
+    photoCaptionPlaceholder: "dinner chair, welcome board...",
+    photoCaptionUnavailable:
+      "Info foto membutuhkan migration 028. Terapkan migration untuk mengaktifkannya.",
     imageUrl: "URL gambar",
     linkUrl: "Tautan referensi",
     category: "Kategori",
