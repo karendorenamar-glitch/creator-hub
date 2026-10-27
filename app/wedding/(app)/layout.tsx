@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { WeddingShell } from "@/components/wedding/shell";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { getAdminStatus } from "@/lib/wedding/admin-status";
 import { weddingCopy } from "@/lib/wedding/copy";
 import { formatWeddingDate } from "@/lib/wedding/format";
 import {
@@ -32,16 +33,7 @@ export default async function WeddingAppLayout({
   // together removes one serial round trip from every app page.
   const [locale, isAdmin] = await Promise.all([
     getLocale(),
-    (async () => {
-      const { createWeddingClient } = await import("@/lib/wedding/supabase");
-      const supabase = await createWeddingClient();
-      const { data } = await supabase
-        .from("admins")
-        .select("user_id")
-        .eq("user_id", session.userId)
-        .maybeSingle();
-      return Boolean(data);
-    })(),
+    getAdminStatus(session.userId),
   ]);
   const copy = weddingCopy[locale];
 

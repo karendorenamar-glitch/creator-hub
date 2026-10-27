@@ -1,15 +1,23 @@
 import { revalidatePath } from "next/cache";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { moduleCopy, type ModuleCopy } from "@/lib/wedding/module-copy";
-import { loadWeddingSession, type WeddingSession } from "@/lib/wedding/session";
+import {
+  getCurrentUser,
+  type WeddingSession,
+} from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 import type { WeddingDatabase } from "@/lib/wedding/db-types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type ActionResult = { error?: string; success?: string } | null;
 
+export type ActionSession = Pick<
+  WeddingSession,
+  "userId" | "email" | "wedding"
+>;
+
 export type ActionContext = {
-  session: WeddingSession;
+  session: ActionSession;
   copy: ModuleCopy;
   locale: "en" | "id";
   supabase: SupabaseClient<WeddingDatabase>;
@@ -17,17 +25,33 @@ export type ActionContext = {
 
 /** Session + localized copy + RLS-scoped client, or null when signed out. */
 export async function getActionContext(): Promise<ActionContext | null> {
-  const [session, locale] = await Promise.all([
-    loadWeddingSession(),
-    getLocale(),
-  ]);
-  if (!session) return null;
+  const [user, locale] = await Promise.all([getCurrentUser(), getLocale()]);
+  if (!user) return null;
 
+  const supabase = await createWeddingClient();
+  const { data: membership } = await supabase
+    .from("wedding_members")
+    .select("wedding_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!membership) return null;
+
+  const { data: wedding } = await supabase
+    .from("weddings")
+    .select("*")
+    .eq("id", membership.wedding_id)
+    .maybeSingle();
+
+  if (!wedding) return null;
+
+  // Actions only need the workspace and copy. Subscription/access is enforced
+  // by RLS on the mutation itself, so avoid loading five extra session tables.
   return {
-    session,
+    session: { userId: user.id, email: user.email, wedding },
     locale,
     copy: moduleCopy[locale],
-    supabase: await createWeddingClient(),
+    supabase,
   };
 }
 

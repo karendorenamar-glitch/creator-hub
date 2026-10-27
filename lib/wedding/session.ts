@@ -3,9 +3,13 @@ import { createWeddingClient } from "@/lib/wedding/supabase";
 import type {
   Subscription,
   Wedding,
-  WeddingMember,
   WeddingRole,
 } from "@/lib/wedding/db-types";
+
+export type CurrentUser = {
+  id: string;
+  email: string | null;
+};
 
 export type WeddingSession = {
   userId: string;
@@ -13,7 +17,6 @@ export type WeddingSession = {
   wedding: Wedding;
   subscription: Subscription | null;
   role: WeddingRole;
-  members: WeddingMember[];
   /** True when the ACCOUNT owns lifetime access (paid before onboarding). */
   hasEntitlement: boolean;
   /** False while the temporary open-access switch is on. */
@@ -31,19 +34,49 @@ export function isSubscriptionActive(
   return new Date(subscription.current_period_end).getTime() > Date.now();
 }
 
-/** Signed-in user, or null. Cached per server request. */
-export const getCurrentUser = cache(async () => {
+/**
+ * Verified signed-in user, or null. `getClaims()` verifies the access token
+ * locally with the project's asymmetric JWT key instead of calling the Auth
+ * server on every request. Cached per server request.
+ */
+export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   try {
     const supabase = await createWeddingClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getClaims();
+    const claims = data?.claims;
 
-    return user;
+    if (error || typeof claims?.sub !== "string") return null;
+
+    return {
+      id: claims.sub,
+      email: typeof claims.email === "string" ? claims.email : null,
+    };
   } catch {
     return null;
   }
 });
+
+// app_settings is global and changes rarely. A short in-process TTL removes one
+// Supabase round trip from warm page/action requests without caching user data.
+let subscriptionSettingCache: { value: boolean; expiresAt: number } | null = null;
+
+async function loadSubscriptionRequired(
+  supabase: Awaited<ReturnType<typeof createWeddingClient>>,
+): Promise<boolean> {
+  if (subscriptionSettingCache && subscriptionSettingCache.expiresAt > Date.now()) {
+    return subscriptionSettingCache.value;
+  }
+
+  const { data } = await supabase
+    .from("app_settings")
+    .select("require_subscription")
+    .eq("id", true)
+    .maybeSingle();
+
+  const value = data?.require_subscription ?? true;
+  subscriptionSettingCache = { value, expiresAt: Date.now() + 60_000 };
+  return value;
+}
 
 /**
  * The signed-in user's wedding, loaded through RLS with the anon key. Cached
@@ -68,8 +101,7 @@ export const loadWeddingSession = cache(async (): Promise<WeddingSession | null>
     const [
       { data: wedding },
       { data: subscription },
-      { data: members },
-      { data: settings },
+      subscriptionRequired,
       { data: entitlement },
     ] = await Promise.all([
       supabase
@@ -82,16 +114,7 @@ export const loadWeddingSession = cache(async (): Promise<WeddingSession | null>
         .select("*")
         .eq("wedding_id", membership.wedding_id)
         .maybeSingle(),
-      supabase
-        .from("wedding_members")
-        .select("*")
-        .eq("wedding_id", membership.wedding_id)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("app_settings")
-        .select("require_subscription")
-        .eq("id", true)
-        .maybeSingle(),
+      loadSubscriptionRequired(supabase),
       supabase
         .from("user_entitlements")
         .select("user_id, lifetime_access_granted_at")
@@ -101,17 +124,12 @@ export const loadWeddingSession = cache(async (): Promise<WeddingSession | null>
 
     if (!wedding) return null;
 
-    // Safe default: if the settings row is missing (migration 004 not run yet),
-    // behave as before and require an active subscription.
-    const subscriptionRequired = settings?.require_subscription ?? true;
-
     return {
       userId: user.id,
       email: user.email ?? null,
       wedding,
       subscription: subscription ?? null,
       role: membership.role,
-      members: members ?? [],
       subscriptionRequired,
       hasEntitlement: Boolean(entitlement?.lifetime_access_granted_at),
       hasPlanningAccess:
@@ -152,7 +170,7 @@ export async function loadAccountContext(): Promise<AccountContext | null> {
   try {
     const supabase = await createWeddingClient();
 
-    const [{ data: membership }, { data: entitlement }, { data: settings }] =
+    const [{ data: membership }, { data: entitlement }, subscriptionRequired] =
       await Promise.all([
         supabase
           .from("wedding_members")
@@ -164,14 +182,9 @@ export async function loadAccountContext(): Promise<AccountContext | null> {
           .select("lifetime_access_granted_at")
           .eq("user_id", user.id)
           .maybeSingle(),
-        supabase
-          .from("app_settings")
-          .select("require_subscription")
-          .eq("id", true)
-          .maybeSingle(),
+        loadSubscriptionRequired(supabase),
       ]);
 
-    const subscriptionRequired = settings?.require_subscription ?? true;
     const entitled = Boolean(entitlement?.lifetime_access_granted_at);
 
     return {

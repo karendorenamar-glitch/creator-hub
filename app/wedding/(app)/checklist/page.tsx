@@ -24,7 +24,11 @@ export default async function ChecklistPage() {
 
   await ensureKuaChecklist(supabase, session.wedding.id);
 
-  const [{ data: checklistRows }, { data: taskRows }] = await Promise.all([
+  const [
+    { data: checklistRows },
+    { data: taskRows },
+    { data: memberRows },
+  ] = await Promise.all([
     supabase
       .from("checklists")
       .select("*")
@@ -36,6 +40,11 @@ export default async function ChecklistPage() {
       .eq("wedding_id", session.wedding.id)
       .order("sort_order", { ascending: true })
       .order("due_date", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("wedding_members")
+      .select("*")
+      .eq("wedding_id", session.wedding.id)
+      .order("created_at", { ascending: true }),
   ]);
 
   const lists = (checklistRows ?? []) as Checklist[];
@@ -64,7 +73,7 @@ export default async function ChecklistPage() {
   }).length;
 
   const partnerTwo = session.wedding.partner_two_name?.trim();
-  const assignees = session.members.map((member) => {
+  const assignees = (memberRows ?? []).map((member) => {
     const name =
       member.role === "owner"
         ? session.wedding.partner_one_name
