@@ -447,6 +447,8 @@ export type DonationAllocation = {
   id: string;
   wedding_id: string;
   donation_id: string;
+  expense_id: string | null;
+  vendor_id: string | null;
   category_id: string | null;
   label: string;
   amount: number;

@@ -9,6 +9,7 @@ import {
 } from "@/lib/wedding/action-context";
 import type { PaymentStatus } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { syncDonorAllocationForCost } from "@/lib/wedding/donation-allocation-sync";
 import {
   enumValue,
   isDateString,
@@ -297,15 +298,32 @@ export async function createOtherCostAction(
     wedding_id: ctx.session.wedding.id,
     ...otherCostRow(parsed.values),
   };
-  let { error } = await ctx.supabase.from("expenses").insert(values);
+  let { data: created, error } = await ctx.supabase
+    .from("expenses")
+    .insert(values)
+    .select("id")
+    .single();
   if (error?.code === "42703") {
     const { funded_by_donor, ...legacyValues } = values;
     void funded_by_donor;
-    const retry = await ctx.supabase.from("expenses").insert(legacyValues);
+    const retry = await ctx.supabase
+      .from("expenses")
+      .insert(legacyValues)
+      .select("id")
+      .single();
+    created = retry.data;
     error = retry.error;
   }
 
   if (error) return { error: actionError(error, ctx.copy) };
+  if (created?.id) {
+    await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
+      expenseId: created.id,
+      label: parsed.values.name,
+      amount: parsed.values.amount,
+      fundedByDonor: parsed.values.status === "donor",
+    });
+  }
 
   budgetPaths();
   return { success: ctx.copy.form.saved };
@@ -342,6 +360,13 @@ export async function updateOtherCostAction(
   }
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
+    expenseId: id,
+    label: parsed.values.name,
+    amount: parsed.values.amount,
+    fundedByDonor: parsed.values.status === "donor",
+  });
 
   budgetPaths();
   return { success: ctx.copy.form.saved };

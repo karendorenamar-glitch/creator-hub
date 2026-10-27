@@ -8,6 +8,7 @@ import {
   type ActionResult,
 } from "@/lib/wedding/action-context";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { syncDonorAllocationForCost } from "@/lib/wedding/donation-allocation-sync";
 import {
   PAYMENT_PROOF_BUCKET,
   validatePaymentProofFile,
@@ -188,6 +189,12 @@ export async function createVendorAction(
   if (error || !created) {
     return { error: actionError(error ?? { message: "" }, ctx.copy) };
   }
+  await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
+    vendorId: created.id,
+    label: parsed.values.name,
+    amount: parsed.values.agreed_price,
+    fundedByDonor: statusIntent === "donor",
+  });
 
   if (hasInitialPayment) {
     formData.set("vendorId", created.id);
@@ -316,6 +323,12 @@ export async function updateVendorAction(
   }
 
   if (error) return { error: actionError(error, ctx.copy) };
+  await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
+    vendorId: id,
+    label: parsed.values.name,
+    amount: parsed.values.agreed_price,
+    fundedByDonor,
+  });
 
   const vendorOptionId = text(formData, "vendorOptionId");
   if (vendorOptionId && isUuid(vendorOptionId)) {
