@@ -526,7 +526,7 @@ export function SeatingPlanner({
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
-          label={isCeremony ? copy.seating.totalRows : copy.seating.totalTables}
+          label={isCeremony ? copy.seating.totalChairs : copy.seating.totalTables}
           value={String(stats.totalTables)}
         />
         <StatCard
@@ -751,35 +751,31 @@ export function SeatingPlanner({
                 ) : null}
 
                 {isCeremony
-                  ? eventTables.map((row) => {
-                      const people = stats.peopleByTable.get(row.id) ?? 0;
-                      const full = people >= Number(row.capacity);
-                      const partial = people > 0 && !full;
-                      const rowGuests = eventAssignments
-                        .filter((assignment) => assignment.table_id === row.id)
-                        .map((assignment) => guestById.get(assignment.guest_id))
-                        .filter((guest): guest is Guest => Boolean(guest));
+                  ? eventTables.map((chair) => {
+                      const assignment = eventAssignments.find(
+                        (item) => item.table_id === chair.id,
+                      );
+                      const guest = assignment
+                        ? guestById.get(assignment.guest_id)
+                        : null;
+                      const selected = selectedTableId === chair.id;
                       return (
                         <div
-                          key={row.id}
+                          key={chair.id}
                           role="button"
                           tabIndex={0}
                           onClick={() => {
-                            if (suppressClick.current) {
-                              suppressClick.current = false;
-                              return;
-                            }
                             if (selectedGuestId) {
-                              void assignGuest(selectedGuestId, row.id);
+                              void assignGuest(selectedGuestId, chair.id);
                             } else {
-                              setSelectedTableId(row.id);
+                              setSelectedTableId(chair.id);
                               setDetailsOpen(true);
                             }
                           }}
                           onKeyDown={(event) => {
                             if (event.key === "Enter" || event.key === " ") {
                               event.preventDefault();
-                              setSelectedTableId(row.id);
+                              setSelectedTableId(chair.id);
                               setDetailsOpen(true);
                             }
                           }}
@@ -791,102 +787,49 @@ export function SeatingPlanner({
                             event.preventDefault();
                             const guestId =
                               event.dataTransfer.getData("text/guest-id");
-                            if (guestId) void assignGuest(guestId, row.id);
+                            if (guestId) void assignGuest(guestId, chair.id);
                           }}
-                          title={
-                            rowGuests.length > 0
-                              ? rowGuests.map((guest) => guest.name).join(", ")
-                              : row.name
-                          }
-                          className={`absolute z-20 flex cursor-pointer touch-none flex-col items-center justify-center rounded-xl border-2 px-2 py-1 shadow-sm transition-colors ${
-                            full
-                              ? "border-petal-300 bg-petal-100/90"
-                              : partial
-                                ? "border-champagne/70 bg-sand-100/90"
+                          title={guest?.name ?? chair.name}
+                          className={`absolute z-20 cursor-pointer rounded-t-xl rounded-b-md border-2 p-1 text-center shadow-sm transition-colors ${
+                            selected
+                              ? "border-olive-600 ring-2 ring-olive-200"
+                              : guest
+                                ? guestSideOf(guest) === "bride"
+                                  ? "border-petal-300 bg-petal-100"
+                                  : guestSideOf(guest) === "groom"
+                                    ? "border-baby-300 bg-baby-100"
+                                    : "border-champagne/70 bg-sand-100"
                                 : "border-olive-200 bg-white/95"
                           }`}
                           style={{
-                            left: `${row.canvas_x}%`,
-                            top: `${row.canvas_y}%`,
-                            width: `${row.width}%`,
-                            height: `${row.height}%`,
+                            left: `${chair.canvas_x}%`,
+                            top: `${chair.canvas_y}%`,
+                            width: `${chair.width}%`,
+                            height: `${chair.height}%`,
                             transform: "translate(-50%, -50%)",
                           }}
                         >
                           <button
                             type="button"
-                            aria-label="Move row"
+                            aria-label="Move chair"
                             onPointerDown={(event) =>
-                              moveTablePointerDown(event, row)
+                              moveTablePointerDown(event, chair)
                             }
                             onPointerMove={moveTablePointerMove}
                             onPointerUp={moveTablePointerUp}
                             onPointerCancel={moveTablePointerUp}
                             onClick={(event) => event.stopPropagation()}
-                            className="absolute right-1 top-1 z-10 cursor-grab touch-none rounded p-1 text-ink-soft/60 hover:bg-white/80 active:cursor-grabbing"
+                            className="absolute -right-1 -top-1 z-10 cursor-grab touch-none rounded-full border border-olive-200 bg-white p-0.5 text-ink-soft/60 shadow-sm hover:bg-olive-50 active:cursor-grabbing"
                           >
-                            <GripVertical className="size-3" aria-hidden />
+                            <GripVertical className="size-2.5" aria-hidden />
                           </button>
-                          <div className="flex max-w-full items-center justify-center gap-1">
-                            {Array.from({
-                              length: Math.min(12, Math.max(1, row.capacity)),
-                            }).map((_, index) => {
-                              const occupied = index < people;
-                              return (
-                                <button
-                                  key={index}
-                                  type="button"
-                                  aria-label={`${row.name} ${index + 1}`}
-                                  title={
-                                    rowGuests[index]?.name ??
-                                    `${row.name} ${index + 1}`
-                                  }
-                                  onPointerDown={(event) =>
-                                    event.stopPropagation()
-                                  }
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    if (selectedGuestId) {
-                                      void assignGuest(selectedGuestId, row.id);
-                                    } else {
-                                      setSelectedTableId(row.id);
-                                      setDetailsOpen(true);
-                                    }
-                                  }}
-                                  onDragOver={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    event.dataTransfer.dropEffect = "move";
-                                  }}
-                                  onDrop={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    const guestId =
-                                      event.dataTransfer.getData(
-                                        "text/guest-id",
-                                      );
-                                    if (guestId) {
-                                      void assignGuest(guestId, row.id);
-                                    }
-                                  }}
-                                  className={`size-3.5 rounded-sm border transition-colors ${
-                                    occupied
-                                      ? "border-petal-400 bg-petal-400"
-                                      : "border-petal-300 bg-petal-50 hover:bg-petal-100"
-                                  }`}
-                                />
-                              );
-                            })}
-                          </div>
-                          <span className="mt-1 max-w-full truncate text-[10px] font-semibold text-ink">
-                            {row.name} · {people}/{row.capacity}
+                          <span className="mt-1 block h-1 w-4/5 rounded-full bg-current opacity-20" />
+                          <span className="mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink">
+                            {guest ? guest.name : chair.name}
                           </span>
-                          {rowGuests.length > 0 ? (
-                            <span className="max-w-full truncate text-[8px] text-ink-soft">
-                              {rowGuests
-                                .slice(0, 3)
-                                .map((guest) => guest.name)
-                                .join(" · ")}
+                          {guest && guestPeopleCount(guest) > 1 ? (
+                            <span className="block text-[7px] text-ink-soft">
+                              +{guestPeopleCount(guest) - 1}
                             </span>
                           ) : null}
                         </div>

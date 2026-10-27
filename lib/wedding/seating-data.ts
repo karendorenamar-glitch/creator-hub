@@ -97,30 +97,60 @@ export async function loadSeatingData(
 
   let tables = tablesResult.data ?? [];
   const akadEvent = events.find((event) => event.event_type === "akad");
-  const hasAkadRows = akadEvent
-    ? tables.some((table) => table.event_id === akadEvent.id)
-    : true;
+  const akadTables = akadEvent
+    ? tables.filter((table) => table.event_id === akadEvent.id)
+    : [];
+  const hasIndividualChairs = akadTables.some((table) => table.capacity === 1);
 
-  // Akad is a chair-only layout. Seed rows once when the event is first opened;
-  // the rows are still the same wedding-scoped seating records used by dinner,
-  // but the UI renders them as rows of chairs instead of tables.
-  if (akadEvent && !hasAkadRows) {
-    const rows = Array.from({ length: 5 }, (_, index) => ({
-      wedding_id: weddingId,
-      event_id: akadEvent.id,
-      name: `Row ${index + 1}`,
-      shape: "rect" as const,
-      capacity: 10,
-      canvas_x: 50,
-      canvas_y: 16 + index * 14,
-      width: 35,
-      height: 8,
-      sort_order: index,
-    }));
-    const { error: rowError } = await supabase
+  // Akad is a chair-only layout. Give every chair its own seating-table row so
+  // it has a unique ID, independent position and independent guest assignment.
+  if (akadEvent && !hasIndividualChairs) {
+    const assignedTableIds = new Set(
+      (assignmentsResult.data ?? []).map((assignment) => assignment.table_id),
+    );
+    const emptyLegacyIds = akadTables
+      .filter((table) => table.capacity > 1 && !assignedTableIds.has(table.id))
+      .map((table) => table.id);
+    if (emptyLegacyIds.length > 0) {
+      await supabase.from("seating_tables").delete().in("id", emptyLegacyIds);
+    }
+
+    const chairs = [] as Array<{
+      wedding_id: string;
+      event_id: string;
+      name: string;
+      shape: "rect";
+      capacity: number;
+      canvas_x: number;
+      canvas_y: number;
+      width: number;
+      height: number;
+      sort_order: number;
+    }>;
+    let order = 0;
+    for (const side of ["left", "right"] as const) {
+      for (let row = 0; row < 5; row += 1) {
+        for (let seat = 0; seat < 5; seat += 1) {
+          const x = side === "left" ? 18 + seat * 5.5 : 82 - seat * 5.5;
+          chairs.push({
+            wedding_id: weddingId,
+            event_id: akadEvent.id,
+            name: `${side === "left" ? "L" : "R"}${row * 5 + seat + 1}`,
+            shape: "rect",
+            capacity: 1,
+            canvas_x: x,
+            canvas_y: 20 + row * 14,
+            width: 4.5,
+            height: 6,
+            sort_order: order++,
+          });
+        }
+      }
+    }
+    const { error: chairError } = await supabase
       .from("seating_tables")
-      .insert(rows);
-    if (!rowError) {
+      .insert(chairs);
+    if (!chairError) {
       const refreshedTables = await supabase
         .from("seating_tables")
         .select("*")
