@@ -443,6 +443,17 @@ export type WeddingDonation = {
   updated_at: string;
 };
 
+export type DonationAllocation = {
+  id: string;
+  wedding_id: string;
+  donation_id: string;
+  category_id: string | null;
+  label: string;
+  amount: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type VendorOption = {
   id: string;
   wedding_id: string;
@@ -511,6 +522,7 @@ export type WeddingDatabase = {
       inspiration_photos: Table<InspirationPhoto>;
       inspiration_vendor_options: Table<InspirationVendorOption>;
       wedding_donations: Table<WeddingDonation>;
+      donation_allocations: Table<DonationAllocation>;
       vendor_options: Table<VendorOption>;
       invitations: Table<Invitation>;
       invitation_rsvps: Table<InvitationRsvp>;

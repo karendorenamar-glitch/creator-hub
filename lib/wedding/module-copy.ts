@@ -119,6 +119,23 @@ const en = {
     donationSchemaRequired:
       "Donations require migration 027. Apply the migration to enable this feature.",
     deleteDonationConfirm: "Delete this donation?",
+    allocationTitle: "Donation allocation",
+    allocationEmpty: "No funds allocated yet",
+    setAllocation: "Set allocation",
+    addAllocation: "Add allocation",
+    editAllocation: "Edit allocation",
+    allocationNeed: "Need / category",
+    allocationAmount: "Allocated amount",
+    allocationTotal: "Total allocated",
+    allocationRemaining: "Remaining donation",
+    allocationCategory: "Budget category (optional)",
+    allocationInvalid: "Enter a valid allocation amount.",
+    donationBelowAllocation:
+      "Donation amount cannot be lower than its allocated total. Remove or reduce allocations first.",
+    allocationExceeds: "Allocation exceeds the remaining donation.",
+    allocationSchemaRequired:
+      "Donation allocations require migration 037. Apply the migration to enable this feature.",
+    deleteAllocationConfirm: "Delete this allocation?",
     otherCostsHint:
       "Costs outside vendors, such as transport, administration, or additional decoration.",
     addOtherCost: "Add Other Cost",
@@ -853,6 +870,23 @@ const id: ModuleCopy = {
     donationSchemaRequired:
       "Fitur donasi membutuhkan migration 027. Terapkan migration untuk mengaktifkannya.",
     deleteDonationConfirm: "Hapus donasi ini?",
+    allocationTitle: "Alokasi donasi",
+    allocationEmpty: "Belum ada alokasi dana",
+    setAllocation: "Atur Alokasi",
+    addAllocation: "Tambah alokasi",
+    editAllocation: "Ubah alokasi",
+    allocationNeed: "Kebutuhan / kategori",
+    allocationAmount: "Nominal dialokasikan",
+    allocationTotal: "Total teralokasi",
+    allocationRemaining: "Sisa donasi",
+    allocationCategory: "Kategori anggaran (opsional)",
+    allocationInvalid: "Masukkan nominal alokasi yang valid.",
+    donationBelowAllocation:
+      "Nominal donasi tidak boleh lebih kecil dari total alokasi. Hapus atau kurangi alokasi terlebih dahulu.",
+    allocationExceeds: "Alokasi melebihi sisa donasi.",
+    allocationSchemaRequired:
+      "Alokasi donasi membutuhkan migration 037. Terapkan migration untuk mengaktifkan fitur ini.",
+    deleteAllocationConfirm: "Hapus alokasi ini?",
     otherCostsHint:
       "Biaya di luar vendor, seperti transport, administrasi, atau dekorasi tambahan.",
     addOtherCost: "Tambah Biaya Lainnya",

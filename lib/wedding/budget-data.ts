@@ -1,4 +1,6 @@
 import type {
+  BudgetCategory,
+  DonationAllocation,
   VendorPayment,
   VendorPaymentProof,
   WeddingDonation,
@@ -30,6 +32,9 @@ export type VendorsPageData = {
   otherCosts: BudgetOtherCost[];
   donations: WeddingDonation[];
   donationSchemaReady: boolean;
+  allocations: DonationAllocation[];
+  categories: BudgetCategory[];
+  allocationSchemaReady: boolean;
   calc: BudgetResult;
 };
 
@@ -93,6 +98,16 @@ export async function loadBudgetData(
       supabase
         .from("wedding_donations")
         .select("id, wedding_id, donor_name, amount, created_at, updated_at")
+        .eq("wedding_id", weddingId)
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("budget_categories")
+        .select("*")
+        .eq("wedding_id", weddingId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("donation_allocations")
+        .select("*")
         .eq("wedding_id", weddingId)
         .order("created_at", { ascending: true }),
     ]);
@@ -163,6 +178,8 @@ export async function loadVendorsPageData(
     proofsResult,
     otherCostsResult,
     donationsResult,
+    categoriesResult,
+    allocationsResult,
   ] = await Promise.all([
       supabase
         .from("vendors")
@@ -194,6 +211,16 @@ export async function loadVendorsPageData(
         .select("id, wedding_id, donor_name, amount, created_at, updated_at")
         .eq("wedding_id", weddingId)
         .order("created_at", { ascending: true }),
+      supabase
+        .from("budget_categories")
+        .select("*")
+        .eq("wedding_id", weddingId)
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("donation_allocations")
+        .select("*")
+        .eq("wedding_id", weddingId)
+        .order("created_at", { ascending: true }),
     ]);
 
   if (vendorsResult.error) throw new Error(vendorsResult.error.message);
@@ -214,6 +241,19 @@ export async function loadVendorsPageData(
         amount: Number(donation.amount),
       }));
   const donationSchemaReady = !donationsResult.error;
+  const categories: BudgetCategory[] = categoriesResult?.error
+    ? []
+    : ((categoriesResult?.data ?? []) as BudgetCategory[]).map((category) => ({
+        ...category,
+        planned_amount: Number(category.planned_amount),
+      }));
+  const allocationSchemaReady = !allocationsResult?.error;
+  const allocations: DonationAllocation[] = allocationSchemaReady
+    ? ((allocationsResult?.data ?? []) as DonationAllocation[]).map((allocation) => ({
+        ...allocation,
+        amount: Number(allocation.amount),
+      }))
+    : [];
 
   const vendors: BudgetVendor[] = (vendorsResult.data ?? []).map((vendor) => ({
     id: vendor.id,
@@ -273,6 +313,9 @@ export async function loadVendorsPageData(
     otherCosts,
     donations,
     donationSchemaReady,
+    allocations,
+    categories,
+    allocationSchemaReady,
     calc: calculateBudget({
       vendors,
       payments: budgetPayments,

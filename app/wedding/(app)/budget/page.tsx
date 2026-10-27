@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { DonationManager } from "@/components/wedding/budget/donation-manager";
 import { OtherCostManager } from "@/components/wedding/budget/other-cost-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
+import { TotalCostCard } from "@/components/wedding/budget/total-cost-card";
 import { Card, PageHeader, Progress } from "@/components/wedding/ui";
 import type { TargetBudgetStatus } from "@/lib/wedding/budget-calc";
 import { VendorList } from "@/components/wedding/vendors/vendor-list";
@@ -194,15 +195,11 @@ export default async function BudgetPage({
             <p className="mt-3 max-w-md text-xs leading-relaxed text-[#888176]">
               {copy.budget.sisaHint}
             </p>
-            <div className="mt-7 grid grid-cols-2 gap-4 border-t border-[#EAE0D7] pt-4 text-xs text-[#888176]">
-              <div>
-                <p>{copy.budget.sisaTagihan}</p>
-                <p className="mt-1 font-medium text-[#49463F]">{formatIDR(calc.sisaTagihan)}</p>
-              </div>
-              <div>
-                <p>{copy.budget.donationAvailable}</p>
-                <p className="mt-1 font-medium text-[#49463F]">{formatIDR(calc.donationAvailable)}</p>
-              </div>
+            <div className="mt-7 border-t border-[#EAE0D7] pt-4 text-xs text-[#888176]">
+              <p>{copy.budget.sisaTagihan}</p>
+              <p className="mt-1 font-medium text-[#49463F]">
+                {formatIDR(calc.sisaTagihan)}
+              </p>
             </div>
             {calc.donationShortfall > 0 ? (
               <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
@@ -228,15 +225,12 @@ export default async function BudgetPage({
         </Card>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-          <Card className="p-5">
-            <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-soft">
-              {copy.budget.totalCost}
-            </p>
-            <p className="mt-2 font-heading text-2xl text-ink">
-              {formatIDR(totalCost)}
-            </p>
-            <p className="mt-1 text-xs text-ink-soft">{copy.budget.totalCostHint}</p>
-          </Card>
+          <TotalCostCard
+            totalCost={totalCost}
+            vendorBudget={calc.vendorBudget}
+            otherCostsTotal={calc.otherCostsTotal}
+            copy={copy}
+          />
           <Card className="p-5">
             <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-soft">
               {copy.budget.cashPaid}
@@ -249,31 +243,12 @@ export default async function BudgetPage({
         </div>
       </section>
 
-      <Card className="overflow-hidden p-0">
-        <div className="border-b border-petal-100 px-5 py-4 sm:px-6">
-          <h2 className="font-heading text-lg font-semibold text-ink">
-            {copy.budget.vendorBudget} &amp; {copy.budget.otherCostsTotal}
-          </h2>
-        </div>
-        <div className="divide-y divide-petal-100/70">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
-            <span className="text-sm text-ink">{copy.budget.vendorBudget}</span>
-            <span className="font-medium text-ink">{formatIDR(calc.vendorBudget)}</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-6">
-            <span className="text-sm text-ink">{copy.budget.otherCostsTotal}</span>
-            <span className="font-medium text-ink">{formatIDR(calc.otherCostsTotal)}</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-cream/50 px-5 py-4 sm:px-6">
-            <span className="text-sm font-medium text-ink">{copy.budget.totalCost}</span>
-            <span className="font-heading text-xl text-rosewood">{formatIDR(totalCost)}</span>
-          </div>
-        </div>
-      </Card>
-
       <DonationManager
         donations={data.donations}
         schemaReady={data.donationSchemaReady}
+        allocations={data.allocations}
+        categories={data.categories}
+        allocationSchemaReady={data.allocationSchemaReady}
         copy={copy}
       />
 

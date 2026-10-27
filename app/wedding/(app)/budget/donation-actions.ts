@@ -64,6 +64,19 @@ export async function updateDonationAction(
   const parsed = readDonation(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const { data: allocations } = await ctx.supabase
+    .from("donation_allocations")
+    .select("amount")
+    .eq("donation_id", id)
+    .eq("wedding_id", ctx.session.wedding.id);
+  const allocated = (allocations ?? []).reduce(
+    (sum, row) => sum + Number(row.amount),
+    0,
+  );
+  if (parsed.amount < allocated) {
+    return { error: ctx.copy.budget.donationBelowAllocation };
+  }
+
   const { error } = await ctx.supabase
     .from("wedding_donations")
     .update({ donor_name: parsed.donorName, amount: parsed.amount })
