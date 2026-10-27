@@ -9,6 +9,10 @@ alter table public.donation_allocations
 alter table public.donation_allocations
   add column if not exists vendor_id uuid;
 
+-- Composite foreign keys below require a unique target key.
+create unique index if not exists expenses_id_wedding_idx
+  on public.expenses (id, wedding_id);
+
 alter table public.donation_allocations
   drop constraint if exists donation_allocations_one_source_check;
 alter table public.donation_allocations
