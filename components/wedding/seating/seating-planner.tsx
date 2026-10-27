@@ -21,7 +21,7 @@ import {
   assignGuestAction,
   deleteTableAction,
   generateAkadChairsAction,
-  moveStageAction,
+  generateDinnerLayoutAction,
   saveEventAction,
   saveTableAction,
   swapSeatGuestsAction,
@@ -265,6 +265,96 @@ function ChairLayoutModal({
     </FormModal>
   );
 }
+function DinnerLayoutModal({
+  open,
+  onClose,
+  copy,
+  eventId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  copy: ModuleCopy;
+  eventId: string;
+}) {
+  const [state, formAction, pending] = useActionState(
+    generateDinnerLayoutAction,
+    null,
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state?.success) {
+      onClose();
+      router.refresh();
+    }
+  }, [state, onClose, router]);
+
+  return (
+    <FormModal
+      open={open}
+      onClose={onClose}
+      title={copy.seating.dinnerLayoutTitle}
+    >
+      <form action={formAction} className="space-y-4">
+        <input type="hidden" name="eventId" value={eventId} />
+        <FormAlert error={state?.error} success={state?.success} />
+        <p className="text-sm leading-relaxed text-ink-soft">
+          {copy.seating.dinnerLayoutIntro}
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label={copy.seating.guestTables} htmlFor="dinner-table-count">
+            <input
+              id="dinner-table-count"
+              name="tableCount"
+              type="number"
+              min={1}
+              max={40}
+              required
+              defaultValue={8}
+              className={inputClass}
+            />
+          </Field>
+          <Field
+            label={copy.seating.chairsPerTable}
+            htmlFor="dinner-chairs-per-table"
+          >
+            <input
+              id="dinner-chairs-per-table"
+              name="chairsPerTable"
+              type="number"
+              min={2}
+              max={20}
+              required
+              defaultValue={8}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <p className="rounded-xl border border-olive-100 bg-olive-50/60 px-3 py-2 text-xs leading-relaxed text-ink-soft">
+          {copy.seating.dinnerLayoutHint}
+        </p>
+        <label className="flex items-start gap-2 rounded-xl border border-rose-100 bg-rose-50/60 px-3 py-2 text-xs leading-relaxed text-rose-800">
+          <input
+            type="checkbox"
+            name="replace"
+            value="1"
+            className="mt-0.5 size-4 shrink-0 accent-rose-600"
+          />
+          <span>{copy.seating.replaceLayout}</span>
+        </label>
+        <ModalFooter
+          pending={pending}
+          submitLabel={copy.seating.setupDinnerLayout}
+          savingLabel={copy.form.saving}
+          cancelLabel={copy.form.cancel}
+          onCancel={onClose}
+        />
+      </form>
+    </FormModal>
+  );
+}
+
+
 
 function EventSettings({
   event,
@@ -353,6 +443,7 @@ export function SeatingPlanner({
     editing: null,
   });
   const [layoutOpen, setLayoutOpen] = useState(false);
+  const [dinnerLayoutOpen, setDinnerLayoutOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
@@ -371,14 +462,6 @@ export function SeatingPlanner({
     startY: number;
     originX: number;
     originY: number;
-  } | null>(null);
-  const stageDragRef = useRef<{
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-    x: number;
-    y: number;
   } | null>(null);
 
   const eventTables = useMemo(
@@ -656,51 +739,6 @@ export function SeatingPlanner({
     panDragRef.current = null;
   }
 
-  function stagePointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    event.stopPropagation();
-    stageDragRef.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: stagePos.x,
-      originY: stagePos.y,
-      x: stagePos.x,
-      y: stagePos.y,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function stagePointerMove(event: React.PointerEvent<HTMLDivElement>) {
-    const drag = stageDragRef.current;
-    const canvas = canvasRef.current;
-    if (!drag || !canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.min(
-      96,
-      Math.max(4, drag.originX + ((event.clientX - drag.startX) / rect.width) * 100),
-    );
-    const y = Math.min(
-      96,
-      Math.max(2, drag.originY + ((event.clientY - drag.startY) / rect.height) * 100),
-    );
-    drag.x = x;
-    drag.y = y;
-    setStagePos({ x, y });
-  }
-
-  function stagePointerUp() {
-    const drag = stageDragRef.current;
-    stageDragRef.current = null;
-    if (!drag || !selectedEvent) return;
-    if (Math.abs(drag.x - drag.originX) < 0.1 && Math.abs(drag.y - drag.originY) < 0.1) {
-      return;
-    }
-    const formData = new FormData();
-    formData.set("id", selectedEvent.id);
-    formData.set("x", String(drag.x));
-    formData.set("y", String(drag.y));
-    void moveStageAction(formData);
-  }
-
   if (!selectedEvent) return <div />;
 
   return (
@@ -922,16 +960,26 @@ export function SeatingPlanner({
                   <RotateCcw className="size-4" aria-hidden />
                 </button>
                 {!isCeremony ? (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setTableModal({ open: true, editing: null })
-                    }
-                    className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700"
-                  >
-                    <Plus className="size-4" aria-hidden />
-                    {copy.seating.addTable}
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setDinnerLayoutOpen(true)}
+                      className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700"
+                    >
+                      <Users className="size-4" aria-hidden />
+                      {copy.seating.setupDinnerLayout}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTableModal({ open: true, editing: null })
+                      }
+                      className="inline-flex items-center gap-2 rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm font-medium text-ink-soft hover:bg-olive-50"
+                    >
+                      <Plus className="size-4" aria-hidden />
+                      {copy.seating.addTable}
+                    </button>
+                  </>
                 ) : (
                   <button
                     type="button"
@@ -959,14 +1007,8 @@ export function SeatingPlanner({
                 }}
               >
                 <div
-                  role="button"
-                  tabIndex={0}
-                  title={copy.seating.stage}
-                  onPointerDown={stagePointerDown}
-                  onPointerMove={stagePointerMove}
-                  onPointerUp={stagePointerUp}
-                  onPointerCancel={stagePointerUp}
-                  className="absolute z-10 w-48 cursor-grab touch-none rounded-2xl border border-petal-200 bg-white/90 px-4 py-2 text-center shadow-sm active:cursor-grabbing"
+                  title={isCeremony ? copy.seating.stage : copy.seating.bridalTable}
+                  className="absolute z-10 w-48 rounded-2xl border border-petal-200 bg-white/90 px-4 py-2 text-center shadow-sm"
                   style={{
                     left: `${stagePos.x}%`,
                     top: `${stagePos.y}%`,
@@ -974,7 +1016,7 @@ export function SeatingPlanner({
                   }}
                 >
                   <p className="text-[10px] uppercase tracking-[0.2em] text-petal-500">
-                    {copy.seating.stage}
+                    {isCeremony ? copy.seating.stage : copy.seating.bridalTable}
                   </p>
                 </div>
                 <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-olive-200 bg-white/80 px-4 py-1 text-[10px] text-ink-soft">
@@ -1238,6 +1280,13 @@ export function SeatingPlanner({
           <ChairLayoutModal
             open={layoutOpen}
             onClose={() => setLayoutOpen(false)}
+            copy={copy}
+            eventId={selectedEvent.id}
+          />
+
+          <DinnerLayoutModal
+            open={dinnerLayoutOpen}
+            onClose={() => setDinnerLayoutOpen(false)}
             copy={copy}
             eventId={selectedEvent.id}
           />

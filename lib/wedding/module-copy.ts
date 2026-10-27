@@ -246,6 +246,17 @@ const en = {
     saveEvent: "Save event details",
     eventSaved: "Event details saved.",
     addTable: "Add table",
+    setupDinnerLayout: "Set dinner layout",
+    dinnerLayoutTitle: "Dinner table layout",
+    dinnerLayoutIntro:
+      "Choose how many guest tables and chairs per table. Kefoo will create the layout with the bridal table at the top and the entrance at the bottom.",
+    guestTables: "Guest tables",
+    chairsPerTable: "Chairs per table",
+    dinnerLayoutHint:
+      "The layout is generated automatically. Clear existing guest assignments before generating a new layout.",
+    replaceLayout:
+      "Replace existing tables and clear dinner guest assignments",
+    bridalTable: "Bridal Table",
     editTable: "Edit table",
     addRow: "Add chair row",
     editRow: "Edit chair row",
@@ -998,6 +1009,17 @@ const id: ModuleCopy = {
     saveEvent: "Simpan detail acara",
     eventSaved: "Detail acara tersimpan.",
     addTable: "Tambah meja",
+    setupDinnerLayout: "Atur layout dinner",
+    dinnerLayoutTitle: "Layout meja dinner",
+    dinnerLayoutIntro:
+      "Tentukan jumlah meja tamu dan kursi per meja. Kefoo akan membuat layout dengan bridal table di atas dan pintu masuk di bawah.",
+    guestTables: "Jumlah meja tamu",
+    chairsPerTable: "Kursi per meja",
+    dinnerLayoutHint:
+      "Layout dibuat otomatis. Kosongkan penempatan tamu sebelum membuat layout baru.",
+    replaceLayout:
+      "Ganti meja lama dan kosongkan penempatan tamu dinner",
+    bridalTable: "Meja Pengantin",
     editTable: "Ubah meja",
     addRow: "Tambah baris kursi",
     editRow: "Ubah baris kursi",

@@ -322,6 +322,135 @@ export async function generateAkadChairsAction(
   return { success: copy.form.saved };
 }
 
+export async function generateDinnerLayoutAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const eventId = text(formData, "eventId");
+  if (!isUuid(eventId)) return { error: ctx.copy.errors.notFound };
+
+  const tableCount = parseCount(text(formData, "tableCount"));
+  const chairsPerTable = parseCount(text(formData, "chairsPerTable"));
+  const replace = text(formData, "replace") === "1";
+  if (
+    tableCount === null ||
+    chairsPerTable === null ||
+    tableCount < 1 ||
+    tableCount > 40 ||
+    chairsPerTable < 2 ||
+    chairsPerTable > 20
+  ) {
+    return { error: ctx.copy.form.invalidNumber };
+  }
+
+  const { data: event } = await ctx.supabase
+    .from("seating_events")
+    .select("id, event_type")
+    .eq("id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .maybeSingle();
+  if (!event || event.event_type !== "dinner") {
+    return { error: ctx.copy.errors.notFound };
+  }
+
+  const { count: assigned, error: assignedError } = await ctx.supabase
+    .from("seating_assignments")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId);
+  if (assignedError) return { error: actionError(assignedError, ctx.copy) };
+  if ((assigned ?? 0) > 0 && !replace) {
+    return { error: ctx.copy.seating.layoutHasGuests };
+  }
+
+  const { data: existingTables, error: existingError } = await ctx.supabase
+    .from("seating_tables")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId);
+  if (existingError) return { error: actionError(existingError, ctx.copy) };
+  const existingIds = (existingTables ?? []).map((table) => table.id);
+
+  // Keep tables inside the canvas with a 3% breathing gap. Rows start below
+  // the bridal table (top) and stop above the entrance marker (bottom).
+  const columns = Math.min(tableCount, 6);
+  const rows = Math.ceil(tableCount / columns);
+  const width = Math.min(13, Math.max(7, 80 / columns - 3));
+  const height = Math.min(11, Math.max(5, 52 / rows - 2));
+  const gapX = width + 3;
+  const rowStart = 27;
+  const rowEnd = 82;
+
+  const tables = Array.from({ length: tableCount }, (_, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const x = 50 + (column - (columns - 1) / 2) * gapX;
+    const y =
+      rows === 1 ? 52 : rowStart + (row * (rowEnd - rowStart)) / (rows - 1);
+
+    return {
+      wedding_id: ctx.weddingId,
+      event_id: eventId,
+      name: `Meja ${index + 1}`,
+      shape: "round" as const,
+      capacity: chairsPerTable,
+      canvas_x: Math.min(92, Math.max(8, x)),
+      canvas_y: Math.min(86, Math.max(22, y)),
+      width,
+      height,
+      sort_order: index,
+      kind: "table" as const,
+      side: "none" as const,
+      rotation: 0,
+      parent_table_id: null,
+    };
+  });
+
+  let { error } = await ctx.supabase.from("seating_tables").insert(tables);
+  if (error?.code === "42703") {
+    const fallback = await ctx.supabase.from("seating_tables").insert(
+      tables.map((table) => {
+        const {
+          kind: _kind,
+          side: _side,
+          rotation: _rotation,
+          parent_table_id: _parent,
+          ...base
+        } = table;
+        void _kind;
+        void _side;
+        void _rotation;
+        void _parent;
+        return base;
+      }),
+    );
+    error = fallback.error;
+  }
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  // Only remove the previous rows after the replacement layout has been
+  // inserted, so a failed insert does not wipe the current dinner setup.
+  if (existingIds.length > 0) {
+    const { error: deleteError } = await ctx.supabase
+      .from("seating_tables")
+      .delete()
+      .in("id", existingIds)
+      .eq("event_id", eventId)
+      .eq("wedding_id", ctx.weddingId);
+    if (deleteError) return { error: actionError(deleteError, ctx.copy) };
+  }
+
+  await ctx.supabase
+    .from("seating_events")
+    .update({ stage_x: 50, stage_y: 7 })
+    .eq("id", eventId)
+    .eq("wedding_id", ctx.weddingId);
+
+  revalidateSeating();
+  return { success: ctx.copy.seating.layoutSaved };
+}
+
 export async function moveTableAction(formData: FormData): Promise<ActionResult> {
   const ctx = await context();
   const id = text(formData, "id");
