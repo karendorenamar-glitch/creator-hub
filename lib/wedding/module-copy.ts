@@ -131,7 +131,13 @@ const en = {
     otherCostPartial: "Terbayar sebagian",
     otherCostDonor: "Dari donatur",
     totalCost: "Total cost",
+    totalCostHint: "Vendors + other costs",
+    sisaTagihan: "Outstanding bill",
+    sisaPerluDisiapkan: "Still to prepare",
+    sisaHint:
+      "After recorded cash payments and costs allocated to donations.",
     cashPaid: "Cash paid",
+    cashPaidHint: "Recorded cash payments only.",
     donorCovered: "Covered by donations",
     donationAvailable: "Donation funds available",
     donationShortfall: "Donation shortfall",
@@ -760,7 +766,7 @@ const id: ModuleCopy = {
     activate: "Lihat langganan",
   },
   budget: {
-    title: "Anggaran Menikah",
+    title: "Anggaran Pernikahan",
     subtitle:
       "Atur anggaran, catat pembayaran vendor, dan selalu tahu sisa dananya.",
     totalBudget: "Target Budget",
@@ -857,7 +863,13 @@ const id: ModuleCopy = {
     otherCostPartial: "Terbayar sebagian",
     otherCostDonor: "Dari donatur",
     totalCost: "Total biaya",
+    totalCostHint: "Vendor + biaya lainnya",
+    sisaTagihan: "Sisa tagihan",
+    sisaPerluDisiapkan: "Sisa yang perlu disiapkan",
+    sisaHint:
+      "Setelah pembayaran tunai dan biaya yang sudah dialokasikan ke donatur.",
     cashPaid: "Dibayar tunai",
+    cashPaidHint: "Hanya pembayaran tunai yang tercatat.",
     donorCovered: "Ditanggung donatur",
     donationAvailable: "Dana donatur tersedia",
     donationShortfall: "Kekurangan dana donatur",

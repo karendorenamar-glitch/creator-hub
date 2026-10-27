@@ -272,7 +272,8 @@ t("other paid: totalPaid", r.totalPaid, 2_000_000);
 t("other paid: remaining", r.remainingPayment, 10_000_000);
 t("other paid: percentage", r.paymentPercentage, 16.67);
 
-// 17b. Donations reduce the remaining balance, never Total Paid or vendor status.
+// 17b. Unallocated donations stay in the donation pool; they are not silently
+// subtracted from the bill.
 const donation = [{ amount: 3_000_000 }];
 r = calculateBudget({
   vendors: [vendor()],
@@ -282,8 +283,9 @@ r = calculateBudget({
 });
 t("donation: totalPaid unchanged", r.totalPaid, 2_000_000);
 t("donation: donationsTotal", r.donationsTotal, 3_000_000);
-t("donation: remaining reduced", r.remainingPayment, 5_000_000);
-t("donation: no excess", r.donationExcess, 0);
+t("donation: remaining unchanged", r.remainingPayment, 8_000_000);
+t("donation: available pool", r.donationAvailable, 3_000_000);
+t("donation: excess is available", r.donationExcess, 3_000_000);
 t("donation: vendor status unchanged", r.statusByVendor.get("v1"), "dp");
 
 r = calculateBudget({
@@ -292,8 +294,9 @@ r = calculateBudget({
   donations: [{ amount: 20_000_000 }],
   targetBudget: 0,
 });
-t("donation excess: remaining zero", r.remainingPayment, 0);
-t("donation excess: amount", r.donationExcess, 12_000_000);
+t("donation excess: remaining unchanged", r.remainingPayment, 8_000_000);
+t("donation excess: available amount", r.donationAvailable, 20_000_000);
+t("donation excess: amount", r.donationExcess, 20_000_000);
 t("donation excess: totalPaid unchanged", r.totalPaid, 2_000_000);
 
 // 18. Vendor payments plus paid other costs can reach 100%.

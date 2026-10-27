@@ -132,10 +132,14 @@ export function DonationNote({
 export function DonationManager({
   donations,
   schemaReady,
+  available = 0,
+  donorCovered = 0,
   copy,
 }: {
   donations: WeddingDonation[];
   schemaReady: boolean;
+  available?: number;
+  donorCovered?: number;
   copy: ModuleCopy;
 }) {
   const [modal, setModal] = useState<{
@@ -178,13 +182,31 @@ export function DonationManager({
         </p>
       ) : (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-blush/35 px-4 py-3">
-            <span className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
-              {copy.budget.donationTotal}
-            </span>
-            <span className="font-heading text-lg text-rosewood">
-              {formatIDR(total)}
-            </span>
+          <div className="grid gap-3 rounded-2xl bg-blush/35 px-4 py-3 sm:grid-cols-3">
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-soft">
+                {copy.budget.donationTotal}
+              </p>
+              <p className="mt-1 font-heading text-lg text-rosewood">
+                {formatIDR(total)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-soft">
+                {copy.budget.donationAvailable}
+              </p>
+              <p className="mt-1 font-heading text-lg text-olive-700">
+                {formatIDR(available)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-soft">
+                {copy.budget.donorCovered}
+              </p>
+              <p className="mt-1 font-heading text-lg text-violet-700">
+                {formatIDR(donorCovered)}
+              </p>
+            </div>
           </div>
           <ul className="divide-y divide-petal-100">
             {donations.map((donation) => (

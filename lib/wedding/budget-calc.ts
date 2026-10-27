@@ -91,6 +91,10 @@ export type BudgetResult = {
   donationShortfall: number;
   /** Cash paid + donor-funded costs. */
   totalPaid: number;
+  /** Costs not covered by cash or an allocated donor-funded cost. */
+  sisaTagihan: number;
+  /** Kept as an alias for existing callers; unallocated donations are not deducted. */
+  sisaPerluDisiapkan: number;
   remainingPayment: number;
   overpayment: number;
   paymentPercentage: number;
@@ -332,15 +336,12 @@ export function calculateBudget(input: {
     0,
   );
   const donationAvailable = Math.max(0, donationsTotal - donorCovered);
-  const uncoveredBeforeDonations = Math.max(0, plannedBudget - totalPaid);
-  const remainingPayment = Math.max(
-    0,
-    uncoveredBeforeDonations - donationAvailable,
-  );
-  const donationExcess = Math.max(
-    0,
-    donationAvailable - uncoveredBeforeDonations,
-  );
+  // Only donor-funded costs are allocated. Donations that are still available
+  // are shown as a separate pool and are NOT silently subtracted from the bill.
+  const sisaTagihan = Math.max(0, plannedBudget - totalPaid);
+  const sisaPerluDisiapkan = sisaTagihan;
+  const remainingPayment = sisaTagihan;
+  const donationExcess = donationAvailable;
   const donationShortfall = Math.max(0, donorCovered - donationsTotal);
   const overpayment = Math.max(
     0,
@@ -370,6 +371,8 @@ export function calculateBudget(input: {
     donationExcess,
     donationShortfall,
     totalPaid,
+    sisaTagihan,
+    sisaPerluDisiapkan,
     remainingPayment,
     overpayment,
     paymentPercentage,
