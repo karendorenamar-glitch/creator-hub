@@ -13,6 +13,7 @@ export type SeatingTableLike = {
 export type SeatingAssignmentLike = {
   table_id: string;
   guest_id: string;
+  seat_ids?: string[];
 };
 
 export function guestMapById(guests: SeatingGuest[]) {

@@ -257,6 +257,8 @@ const en = {
     selectGuest: "Select a guest first.",
     capacityWarning: "This table is full. Continue and override capacity?",
     seatTaken: "That chair is already occupied.",
+    notEnoughSeats:
+      "Not enough adjacent empty chairs for this guest and their plus-ones.",
     assignmentFailed: "Could not assign guest.",
     assigned: "Guest assigned.",
     removed: "Guest removed from table.",
@@ -439,6 +441,10 @@ const en = {
     select: "Select this option",
     compare: "View",
     archive: "Archive",
+    deleteVendor: "Delete vendor",
+    deleteVendorConfirm:
+      "Delete this vendor permanently? Its payment history, proof files, and database rows will be removed.",
+    deleteVendorConfirmLabel: "Yes, delete permanently",
     priceUnknown: "Price not set",
     overpaidWarning: "Payment exceeds the agreed price",
     uncategorized: "Uncategorized",
@@ -476,6 +482,10 @@ const en = {
     overpayment: "Overpayment",
     paymentPercentage: "Payment Percentage",
     statusDiskusi: "Diskusi",
+    statusReset: "Status returned to Diskusi.",
+    resetStatus: "Return to Diskusi",
+    resetStatusConfirm:
+      "Return this vendor to Diskusi? This permanently deletes its recorded payments and proof files.",
     statusDp: "DP",
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
@@ -945,6 +955,8 @@ const id: ModuleCopy = {
     selectGuest: "Pilih tamu terlebih dahulu.",
     capacityWarning: "Meja ini penuh. Tetap lanjutkan dan lewati kapasitas?",
     seatTaken: "Kursi itu sudah terisi.",
+    notEnoughSeats:
+      "Kursi kosong di sebelahnya tidak cukup untuk tamu ini beserta plus-ones-nya.",
     assignmentFailed: "Tamu gagal ditempatkan.",
     assigned: "Tamu ditempatkan.",
     removed: "Tamu dikeluarkan dari meja.",
@@ -1126,6 +1138,10 @@ const id: ModuleCopy = {
     select: "Pilih opsi ini",
     compare: "View",
     archive: "Arsipkan",
+    deleteVendor: "Hapus vendor",
+    deleteVendorConfirm:
+      "Hapus vendor ini permanen? Riwayat pembayaran, file bukti, dan baris database-nya akan dihapus.",
+    deleteVendorConfirmLabel: "Ya, hapus permanen",
     priceUnknown: "Harga belum diisi",
     overpaidWarning: "Pembayaran melebihi harga kesepakatan",
     uncategorized: "Tanpa kategori",
@@ -1162,6 +1178,10 @@ const id: ModuleCopy = {
     overpayment: "Kelebihan Bayar",
     paymentPercentage: "Persentase Pembayaran",
     statusDiskusi: "Diskusi",
+    statusReset: "Status dikembalikan ke Diskusi.",
+    resetStatus: "Kembalikan ke Diskusi",
+    resetStatusConfirm:
+      "Kembalikan vendor ini ke Diskusi? Pembayaran dan file bukti yang sudah tercatat akan dihapus permanen.",
     statusDp: "DP",
     statusTerminLanjutan: "Termin Lanjutan",
     statusLunas: "Lunas",
@@ -1187,9 +1207,9 @@ const id: ModuleCopy = {
       "Budget Vendor belum lengkap: {count} vendor belum punya harga kesepakatan.",
     budgetIncompleteHint:
       "Isi harga kesepakatan vendor tersebut. Harga penawaran tidak dipakai otomatis.",
-    archived: "Vendor diarsipkan",
+    archived: "Vendor lama",
     archivedHint:
-      "Vendor yang diarsipkan tidak masuk Budget Vendor dan total aktif. Riwayat pembayarannya tetap tersedia.",
+      "Baris vendor lama ini sudah tidak dipakai. Hapus permanen untuk membersihkan database.",
     archiveConfirm:
       "Arsipkan vendor ini? Riwayat pembayarannya tetap disimpan.",
     yesArchive: "Ya, arsipkan",

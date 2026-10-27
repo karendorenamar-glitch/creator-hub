@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import {
   createVendorAction,
+  resetVendorStatusAction,
   updateVendorAction,
 } from "@/app/wedding/(app)/vendors/actions";
 import { FormModal } from "@/components/wedding/form-modal";
@@ -95,6 +96,8 @@ export function VendorFormModal({
   const [statusIntent, setStatusIntent] = useState<
     "diskusi" | "dp" | "termin_lanjutan" | "lunas"
   >("diskusi");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
 
   useEffect(() => {
     // Always close after a successful save. Keeping the portal open used to
@@ -104,6 +107,22 @@ export function VendorFormModal({
   }, [state, onClose]);
 
   const zeroPrice = price !== "" && Number(price) === 0;
+
+  async function resetToDiscussion() {
+    if (!vendor || resetBusy) return;
+    if (!window.confirm(copy.vendors.resetStatusConfirm)) return;
+    setResetBusy(true);
+    setResetError(null);
+    try {
+      const formData = new FormData();
+      formData.set("id", vendor.id);
+      const result = await resetVendorStatusAction(formData);
+      if (result?.error) setResetError(result.error);
+      else onClose();
+    } finally {
+      setResetBusy(false);
+    }
+  }
 
   return (
     <FormModal
@@ -219,11 +238,26 @@ export function VendorFormModal({
               label={copy.vendors.paymentStatus}
               htmlFor="vendor-payment-status"
             >
-              <div id="vendor-payment-status" className="pt-1">
+              <div id="vendor-payment-status" className="space-y-2 pt-1">
                 <PaymentStatusBadge
                   status={summary.paymentStatus}
                   copy={copy}
                 />
+                {summary.paymentStatus !== "diskusi" ? (
+                  <button
+                    type="button"
+                    disabled={resetBusy}
+                    onClick={() => void resetToDiscussion()}
+                    className="block text-xs font-medium text-rose-600 hover:underline disabled:opacity-60"
+                  >
+                    {resetBusy
+                      ? copy.form.saving
+                      : copy.vendors.resetStatus}
+                  </button>
+                ) : null}
+                {resetError ? (
+                  <p className="text-xs text-rose-600">{resetError}</p>
+                ) : null}
               </div>
             </Field>
           ) : null}

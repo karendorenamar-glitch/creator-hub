@@ -1,11 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { History, Pencil, RotateCcw } from "lucide-react";
-import {
-  archiveVendorAction,
-  restoreVendorAction,
-} from "@/app/wedding/(app)/vendors/actions";
+import { History, Pencil } from "lucide-react";
+import { deleteVendorAction } from "@/app/wedding/(app)/vendors/actions";
 import { AddButton } from "@/components/wedding/form-kit";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { Card } from "@/components/wedding/ui";
@@ -108,27 +105,14 @@ function VendorRow({
           <History className="size-3.5" aria-hidden />
           {copy.vendors.paymentHistory}
         </button>
-        {archived ? (
-          <form action={restoreVendorAction} className="inline-flex">
-            <input type="hidden" name="id" value={vendor.id} />
-            <button
-              type="submit"
-              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-olive-700 hover:bg-olive-50"
-            >
-              <RotateCcw className="size-3.5" aria-hidden />
-              {copy.vendors.restore}
-            </button>
-          </form>
-        ) : (
-          <DeleteForm
-            action={archiveVendorAction}
-            id={vendor.id}
-            copy={copy}
-            label={copy.vendors.archive}
-            confirmMessage={copy.vendors.archiveConfirm}
-            confirmLabel={copy.vendors.yesArchive}
-          />
-        )}
+        <DeleteForm
+          action={deleteVendorAction}
+          id={vendor.id}
+          copy={copy}
+          label={copy.vendors.deleteVendor}
+          confirmMessage={copy.vendors.deleteVendorConfirm}
+          confirmLabel={copy.vendors.deleteVendorConfirmLabel}
+        />
       </div>
     </div>
   );

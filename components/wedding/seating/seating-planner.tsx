@@ -431,6 +431,48 @@ export function SeatingPlanner({
     () => new Map(eventTables.map((table) => [table.id, table])),
     [eventTables],
   );
+  const assignmentByChair = useMemo(() => {
+    const result = new Map<string, SeatingAssignment>();
+    for (const assignment of eventAssignments) {
+      result.set(assignment.table_id, assignment);
+      for (const seatId of assignment.seat_ids ?? []) {
+        result.set(seatId, assignment);
+      }
+    }
+    return result;
+  }, [eventAssignments]);
+  const selectedAssignments = useMemo(
+    () =>
+      selectedTableId
+        ? eventAssignments.filter(
+            (assignment) =>
+              assignment.table_id === selectedTableId ||
+              (assignment.seat_ids ?? []).includes(selectedTableId),
+          )
+        : [],
+    [eventAssignments, selectedTableId],
+  );
+  const selectedGuestIds = useMemo(
+    () => new Set(selectedAssignments.map((assignment) => assignment.guest_id)),
+    [selectedAssignments],
+  );
+  const selectedPeople = useMemo(
+    () =>
+      selectedAssignments.reduce((sum, assignment) => {
+        const guest = guestById.get(assignment.guest_id);
+        return sum + (guest ? guestPeopleCount(guest) : 0);
+      }, 0),
+    [selectedAssignments, guestById],
+  );
+  const selectedSeatCount = useMemo(
+    () =>
+      selectedAssignments.reduce(
+        (sum, assignment) =>
+          sum + Math.max(1, assignment.seat_ids?.length ?? 1),
+        0,
+      ),
+    [selectedAssignments],
+  );
   const selectedTable = selectedTableId
     ? tableById.get(selectedTableId) ?? null
     : null;
@@ -465,17 +507,14 @@ export function SeatingPlanner({
     const guest = guestById.get(guestId);
     if (!table || !guest) return;
     if (table.capacity > 1 && table.kind !== "chair") return;
-    if (assignmentByGuest.get(guestId)?.table_id === tableId) {
+    if (Number(table.capacity) > 1) return;
+    const current = assignmentByGuest.get(guestId);
+    if (
+      current?.table_id === tableId &&
+      (current.seat_ids?.length ?? 0) >= guestPeopleCount(guest)
+    ) {
       setSelectedTableId(tableId);
       return;
-    }
-
-    const currentPeople = stats.peopleByTable.get(tableId) ?? 0;
-    const willExceed =
-      currentPeople + guestPeopleCount(guest) > Number(table.capacity);
-    if (willExceed && !allowOverCapacity) {
-      if (!window.confirm(copy.seating.capacityWarning)) return;
-      allowOverCapacity = true;
     }
 
     setBusy(true);
@@ -977,9 +1016,7 @@ export function SeatingPlanner({
                   : null}
 
                 {chairs.map((chair) => {
-                  const assignment = eventAssignments.find(
-                    (item) => item.table_id === chair.id,
-                  );
+                  const assignment = assignmentByChair.get(chair.id);
                   const guest = assignment
                     ? guestById.get(assignment.guest_id)
                     : null;
@@ -1095,14 +1132,9 @@ export function SeatingPlanner({
                     {selectedTable.name}
                   </h3>
                   <p className="mt-1 text-sm text-ink-soft">
-                    {copy.seating.occupancy}:{" "}
-                    {stats.peopleByTable.get(selectedTable.id) ?? 0} /{" "}
-                    {selectedTable.capacity} · {copy.seating.remaining}:{" "}
-                    {Math.max(
-                      0,
-                      selectedTable.capacity -
-                        (stats.peopleByTable.get(selectedTable.id) ?? 0),
-                    )}
+                    {selectedTable.capacity <= 1
+                      ? `${selectedPeople} pax · ${selectedSeatCount} seats`
+                      : `${copy.seating.occupancy}: ${selectedPeople} / ${selectedTable.capacity} · ${copy.seating.remaining}: ${Math.max(0, selectedTable.capacity - selectedPeople)}`}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -1140,9 +1172,7 @@ export function SeatingPlanner({
                   <option value="">{copy.seating.addGuest}</option>
                   {guests
                     .filter(
-                      (guest) =>
-                        assignmentByGuest.get(guest.id)?.table_id !==
-                        selectedTable.id,
+                      (guest) => !selectedGuestIds.has(guest.id),
                     )
                     .map((guest) => (
                       <option key={guest.id} value={guest.id}>
@@ -1151,16 +1181,12 @@ export function SeatingPlanner({
                     ))}
                 </select>
 
-                {eventAssignments.filter(
-                  (item) => item.table_id === selectedTable.id,
-                ).length === 0 ? (
+                {selectedAssignments.length === 0 ? (
                   <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
                     {copy.seating.emptyTable}
                   </p>
                 ) : (
-                  eventAssignments
-                    .filter((item) => item.table_id === selectedTable.id)
-                    .map((assignment) => {
+                  selectedAssignments.map((assignment) => {
                       const guest = guestById.get(assignment.guest_id);
                       if (!guest) return null;
                       return (
@@ -1190,9 +1216,7 @@ export function SeatingPlanner({
                 )}
               </div>
 
-              {selectedGuest &&
-              assignmentByGuest.get(selectedGuest.id)?.table_id !==
-                selectedTable.id ? (
+              {selectedGuest && !selectedGuestIds.has(selectedGuest.id) ? (
                 <button
                   type="button"
                   disabled={busy}
@@ -1241,14 +1265,9 @@ export function SeatingPlanner({
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm text-ink-soft">
-                    {copy.seating.occupancy}:{" "}
-                    {stats.peopleByTable.get(selectedTable.id) ?? 0} /{" "}
-                    {selectedTable.capacity} · {copy.seating.remaining}:{" "}
-                    {Math.max(
-                      0,
-                      selectedTable.capacity -
-                        (stats.peopleByTable.get(selectedTable.id) ?? 0),
-                    )}
+                    {selectedTable.capacity <= 1
+                      ? `${selectedPeople} pax · ${selectedSeatCount} seats`
+                      : `${copy.seating.occupancy}: ${selectedPeople} / ${selectedTable.capacity} · ${copy.seating.remaining}: ${Math.max(0, selectedTable.capacity - selectedPeople)}`}
                   </p>
                   <button
                     type="button"
@@ -1282,9 +1301,7 @@ export function SeatingPlanner({
                   <option value="">{copy.seating.addGuest}</option>
                   {guests
                     .filter(
-                      (guest) =>
-                        assignmentByGuest.get(guest.id)?.table_id !==
-                        selectedTable.id,
+                      (guest) => !selectedGuestIds.has(guest.id),
                     )
                     .map((guest) => (
                       <option key={guest.id} value={guest.id}>
@@ -1294,16 +1311,12 @@ export function SeatingPlanner({
                 </select>
 
                 <div className="space-y-2">
-                  {eventAssignments.filter(
-                    (item) => item.table_id === selectedTable.id,
-                  ).length === 0 ? (
+                  {selectedAssignments.length === 0 ? (
                     <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
                       {copy.seating.emptyTable}
                     </p>
                   ) : (
-                    eventAssignments
-                      .filter((item) => item.table_id === selectedTable.id)
-                      .map((assignment) => {
+                    selectedAssignments.map((assignment) => {
                         const guest = guestById.get(assignment.guest_id);
                         if (!guest) return null;
                         return (

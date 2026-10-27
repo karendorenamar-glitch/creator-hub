@@ -279,41 +279,102 @@ export async function updateVendorAction(
   return { success: ctx.copy.form.saved };
 }
 
-export async function archiveVendorAction(
+export async function deleteVendorAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 
+  const weddingId = ctx.session.wedding.id;
+  const [{ data: payments }, { data: proofs }] = await Promise.all([
+    ctx.supabase
+      .from("vendor_payments")
+      .select("id, proof_path")
+      .eq("vendor_id", id)
+      .eq("wedding_id", weddingId),
+    ctx.supabase
+      .from("vendor_payment_proofs")
+      .select("path, payment_id")
+      .eq("wedding_id", weddingId),
+  ]);
+
+  const paymentIds = new Set((payments ?? []).map((payment) => payment.id));
+  const paths = [
+    ...(payments ?? [])
+      .map((payment) => payment.proof_path)
+      .filter((path): path is string => Boolean(path)),
+    ...(proofs ?? [])
+      .filter((proof) => paymentIds.has(proof.payment_id))
+      .map((proof) => proof.path),
+  ];
+
+  // Hard delete: vendor_payments and proof rows cascade with the vendor.
   const { error } = await ctx.supabase
     .from("vendors")
-    .update({ archived_at: new Date().toISOString() })
+    .delete()
     .eq("id", id)
-    .eq("wedding_id", ctx.session.wedding.id);
+    .eq("wedding_id", weddingId);
 
   if (error) return { error: actionError(error, ctx.copy) };
 
+  await removeStoredFiles(ctx, paths);
   revalidateVendorPages();
   return null;
 }
 
-export async function restoreVendorAction(
+export async function resetVendorStatusAction(
   formData: FormData,
-): Promise<void> {
+): Promise<ActionResult> {
   const ctx = await context();
   const id = text(formData, "id");
-  if (!isUuid(id)) return;
+  if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
+
+  const weddingId = ctx.session.wedding.id;
+  const { data: vendor } = await ctx.supabase
+    .from("vendors")
+    .select("id")
+    .eq("id", id)
+    .eq("wedding_id", weddingId)
+    .maybeSingle();
+  if (!vendor) return { error: ctx.copy.errors.notFound };
+
+  const [{ data: payments }, { data: proofs }] = await Promise.all([
+    ctx.supabase
+      .from("vendor_payments")
+      .select("id, proof_path")
+      .eq("vendor_id", id)
+      .eq("wedding_id", weddingId),
+    ctx.supabase
+      .from("vendor_payment_proofs")
+      .select("path, payment_id")
+      .eq("wedding_id", weddingId),
+  ]);
+  const paymentIds = new Set((payments ?? []).map((payment) => payment.id));
+  const paths = [
+    ...(payments ?? [])
+      .map((payment) => payment.proof_path)
+      .filter((path): path is string => Boolean(path)),
+    ...(proofs ?? [])
+      .filter((proof) => paymentIds.has(proof.payment_id))
+      .map((proof) => proof.path),
+  ];
 
   const { error } = await ctx.supabase
+    .from("vendor_payments")
+    .delete()
+    .eq("vendor_id", id)
+    .eq("wedding_id", weddingId);
+  if (error) return { error: actionError(error, ctx.copy) };
+
+  await ctx.supabase
     .from("vendors")
-    .update({ archived_at: null, selection_status: "terpilih" })
+    .update({ collaboration_completed_at: null })
     .eq("id", id)
-    .eq("wedding_id", ctx.session.wedding.id);
-
-  if (error) return;
-
+    .eq("wedding_id", weddingId);
+  await removeStoredFiles(ctx, paths);
   revalidateVendorPages();
+  return { success: ctx.copy.vendors.statusReset };
 }
 
 type ProofUpload = {
