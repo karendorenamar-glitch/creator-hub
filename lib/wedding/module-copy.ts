@@ -90,9 +90,9 @@ const en = {
     targetOver: "OVERBUDGET",
     targetUnset: "BELUM ADA TARGET",
     targetProvisional: "SEMENTARA",
-    targetUnderDetail: "{amount} less than the original target.",
+    targetUnderDetail: "{amount} below target.",
     targetOnDetail: "Vendor Budget + Other Budget equals the original target.",
-    targetOverDetail: "Vendor Budget + Other Budget exceeds the original target by {amount}.",
+    targetOverDetail: "{amount} above target.",
     targetUnsetDetail: "Set a Target Budget to see the comparison.",
     targetProvisionalDetail:
       "Target comparison is temporary: {count} vendor(s) still need an agreed price.",
@@ -824,9 +824,9 @@ const id: ModuleCopy = {
     targetOver: "OVERBUDGET",
     targetUnset: "BELUM ADA TARGET",
     targetProvisional: "SEMENTARA",
-    targetUnderDetail: "{amount} lebih hemat dari target awal.",
+    targetUnderDetail: "{amount} di bawah target.",
     targetOnDetail: "Total Budget Vendor + Budget Lainnya sama dengan target awal.",
-    targetOverDetail: "Total Budget Vendor + Budget Lainnya melebihi target awal sebesar {amount}.",
+    targetOverDetail: "{amount} di atas target.",
     targetUnsetDetail: "Isi Target Budget untuk melihat perbandingan.",
     targetProvisionalDetail:
       "Perbandingan target masih sementara: {count} vendor belum punya harga kesepakatan.",
