@@ -8,7 +8,6 @@ import {
   Images,
   Search,
   Sparkles,
-  X,
 } from "lucide-react";
 import { AddButton } from "@/components/wedding/form-kit";
 import { InspirationDetailModal } from "@/components/wedding/inspiration/inspiration-detail-modal";
@@ -280,7 +279,6 @@ export function InspirationManager({
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<InspirationItem | null>(null);
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [search, setSearch] = useState("");
   const [detail, setDetail] = useState<InspirationItem | null>(null);
 
   const categoriesUsed = useMemo(() => {
@@ -295,30 +293,13 @@ export function InspirationManager({
     [categoriesUsed],
   );
 
-  const normalizedSearch = search.trim().toLowerCase();
   const filtered = useMemo(() => {
-    return items.filter((item) => {
-      if (
-        categoryFilter !== "all" &&
-        (item.category?.trim() ?? "") !== categoryFilter
-      ) {
-        return false;
-      }
-      if (!normalizedSearch) return true;
-
-      return [
-        item.title,
-        item.category,
-        item.notes,
-        item.description,
-        item.link_url,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
-        .includes(normalizedSearch);
-    });
-  }, [items, categoryFilter, normalizedSearch]);
+    return items.filter(
+      (item) =>
+        categoryFilter === "all" ||
+        (item.category?.trim() ?? "") === categoryFilter,
+    );
+  }, [items, categoryFilter]);
 
   const categoryPhotos = useMemo(() => {
     if (categoryFilter === "all") return [];
@@ -339,23 +320,12 @@ export function InspirationManager({
   }
 
   function clearFilters() {
-    setSearch("");
     setCategoryFilter("all");
   }
 
   const activeDetail = detail
     ? (items.find((item) => item.id === detail.id) ?? null)
     : null;
-
-  const activePhotos = editing
-    ? (photosByItem[editing.id] ?? [])
-        .map((photo) => ({
-          id: photo.id,
-          url: imageUrls[photo.path],
-          caption: photo.caption,
-        }))
-        .filter((photo) => Boolean(photo.url))
-    : [];
 
   return (
     <div className="space-y-7">
@@ -377,30 +347,6 @@ export function InspirationManager({
 
       <div className="rounded-[1.75rem] border border-petal-100/80 bg-white/75 p-3 shadow-[0_20px_55px_-50px_rgba(87,66,63,0.5)] backdrop-blur-sm sm:p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
-              aria-hidden
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={copy.inspiration.searchPlaceholder}
-              aria-label={copy.inspiration.searchPlaceholder}
-              className="w-full rounded-2xl border border-petal-100 bg-cream/70 py-3 pl-10 pr-10 text-sm text-ink outline-none transition-colors placeholder:text-ink-soft/70 focus:border-olive-300 focus:ring-2 focus:ring-olive-100"
-            />
-            {search ? (
-              <button
-                type="button"
-                onClick={() => setSearch("")}
-                aria-label={copy.inspiration.clearFilters}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-ink-soft hover:bg-olive-50 hover:text-ink"
-              >
-                <X className="size-4" aria-hidden />
-              </button>
-            ) : null}
-          </div>
           <p className="shrink-0 text-xs text-ink-soft">
             {categoryFilter === "all"
               ? `${filtered.length} / ${items.length}`
@@ -515,7 +461,6 @@ export function InspirationManager({
         onClose={() => setModalOpen(false)}
         copy={copy}
         item={editing}
-        photos={activePhotos}
         categories={formCategories}
       />
 

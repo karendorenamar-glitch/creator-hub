@@ -6,7 +6,6 @@ import {
   updateInspirationAction,
 } from "@/app/wedding/(app)/inspiration/actions";
 import { FormModal } from "@/components/wedding/form-modal";
-import { InspirationPhotoManager } from "@/components/wedding/inspiration/inspiration-photo-manager";
 import {
   Field,
   FormAlert,
@@ -26,14 +25,12 @@ export function InspirationFormModal({
   onClose,
   copy,
   item,
-  photos,
   categories,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   item: InspirationItem | null;
-  photos: { id: string; url: string; caption: string | null }[];
   categories: string[];
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
@@ -60,14 +57,6 @@ export function InspirationFormModal({
     >
       <div className="space-y-5">
         <FormAlert error={state?.error ?? fileError ?? undefined} />
-
-        {item ? (
-          <InspirationPhotoManager
-            itemId={item.id}
-            photos={photos}
-            copy={copy}
-          />
-        ) : null}
 
         <form
           action={formAction}
@@ -161,7 +150,7 @@ export function InspirationFormModal({
               </p>
             </div>
 
-            <Field label={copy.inspiration.uploadLabel} htmlFor="inspiration-photo">
+            <Field label={copy.inspiration.addPhoto} htmlFor="inspiration-photo">
               <input
                 id="inspiration-photo"
                 name="image"
@@ -233,7 +222,7 @@ export function InspirationFormModal({
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={previewUrl}
-                  alt={copy.inspiration.uploadLabel}
+                  alt={copy.inspiration.addPhoto}
                   className="max-h-56 w-full object-contain"
                 />
               </div>

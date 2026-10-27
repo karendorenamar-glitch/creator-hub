@@ -619,6 +619,7 @@ const en = {
     linkHint: "Optional link to the original post",
     emptyFilter: "No inspiration matches this category.",
     uploadLabel: "Upload photo",
+    addPhoto: "Add photo",
     uploadHint:
       "JPG or PNG, max 8 MB per photo. Upload one photo at a time if you want to add more than one.",
     imageTooLarge: "The photo is larger than 8 MB.",
@@ -1327,6 +1328,7 @@ const id: ModuleCopy = {
     linkHint: "Tautan opsional ke unggahan asli",
     emptyFilter: "Tidak ada inspirasi untuk kategori ini.",
     uploadLabel: "Upload foto",
+    addPhoto: "Tambah foto",
     uploadHint:
       "Format foto JPG atau PNG, maksimal 8 MB per foto. Upload foto satu per satu jika ingin menambahkan lebih dari satu foto.",
     imageTooLarge: "Ukuran foto melebihi 8 MB.",
