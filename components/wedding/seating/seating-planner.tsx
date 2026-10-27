@@ -762,6 +762,10 @@ export function SeatingPlanner({
                       const people = stats.peopleByTable.get(row.id) ?? 0;
                       const full = people >= Number(row.capacity);
                       const partial = people > 0 && !full;
+                      const rowGuests = eventAssignments
+                        .filter((assignment) => assignment.table_id === row.id)
+                        .map((assignment) => guestById.get(assignment.guest_id))
+                        .filter((guest): guest is Guest => Boolean(guest));
                       return (
                         <div
                           key={row.id}
@@ -800,6 +804,11 @@ export function SeatingPlanner({
                               event.dataTransfer.getData("text/guest-id");
                             if (guestId) void assignGuest(guestId, row.id);
                           }}
+                          title={
+                            rowGuests.length > 0
+                              ? rowGuests.map((guest) => guest.name).join(", ")
+                              : row.name
+                          }
                           className={`absolute z-20 flex cursor-grab touch-none flex-col items-center justify-center rounded-xl border-2 px-2 py-1 shadow-sm transition-colors active:cursor-grabbing ${
                             full
                               ? "border-petal-300 bg-petal-100/90"
@@ -829,7 +838,10 @@ export function SeatingPlanner({
                                   key={index}
                                   type="button"
                                   aria-label={`${row.name} ${index + 1}`}
-                                  title={`${row.name} ${index + 1}`}
+                                  title={
+                                    rowGuests[index]?.name ??
+                                    `${row.name} ${index + 1}`
+                                  }
                                   onPointerDown={(event) =>
                                     event.stopPropagation()
                                   }
@@ -869,6 +881,14 @@ export function SeatingPlanner({
                           <span className="mt-1 max-w-full truncate text-[10px] font-semibold text-ink">
                             {row.name} · {people}/{row.capacity}
                           </span>
+                          {rowGuests.length > 0 ? (
+                            <span className="max-w-full truncate text-[8px] text-ink-soft">
+                              {rowGuests
+                                .slice(0, 3)
+                                .map((guest) => guest.name)
+                                .join(" · ")}
+                            </span>
+                          ) : null}
                         </div>
                       );
                     })
@@ -1009,6 +1029,31 @@ export function SeatingPlanner({
               </div>
 
               <div className="space-y-2">
+                <select
+                  defaultValue=""
+                  disabled={busy}
+                  onChange={(event) => {
+                    const guestId = event.target.value;
+                    event.currentTarget.value = "";
+                    if (guestId) void assignGuest(guestId, selectedTable.id);
+                  }}
+                  aria-label={copy.seating.addGuest}
+                  className={inputClass}
+                >
+                  <option value="">{copy.seating.addGuest}</option>
+                  {guests
+                    .filter(
+                      (guest) =>
+                        assignmentByGuest.get(guest.id)?.table_id !==
+                        selectedTable.id,
+                    )
+                    .map((guest) => (
+                      <option key={guest.id} value={guest.id}>
+                        {guest.name} ({guestPeopleCount(guest)} pax)
+                      </option>
+                    ))}
+                </select>
+
                 {eventAssignments.filter(
                   (item) => item.table_id === selectedTable.id,
                 ).length === 0 ? (
