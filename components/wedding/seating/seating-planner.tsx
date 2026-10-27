@@ -10,7 +10,6 @@ import {
 import { useRouter } from "next/navigation";
 import {
   CircleHelp,
-  GripVertical,
   Plus,
   RotateCcw,
   Search,
@@ -23,7 +22,6 @@ import {
   deleteTableAction,
   generateAkadChairsAction,
   moveStageAction,
-  moveTableAction,
   saveEventAction,
   saveTableAction,
   swapSeatGuestsAction,
@@ -345,7 +343,6 @@ export function SeatingPlanner({
   const [selectedEventId, setSelectedEventId] = useState(events[0]?.id ?? "");
   const selectedEvent =
     events.find((event) => event.id === selectedEventId) ?? events[0];
-  const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
@@ -383,32 +380,10 @@ export function SeatingPlanner({
     x: number;
     y: number;
   } | null>(null);
-  const dragRef = useRef<{
-    id: string;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-    x: number;
-    y: number;
-    moved: boolean;
-  } | null>(null);
-  const suppressClick = useRef(false);
-
-  const localTables = useMemo(
-    () =>
-      tables.map((table) => {
-        const position = positions[table.id];
-        return position
-          ? { ...table, canvas_x: position.x, canvas_y: position.y }
-          : table;
-      }),
-    [tables, positions],
-  );
 
   const eventTables = useMemo(
-    () => localTables.filter((table) => table.event_id === selectedEvent?.id),
-    [localTables, selectedEvent?.id],
+    () => tables.filter((table) => table.event_id === selectedEvent?.id),
+    [tables, selectedEvent?.id],
   );
   const eventAssignments = useMemo(
     () => assignments.filter((item) => item.event_id === selectedEvent?.id),
@@ -616,8 +591,9 @@ export function SeatingPlanner({
     }
   }
 
-  async function handleGuestDrop(guestId: string, chairId: string) {
-    if (!selectedEvent || busy) return;
+  async function handleChairClick(chairId: string) {
+    if (!selectedEvent || busy || !selectedGuestId) return;
+    const guestId = selectedGuestId;
     const targetAssignment = assignmentByChair.get(chairId);
     if (targetAssignment && targetAssignment.guest_id !== guestId) {
       const movingGuest = guestById.get(guestId);
@@ -656,53 +632,6 @@ export function SeatingPlanner({
     }
   }
 
-  function moveTablePointerDown(
-    event: React.PointerEvent<HTMLElement>,
-    table: SeatingTable,
-  ) {
-    event.stopPropagation();
-    dragRef.current = {
-      id: table.id,
-      startX: event.clientX,
-      startY: event.clientY,
-      originX: table.canvas_x,
-      originY: table.canvas_y,
-      x: table.canvas_x,
-      y: table.canvas_y,
-      moved: false,
-    };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  }
-
-  function moveTablePointerMove(event: React.PointerEvent<HTMLElement>) {
-    const drag = dragRef.current;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!drag || !rect) return;
-    const nextX = Math.min(
-      100,
-      Math.max(
-        0,
-        drag.originX + ((event.clientX - drag.startX) / rect.width) * 100,
-      ),
-    );
-    const nextY = Math.min(
-      100,
-      Math.max(
-        0,
-        drag.originY + ((event.clientY - drag.startY) / rect.height) * 100,
-      ),
-    );
-    drag.x = nextX;
-    drag.y = nextY;
-    drag.moved =
-      drag.moved ||
-      Math.abs(nextX - drag.originX) + Math.abs(nextY - drag.originY) > 0.5;
-    setPositions((current) => ({
-      ...current,
-      [drag.id]: { x: nextX, y: nextY },
-    }));
-  }
-
   function panPointerDown(event: React.PointerEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget) return;
     panDragRef.current = {
@@ -725,21 +654,6 @@ export function SeatingPlanner({
 
   function panPointerUp() {
     panDragRef.current = null;
-  }
-
-  function moveTablePointerUp() {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    if (!drag || !drag.moved) return;
-    suppressClick.current = true;
-    window.setTimeout(() => {
-      suppressClick.current = false;
-    }, 0);
-    const formData = new FormData();
-    formData.set("id", drag.id);
-    formData.set("x", String(drag.x));
-    formData.set("y", String(drag.y));
-    void moveTableAction(formData);
   }
 
   function stagePointerDown(event: React.PointerEvent<HTMLDivElement>) {
@@ -915,11 +829,6 @@ export function SeatingPlanner({
                   <button
                     key={guest.id}
                     type="button"
-                    draggable
-                    onDragStart={(event) => {
-                      event.dataTransfer.setData("text/guest-id", guest.id);
-                      event.dataTransfer.effectAllowed = "move";
-                    }}
                     onClick={() =>
                       setSelectedGuestId(selected ? null : guest.id)
                     }
@@ -1092,16 +1001,6 @@ export function SeatingPlanner({
                             setDetailsOpen(true);
                           }
                         }}
-                        onDragOver={(event) => {
-                          event.preventDefault();
-                          event.dataTransfer.dropEffect = "move";
-                        }}
-                        onDrop={(event) => {
-                          event.preventDefault();
-                          const guestId =
-                            event.dataTransfer.getData("text/guest-id");
-                          if (guestId) void handleTableDrop(guestId, table.id);
-                        }}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
@@ -1142,12 +1041,8 @@ export function SeatingPlanner({
                       role="button"
                       tabIndex={0}
                       onClick={() => {
-                        if (suppressClick.current) {
-                          suppressClick.current = false;
-                          return;
-                        }
                         if (selectedGuestId) {
-                          void assignGuest(selectedGuestId, chair.id);
+                          void handleChairClick(chair.id);
                         } else {
                           setSelectedTableId(chair.id);
                           setDetailsOpen(true);
@@ -1159,16 +1054,6 @@ export function SeatingPlanner({
                           setSelectedTableId(chair.id);
                           setDetailsOpen(true);
                         }
-                      }}
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        event.dataTransfer.dropEffect = "move";
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        const guestId =
-                          event.dataTransfer.getData("text/guest-id");
-                        if (guestId) void handleGuestDrop(guestId, chair.id);
                       }}
                       title={guest?.name ?? chair.name}
                       className={`absolute z-30 cursor-pointer rounded-t-xl rounded-b-md border-2 p-1 text-center shadow-sm transition-colors ${
@@ -1190,37 +1075,14 @@ export function SeatingPlanner({
                         transform: `translate(-50%, -50%) rotate(${chair.rotation ?? 0}deg)`,
                       }}
                     >
-                      <button
-                        type="button"
-                        aria-label="Move chair"
-                        onPointerDown={(event) =>
-                          moveTablePointerDown(event, chair)
-                        }
-                        onPointerMove={moveTablePointerMove}
-                        onPointerUp={moveTablePointerUp}
-                        onPointerCancel={moveTablePointerUp}
-                        onClick={(event) => event.stopPropagation()}
-                        className="absolute -right-1.5 -top-1.5 z-10 cursor-grab touch-none rounded-full border border-olive-200 bg-white p-1 text-ink-soft/70 shadow-sm hover:bg-olive-50 active:cursor-grabbing"
-                      >
-                        <GripVertical className="size-3.5" aria-hidden />
-                      </button>
                       <span className="mt-1 block h-1 w-4/5 rounded-full bg-current opacity-20" />
                       <span
-                        draggable={Boolean(guest)}
-                        onDragStart={(event) => {
-                          if (!guest) return;
-                          event.stopPropagation();
-                          event.dataTransfer.setData("text/guest-id", guest.id);
-                          event.dataTransfer.effectAllowed = "move";
-                        }}
                         title={
                           guest
                             ? `${guest.name} · ${copy.seating.guestDragHint}`
                             : chair.name
                         }
-                        className={`mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink ${
-                          guest ? "cursor-grab active:cursor-grabbing" : ""
-                        }`}
+                        className="mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink"
                       >
                         {guest ? guest.name : chair.name}
                       </span>

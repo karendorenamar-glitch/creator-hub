@@ -287,14 +287,14 @@ const en = {
     seatedAt: "Table {table}",
     unassigned: "Unassigned",
     noGuests: "No guests match this search.",
-    dragHint: "Drag a guest to a table, or select a guest then click a table.",
+    dragHint: "Select a guest, then click a table or chair. Click another occupied chair to swap.",
     selectGuest: "Select a guest first.",
     capacityWarning: "This table is full. Continue and override capacity?",
     seatTaken: "That chair is already occupied.",
     notEnoughSeats:
       "Not enough adjacent empty chairs for this guest and their plus-ones.",
     swapConfirm: "Swap seating positions for {a} and {b}?",
-    guestDragHint: "Drag this guest to another chair to swap positions.",
+    guestDragHint: "Select this guest, then click another chair to swap.",
     swapped: "Seating positions swapped.",
     swapNeedsBoth: "Both guests need to be seated before swapping.",
     swapSizeMismatch:
@@ -1039,14 +1039,14 @@ const id: ModuleCopy = {
     seatedAt: "Meja {table}",
     unassigned: "Belum ditempatkan",
     noGuests: "Tidak ada tamu yang cocok.",
-    dragHint: "Geser tamu ke meja, atau pilih tamu lalu klik meja.",
+    dragHint: "Pilih tamu, lalu klik meja atau kursi. Klik kursi lain yang terisi untuk menukar posisi.",
     selectGuest: "Pilih tamu terlebih dahulu.",
     capacityWarning: "Meja ini penuh. Tetap lanjutkan dan lewati kapasitas?",
     seatTaken: "Kursi itu sudah terisi.",
     notEnoughSeats:
       "Kursi kosong di sebelahnya tidak cukup untuk tamu ini beserta plus-ones-nya.",
     swapConfirm: "Tukar posisi duduk {a} dan {b}?",
-    guestDragHint: "Tarik tamu ini ke kursi lain untuk menukar posisi.",
+    guestDragHint: "Pilih tamu ini, lalu klik kursi lain untuk menukar posisi.",
     swapped: "Posisi duduk berhasil ditukar.",
     swapNeedsBoth: "Kedua tamu harus sudah punya kursi sebelum ditukar.",
     swapSizeMismatch:
