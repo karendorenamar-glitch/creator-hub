@@ -274,6 +274,9 @@ const en = {
     occupancy: "Occupancy",
     remaining: "Remaining seats",
     emptyTable: "No guests at this table yet.",
+    tableFull: "All chairs at this table are occupied.",
+    tableAssignHint:
+      "Choose a guest below and the app will place them in the next empty chair at this table.",
     full: "Full",
     available: "Available",
     partial: "Partially filled",
@@ -978,6 +981,9 @@ const id: ModuleCopy = {
     occupancy: "Okupansi",
     remaining: "Sisa kursi",
     emptyTable: "Belum ada tamu di meja ini.",
+    tableFull: "Semua kursi di meja ini sudah terisi.",
+    tableAssignHint:
+      "Pilih tamu di bawah, aplikasi akan menaruhnya di kursi kosong berikutnya pada meja ini.",
     full: "Penuh",
     available: "Tersedia",
     partial: "Terisi sebagian",

@@ -442,16 +442,29 @@ export function SeatingPlanner({
     }
     return result;
   }, [eventAssignments]);
+  const selectedChairIds = useMemo(() => {
+    const table = selectedTableId ? tableById.get(selectedTableId) : null;
+    if (!table) return [];
+    if (table.capacity <= 1) return [table.id];
+    return [
+      table.id,
+      ...chairs
+        .filter((chair) => chair.parent_table_id === table.id)
+        .map((chair) => chair.id),
+    ];
+  }, [chairs, selectedTableId, tableById]);
   const selectedAssignments = useMemo(
     () =>
-      selectedTableId
+      selectedChairIds.length > 0
         ? eventAssignments.filter(
             (assignment) =>
-              assignment.table_id === selectedTableId ||
-              (assignment.seat_ids ?? []).includes(selectedTableId),
+              selectedChairIds.includes(assignment.table_id) ||
+              (assignment.seat_ids ?? []).some((seatId) =>
+                selectedChairIds.includes(seatId),
+              ),
           )
         : [],
-    [eventAssignments, selectedTableId],
+    [eventAssignments, selectedChairIds],
   );
   const selectedGuestIds = useMemo(
     () => new Set(selectedAssignments.map((assignment) => assignment.guest_id)),
@@ -539,6 +552,38 @@ export function SeatingPlanner({
     } finally {
       setBusy(false);
     }
+  }
+
+  function firstFreeChairForTable(tableId: string) {
+    const table = tableById.get(tableId);
+    if (!table) return null;
+    if (table.capacity <= 1) return table;
+    return (
+      chairs.find(
+        (chair) =>
+          chair.parent_table_id === tableId && !assignmentByChair.has(chair.id),
+      ) ?? null
+    );
+  }
+
+  async function assignToSelectedTable(guestId: string) {
+    if (!selectedTable) return;
+    const target = firstFreeChairForTable(selectedTable.id);
+    if (!target) {
+      setError(copy.seating.tableFull);
+      return;
+    }
+    await assignGuest(guestId, target.id);
+  }
+
+  async function handleTableDrop(guestId: string, tableId: string) {
+    if (!selectedEvent || busy) return;
+    const target = firstFreeChairForTable(tableId);
+    if (!target) {
+      setError(copy.seating.tableFull);
+      return;
+    }
+    await assignGuest(guestId, target.id);
   }
 
   async function swapGuests(guestA: string, guestB: string) {
@@ -1027,8 +1072,22 @@ export function SeatingPlanner({
                         role="button"
                         tabIndex={0}
                         onClick={() => {
-                          setSelectedTableId(table.id);
-                          setDetailsOpen(true);
+                          if (selectedGuestId) {
+                            void handleTableDrop(selectedGuestId, table.id);
+                          } else {
+                            setSelectedTableId(table.id);
+                            setDetailsOpen(true);
+                          }
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const guestId =
+                            event.dataTransfer.getData("text/guest-id");
+                          if (guestId) void handleTableDrop(guestId, table.id);
                         }}
                         onKeyDown={(event) => {
                           if (event.key === "Enter" || event.key === " ") {
@@ -1217,13 +1276,18 @@ export function SeatingPlanner({
               </div>
 
               <div className="space-y-2">
+                {selectedTable.capacity > 1 ? (
+                  <p className="rounded-xl border border-olive-100 bg-olive-50/60 px-3 py-2 text-xs text-ink-soft">
+                    {copy.seating.tableAssignHint}
+                  </p>
+                ) : null}
                 <select
                   defaultValue=""
                   disabled={busy}
                   onChange={(event) => {
                     const guestId = event.target.value;
                     event.currentTarget.value = "";
-                    if (guestId) void assignGuest(guestId, selectedTable.id);
+                    if (guestId) void assignToSelectedTable(guestId);
                   }}
                   aria-label={copy.seating.addGuest}
                   className={inputClass}
@@ -1279,7 +1343,7 @@ export function SeatingPlanner({
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => void assignGuest(selectedGuest.id, selectedTable.id)}
+                  onClick={() => void assignToSelectedTable(selectedGuest.id)}
                   className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700 disabled:opacity-60"
                 >
                   <Plus className="size-4" aria-hidden />
@@ -1346,13 +1410,19 @@ export function SeatingPlanner({
                   </p>
                 ) : null}
 
+                {selectedTable.capacity > 1 ? (
+                  <p className="rounded-xl border border-olive-100 bg-olive-50/60 px-3 py-2 text-xs text-ink-soft">
+                    {copy.seating.tableAssignHint}
+                  </p>
+                ) : null}
+
                 <select
                   defaultValue=""
                   disabled={busy}
                   onChange={(event) => {
                     const guestId = event.target.value;
                     event.currentTarget.value = "";
-                    if (guestId) void assignGuest(guestId, selectedTable.id);
+                    if (guestId) void assignToSelectedTable(guestId);
                   }}
                   aria-label={copy.seating.addGuest}
                   className={inputClass}
