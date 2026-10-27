@@ -365,7 +365,6 @@ export function SeatingPlanner({
     guestId: string,
     tableId: string,
     allowOverCapacity = false,
-    seatIndex: number | null = null,
   ) {
     if (!selectedEvent || busy) return;
     const table = tableById.get(tableId);
@@ -390,7 +389,6 @@ export function SeatingPlanner({
     formData.set("eventId", selectedEvent.id);
     formData.set("tableId", tableId);
     formData.set("guestId", guestId);
-    if (seatIndex !== null) formData.set("seatIndex", String(seatIndex));
     if (allowOverCapacity) formData.set("allowOverCapacity", "1");
     const result = await assignGuestAction(null, formData);
     setBusy(false);
@@ -716,16 +714,18 @@ export function SeatingPlanner({
                 >
                   <RotateCcw className="size-4" aria-hidden />
                 </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setTableModal({ open: true, editing: null })
-                  }
-                  className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700"
-                >
-                  <Plus className="size-4" aria-hidden />
-                  {isCeremony ? copy.seating.addRow : copy.seating.addTable}
-                </button>
+                {!isCeremony ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTableModal({ open: true, editing: null })
+                    }
+                    className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700"
+                  >
+                    <Plus className="size-4" aria-hidden />
+                    {copy.seating.addTable}
+                  </button>
+                ) : null}
               </div>
             </div>
 
@@ -762,18 +762,6 @@ export function SeatingPlanner({
                       const people = stats.peopleByTable.get(row.id) ?? 0;
                       const full = people >= Number(row.capacity);
                       const partial = people > 0 && !full;
-                      const occupiedSeats = new Map(
-                        eventAssignments
-                          .filter(
-                            (assignment) =>
-                              assignment.table_id === row.id &&
-                              assignment.seat_index !== null,
-                          )
-                          .map((assignment) => [
-                            assignment.seat_index as number,
-                            guestById.get(assignment.guest_id),
-                          ]),
-                      );
                       return (
                         <div
                           key={row.id}
@@ -835,30 +823,20 @@ export function SeatingPlanner({
                             {Array.from({
                               length: Math.min(12, Math.max(1, row.capacity)),
                             }).map((_, index) => {
-                              const occupant = occupiedSeats.get(index);
-                              const occupied = Boolean(occupant) || index < people;
+                              const occupied = index < people;
                               return (
                                 <button
                                   key={index}
                                   type="button"
                                   aria-label={`${row.name} ${index + 1}`}
-                                  title={
-                                    occupant
-                                      ? occupant.name
-                                      : `${row.name} ${index + 1}`
-                                  }
+                                  title={`${row.name} ${index + 1}`}
                                   onPointerDown={(event) =>
                                     event.stopPropagation()
                                   }
                                   onClick={(event) => {
                                     event.stopPropagation();
                                     if (selectedGuestId) {
-                                      void assignGuest(
-                                        selectedGuestId,
-                                        row.id,
-                                        false,
-                                        index,
-                                      );
+                                      void assignGuest(selectedGuestId, row.id);
                                     } else {
                                       setSelectedTableId(row.id);
                                     }
@@ -876,12 +854,7 @@ export function SeatingPlanner({
                                         "text/guest-id",
                                       );
                                     if (guestId) {
-                                      void assignGuest(
-                                        guestId,
-                                        row.id,
-                                        false,
-                                        index,
-                                      );
+                                      void assignGuest(guestId, row.id);
                                     }
                                   }}
                                   className={`size-3.5 rounded-sm border transition-colors ${

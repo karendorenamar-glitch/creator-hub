@@ -210,35 +210,14 @@ export async function assignGuestAction(
 
   if (!table || !guest) return { error: ctx.copy.errors.notFound };
 
-  const rawSeatIndex = text(formData, "seatIndex");
-  const seatIndex = rawSeatIndex ? parseCount(rawSeatIndex) : null;
-  if (seatIndex !== null && seatIndex > 99) {
-    return { error: ctx.copy.form.invalidNumber };
-  }
-
   const { data: current } = await ctx.supabase
     .from("seating_assignments")
-    .select("table_id, seat_index")
+    .select("table_id")
     .eq("event_id", eventId)
     .eq("guest_id", guestId)
     .maybeSingle();
-  if (
-    current?.table_id === tableId &&
-    (current.seat_index ?? null) === (seatIndex ?? null)
-  ) {
+  if (current?.table_id === tableId) {
     return { success: ctx.copy.seating.assigned };
-  }
-
-  if (seatIndex !== null) {
-    const { data: occupiedSeat } = await ctx.supabase
-      .from("seating_assignments")
-      .select("guest_id")
-      .eq("table_id", tableId)
-      .eq("seat_index", seatIndex)
-      .maybeSingle();
-    if (occupiedSeat && occupiedSeat.guest_id !== guestId) {
-      return { error: ctx.copy.seating.seatTaken };
-    }
   }
 
   const occupied = await tablePeople(ctx.supabase, tableId);
@@ -254,7 +233,6 @@ export async function assignGuestAction(
       event_id: eventId,
       table_id: tableId,
       guest_id: guestId,
-      seat_index: seatIndex,
     },
     { onConflict: "event_id,guest_id" },
   );
