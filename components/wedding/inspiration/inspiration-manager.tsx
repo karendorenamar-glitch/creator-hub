@@ -327,6 +327,16 @@ export function InspirationManager({
     ? (items.find((item) => item.id === detail.id) ?? null)
     : null;
 
+  const activePhotos = editing
+    ? (photosByItem[editing.id] ?? [])
+        .map((photo) => ({
+          id: photo.id,
+          url: imageUrls[photo.path],
+          caption: photo.caption,
+        }))
+        .filter((photo) => Boolean(photo.url))
+    : [];
+
   return (
     <div className="space-y-7">
       <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
@@ -461,6 +471,7 @@ export function InspirationManager({
         onClose={() => setModalOpen(false)}
         copy={copy}
         item={editing}
+        photos={activePhotos}
         categories={formCategories}
       />
 

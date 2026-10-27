@@ -6,6 +6,7 @@ import {
   updateInspirationAction,
 } from "@/app/wedding/(app)/inspiration/actions";
 import { FormModal } from "@/components/wedding/form-modal";
+import { InspirationPhotoManager } from "@/components/wedding/inspiration/inspiration-photo-manager";
 import {
   Field,
   FormAlert,
@@ -25,12 +26,14 @@ export function InspirationFormModal({
   onClose,
   copy,
   item,
+  photos,
   categories,
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   item: InspirationItem | null;
+  photos: { id: string; url: string; caption: string | null }[];
   categories: string[];
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
@@ -59,6 +62,7 @@ export function InspirationFormModal({
         <FormAlert error={state?.error ?? fileError ?? undefined} />
 
         <form
+          id="inspiration-details-form"
           action={formAction}
           onSubmit={(event) => {
             if (fileError) event.preventDefault();
@@ -140,6 +144,7 @@ export function InspirationFormModal({
             </Field>
           </section>
 
+          {!item ? (
           <section className="space-y-3 rounded-2xl border border-petal-100/80 bg-white/80 p-4 sm:p-5">
             <div>
               <h3 className="font-heading text-base text-ink">
@@ -228,15 +233,25 @@ export function InspirationFormModal({
               </div>
             ) : null}
           </section>
-
-          <ModalFooter
-            pending={pending}
-            submitLabel={copy.form.save}
-            savingLabel={copy.form.saving}
-            cancelLabel={copy.form.cancel}
-            onCancel={onClose}
-          />
+          ) : null}
         </form>
+
+        {item ? (
+          <InspirationPhotoManager
+            itemId={item.id}
+            photos={photos}
+            copy={copy}
+          />
+        ) : null}
+
+        <ModalFooter
+          pending={pending}
+          submitLabel={copy.form.save}
+          savingLabel={copy.form.saving}
+          cancelLabel={copy.form.cancel}
+          onCancel={onClose}
+          formId="inspiration-details-form"
+        />
       </div>
     </FormModal>
   );

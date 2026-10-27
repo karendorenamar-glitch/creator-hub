@@ -167,7 +167,7 @@ function AddPhotoForm({
       />
       <div className="flex flex-wrap items-center gap-2">
         <label className="inline-flex cursor-pointer items-center rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100">
-          {copy.inspiration.uploadLabel}
+          {copy.inspiration.addPhoto}
           <input
             type="file"
             name="image"
@@ -210,7 +210,7 @@ export function InspirationPhotoManager({
     <div className="space-y-3 rounded-2xl border border-petal-100/80 bg-white/80 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
-          {copy.inspiration.currentPhotos}
+          {copy.inspiration.photoSection}
         </p>
         {itemId ? <AddPhotoForm itemId={itemId} copy={copy} /> : null}
       </div>
