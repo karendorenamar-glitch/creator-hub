@@ -113,8 +113,8 @@ export async function deleteUserAction(
     return { error: "Gagal menghapus akses pengguna." };
   }
 
-  // This is the actual Supabase Auth deletion. It also cascades any remaining
-  // account-linked rows.
+  // This is the actual Supabase Auth deletion. Do it before Storage cleanup so
+  // the account is definitely gone even if file cleanup is slow or times out.
   const { error: deleteError } = await admin.auth.admin.deleteUser(id);
   if (deleteError) {
     console.error("[deleteUserAction] delete auth user:", deleteError);
@@ -123,10 +123,84 @@ export async function deleteUserAction(
     };
   }
 
+  // Best-effort Storage cleanup: Supabase does not cascade Storage objects when
+  // an auth user or database row is deleted. Files are namespaced as
+  // userId/... (receipts) and weddingId/... (planner media).
+  const ownedWeddingIds = (ownedWeddings ?? []).map((wedding) => wedding.id);
+  await Promise.all([
+    removeStoragePrefix(admin, "payment-receipts", id),
+    ...ownedWeddingIds.flatMap((weddingId) => [
+      removeStoragePrefix(admin, "payment-proofs", weddingId),
+      removeStoragePrefix(admin, "inspiration-images", weddingId),
+      removeStoragePrefix(admin, "invitation-photos", weddingId),
+      removeStoragePrefix(admin, "invitation-audio", weddingId),
+    ]),
+  ]);
+
   revalidatePath("/admin/users");
   revalidatePath("/admin");
   revalidatePath("/admin/weddings");
   return {
     success: `Akun ${target.user.email ?? "pengguna"} beserta datanya sudah dihapus.`,
   };
+}
+
+type StorageAdmin = NonNullable<
+  ReturnType<typeof createAdminServiceClient>
+>;
+
+/**
+ * Remove every object under a folder prefix, including nested folders.
+ * Storage cleanup is intentionally best-effort: a missing bucket or a storage
+ * hiccup must not prevent the account/database deletion from completing.
+ */
+async function removeStoragePrefix(
+  admin: StorageAdmin,
+  bucket: string,
+  prefix: string,
+): Promise<void> {
+  try {
+    const queue = [prefix];
+    const files: string[] = [];
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const { data, error } = await admin.storage
+        .from(bucket)
+        .list(current, { limit: 1000 });
+
+      if (error) {
+        console.warn(
+          `[deleteUserAction] storage list ${bucket}/${current}:`,
+          error.message,
+        );
+        return;
+      }
+
+      for (const entry of data ?? []) {
+        const path = `${current}/${entry.name}`;
+        if (entry.id === null) {
+          queue.push(path);
+        } else {
+          files.push(path);
+        }
+      }
+    }
+
+    for (let index = 0; index < files.length; index += 100) {
+      const chunk = files.slice(index, index + 100);
+      const { error } = await admin.storage.from(bucket).remove(chunk);
+      if (error) {
+        console.warn(
+          `[deleteUserAction] storage remove ${bucket}:`,
+          error.message,
+        );
+      }
+    }
+  } catch (error) {
+    console.warn(
+      `[deleteUserAction] storage cleanup ${bucket}/${prefix}:`,
+      error instanceof Error ? error.message : error,
+    );
+  }
 }

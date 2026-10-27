@@ -321,8 +321,9 @@ export default async function AdminUsersPage({
         Daftar dibatasi 1000 akun terbaru per pembacaan. Tidak ada data
         autentikasi sensitif (password, token) yang ditampilkan. Tombol{" "}
         <strong>Hapus akun</strong> melakukan hard delete di Supabase Auth:
-        wedding milik akun, membership, pembayaran, dan entitlement ikut
-        terhapus. Akun admin dan akun yang sedang dipakai dilindungi.
+        wedding milik akun, membership, pembayaran, entitlement, dan file
+        Storage-nya ikut dibersihkan. Akun admin dan akun yang sedang dipakai
+        dilindungi.
       </p>
 
     </div>
