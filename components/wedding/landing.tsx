@@ -529,13 +529,16 @@ export function WeddingLanding() {
             ))}
             <Link href="/wedding/login" className="hover:text-rosewood">Masuk</Link>
             <Link href="/wedding/signup" className="hover:text-rosewood">Daftar</Link>
+            <Link href="/privacy" className="hover:text-rosewood">Privasi</Link>
+            <Link href="/terms" className="hover:text-rosewood">Syarat</Link>
+            <Link href="/refund" className="hover:text-rosewood">Refund</Link>
           </nav>
 
           <div className="text-center text-xs sm:text-right">
             <p>
               Email:{" "}
-              <a href="mailto:hello@kefootech" className="font-medium text-rosewood underline-offset-4 hover:underline">
-                hello@kefootech
+              <a href="mailto:hello@kefoo.tech" className="font-medium text-rosewood underline-offset-4 hover:underline">
+                hello@kefoo.tech
               </a>
             </p>
             <p className="mt-1 text-cocoa/45">© {new Date().getFullYear()} Kefoo Wedding Planner</p>

@@ -75,6 +75,15 @@ export function PublicSeoShell({ children }: { children: ReactNode }) {
             <Link href="/wedding/signup" className="hover:text-rosewood">
               Mulai merencanakan
             </Link>
+            <Link href="/privacy" className="hover:text-rosewood">
+              Privasi
+            </Link>
+            <Link href="/terms" className="hover:text-rosewood">
+              Syarat
+            </Link>
+            <Link href="/refund" className="hover:text-rosewood">
+              Refund
+            </Link>
           </div>
         </div>
       </footer>
