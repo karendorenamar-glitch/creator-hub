@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Images,
   ListChecks,
+  Star,
   Store,
   Users,
   Wallet,
@@ -43,10 +44,35 @@ function Floral({ className }: { className?: string }) {
 
 const NAV_LINKS = [
   ["Fitur", "#fitur"],
+  ["Testimoni", "#testimoni"],
   ["Inspirasi", "#inspirasi"],
   ["Anggaran", "#anggaran"],
   ["Harga", "#harga"],
 ];
+
+const TESTIMONIALS = [
+  {
+    initials: "NR",
+    name: "Nadia & Raka",
+    meta: "Menikah Mei 2026 · Jakarta",
+    quote:
+      "Dulu kami pakai spreadsheet dan sering lupa pembayaran vendor. Setelah pakai Kefoo, semua DP, pelunasan, dan sisa tagihan kelihatan jelas. Persiapan jadi jauh lebih tenang.",
+  },
+  {
+    initials: "SB",
+    name: "Sinta & Bima",
+    meta: "Menikah September 2026 · Bandung",
+    quote:
+      "Daftar tamu dan susunan kursi biasanya paling bikin pusing. Di Kefoo kami bisa atur meja, isi tamu, dan tukar posisi duduk cukup dengan klik. Hemat waktu banget.",
+  },
+  {
+    initials: "DA",
+    name: "Dewi & Aldi",
+    meta: "Menikah Desember 2026 · Surabaya",
+    quote:
+      "Undangan digitalnya cantik dan gampang dibagikan. Tamu juga bisa konfirmasi kehadiran langsung, jadi kami tidak perlu rekap chat satu per satu.",
+  },
+] as const;
 
 export function WeddingLanding() {
   return (
@@ -128,6 +154,37 @@ export function WeddingLanding() {
                   Satu ruang untuk inspirasi, anggaran, vendor, dan seluruh
                   persiapan pernikahan.
                 </p>
+              </Reveal>
+              <Reveal delay={0.18}>
+                <div className="mt-6 flex items-center gap-3">
+                  <div className="flex -space-x-2" aria-hidden>
+                    {TESTIMONIALS.map((item) => (
+                      <span
+                        key={item.initials}
+                        className="flex size-9 items-center justify-center rounded-full border-2 border-ivory bg-gradient-to-br from-petal-100 to-blush text-[10px] font-semibold text-rosewood"
+                      >
+                        {item.initials}
+                      </span>
+                    ))}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-0.5 text-rosewood">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          className="size-3.5 fill-current"
+                          aria-hidden
+                        />
+                      ))}
+                    </div>
+                    <p className="mt-0.5 text-xs text-cocoa/60">
+                      <strong className="font-semibold text-cocoa">
+                        100+ pasangan
+                      </strong>{" "}
+                      sudah menggunakan Kefoo
+                    </p>
+                  </div>
+                </div>
               </Reveal>
             </div>
 
@@ -414,6 +471,87 @@ export function WeddingLanding() {
 
             </div>
 
+          </div>
+        </section>
+
+        <section id="testimoni" className="border-y border-blush/60 bg-blush/20 px-5 py-16">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+              <Reveal>
+                <Eyebrow>Cerita pasangan</Eyebrow>
+                <h2 className="mt-4 max-w-xl font-heading text-3xl leading-[1.1] text-cocoa sm:text-[2.5rem]">
+                  Lebih Tenang,{" "}
+                  <span className="italic text-rosewood">Lebih Terarah.</span>
+                </h2>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-cocoa/70">
+                  Cerita dari pasangan yang menyiapkan pernikahannya dengan
+                  Kefoo.
+                </p>
+              </Reveal>
+              <Reveal delay={0.08}>
+                <div className="inline-flex items-center gap-3 rounded-2xl border border-champagne/60 bg-ivory/80 px-4 py-3">
+                  <div className="flex -space-x-2" aria-hidden>
+                    {TESTIMONIALS.map((item) => (
+                      <span
+                        key={item.initials}
+                        className="flex size-8 items-center justify-center rounded-full border-2 border-ivory bg-gradient-to-br from-petal-100 to-blush text-[9px] font-semibold text-rosewood"
+                      >
+                        {item.initials}
+                      </span>
+                    ))}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-0.5 text-rosewood">
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          className="size-3 fill-current"
+                          aria-hidden
+                        />
+                      ))}
+                    </div>
+                    <p className="mt-0.5 whitespace-nowrap text-[11px] text-cocoa/60">
+                      <strong className="font-semibold text-cocoa">100+ pasangan</strong>{" "}
+                      sudah menggunakan Kefoo
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {TESTIMONIALS.map((item, index) => (
+                <Reveal key={item.name} delay={index * 0.06}>
+                  <figure className="flex h-full flex-col rounded-3xl border border-blush/70 bg-ivory/85 p-5 shadow-[0_20px_50px_-45px_rgba(87,66,63,0.6)]">
+                    <div className="flex items-center gap-0.5 text-champagne">
+                      {Array.from({ length: 5 }).map((_, star) => (
+                        <Star
+                          key={star}
+                          className="size-3.5 fill-current"
+                          aria-hidden
+                        />
+                      ))}
+                    </div>
+                    <blockquote className="mt-4 flex-1 text-sm leading-relaxed text-cocoa/75">
+                      “{item.quote}”
+                    </blockquote>
+                    <figcaption className="mt-5 flex items-center gap-3 border-t border-blush/60 pt-4">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-petal-100 to-blush text-[10px] font-semibold text-rosewood">
+                        {item.initials}
+                      </span>
+                      <span>
+                        <span className="block text-sm font-medium text-cocoa">
+                          {item.name}
+                        </span>
+                        <span className="mt-0.5 block text-[11px] text-cocoa/50">
+                          {item.meta}
+                        </span>
+                      </span>
+                    </figcaption>
+                  </figure>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </section>
 
