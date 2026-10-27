@@ -7,6 +7,7 @@ import {
   useState,
   useActionState,
 } from "react";
+import { useRouter } from "next/navigation";
 import {
   CircleHelp,
   GripVertical,
@@ -71,10 +72,14 @@ function TableFormModal({
   defaultY?: number;
 }) {
   const [state, formAction, pending] = useActionState(saveTableAction, null);
+  const router = useRouter();
 
   useEffect(() => {
-    if (state?.success) onClose();
-  }, [state, onClose]);
+    if (state?.success) {
+      onClose();
+      router.refresh();
+    }
+  }, [state, onClose, router]);
 
   return (
     <FormModal
@@ -201,10 +206,14 @@ function ChairLayoutModal({
     generateAkadChairsAction,
     null,
   );
+  const router = useRouter();
 
   useEffect(() => {
-    if (state?.success) onClose();
-  }, [state, onClose]);
+    if (state?.success) {
+      onClose();
+      router.refresh();
+    }
+  }, [state, onClose, router]);
 
   return (
     <FormModal open={open} onClose={onClose} title={copy.seating.manageChairs}>
@@ -349,6 +358,7 @@ export function SeatingPlanner({
   const [layoutOpen, setLayoutOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const router = useRouter();
   const [zoom, setZoom] = useState(selectedEvent?.zoom ?? 1);
   const [pan, setPan] = useState({
     x: selectedEvent?.pan_x ?? 0,
@@ -547,6 +557,7 @@ export function SeatingPlanner({
         return;
       }
       setSelectedTableId(tableId);
+      router.refresh();
     } catch {
       setError(copy.errors.generic);
     } finally {
@@ -597,6 +608,7 @@ export function SeatingPlanner({
       formData.set("guestB", guestB);
       const result = await swapSeatGuestsAction(formData);
       if (result?.error) setError(result.error);
+      else router.refresh();
     } catch {
       setError(copy.errors.generic);
     } finally {
@@ -636,6 +648,7 @@ export function SeatingPlanner({
       formData.set("guestId", guestId);
       const result = await unassignGuestAction(formData);
       if (result?.error) setError(result.error);
+      else router.refresh();
     } catch {
       setError(copy.errors.generic);
     } finally {
