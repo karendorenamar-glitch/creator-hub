@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { createGuestAction, updateGuestAction } from "@/app/wedding/(app)/guests/actions";
 import { FormModal } from "@/components/wedding/form-modal";
@@ -48,20 +47,14 @@ export function GuestFormModal({
 }) {
   const action = guest ? updateGuestAction : createGuestAction;
   const [state, formAction, pending] = useActionState(action, null);
-  const router = useRouter();
-  const refreshed = useRef(false);
   const initialSide =
     guest?.side === "bride" || guest?.side === "groom" ? guest.side : "";
   const needsSideAssignment =
     Boolean(guest) && (!guest?.side || guest.side === "unassigned");
 
   useEffect(() => {
-    if (state?.success && !refreshed.current) {
-      refreshed.current = true;
-      onClose();
-      router.refresh();
-    }
-  }, [state, onClose, router]);
+    if (state?.success) onClose();
+  }, [state, onClose]);
 
   const [rows, setRows] = useState<GuestRow[]>(() =>
     guest

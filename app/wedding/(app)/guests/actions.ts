@@ -174,10 +174,7 @@ export async function createGuestAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  // The guest modal closes immediately and refreshes the current route from the
-  // client. Revalidating /wedding/guests here makes the action response carry a
-  // full RSC refresh, which is noticeably slow with a long guest list.
-  revalidateWedding("/wedding/dashboard");
+  revalidateWedding("/wedding/guests");
   return { success: ctx.copy.form.saved };
 }
 
@@ -200,7 +197,7 @@ export async function updateGuestAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/dashboard");
+  revalidateWedding("/wedding/guests");
   return { success: ctx.copy.form.saved };
 }
 
