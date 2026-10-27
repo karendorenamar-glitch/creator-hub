@@ -675,9 +675,8 @@ export function SeatingPlanner({
     }
   }
 
-  async function handleChairClick(chairId: string) {
-    if (!selectedEvent || busy || !selectedGuestId) return;
-    const guestId = selectedGuestId;
+  async function moveGuestToChair(guestId: string, chairId: string) {
+    if (!selectedEvent || busy) return;
     const targetAssignment = assignmentByChair.get(chairId);
     if (targetAssignment && targetAssignment.guest_id !== guestId) {
       const movingGuest = guestById.get(guestId);
@@ -698,8 +697,19 @@ export function SeatingPlanner({
     await assignGuest(guestId, chairId);
   }
 
+  async function handleChairClick(chairId: string) {
+    if (!selectedGuestId) return;
+    await moveGuestToChair(selectedGuestId, chairId);
+  }
+
+  async function handleGuestDrop(guestId: string, chairId: string) {
+    if (!isCeremony) return;
+    await moveGuestToChair(guestId, chairId);
+  }
+
   async function removeGuest(guestId: string) {
     if (!selectedEvent || busy) return;
+    if (!window.confirm(copy.seating.removeConfirm)) return;
     setBusy(true);
     setError(null);
     try {
@@ -883,6 +893,12 @@ export function SeatingPlanner({
                   <button
                     key={guest.id}
                     type="button"
+                    draggable={isCeremony}
+                    onDragStart={(event) => {
+                      if (!isCeremony) return;
+                      event.dataTransfer.setData("text/guest-id", guest.id);
+                      event.dataTransfer.effectAllowed = "move";
+                    }}
                     onClick={() =>
                       setSelectedGuestId(selected ? null : guest.id)
                     }
@@ -1023,7 +1039,7 @@ export function SeatingPlanner({
                 }}
               >
                 <div
-                  title={isCeremony ? copy.seating.stage : copy.seating.bridalTable}
+                  title={isCeremony ? copy.seating.brideGroom : copy.seating.bridalTable}
                   className="absolute z-10 w-48 rounded-2xl border border-petal-200 bg-white/90 px-4 py-2 text-center shadow-sm"
                   style={{
                     left: `${stagePos.x}%`,
@@ -1032,7 +1048,7 @@ export function SeatingPlanner({
                   }}
                 >
                   <p className="text-[10px] uppercase tracking-[0.2em] text-petal-500">
-                    {isCeremony ? copy.seating.stage : copy.seating.bridalTable}
+                    {isCeremony ? copy.seating.brideGroom : copy.seating.bridalTable}
                   </p>
                 </div>
                 <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-olive-200 bg-white/80 px-4 py-1 text-[10px] text-ink-soft">
@@ -1113,6 +1129,18 @@ export function SeatingPlanner({
                           setDetailsOpen(true);
                         }
                       }}
+                      onDragOver={(event) => {
+                        if (!isCeremony) return;
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                      }}
+                      onDrop={(event) => {
+                        if (!isCeremony) return;
+                        event.preventDefault();
+                        const guestId =
+                          event.dataTransfer.getData("text/guest-id");
+                        if (guestId) void handleGuestDrop(guestId, chair.id);
+                      }}
                       title={guest?.name ?? chair.name}
                       className={`absolute z-30 cursor-pointer rounded-t-xl rounded-b-md border-2 p-1 text-center shadow-sm transition-colors ${
                         selected
@@ -1135,12 +1163,23 @@ export function SeatingPlanner({
                     >
                       <span className="mt-1 block h-1 w-4/5 rounded-full bg-current opacity-20" />
                       <span
+                        draggable={isCeremony && Boolean(guest)}
+                        onDragStart={(event) => {
+                          if (!isCeremony || !guest) return;
+                          event.stopPropagation();
+                          event.dataTransfer.setData("text/guest-id", guest.id);
+                          event.dataTransfer.effectAllowed = "move";
+                        }}
                         title={
                           guest
                             ? `${guest.name} · ${copy.seating.guestDragHint}`
                             : chair.name
                         }
-                        className="mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink"
+                        className={`mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink ${
+                          guest && isCeremony
+                            ? "cursor-grab active:cursor-grabbing"
+                            : ""
+                        }`}
                       >
                         {guest ? guest.name : chair.name}
                       </span>
