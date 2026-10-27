@@ -13,10 +13,7 @@ import {
 import { AddButton } from "@/components/wedding/form-kit";
 import { InspirationDetailModal } from "@/components/wedding/inspiration/inspiration-detail-modal";
 import { InspirationFormModal } from "@/components/wedding/inspiration/inspiration-form-modal";
-import type {
-  InspirationItem,
-  InspirationVendorOption,
-} from "@/lib/wedding/db-types";
+import type { InspirationItem } from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -37,14 +34,12 @@ const STANDARD_CATEGORIES = [
 function InspirationCard({
   item,
   photos,
-  optionsCount,
   imageUrls,
   copy,
   onOpen,
 }: {
   item: InspirationItem;
   photos: { id: string; path: string }[];
-  optionsCount: number;
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
   onOpen: (item: InspirationItem) => void;
@@ -124,12 +119,6 @@ function InspirationCard({
             <span className="inline-flex items-center gap-1.5">
               <Images className="size-3.5 text-petal-400" aria-hidden />
               {photoCount} {copy.inspiration.photosCount}
-            </span>
-          ) : null}
-          {optionsCount > 0 ? (
-            <span className="inline-flex items-center gap-1.5">
-              <Sparkles className="size-3.5 text-champagne" aria-hidden />
-              {optionsCount} {copy.inspiration.vendorOptions.toLowerCase()}
             </span>
           ) : null}
           <span className="ml-auto inline-flex items-center gap-1 font-medium text-olive-700">
@@ -259,13 +248,11 @@ function CategoryPhotoGallery({
 export function InspirationManager({
   items,
   photosByItem,
-  optionsByItem,
   imageUrls,
   copy,
 }: {
   items: InspirationItem[];
   photosByItem: Record<string, { id: string; path: string }[]>;
-  optionsByItem: Record<string, InspirationVendorOption[]>;
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
 }) {
@@ -298,23 +285,19 @@ export function InspirationManager({
       }
       if (!normalizedSearch) return true;
 
-      const vendorText = (optionsByItem[item.id] ?? [])
-        .map((option) => option.vendor_name)
-        .join(" ");
       return [
         item.title,
         item.category,
         item.notes,
         item.description,
         item.link_url,
-        vendorText,
       ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(normalizedSearch);
     });
-  }, [items, categoryFilter, normalizedSearch, optionsByItem]);
+  }, [items, categoryFilter, normalizedSearch]);
 
   const categoryPhotos = useMemo(() => {
     if (categoryFilter === "all") return [];
@@ -493,7 +476,6 @@ export function InspirationManager({
               key={item.id}
               item={item}
               photos={photosByItem[item.id] ?? []}
-              optionsCount={(optionsByItem[item.id] ?? []).length}
               imageUrls={imageUrls}
               copy={copy}
               onOpen={setDetail}
@@ -510,7 +492,6 @@ export function InspirationManager({
         item={editing}
         photos={activePhotos}
         categories={formCategories}
-        options={editing ? (optionsByItem[editing.id] ?? []) : []}
       />
 
       <InspirationDetailModal
@@ -518,7 +499,6 @@ export function InspirationManager({
         onClose={() => setDetail(null)}
         item={activeDetail}
         photos={activeDetail ? (photosByItem[activeDetail.id] ?? []) : []}
-        options={activeDetail ? (optionsByItem[activeDetail.id] ?? []) : []}
         imageUrls={imageUrls}
         copy={copy}
         onEdit={openEdit}

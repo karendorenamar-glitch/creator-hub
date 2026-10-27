@@ -12,6 +12,7 @@ import {
   PAYMENT_PROOF_BUCKET,
   validatePaymentProofFile,
 } from "@/lib/wedding/uploads";
+import { linkVendorOption } from "@/lib/wedding/vendor-option-selection";
 import {
   enumValue,
   isRealDate,
@@ -120,6 +121,42 @@ export async function createVendorAction(
       ? new Date().toISOString()
       : null;
 
+  const vendorOptionId = text(formData, "vendorOptionId");
+  if (vendorOptionId && !isUuid(vendorOptionId)) {
+    return { error: ctx.copy.errors.notFound };
+  }
+
+  if (vendorOptionId) {
+    const { data: option } = await ctx.supabase
+      .from("vendor_options")
+      .select("id")
+      .eq("id", vendorOptionId)
+      .eq("wedding_id", ctx.session.wedding.id)
+      .maybeSingle();
+    if (!option) return { error: ctx.copy.errors.notFound };
+
+    // Do not create a second budget vendor for the same candidate/name.
+    const { data: duplicate } = await ctx.supabase
+      .from("vendors")
+      .select("id")
+      .eq("wedding_id", ctx.session.wedding.id)
+      .eq("category", parsed.values.category)
+      .ilike("name", parsed.values.name)
+      .is("archived_at", null)
+      .maybeSingle();
+
+    if (duplicate) {
+      await linkVendorOption(
+        ctx.supabase,
+        ctx.session.wedding.id,
+        vendorOptionId,
+        duplicate.id,
+      );
+      revalidateVendorPages();
+      return { success: ctx.copy.form.saved };
+    }
+  }
+
   const { data: created, error } = await ctx.supabase
     .from("vendors")
     .insert({
@@ -168,6 +205,20 @@ export async function createVendorAction(
     }
   }
 
+  if (vendorOptionId) {
+    const linked = await linkVendorOption(
+      ctx.supabase,
+      ctx.session.wedding.id,
+      vendorOptionId,
+      created.id,
+    );
+    if (!linked.ok) {
+      // The vendor is valid; only the candidate badge could not be linked.
+      // Keep the confirmed vendor rather than rolling back a real save.
+      console.error("[createVendorAction] vendor option link failed");
+    }
+  }
+
   revalidateVendorPages();
   return { success: ctx.copy.form.saved };
 }
@@ -213,6 +264,16 @@ export async function updateVendorAction(
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  const vendorOptionId = text(formData, "vendorOptionId");
+  if (vendorOptionId && isUuid(vendorOptionId)) {
+    await linkVendorOption(
+      ctx.supabase,
+      ctx.session.wedding.id,
+      vendorOptionId,
+      id,
+    );
+  }
 
   revalidateVendorPages();
   return { success: ctx.copy.form.saved };

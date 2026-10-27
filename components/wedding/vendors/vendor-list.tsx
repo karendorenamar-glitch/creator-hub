@@ -23,6 +23,7 @@ import type {
 import { formatIDR } from "@/lib/wedding/format";
 import { groupProofsByPayment } from "@/lib/wedding/payment-proofs";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import type { VendorOptionPrefill } from "@/lib/wedding/vendor-options";
 
 function VendorRow({
   vendor,
@@ -142,6 +143,8 @@ export function VendorList({
   summaryByVendor,
   copy,
   locale,
+  prefill,
+  initialVendorId,
 }: {
   activeVendors: BudgetVendor[];
   archivedVendors: BudgetVendor[];
@@ -151,12 +154,29 @@ export function VendorList({
   summaryByVendor: Record<string, VendorPaymentSummary>;
   copy: ModuleCopy;
   locale: "en" | "id";
+  prefill?: VendorOptionPrefill | null;
+  initialVendorId?: string | null;
 }) {
+  const initialVendor = useMemo(
+    () =>
+      initialVendorId
+        ? ([...activeVendors, ...archivedVendors].find(
+            (vendor) => vendor.id === initialVendorId,
+          ) ?? null)
+        : null,
+    [activeVendors, archivedVendors, initialVendorId],
+  );
   const [vendorModal, setVendorModal] = useState<{
     open: boolean;
     editing: BudgetVendor | null;
     idempotencyKey: string;
-  }>({ open: false, editing: null, idempotencyKey: "" });
+    prefill: VendorOptionPrefill | null;
+  }>({
+    open: Boolean(initialVendor || prefill),
+    editing: initialVendor,
+    idempotencyKey: "",
+    prefill: initialVendor ? null : (prefill ?? null),
+  });
   const [paymentModal, setPaymentModal] = useState<{
     open: boolean;
     vendor: BudgetVendor | null;
@@ -226,6 +246,7 @@ export function VendorList({
               open: true,
               editing: null,
               idempotencyKey: crypto.randomUUID(),
+              prefill: null,
             })
           }
         />
@@ -249,6 +270,7 @@ export function VendorList({
                   open: true,
                   editing: vendor,
                   idempotencyKey: crypto.randomUUID(),
+                  prefill: null,
                 })
               }
               onHistory={() => openPayment(vendor, false, true)}
@@ -283,7 +305,12 @@ export function VendorList({
         key={`${vendorModal.editing?.id ?? "new-vendor"}-${vendorModal.idempotencyKey}`}
         open={vendorModal.open}
         onClose={() =>
-          setVendorModal({ open: false, editing: null, idempotencyKey: "" })
+          setVendorModal({
+            open: false,
+            editing: null,
+            idempotencyKey: "",
+            prefill: null,
+          })
         }
         copy={copy}
         locale={locale}
@@ -301,13 +328,24 @@ export function VendorList({
             : undefined
         }
         idempotencyKey={vendorModal.idempotencyKey}
+        prefill={vendorModal.prefill}
         onOpenHistory={() => {
           const vendor = vendorModal.editing;
-          setVendorModal({ open: false, editing: null, idempotencyKey: "" });
+          setVendorModal({
+            open: false,
+            editing: null,
+            idempotencyKey: "",
+            prefill: null,
+          });
           if (vendor) openPayment(vendor, false, true);
         }}
         onPaymentSaved={() =>
-          setVendorModal({ open: false, editing: null, idempotencyKey: "" })
+          setVendorModal({
+            open: false,
+            editing: null,
+            idempotencyKey: "",
+            prefill: null,
+          })
         }
       />
 

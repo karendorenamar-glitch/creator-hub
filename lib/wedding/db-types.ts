@@ -351,6 +351,31 @@ export type InspirationItem = {
   updated_at: string;
 };
 
+export type WeddingDonation = {
+  id: string;
+  wedding_id: string;
+  donor_name: string;
+  amount: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type VendorOption = {
+  id: string;
+  wedding_id: string;
+  category: string;
+  vendor_name: string;
+  instagram_url: string | null;
+  reference_price: number | null;
+  love_reason: string | null;
+  hesitation: string | null;
+  selected_vendor_id: string | null;
+  legacy_inspiration_option_id: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
 export type InspirationVendorOption = {
   id: string;
   wedding_id: string;
@@ -397,6 +422,8 @@ export type WeddingDatabase = {
       inspiration_items: Table<InspirationItem>;
       inspiration_photos: Table<InspirationPhoto>;
       inspiration_vendor_options: Table<InspirationVendorOption>;
+      wedding_donations: Table<WeddingDonation>;
+      vendor_options: Table<VendorOption>;
       invitations: Table<Invitation>;
       invitation_rsvps: Table<InvitationRsvp>;
       music_tracks: Table<MusicTrack>;

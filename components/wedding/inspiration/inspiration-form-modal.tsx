@@ -7,17 +7,13 @@ import {
 } from "@/app/wedding/(app)/inspiration/actions";
 import { FormModal } from "@/components/wedding/form-modal";
 import { InspirationPhotoManager } from "@/components/wedding/inspiration/inspiration-photo-manager";
-import { InspirationVendorOptions } from "@/components/wedding/inspiration/inspiration-vendor-options";
 import {
   Field,
   FormAlert,
   ModalFooter,
   inputClass,
 } from "@/components/wedding/form-kit";
-import type {
-  InspirationItem,
-  InspirationVendorOption,
-} from "@/lib/wedding/db-types";
+import type { InspirationItem } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { compressInspirationImage } from "@/lib/wedding/image-compress";
 import { validateInspirationImageFile } from "@/lib/wedding/uploads";
@@ -32,7 +28,6 @@ export function InspirationFormModal({
   item,
   photos,
   categories,
-  options,
 }: {
   open: boolean;
   onClose: () => void;
@@ -40,7 +35,6 @@ export function InspirationFormModal({
   item: InspirationItem | null;
   photos: { id: string; url: string }[];
   categories: string[];
-  options: InspirationVendorOption[];
 }) {
   const action = item ? updateInspirationAction : createInspirationAction;
   const [state, formAction, pending] = useActionState(action, null);
@@ -240,16 +234,6 @@ export function InspirationFormModal({
             onCancel={onClose}
           />
         </form>
-
-        {item ? (
-          <div className="rounded-2xl border border-petal-100/80 bg-white/80 p-4 sm:p-5">
-            <InspirationVendorOptions
-              itemId={item.id}
-              options={options}
-              copy={copy}
-            />
-          </div>
-        ) : null}
       </div>
     </FormModal>
   );

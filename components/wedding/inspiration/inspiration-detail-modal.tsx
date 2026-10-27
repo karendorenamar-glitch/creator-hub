@@ -8,11 +8,7 @@ import { deleteInspirationAction } from "@/app/wedding/(app)/inspiration/actions
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { FormModal } from "@/components/wedding/form-modal";
 import { InspirationLightbox } from "@/components/wedding/inspiration/inspiration-lightbox";
-import { InspirationVendorOptions } from "@/components/wedding/inspiration/inspiration-vendor-options";
-import type {
-  InspirationItem,
-  InspirationVendorOption,
-} from "@/lib/wedding/db-types";
+import type { InspirationItem } from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -21,7 +17,6 @@ export function InspirationDetailModal({
   onClose,
   item,
   photos,
-  options,
   imageUrls,
   copy,
   onEdit,
@@ -30,7 +25,6 @@ export function InspirationDetailModal({
   onClose: () => void;
   item: InspirationItem | null;
   photos: { id: string; path: string }[];
-  options: InspirationVendorOption[];
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
   onEdit: (item: InspirationItem) => void;
@@ -171,12 +165,6 @@ export function InspirationDetailModal({
                 {copy.inspiration.openLink}
               </a>
             ) : null}
-
-            <InspirationVendorOptions
-              itemId={item.id}
-              options={options}
-              copy={copy}
-            />
           </div>
         </div>
       </FormModal>

@@ -59,6 +59,10 @@ export type BudgetOtherCost = {
   paidAmount: number;
 };
 
+export type BudgetDonation = {
+  amount: number;
+};
+
 export type VendorPaymentSummary = {
   paymentCount: number;
   totalPaid: number;
@@ -71,6 +75,8 @@ export type BudgetResult = {
   vendorBudget: number;
   otherCostsTotal: number;
   otherCostsPaid: number;
+  donationsTotal: number;
+  donationExcess: number;
   totalPaid: number;
   remainingPayment: number;
   overpayment: number;
@@ -191,6 +197,7 @@ export function calculateBudget(input: {
   vendors: BudgetVendor[];
   payments: BudgetPayment[];
   otherCosts?: BudgetOtherCost[];
+  donations?: BudgetDonation[];
   targetBudget?: number | null;
 }): BudgetResult {
   // Deduplicate vendors by id so the same vendor cannot be counted twice.
@@ -285,7 +292,15 @@ export function calculateBudget(input: {
   );
   const totalPaid = vendorPaid + otherCostsPaid;
   const plannedBudget = vendorBudget + otherCostsTotal;
-  const remainingPayment = Math.max(0, plannedBudget - totalPaid);
+  const donationsTotal = (input.donations ?? []).reduce(
+    (sum, donation) => sum + Math.max(0, amountOf(donation.amount)),
+    0,
+  );
+  // Donations reduce what the couple still needs to pay. They are not vendor
+  // payments and never change Total Paid, vendor prices, or payment status.
+  const unpaidBeforeDonations = Math.max(0, plannedBudget - totalPaid);
+  const remainingPayment = Math.max(0, unpaidBeforeDonations - donationsTotal);
+  const donationExcess = Math.max(0, donationsTotal - unpaidBeforeDonations);
   const overpayment = Math.max(0, totalPaid - plannedBudget);
   const paymentPercentage =
     plannedBudget > 0
@@ -304,6 +319,8 @@ export function calculateBudget(input: {
     vendorBudget,
     otherCostsTotal,
     otherCostsPaid,
+    donationsTotal,
+    donationExcess,
     totalPaid,
     remainingPayment,
     overpayment,

@@ -28,11 +28,11 @@ type NavKey = keyof WeddingCopy["nav"];
 
 const NAV: { key: NavKey; href: string; Icon: typeof LayoutDashboard }[] = [
   { key: "dashboard", href: "/wedding/dashboard", Icon: LayoutDashboard },
-  { key: "budget", href: "/wedding/budget", Icon: Wallet },
-  { key: "vendors", href: "/wedding/vendors", Icon: Store },
-  { key: "guests", href: "/wedding/guests", Icon: Users },
-  { key: "checklist", href: "/wedding/checklist", Icon: ListOrdered },
   { key: "inspiration", href: "/wedding/inspiration", Icon: Images },
+  { key: "vendors", href: "/wedding/vendors", Icon: Store },
+  { key: "budget", href: "/wedding/budget", Icon: Wallet },
+  { key: "checklist", href: "/wedding/checklist", Icon: ListOrdered },
+  { key: "guests", href: "/wedding/guests", Icon: Users },
   { key: "invitation", href: "/wedding/invitation", Icon: Mail },
   { key: "settings", href: "/wedding/settings", Icon: Settings },
 ];

@@ -26,6 +26,7 @@ import { formatIDR } from "@/lib/wedding/format";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { PAYMENT_PROOF_TYPES } from "@/lib/wedding/uploads";
+import type { VendorOptionPrefill } from "@/lib/wedding/vendor-options";
 
 const CATEGORY_SUGGESTIONS = [
   "Venue",
@@ -51,6 +52,7 @@ export function VendorFormModal({
   proofUrls,
   summary,
   idempotencyKey,
+  prefill,
   onOpenHistory,
   onPaymentSaved,
 }: {
@@ -64,15 +66,19 @@ export function VendorFormModal({
   proofUrls: Record<string, string>;
   summary?: VendorPaymentSummary;
   idempotencyKey: string;
+  prefill?: VendorOptionPrefill | null;
   onOpenHistory: () => void;
   onPaymentSaved: () => void;
 }) {
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
   const [price, setPrice] = useState(
-    vendor?.agreed_price === null || vendor?.agreed_price === undefined
-      ? ""
-      : String(vendor.agreed_price),
+    vendor?.agreed_price !== null && vendor?.agreed_price !== undefined
+      ? String(vendor.agreed_price)
+      : prefill?.referencePrice !== null &&
+          prefill?.referencePrice !== undefined
+        ? String(prefill.referencePrice)
+        : "",
   );
   const [completed, setCompleted] = useState(
     Boolean(vendor?.collaboration_completed_at),
@@ -107,6 +113,9 @@ export function VendorFormModal({
     >
       <form action={formAction} className="space-y-4">
         {vendor ? <input type="hidden" name="id" value={vendor.id} /> : null}
+        {!vendor && prefill ? (
+          <input type="hidden" name="vendorOptionId" value={prefill.optionId} />
+        ) : null}
         <FormAlert error={state?.error} />
         {state?.success ? (
           <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
@@ -117,6 +126,11 @@ export function VendorFormModal({
         <p className="rounded-xl border border-olive-100 bg-olive-50/60 px-3 py-2 text-xs leading-relaxed text-ink-soft">
           {copy.vendors.confirmedHint}
         </p>
+        {!vendor && prefill ? (
+          <p className="rounded-xl border border-petal-100 bg-petal-50/50 px-3 py-2 text-xs leading-relaxed text-rosewood">
+            {copy.vendors.optionPrefilledHint}
+          </p>
+        ) : null}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label={copy.vendors.name} htmlFor="vendor-name">
@@ -125,7 +139,7 @@ export function VendorFormModal({
               name="name"
               required
               maxLength={120}
-              defaultValue={vendor?.name ?? ""}
+              defaultValue={vendor?.name ?? prefill?.name ?? ""}
               className={inputClass}
             />
           </Field>
@@ -137,7 +151,7 @@ export function VendorFormModal({
               list="vendor-category-suggestions"
               maxLength={80}
               placeholder="Venue, Catering, MUA..."
-              defaultValue={vendor?.category ?? ""}
+              defaultValue={vendor?.category ?? prefill?.category ?? ""}
               className={inputClass}
             />
             <datalist id="vendor-category-suggestions">

@@ -52,12 +52,14 @@ export function StatCard({
   hint,
   icon,
   tone = "blush",
+  children,
 }: {
   label: string;
   value: string;
   hint?: string;
   icon?: ReactNode;
   tone?: "blush" | "champagne" | "neutral";
+  children?: ReactNode;
 }) {
   const toneStyles = {
     blush: "bg-petal-100 text-petal-500",
@@ -78,6 +80,7 @@ export function StatCard({
       <div>
         <p className="text-2xl font-semibold tracking-tight text-ink">{value}</p>
         {hint ? <p className="mt-1 text-xs text-ink-soft">{hint}</p> : null}
+        {children}
       </div>
     </Card>
   );

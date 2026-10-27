@@ -18,7 +18,7 @@ export default async function InspirationPage() {
 
   // These reads are independent; run them together so the page does not pay
   // three sequential Supabase round trips before rendering.
-  const [itemsResult, photosResult, optionsResult] = await Promise.all([
+  const [itemsResult, photosResult] = await Promise.all([
     supabase
       .from("inspiration_items")
       .select("*")
@@ -27,19 +27,10 @@ export default async function InspirationPage() {
       .from("inspiration_photos")
       .select("id, item_id, path")
       .order("sort_order", { ascending: true }),
-    supabase
-      .from("inspiration_vendor_options")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true }),
   ]);
 
   const items = itemsResult.data ?? [];
-  const photoRows = photosResult.data;
-  const optionRows = optionsResult.data;
-  const optionError = optionsResult.error;
-  const photos = photoRows ?? [];
-  const options = optionError ? [] : (optionRows ?? []);
+  const photos = photosResult.data ?? [];
 
   const photosByItem: Record<string, { id: string; path: string }[]> = {};
   for (const photo of photos) {
@@ -47,11 +38,6 @@ export default async function InspirationPage() {
       id: photo.id,
       path: photo.path,
     });
-  }
-
-  const optionsByItem: Record<string, typeof options> = {};
-  for (const option of options) {
-    (optionsByItem[option.item_id] ??= []).push(option);
   }
 
   const imagePaths = Array.from(
@@ -79,7 +65,6 @@ export default async function InspirationPage() {
     <InspirationManager
       items={items}
       photosByItem={photosByItem}
-      optionsByItem={optionsByItem}
       imageUrls={imageUrls}
       copy={copy}
     />

@@ -272,6 +272,30 @@ t("other paid: totalPaid", r.totalPaid, 2_000_000);
 t("other paid: remaining", r.remainingPayment, 10_000_000);
 t("other paid: percentage", r.paymentPercentage, 16.67);
 
+// 17b. Donations reduce the remaining balance, never Total Paid or vendor status.
+const donation = [{ amount: 3_000_000 }];
+r = calculateBudget({
+  vendors: [vendor()],
+  payments: [payment({ amount: 2_000_000 })],
+  donations: donation,
+  targetBudget: 0,
+});
+t("donation: totalPaid unchanged", r.totalPaid, 2_000_000);
+t("donation: donationsTotal", r.donationsTotal, 3_000_000);
+t("donation: remaining reduced", r.remainingPayment, 5_000_000);
+t("donation: no excess", r.donationExcess, 0);
+t("donation: vendor status unchanged", r.statusByVendor.get("v1"), "dp");
+
+r = calculateBudget({
+  vendors: [vendor()],
+  payments: [payment({ amount: 2_000_000 })],
+  donations: [{ amount: 20_000_000 }],
+  targetBudget: 0,
+});
+t("donation excess: remaining zero", r.remainingPayment, 0);
+t("donation excess: amount", r.donationExcess, 12_000_000);
+t("donation excess: totalPaid unchanged", r.totalPaid, 2_000_000);
+
 // 18. Vendor payments plus paid other costs can reach 100%.
 r = calc([vendor()], [payment({ amount: 10_000_000 })], 0, paidOther);
 t("all paid: totalPaid", r.totalPaid, 12_000_000);
