@@ -169,6 +169,32 @@ export async function signUpAction(
     );
   }
 
+  // signUp() above used the session-less client so a stale cookie could not
+  // break the request. With autoconfirm enabled Supabase returns a session,
+  // but it is in memory only. Persist it through the cookie-aware SSR client
+  // before redirecting to checkout/onboarding.
+  const sessionClient = await createWeddingClient();
+  const { error: sessionError } = await sessionClient.auth.setSession({
+    access_token: data.session.access_token,
+    refresh_token: data.session.refresh_token,
+  });
+
+  if (sessionError) {
+    console.error(
+      "[signUpAction] session setup:",
+      sessionError.code,
+      sessionError.message,
+    );
+    const next = safeNext(text(formData, "next"), "/checkout");
+    const ref = text(formData, "ref");
+    redirect(
+      withRef(
+        `/wedding/login?next=${encodeURIComponent(next)}`,
+        ref,
+      ),
+    );
+  }
+
   revalidatePath("/wedding", "layout");
   // Pay first: onboarding only opens after the payment is approved.
   const next = safeNext(text(formData, "next"), "/checkout");
