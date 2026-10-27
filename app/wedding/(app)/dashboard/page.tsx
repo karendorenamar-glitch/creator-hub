@@ -21,7 +21,10 @@ import { weddingCopy } from "@/lib/wedding/copy";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { daysFromToday, formatIDR, formatWeddingDate } from "@/lib/wedding/format";
 import { loadBudgetData } from "@/lib/wedding/budget-data";
-import { totalGuestPeople } from "@/lib/wedding/guest-count";
+import {
+  summarizeGuestSides,
+  totalGuestPeople,
+} from "@/lib/wedding/guest-count";
 import { coupleNames, loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
@@ -42,7 +45,7 @@ export default async function DashboardPage() {
       session.wedding.id,
       Number(session.wedding.total_budget ?? 0),
     ),
-    supabase.from("guests").select("id, rsvp_status, plus_ones"),
+    supabase.from("guests").select("*"),
     supabase
       .from("checklist_tasks")
       .select("id, title, status, due_date, priority")
@@ -50,6 +53,7 @@ export default async function DashboardPage() {
   ]);
 
   const guests = guestsResult.data ?? [];
+  const sideSummary = summarizeGuestSides(guests);
   const tasks = tasksResult.data ?? [];
   const calc = budgetData.calc;
 
@@ -201,6 +205,13 @@ export default async function DashboardPage() {
           </p>
           <p className="mt-1 text-xs text-ink-soft">
             {moduleText.guests.invitedHint}
+          </p>
+          <p className="mt-1 text-xs text-ink-soft">
+            {moduleText.guests.brideGuests}: {sideSummary.bride.people} ·{" "}
+            {moduleText.guests.groomGuests}: {sideSummary.groom.people}
+            {sideSummary.unassigned.people > 0
+              ? ` · ${moduleText.guests.unassignedGuests}: ${sideSummary.unassigned.people}`
+              : ""}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             <Badge tone="success">

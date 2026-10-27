@@ -27,6 +27,7 @@ async function context() {
 }
 
 type GuestCommon = {
+  side: "bride" | "groom";
   email: string | null;
   guest_group: string | null;
   invitation_status: "not_sent" | "sent";
@@ -46,6 +47,11 @@ function readGuestCommon(
   formData: FormData,
   copy: ModuleCopy,
 ): { ok: true; values: GuestCommon } | { ok: false; error: string } {
+  const side = text(formData, "side");
+  if (side !== "bride" && side !== "groom") {
+    return { ok: false, error: copy.guests.sideRequired };
+  }
+
   const email = optionalText(formData, "email", 200);
   if (email && !isEmail(email)) {
     return { ok: false, error: copy.form.invalidEmail };
@@ -54,6 +60,7 @@ function readGuestCommon(
   return {
     ok: true,
     values: {
+      side,
       email,
       guest_group: optionalText(formData, "guestGroup", 80),
       invitation_status: enumValue(

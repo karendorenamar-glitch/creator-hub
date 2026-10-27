@@ -58,11 +58,12 @@ export function StatCard({
   value: string;
   hint?: string;
   icon?: ReactNode;
-  tone?: "blush" | "champagne" | "neutral";
+  tone?: "blush" | "baby" | "champagne" | "neutral";
   children?: ReactNode;
 }) {
   const toneStyles = {
     blush: "bg-petal-100 text-petal-500",
+    baby: "bg-baby-100 text-baby-700",
     champagne: "bg-sand-100 text-clay-500",
     neutral: "bg-white text-ink-soft",
   }[tone];
@@ -110,13 +111,15 @@ export function Badge({
   tone = "neutral",
 }: {
   children: ReactNode;
-  tone?: "neutral" | "success" | "warning" | "muted";
+  tone?: "neutral" | "success" | "warning" | "muted" | "blush" | "baby";
 }) {
   const tones = {
     neutral: "bg-olive-50 text-olive-700 border-olive-100",
     success: "bg-emerald-50 text-emerald-700 border-emerald-100",
     warning: "bg-amber-50 text-amber-700 border-amber-100",
     muted: "bg-stone-50 text-stone-500 border-stone-200",
+    blush: "bg-petal-100 text-petal-500 border-petal-200",
+    baby: "bg-baby-100 text-baby-700 border-baby-200",
   }[tone];
 
   return (

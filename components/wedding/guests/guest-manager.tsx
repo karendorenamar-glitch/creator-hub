@@ -7,8 +7,8 @@ import { DeleteForm } from "@/components/wedding/delete-form";
 import { GuestFormModal } from "@/components/wedding/guests/guest-form-modal";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { Badge } from "@/components/wedding/ui";
-import type { Guest } from "@/lib/wedding/db-types";
-import { guestPeopleCount } from "@/lib/wedding/guest-count";
+import type { Guest, GuestSide } from "@/lib/wedding/db-types";
+import { guestPeopleCount, guestSideOf } from "@/lib/wedding/guest-count";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -17,6 +17,14 @@ const rsvpTone = {
   pending: "warning",
   not_attending: "muted",
 } as const;
+
+const sideTone: Record<GuestSide, "blush" | "baby" | "muted"> = {
+  bride: "blush",
+  groom: "baby",
+  unassigned: "muted",
+};
+
+const sideOptions: GuestSide[] = ["bride", "groom", "unassigned"];
 
 export function GuestManager({
   guests,
@@ -32,6 +40,7 @@ export function GuestManager({
   const [formVersion, setFormVersion] = useState(0);
   const [query, setQuery] = useState("");
   const [groupFilter, setGroupFilter] = useState("all");
+  const [sideFilter, setSideFilter] = useState<"all" | GuestSide>("all");
   const [rsvpFilter, setRsvpFilter] = useState("all");
 
   const groupPeople = useMemo(() => {
@@ -53,7 +62,18 @@ export function GuestManager({
       : copy.guests.groupPeople.replace("{count}", String(count));
   }
 
+  function sideFilterLabel(side: GuestSide) {
+    return side === "bride"
+      ? copy.guests.brideGuests
+      : side === "groom"
+        ? copy.guests.groomGuests
+        : copy.guests.unassignedGuests;
+  }
+
   const needle = query.trim().toLowerCase();
+  const unassignedCount = guests.filter(
+    (guest) => guestSideOf(guest) === "unassigned",
+  ).length;
   const filtered = guests.filter((guest) => {
     if (needle) {
       const haystack = [guest.name, guest.phone, guest.guest_group]
@@ -61,6 +81,9 @@ export function GuestManager({
         .join(" ")
         .toLowerCase();
       if (!haystack.includes(needle)) return false;
+    }
+    if (sideFilter !== "all" && guestSideOf(guest) !== sideFilter) {
+      return false;
     }
     if (
       groupFilter !== "all" &&
@@ -93,6 +116,24 @@ export function GuestManager({
         <AddButton label={copy.guests.add} onClick={openCreate} />
       </div>
 
+      {unassignedCount > 0 && sideFilter !== "unassigned" ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3">
+          <p className="text-sm text-amber-900">
+            {copy.guests.unassignedPrompt.replace(
+              "{count}",
+              String(unassignedCount),
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => setSideFilter("unassigned")}
+            className="rounded-xl border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 hover:bg-amber-200"
+          >
+            {copy.guests.unassignedAction}
+          </button>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         <div className="relative min-w-56 flex-1">
           <Search
@@ -117,6 +158,21 @@ export function GuestManager({
           {groups.map((group) => (
             <option key={group} value={group}>
               {group} · {groupPeopleLabel(groupPeople.get(group) ?? 0)}
+            </option>
+          ))}
+        </select>
+        <select
+          value={sideFilter}
+          onChange={(event) =>
+            setSideFilter(event.target.value as "all" | GuestSide)
+          }
+          aria-label={copy.guests.side}
+          className={`${inputClass} w-auto min-w-40`}
+        >
+          <option value="all">{copy.guests.allGuests}</option>
+          {sideOptions.map((side) => (
+            <option key={side} value={side}>
+              {sideFilterLabel(side)}
             </option>
           ))}
         </select>
@@ -164,6 +220,11 @@ export function GuestManager({
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-ink">
                   {guest.name}
+                  <span className="ml-2 inline-flex align-middle">
+                    <Badge tone={sideTone[guestSideOf(guest)]}>
+                      {label("guestSide", guestSideOf(guest), locale)}
+                    </Badge>
+                  </span>
                   {guest.plus_ones > 0 ? (
                     <span className="ml-2 text-xs font-normal text-ink-soft">
                       +{guest.plus_ones}

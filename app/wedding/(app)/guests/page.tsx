@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { GuestManager } from "@/components/wedding/guests/guest-manager";
 import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { totalGuestPeople } from "@/lib/wedding/guest-count";
+import { summarizeGuestSides, totalGuestPeople } from "@/lib/wedding/guest-count";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
@@ -19,12 +19,13 @@ export default async function GuestsPage() {
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  const { data } = await supabase
+  const { data, error: guestsError } = await supabase
     .from("guests")
     .select("*")
     .order("name", { ascending: true });
 
   const guests = data ?? [];
+  const sideSummary = summarizeGuestSides(guests);
   const invited = totalGuestPeople(guests);
   const target = Number(session.wedding.estimated_guest_count ?? 0);
   const hasTarget = Number.isFinite(target) && target > 0;
@@ -49,6 +50,42 @@ export default async function GuestsPage() {
   return (
     <div className="space-y-7">
       <PageHeader title={copy.guests.title} subtitle={copy.guests.subtitle} />
+
+      {guestsError ? (
+        <Card className="border-rose-200 bg-rose-50/70">
+          <p className="text-sm text-rose-800">{copy.errors.generic}</p>
+        </Card>
+      ) : null}
+
+      <section className="grid gap-4 sm:grid-cols-3">
+        <StatCard
+          label={copy.guests.brideGuests}
+          value={String(sideSummary.bride.people)}
+          hint={copy.guests.invitationRecords.replace(
+            "{count}",
+            String(sideSummary.bride.records),
+          )}
+          tone="blush"
+        />
+        <StatCard
+          label={copy.guests.groomGuests}
+          value={String(sideSummary.groom.people)}
+          hint={copy.guests.invitationRecords.replace(
+            "{count}",
+            String(sideSummary.groom.records),
+          )}
+          tone="baby"
+        />
+        <StatCard
+          label={copy.guests.totalGuests}
+          value={String(sideSummary.assigned.people)}
+          hint={copy.guests.invitationRecords.replace(
+            "{count}",
+            String(sideSummary.assigned.records),
+          )}
+          tone="neutral"
+        />
+      </section>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard

@@ -1,5 +1,7 @@
 import {
   guestPeopleCount,
+  guestSideOf,
+  summarizeGuestSides,
   totalGuestPeople,
 } from "../lib/wedding/guest-count.ts";
 
@@ -34,6 +36,28 @@ t(
   ]),
   6,
 );
+
+t("missing side is unassigned", guestSideOf({}), "unassigned");
+t("unknown side is unassigned", guestSideOf({ side: "other" }), "unassigned");
+t("bride side is kept", guestSideOf({ side: "bride" }), "bride");
+t("groom side is kept", guestSideOf({ side: "groom" }), "groom");
+
+const sideSummary = summarizeGuestSides([
+  { side: "bride", plus_ones: 1 },
+  { side: "bride", plus_ones: 0 },
+  { side: "groom", plus_ones: 2 },
+  { side: "unassigned", plus_ones: 0 },
+  {},
+]);
+
+t("bride records", sideSummary.bride.records, 2);
+t("bride people", sideSummary.bride.people, 3);
+t("groom records", sideSummary.groom.records, 1);
+t("groom people", sideSummary.groom.people, 3);
+t("unassigned records", sideSummary.unassigned.records, 2);
+t("unassigned people", sideSummary.unassigned.people, 2);
+t("assigned records exclude unassigned", sideSummary.assigned.records, 3);
+t("assigned people exclude unassigned", sideSummary.assigned.people, 6);
 
 console.log(`\nTOTAL: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

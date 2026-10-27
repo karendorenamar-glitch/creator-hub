@@ -47,6 +47,10 @@ export function GuestFormModal({
 }) {
   const action = guest ? updateGuestAction : createGuestAction;
   const [state, formAction, pending] = useActionState(action, null);
+  const initialSide =
+    guest?.side === "bride" || guest?.side === "groom" ? guest.side : "";
+  const needsSideAssignment =
+    Boolean(guest) && (!guest?.side || guest.side === "unassigned");
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -94,6 +98,28 @@ export function GuestFormModal({
           <input type="hidden" name="email" value={guest.email ?? ""} />
         ) : null}
         <FormAlert error={state?.error} />
+
+        <Field
+          label={copy.guests.side}
+          htmlFor="guest-side"
+          hint={
+            needsSideAssignment ? copy.guests.sideUnassignedPrompt : undefined
+          }
+        >
+          <select
+            id="guest-side"
+            name="side"
+            required
+            defaultValue={initialSide}
+            className={inputClass}
+          >
+            <option value="" disabled>
+              {copy.guests.sidePlaceholder}
+            </option>
+            <option value="bride">{copy.guests.brideSide}</option>
+            <option value="groom">{copy.guests.groomSide}</option>
+          </select>
+        </Field>
 
         <Field
           label={`${copy.guests.group} (${copy.form.optional})`}

@@ -39,6 +39,12 @@ const invitationStatus = {
   sent: ["Sent", "Terkirim"],
 } as const;
 
+const guestSide = {
+  bride: ["Bride's side", "Pihak mempelai wanita"],
+  groom: ["Groom's side", "Pihak mempelai pria"],
+  unassigned: ["Unassigned", "Belum ditentukan"],
+} as const;
+
 const priority = {
   low: ["Low", "Rendah"],
   medium: ["Medium", "Sedang"],
@@ -93,6 +99,7 @@ export const labelGroups = {
   bookingStatus,
   rsvpStatus,
   invitationStatus,
+  guestSide,
   priority,
   taskStatus,
   stage,

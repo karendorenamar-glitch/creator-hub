@@ -9,6 +9,7 @@ export type WeddingRole = "owner" | "partner";
 export type SubscriptionStatus = "inactive" | "active" | "expired" | "canceled";
 export type RsvpStatus = "pending" | "attending" | "not_attending";
 export type InvitationStatus = "not_sent" | "sent";
+export type GuestSide = "bride" | "groom" | "unassigned";
 export type BookingStatus = "considering" | "contacted" | "booked" | "cancelled";
 export type PaymentStatus = "diskusi" | "dp" | "lunas";
 export type TaskStatus = "todo" | "in_progress" | "done";
@@ -178,6 +179,7 @@ export type Guest = {
   phone: string | null;
   email: string | null;
   guest_group: string | null;
+  side: GuestSide;
   invitation_status: InvitationStatus;
   rsvp_status: RsvpStatus;
   plus_ones: number;
