@@ -66,6 +66,27 @@ where capacity = 1
   and name ~ '^[LR][0-9]+$'
   and kind = 'table';
 
+-- Dinner chairs created by the compatibility fallback are named
+-- "<table name> · <number>". Mark them as chairs too and connect them to
+-- their table so editing/deleting a table behaves correctly.
+update public.seating_tables
+set kind = 'chair',
+    side = 'none'
+where capacity = 1
+  and name like '% · %'
+  and kind = 'table';
+
+update public.seating_tables as chair
+set parent_table_id = parent.id
+from public.seating_tables as parent
+where chair.parent_table_id is null
+  and chair.kind = 'chair'
+  and parent.kind = 'table'
+  and parent.capacity > 1
+  and chair.event_id = parent.event_id
+  and chair.wedding_id = parent.wedding_id
+  and chair.name like parent.name || ' · %';
+
 create index if not exists seating_tables_parent_idx
   on public.seating_tables (parent_table_id);
 
