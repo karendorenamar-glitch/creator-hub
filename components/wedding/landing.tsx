@@ -54,23 +54,20 @@ const TESTIMONIALS = [
   {
     initials: "NR",
     name: "Nadia & Raka",
-    meta: "Menikah Mei 2026 · Jakarta",
     quote:
       "Dulu kami pakai spreadsheet dan sering lupa pembayaran vendor. Setelah pakai Kefoo, semua DP, pelunasan, dan sisa tagihan kelihatan jelas. Persiapan jadi jauh lebih tenang.",
   },
   {
     initials: "SB",
     name: "Sinta & Bima",
-    meta: "Menikah September 2026 · Bandung",
     quote:
       "Daftar tamu dan susunan kursi biasanya paling bikin pusing. Di Kefoo kami bisa atur meja, isi tamu, dan tukar posisi duduk cukup dengan klik. Hemat waktu banget.",
   },
   {
     initials: "DA",
     name: "Dewi & Aldi",
-    meta: "Menikah Desember 2026 · Surabaya",
     quote:
-      "Undangan digitalnya cantik dan gampang dibagikan. Tamu juga bisa konfirmasi kehadiran langsung, jadi kami tidak perlu rekap chat satu per satu.",
+      "Checklist persiapan dan catatan vendor jadi rapi dalam satu tempat. Kami tidak perlu buka banyak file atau chat lama untuk mencari detail yang sudah disepakati.",
   },
 ] as const;
 
@@ -124,7 +121,7 @@ export function WeddingLanding() {
           <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
             <div>
               <Reveal>
-                <Eyebrow>Wedding planner, bukan sekadar undangan</Eyebrow>
+                <Eyebrow>Wedding planner untuk persiapan yang lebih tenang</Eyebrow>
               </Reveal>
               <Reveal delay={0.05}>
                 <h1 className="mt-5 font-heading text-[2.4rem] leading-[1.06] tracking-tight text-cocoa sm:text-5xl lg:text-[3.4rem]">
@@ -136,8 +133,8 @@ export function WeddingLanding() {
               <Reveal delay={0.1}>
                 <p className="mt-5 max-w-xl text-base leading-relaxed text-cocoa/70">
                   Kelola anggaran dan pengeluaran, atur vendor, susun daftar tamu
-                  dan checklist, temukan inspirasi, serta buat undangan pernikahan
-                  digital dalam satu ruang yang dirancang dengan indah.
+                  dan checklist, atur susunan kursi, serta simpan inspirasi
+                  pernikahan dalam satu ruang yang dirancang dengan indah.
                 </p>
               </Reveal>
               <Reveal delay={0.15}>
@@ -544,7 +541,7 @@ export function WeddingLanding() {
                           {item.name}
                         </span>
                         <span className="mt-0.5 block text-[11px] text-cocoa/50">
-                          {item.meta}
+                          Pengguna Kefoo
                         </span>
                       </span>
                     </figcaption>
@@ -604,7 +601,7 @@ export function WeddingLanding() {
                     "Anggaran, pengeluaran, dan pembayaran vendor",
                     "Pengelolaan vendor dan daftar tamu",
                     "Checklist dan linimasa persiapan",
-                    "Undangan pernikahan digital",
+                    "Pengaturan tempat duduk tamu",
                     "Papan inspirasi pernikahan",
                   ].map((item) => (
                     <li key={item} className="flex items-start gap-2">
