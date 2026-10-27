@@ -324,6 +324,17 @@ export function RoomManager({
     (sum, room) => sum + Math.max(0, Number(room.capacity) || 0),
     0,
   );
+  const roomTypeCounts = useMemo(() => {
+    const counts: Record<RoomType, number> = {
+      single: 0,
+      twin: 0,
+      double: 0,
+      suite: 0,
+      custom: 0,
+    };
+    for (const room of rooms) counts[room.room_type] += 1;
+    return counts;
+  }, [rooms]);
   const breakfastEntitlements = rooms.reduce((sum, room) => {
     if (room.breakfast_type !== "included" && room.breakfast_type !== "custom") {
       return sum;
@@ -386,6 +397,24 @@ export function RoomManager({
         <StatCard label={copy.rooms.availableSpaces} value={String(Math.max(0, totalCapacity - assignedPeople))} />
         <StatCard label={copy.rooms.breakfastEntitlements} value={String(breakfastEntitlements)} hint={`${breakfastUnconfigured} ${copy.rooms.breakfastUnconfiguredCount.toLowerCase()}`} />
         <StatCard label={copy.rooms.roomsWithoutBreakfast} value={String(roomsWithoutBreakfast)} tone="neutral" />
+        <Card className="sm:col-span-2 xl:col-span-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+              {copy.rooms.roomTypeBreakdown}
+            </p>
+            <Badge tone="muted">{rooms.length}</Badge>
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {(["single", "twin", "double", "suite", "custom"] as const).map(
+              (type) => (
+                <div key={type} className="rounded-xl border border-olive-100 bg-olive-50/40 px-3 py-2">
+                  <p className="text-[11px] text-ink-soft">{roomTypeLabel(type, copy)}</p>
+                  <p className="mt-1 text-xl font-semibold text-ink">{roomTypeCounts[type]}</p>
+                </div>
+              ),
+            )}
+          </div>
+        </Card>
       </section>
 
       <div className="flex flex-wrap items-center gap-2">
