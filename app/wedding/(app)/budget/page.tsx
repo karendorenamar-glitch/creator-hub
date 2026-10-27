@@ -146,7 +146,7 @@ export default async function BudgetPage({
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
-                  {copy.budget.paymentPercentage}
+                  {copy.budget.budgetUsage}
                 </p>
                 <p className="mt-1 text-lg font-semibold text-ink">
                   {usagePercentage}%
@@ -167,7 +167,7 @@ export default async function BudgetPage({
                 <span>
                   {copy.budget.targetBudget}: {formatIDR(targetBudget)}
                 </span>
-                <span>{usagePercentage}% {copy.budget.paymentPercentage.toLowerCase()}</span>
+                <span>{usagePercentage}% {copy.budget.budgetUsage.toLowerCase()}</span>
               </div>
             </div>
           </div>

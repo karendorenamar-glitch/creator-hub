@@ -151,6 +151,7 @@ const en = {
     deleteOtherCostConfirm: "Delete this other cost?",
     autoCalculatedInfo:
       "Vendor Budget, Other Budget, Total Paid, Remaining Payment, and Payment Percentage are calculated automatically.",
+    budgetUsage: "Budget used",
     paymentPercentage: "Payment Percentage",
     budgetIncomplete:
       "Vendor Budget is incomplete: {count} vendor(s) missing an agreed price.",
@@ -883,6 +884,7 @@ const id: ModuleCopy = {
     deleteOtherCostConfirm: "Hapus biaya lainnya ini?",
     autoCalculatedInfo:
       "Budget Vendor, Budget Lainnya, Total Dibayar, Sisa Pembayaran, dan Persentase Pembayaran dihitung otomatis.",
+    budgetUsage: "Pemakaian budget",
     paymentPercentage: "Persentase Pembayaran",
     budgetIncomplete:
       "Budget Vendor belum lengkap: {count} vendor belum punya harga kesepakatan.",
