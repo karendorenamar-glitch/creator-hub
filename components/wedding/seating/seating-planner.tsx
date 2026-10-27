@@ -401,7 +401,7 @@ export function SeatingPlanner({
   }
 
   function moveTablePointerDown(
-    event: React.PointerEvent<HTMLDivElement>,
+    event: React.PointerEvent<HTMLElement>,
     table: SeatingTable,
   ) {
     event.stopPropagation();
@@ -418,7 +418,7 @@ export function SeatingPlanner({
     event.currentTarget.setPointerCapture(event.pointerId);
   }
 
-  function moveTablePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+  function moveTablePointerMove(event: React.PointerEvent<HTMLElement>) {
     const drag = dragRef.current;
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!drag || !rect) return;
@@ -476,6 +476,9 @@ export function SeatingPlanner({
     dragRef.current = null;
     if (!drag || !drag.moved) return;
     suppressClick.current = true;
+    window.setTimeout(() => {
+      suppressClick.current = false;
+    }, 0);
     const formData = new FormData();
     formData.set("id", drag.id);
     formData.set("x", String(drag.x));
@@ -761,12 +764,6 @@ export function SeatingPlanner({
                           key={row.id}
                           role="button"
                           tabIndex={0}
-                          onPointerDown={(event) =>
-                            moveTablePointerDown(event, row)
-                          }
-                          onPointerMove={moveTablePointerMove}
-                          onPointerUp={moveTablePointerUp}
-                          onPointerCancel={moveTablePointerUp}
                           onClick={() => {
                             if (suppressClick.current) {
                               suppressClick.current = false;
@@ -801,7 +798,7 @@ export function SeatingPlanner({
                               ? rowGuests.map((guest) => guest.name).join(", ")
                               : row.name
                           }
-                          className={`absolute z-20 flex cursor-grab touch-none flex-col items-center justify-center rounded-xl border-2 px-2 py-1 shadow-sm transition-colors active:cursor-grabbing ${
+                          className={`absolute z-20 flex cursor-pointer touch-none flex-col items-center justify-center rounded-xl border-2 px-2 py-1 shadow-sm transition-colors ${
                             full
                               ? "border-petal-300 bg-petal-100/90"
                               : partial
@@ -816,10 +813,20 @@ export function SeatingPlanner({
                             transform: "translate(-50%, -50%)",
                           }}
                         >
-                          <GripVertical
-                            className="absolute right-1 top-1 size-3 text-ink-soft/50"
-                            aria-hidden
-                          />
+                          <button
+                            type="button"
+                            aria-label="Move row"
+                            onPointerDown={(event) =>
+                              moveTablePointerDown(event, row)
+                            }
+                            onPointerMove={moveTablePointerMove}
+                            onPointerUp={moveTablePointerUp}
+                            onPointerCancel={moveTablePointerUp}
+                            onClick={(event) => event.stopPropagation()}
+                            className="absolute right-1 top-1 z-10 cursor-grab touch-none rounded p-1 text-ink-soft/60 hover:bg-white/80 active:cursor-grabbing"
+                          >
+                            <GripVertical className="size-3" aria-hidden />
+                          </button>
                           <div className="flex max-w-full items-center justify-center gap-1">
                             {Array.from({
                               length: Math.min(12, Math.max(1, row.capacity)),
@@ -897,12 +904,6 @@ export function SeatingPlanner({
                       key={table.id}
                       role="button"
                       tabIndex={0}
-                      onPointerDown={(event) =>
-                        moveTablePointerDown(event, table)
-                      }
-                      onPointerMove={moveTablePointerMove}
-                      onPointerUp={moveTablePointerUp}
-                      onPointerCancel={moveTablePointerUp}
                       onClick={() => {
                         if (suppressClick.current) {
                           suppressClick.current = false;
@@ -932,7 +933,7 @@ export function SeatingPlanner({
                           event.dataTransfer.getData("text/guest-id");
                         if (guestId) void assignGuest(guestId, table.id);
                       }}
-                      className={`absolute z-20 flex cursor-grab touch-none flex-col items-center justify-center border-2 text-center shadow-sm transition-colors active:cursor-grabbing ${
+                      className={`absolute z-20 flex cursor-pointer touch-none flex-col items-center justify-center border-2 text-center shadow-sm transition-colors ${
                         table.shape === "round" ? "rounded-full" : "rounded-xl"
                       } ${
                         isFull
@@ -949,10 +950,20 @@ export function SeatingPlanner({
                         transform: "translate(-50%, -50%)",
                       }}
                     >
-                      <GripVertical
-                        className="absolute right-1 top-1 size-3 text-ink-soft/50"
-                        aria-hidden
-                      />
+                      <button
+                        type="button"
+                        aria-label="Move table"
+                        onPointerDown={(event) =>
+                          moveTablePointerDown(event, table)
+                        }
+                        onPointerMove={moveTablePointerMove}
+                        onPointerUp={moveTablePointerUp}
+                        onPointerCancel={moveTablePointerUp}
+                        onClick={(event) => event.stopPropagation()}
+                        className="absolute right-1 top-1 z-10 cursor-grab touch-none rounded p-1 text-ink-soft/60 hover:bg-white/80 active:cursor-grabbing"
+                      >
+                        <GripVertical className="size-3" aria-hidden />
+                      </button>
                       <span className="max-w-full truncate px-1 text-xs font-semibold text-ink">
                         {table.name}
                       </span>
