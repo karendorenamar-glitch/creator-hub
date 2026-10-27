@@ -132,116 +132,80 @@ export function DonationNote({
 export function DonationManager({
   donations,
   schemaReady,
-  available = 0,
-  donorCovered = 0,
   copy,
 }: {
   donations: WeddingDonation[];
   schemaReady: boolean;
-  available?: number;
-  donorCovered?: number;
   copy: ModuleCopy;
 }) {
   const [modal, setModal] = useState<{
     open: boolean;
     editing: WeddingDonation | null;
   }>({ open: false, editing: null });
-  const total = donations.reduce((sum, donation) => sum + donation.amount, 0);
-
   return (
-    <Card className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-ink">
-            <Heart className="size-4 text-petal-400" aria-hidden />
-            {copy.budget.donorsTitle}
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-soft">
-            {copy.budget.donorsHint}
-          </p>
-        </div>
+    <Card className="border-[#EAE0D7] bg-[#FFFDFC] p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2.5 font-heading text-xl font-semibold text-[#796779]">
+          <Heart className="size-4 text-[#C98F97]" strokeWidth={1.6} aria-hidden />
+          {copy.budget.donorsTitle}
+        </h2>
         {schemaReady ? (
           <button
             type="button"
             onClick={() => setModal({ open: true, editing: null })}
-            className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#788568] px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-[#687558]"
           >
-            <Plus className="size-4" aria-hidden />
+            <Plus className="size-3.5" aria-hidden />
             {copy.budget.addDonation}
           </button>
         ) : null}
       </div>
 
       {!schemaReady ? (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900">
+        <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-900">
           {copy.budget.donationSchemaRequired}
         </p>
       ) : donations.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-petal-200 bg-petal-50/40 px-4 py-6 text-center text-sm text-ink-soft">
+        <p className="mt-5 border-t border-[#EAE0D7] pt-5 text-sm text-[#888176]">
           {copy.budget.donationEmpty}
         </p>
       ) : (
-        <>
-          <div className="grid gap-3 rounded-2xl bg-blush/35 px-4 py-3 sm:grid-cols-3">
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-soft">
-                {copy.budget.donationTotal}
-              </p>
-              <p className="mt-1 font-heading text-lg text-rosewood">
-                {formatIDR(total)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-soft">
-                {copy.budget.donationAvailable}
-              </p>
-              <p className="mt-1 font-heading text-lg text-olive-700">
-                {formatIDR(available)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-ink-soft">
-                {copy.budget.donorCovered}
-              </p>
-              <p className="mt-1 font-heading text-lg text-violet-700">
-                {formatIDR(donorCovered)}
-              </p>
-            </div>
-          </div>
-          <ul className="divide-y divide-petal-100">
-            {donations.map((donation) => (
-              <li
-                key={donation.id}
-                className="flex flex-wrap items-center justify-between gap-2 py-2.5"
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink">
-                    {donation.donor_name}
-                  </p>
-                  <p className="text-xs text-ink-soft">
-                    {formatIDR(donation.amount)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setModal({ open: true, editing: donation })}
-                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs text-ink-soft hover:bg-olive-50"
-                  >
-                    <Pencil className="size-3.5" aria-hidden />
-                    {copy.form.edit}
-                  </button>
-                  <DeleteForm
-                    action={deleteDonationAction}
-                    id={donation.id}
-                    copy={copy}
-                    confirmMessage={copy.budget.deleteDonationConfirm}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+        <ul className="mt-5 divide-y divide-[#EAE0D7] border-t border-[#EAE0D7]">
+          {donations.map((donation) => (
+            <li
+              key={donation.id}
+              className="flex items-center justify-between gap-3 py-3.5"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-[#49463F]">
+                  {donation.donor_name}
+                </p>
+                <p className="mt-0.5 text-xs text-[#888176]">
+                  {formatIDR(donation.amount)}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={() => setModal({ open: true, editing: donation })}
+                  aria-label={copy.form.edit}
+                  title={copy.form.edit}
+                  className="rounded-lg p-1.5 text-[#888176] transition-colors hover:bg-[#FBF7F2] hover:text-[#49463F]"
+                >
+                  <Pencil className="size-3.5" aria-hidden />
+                </button>
+                <DeleteForm
+                  action={deleteDonationAction}
+                  id={donation.id}
+                  copy={copy}
+                  label={copy.form.delete}
+                  compact
+                  confirmMessage={copy.budget.deleteDonationConfirm}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
       <DonationFormModal

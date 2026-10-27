@@ -189,8 +189,8 @@ t("duplicate payment: totalPaid", r.totalPaid, 2_000_000);
 r = calc([vendor()], [], 12_000_000);
 t("target under", r.targetStatus, "under");
 t("target under difference", r.targetDifference, 2_000_000);
-t("target under wording ID", moduleCopy.id.budget.targetUnderDetail, "{amount} lebih hemat dari target awal.");
-t("target under wording EN", moduleCopy.en.budget.targetUnderDetail, "{amount} less than the original target.");
+t("target under wording ID", moduleCopy.id.budget.targetUnderDetail, "{amount} di bawah target.");
+t("target under wording EN", moduleCopy.en.budget.targetUnderDetail, "{amount} below target.");
 
 r = calc([vendor()], [], 10_000_000);
 t("target on", r.targetStatus, "on");

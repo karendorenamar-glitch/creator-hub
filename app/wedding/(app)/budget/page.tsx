@@ -274,8 +274,6 @@ export default async function BudgetPage({
       <DonationManager
         donations={data.donations}
         schemaReady={data.donationSchemaReady}
-        available={calc.donationAvailable}
-        donorCovered={calc.donorCovered}
         copy={copy}
       />
 

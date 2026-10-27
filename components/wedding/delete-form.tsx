@@ -18,6 +18,7 @@ export function DeleteForm({
   label,
   confirmMessage,
   confirmLabel,
+  compact = false,
 }: {
   action: DeleteAction;
   id: string;
@@ -25,6 +26,7 @@ export function DeleteForm({
   label?: string;
   confirmMessage?: string;
   confirmLabel?: string;
+  compact?: boolean;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(
@@ -37,11 +39,16 @@ export function DeleteForm({
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-rose-50 hover:text-rose-600"
+        className={
+          compact
+            ? "inline-flex items-center justify-center rounded-lg p-1.5 text-[#888176] transition-colors hover:bg-rose-50 hover:text-rose-600"
+            : "inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs text-ink-soft transition-colors hover:bg-rose-50 hover:text-rose-600"
+        }
         aria-label={label ?? copy.form.delete}
+        title={label ?? copy.form.delete}
       >
         <Trash2 className="size-3.5" aria-hidden />
-        {label ?? copy.form.delete}
+        {compact ? null : (label ?? copy.form.delete)}
       </button>
     );
   }
