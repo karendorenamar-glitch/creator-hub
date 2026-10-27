@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { DonationManager, DonationNote } from "@/components/wedding/budget/donation-manager";
+import { DonationManager } from "@/components/wedding/budget/donation-manager";
 import { OtherCostManager } from "@/components/wedding/budget/other-cost-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
 import { TargetBudgetStatusCard } from "@/components/wedding/budget/target-budget-status";
@@ -128,14 +128,7 @@ export default async function BudgetPage({
         <StatCard
           label={copy.budget.remainingPayment}
           value={formatIDR(calc.remainingPayment)}
-        >
-          <DonationNote
-            donations={data.donations}
-            total={calc.donationsTotal}
-            excess={calc.donationExcess}
-            copy={copy}
-          />
-        </StatCard>
+        />
         {calc.donationShortfall > 0 ? (
           <StatCard
             label={copy.budget.donationShortfall}
@@ -166,18 +159,6 @@ export default async function BudgetPage({
           </p>
         </div>
         <Progress value={calc.paymentPercentage} />
-      </Card>
-
-      <Card className="border-olive-100 bg-olive-50/50">
-        <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
-          {copy.budget.formulaTitle}
-        </p>
-        <p className="mt-1 text-xs leading-relaxed text-ink-soft">
-          {copy.budget.formulaBody}
-        </p>
-        <p className="mt-2 text-xs leading-relaxed text-ink-soft">
-          {copy.budget.autoCalculatedInfo}
-        </p>
       </Card>
 
       <Card className="space-y-4">
