@@ -259,6 +259,12 @@ const en = {
     seatTaken: "That chair is already occupied.",
     notEnoughSeats:
       "Not enough adjacent empty chairs for this guest and their plus-ones.",
+    swapConfirm: "Swap seating positions for {a} and {b}?",
+    guestDragHint: "Drag this guest to another chair to swap positions.",
+    swapped: "Seating positions swapped.",
+    swapNeedsBoth: "Both guests need to be seated before swapping.",
+    swapSizeMismatch:
+      "These two guest groups have different sizes, so they cannot be swapped automatically.",
     assignmentFailed: "Could not assign guest.",
     assigned: "Guest assigned.",
     removed: "Guest removed from table.",
@@ -957,6 +963,12 @@ const id: ModuleCopy = {
     seatTaken: "Kursi itu sudah terisi.",
     notEnoughSeats:
       "Kursi kosong di sebelahnya tidak cukup untuk tamu ini beserta plus-ones-nya.",
+    swapConfirm: "Tukar posisi duduk {a} dan {b}?",
+    guestDragHint: "Tarik tamu ini ke kursi lain untuk menukar posisi.",
+    swapped: "Posisi duduk berhasil ditukar.",
+    swapNeedsBoth: "Kedua tamu harus sudah punya kursi sebelum ditukar.",
+    swapSizeMismatch:
+      "Jumlah orang di kedua grup tamu berbeda, jadi tidak bisa ditukar otomatis.",
     assignmentFailed: "Tamu gagal ditempatkan.",
     assigned: "Tamu ditempatkan.",
     removed: "Tamu dikeluarkan dari meja.",

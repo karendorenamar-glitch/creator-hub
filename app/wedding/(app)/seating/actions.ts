@@ -539,6 +539,79 @@ export async function assignGuestAction(
   return { success: ctx.copy.seating.assigned };
 }
 
+export async function swapSeatGuestsAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const eventId = text(formData, "eventId");
+  const guestA = text(formData, "guestA");
+  const guestB = text(formData, "guestB");
+  if (![eventId, guestA, guestB].every(isUuid) || guestA === guestB) {
+    return { error: ctx.copy.errors.notFound };
+  }
+
+  type SwapAssignment = {
+    id: string;
+    guest_id: string;
+    table_id: string;
+    seat_ids?: string[];
+  };
+  const full = await ctx.supabase
+    .from("seating_assignments")
+    .select("id, guest_id, table_id, seat_ids")
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .in("guest_id", [guestA, guestB]);
+  let rows: SwapAssignment[] = (full.data ?? []) as SwapAssignment[];
+  if (full.error?.code === "42703") {
+    const fallback = await ctx.supabase
+      .from("seating_assignments")
+      .select("id, guest_id, table_id")
+      .eq("event_id", eventId)
+      .eq("wedding_id", ctx.weddingId)
+      .in("guest_id", [guestA, guestB]);
+    if (fallback.error) return { error: actionError(fallback.error, ctx.copy) };
+    rows = fallback.data ?? [];
+  } else if (full.error) {
+    return { error: actionError(full.error, ctx.copy) };
+  }
+
+  const a = rows.find((row) => row.guest_id === guestA);
+  const b = rows.find((row) => row.guest_id === guestB);
+  if (!a || !b) return { error: ctx.copy.seating.swapNeedsBoth };
+
+  const seatsA = a.seat_ids?.length ? a.seat_ids : [a.table_id];
+  const seatsB = b.seat_ids?.length ? b.seat_ids : [b.table_id];
+  if (seatsA.length !== seatsB.length) {
+    return { error: ctx.copy.seating.swapSizeMismatch };
+  }
+
+  const first = await ctx.supabase
+    .from("seating_assignments")
+    .update({ table_id: b.table_id, seat_ids: seatsB })
+    .eq("id", a.id)
+    .eq("wedding_id", ctx.weddingId);
+  if (first.error) return { error: actionError(first.error, ctx.copy) };
+
+  const second = await ctx.supabase
+    .from("seating_assignments")
+    .update({ table_id: a.table_id, seat_ids: seatsA })
+    .eq("id", b.id)
+    .eq("wedding_id", ctx.weddingId);
+  if (second.error) {
+    // Best-effort rollback of the first swap row.
+    await ctx.supabase
+      .from("seating_assignments")
+      .update({ table_id: a.table_id, seat_ids: seatsA })
+      .eq("id", a.id)
+      .eq("wedding_id", ctx.weddingId);
+    return { error: actionError(second.error, ctx.copy) };
+  }
+
+  revalidateSeating();
+  return { success: ctx.copy.seating.swapped };
+}
+
 export async function unassignGuestAction(
   formData: FormData,
 ): Promise<ActionResult> {

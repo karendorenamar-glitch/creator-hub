@@ -25,6 +25,7 @@ import {
   moveTableAction,
   saveEventAction,
   saveTableAction,
+  swapSeatGuestsAction,
   unassignGuestAction,
 } from "@/app/wedding/(app)/seating/actions";
 import {
@@ -510,7 +511,9 @@ export function SeatingPlanner({
     if (Number(table.capacity) > 1) return;
     const current = assignmentByGuest.get(guestId);
     if (
-      current?.table_id === tableId &&
+      current &&
+      (current.table_id === tableId ||
+        (current.seat_ids ?? []).includes(tableId)) &&
       (current.seat_ids?.length ?? 0) >= guestPeopleCount(guest)
     ) {
       setSelectedTableId(tableId);
@@ -536,6 +539,46 @@ export function SeatingPlanner({
     } finally {
       setBusy(false);
     }
+  }
+
+  async function swapGuests(guestA: string, guestB: string) {
+    if (!selectedEvent || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.set("eventId", selectedEvent.id);
+      formData.set("guestA", guestA);
+      formData.set("guestB", guestB);
+      const result = await swapSeatGuestsAction(formData);
+      if (result?.error) setError(result.error);
+    } catch {
+      setError(copy.errors.generic);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGuestDrop(guestId: string, chairId: string) {
+    if (!selectedEvent || busy) return;
+    const targetAssignment = assignmentByChair.get(chairId);
+    if (targetAssignment && targetAssignment.guest_id !== guestId) {
+      const movingGuest = guestById.get(guestId);
+      const targetGuest = guestById.get(targetAssignment.guest_id);
+      if (!movingGuest || !targetGuest) return;
+      if (!assignmentByGuest.has(guestId)) {
+        setError(copy.seating.seatTaken);
+        return;
+      }
+      const message = copy.seating.swapConfirm
+        .replace("{a}", movingGuest.name)
+        .replace("{b}", targetGuest.name);
+      if (!window.confirm(message)) return;
+      await swapGuests(guestId, targetAssignment.guest_id);
+      setSelectedTableId(chairId);
+      return;
+    }
+    await assignGuest(guestId, chairId);
   }
 
   async function removeGuest(guestId: string) {
@@ -1053,7 +1096,7 @@ export function SeatingPlanner({
                         event.preventDefault();
                         const guestId =
                           event.dataTransfer.getData("text/guest-id");
-                        if (guestId) void assignGuest(guestId, chair.id);
+                        if (guestId) void handleGuestDrop(guestId, chair.id);
                       }}
                       title={guest?.name ?? chair.name}
                       className={`absolute z-30 cursor-pointer rounded-t-xl rounded-b-md border-2 p-1 text-center shadow-sm transition-colors ${
@@ -1085,12 +1128,28 @@ export function SeatingPlanner({
                         onPointerUp={moveTablePointerUp}
                         onPointerCancel={moveTablePointerUp}
                         onClick={(event) => event.stopPropagation()}
-                        className="absolute -right-1 -top-1 z-10 cursor-grab touch-none rounded-full border border-olive-200 bg-white p-0.5 text-ink-soft/60 shadow-sm hover:bg-olive-50 active:cursor-grabbing"
+                        className="absolute -right-1.5 -top-1.5 z-10 cursor-grab touch-none rounded-full border border-olive-200 bg-white p-1 text-ink-soft/70 shadow-sm hover:bg-olive-50 active:cursor-grabbing"
                       >
-                        <GripVertical className="size-2.5" aria-hidden />
+                        <GripVertical className="size-3.5" aria-hidden />
                       </button>
                       <span className="mt-1 block h-1 w-4/5 rounded-full bg-current opacity-20" />
-                      <span className="mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink">
+                      <span
+                        draggable={Boolean(guest)}
+                        onDragStart={(event) => {
+                          if (!guest) return;
+                          event.stopPropagation();
+                          event.dataTransfer.setData("text/guest-id", guest.id);
+                          event.dataTransfer.effectAllowed = "move";
+                        }}
+                        title={
+                          guest
+                            ? `${guest.name} · ${copy.seating.guestDragHint}`
+                            : chair.name
+                        }
+                        className={`mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink ${
+                          guest ? "cursor-grab active:cursor-grabbing" : ""
+                        }`}
+                      >
                         {guest ? guest.name : chair.name}
                       </span>
                       {guest && guestPeopleCount(guest) > 1 ? (
