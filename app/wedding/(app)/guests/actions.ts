@@ -26,40 +26,34 @@ async function context() {
   return ctx;
 }
 
-type GuestValues = {
-  name: string;
-  phone: string | null;
+type GuestCommon = {
   email: string | null;
   guest_group: string | null;
   invitation_status: "not_sent" | "sent";
   rsvp_status: "pending" | "attending" | "not_attending";
-  plus_ones: number;
   notes: string | null;
 };
 
-function readGuest(
+type GuestPerson = {
+  name: string;
+  phone: string | null;
+  plus_ones: number;
+};
+
+type GuestValues = GuestCommon & GuestPerson;
+
+function readGuestCommon(
   formData: FormData,
   copy: ModuleCopy,
-): { ok: true; values: GuestValues } | { ok: false; error: string } {
-  const name = text(formData, "name").slice(0, 120);
-  if (!name) return { ok: false, error: copy.form.required };
-
+): { ok: true; values: GuestCommon } | { ok: false; error: string } {
   const email = optionalText(formData, "email", 200);
   if (email && !isEmail(email)) {
     return { ok: false, error: copy.form.invalidEmail };
   }
 
-  const plusOnesRaw = text(formData, "plusOnes");
-  const plusOnes = plusOnesRaw ? parseCount(plusOnesRaw) : 0;
-  if (plusOnes === null || plusOnes > 20) {
-    return { ok: false, error: copy.form.invalidNumber };
-  }
-
   return {
     ok: true,
     values: {
-      name,
-      phone: optionalText(formData, "phone", 40),
       email,
       guest_group: optionalText(formData, "guestGroup", 80),
       invitation_status: enumValue(
@@ -69,9 +63,70 @@ function readGuest(
         "not_sent",
       ),
       rsvp_status: enumValue(formData, "rsvpStatus", RSVP_STATUSES, "pending"),
-      plus_ones: plusOnes,
       notes: optionalText(formData, "notes", 1000),
     },
+  };
+}
+
+function readGuestPeople(
+  formData: FormData,
+  copy: ModuleCopy,
+): { ok: true; values: GuestPerson[] } | { ok: false; error: string } {
+  // The form renders name/phone/plusOnes together for every row, so the three
+  // arrays stay aligned even when an empty row is submitted.
+  const names = formData.getAll("name").map((value) => String(value).trim());
+  const phones = formData.getAll("phone").map((value) => String(value).trim());
+  const plusOnes = formData
+    .getAll("plusOnes")
+    .map((value) => String(value).trim());
+  const rowCount = Math.max(names.length, phones.length, plusOnes.length);
+  const people: GuestPerson[] = [];
+
+  for (let index = 0; index < rowCount; index += 1) {
+    const name = names[index] ?? "";
+    const phone = phones[index] ?? "";
+    const plusOnesRaw = plusOnes[index] ?? "";
+    const normalizedPlusOnes = plusOnesRaw.replace(/[^\d]/g, "");
+
+    // Ignore a completely empty row (the default "0" companion value does not
+    // make an otherwise blank row count as a person).
+    if (!name && !phone && (!normalizedPlusOnes || normalizedPlusOnes === "0")) {
+      continue;
+    }
+    if (!name) return { ok: false, error: copy.form.required };
+
+    const parsedPlusOnes = plusOnesRaw ? parseCount(plusOnesRaw) : 0;
+    if (parsedPlusOnes === null || parsedPlusOnes > 20) {
+      return { ok: false, error: copy.form.invalidNumber };
+    }
+
+    people.push({
+      name: name.slice(0, 120),
+      phone: phone ? phone.slice(0, 40) : null,
+      plus_ones: parsedPlusOnes,
+    });
+  }
+
+  if (people.length === 0) {
+    return { ok: false, error: copy.form.required };
+  }
+
+  return { ok: true, values: people };
+}
+
+function readGuest(
+  formData: FormData,
+  copy: ModuleCopy,
+): { ok: true; values: GuestValues } | { ok: false; error: string } {
+  const common = readGuestCommon(formData, copy);
+  if (!common.ok) return common;
+
+  const people = readGuestPeople(formData, copy);
+  if (!people.ok) return people;
+
+  return {
+    ok: true,
+    values: { ...common.values, ...people.values[0] },
   };
 }
 
@@ -80,13 +135,19 @@ export async function createGuestAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
-  const parsed = readGuest(formData, ctx.copy);
-  if (!parsed.ok) return { error: parsed.error };
+  const common = readGuestCommon(formData, ctx.copy);
+  if (!common.ok) return { error: common.error };
 
-  const { error } = await ctx.supabase.from("guests").insert({
-    wedding_id: ctx.session.wedding.id,
-    ...parsed.values,
-  });
+  const people = readGuestPeople(formData, ctx.copy);
+  if (!people.ok) return { error: people.error };
+
+  const { error } = await ctx.supabase.from("guests").insert(
+    people.values.map((person) => ({
+      wedding_id: ctx.session.wedding.id,
+      ...common.values,
+      ...person,
+    })),
+  );
 
   if (error) return { error: actionError(error, ctx.copy) };
 

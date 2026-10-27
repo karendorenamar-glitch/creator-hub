@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { GuestManager } from "@/components/wedding/guests/guest-manager";
-import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
+import { Card, PageHeader, Progress, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { totalGuestPeople } from "@/lib/wedding/guest-count";
 import { moduleCopy } from "@/lib/wedding/module-copy";
@@ -25,6 +26,13 @@ export default async function GuestsPage() {
 
   const guests = data ?? [];
   const invited = totalGuestPeople(guests);
+  const target = Number(session.wedding.estimated_guest_count ?? 0);
+  const hasTarget = Number.isFinite(target) && target > 0;
+  const remaining = hasTarget ? target - invited : null;
+  const overTarget = remaining !== null && remaining < 0;
+  const targetProgress = hasTarget
+    ? Math.min(100, Math.round((invited / target) * 100))
+    : 0;
   const attending = totalGuestPeople(
     guests.filter((g) => g.rsvp_status === "attending"),
   );
@@ -60,6 +68,63 @@ export default async function GuestsPage() {
           hint={`${copy.guests.sent}: ${invitationsSent}`}
         />
       </section>
+
+      <Card
+        className={
+          overTarget
+            ? "border-rose-200 bg-rose-50/70"
+            : "border-olive-100 bg-olive-50/45"
+        }
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-soft">
+              {copy.guests.targetTitle}
+            </p>
+            <p className="mt-1 font-heading text-xl font-semibold text-ink">
+              {hasTarget
+                ? copy.guests.targetProgress
+                    .replace("{invited}", String(invited))
+                    .replace("{target}", String(target))
+                : copy.guests.targetUnset}
+            </p>
+          </div>
+          {!hasTarget ? (
+            <Link
+              href="/wedding/settings"
+              className="rounded-xl border border-olive-200 bg-white px-3 py-2 text-xs font-medium text-olive-700 hover:bg-olive-50"
+            >
+              {copy.guests.manageTarget}
+            </Link>
+          ) : null}
+        </div>
+
+        {hasTarget ? (
+          <>
+            <div className="mt-3">
+              <Progress value={targetProgress} />
+            </div>
+            <p
+              className={`mt-2 text-sm font-medium ${
+                overTarget ? "text-rose-700" : "text-olive-700"
+              }`}
+            >
+              {overTarget
+                ? copy.guests.targetOver.replace(
+                    "{count}",
+                    String(Math.abs(remaining ?? 0)),
+                  )
+                : remaining === 0
+                  ? copy.guests.targetReached
+                  : copy.guests.targetRemaining.replace(
+                      "{count}",
+                      String(remaining ?? 0),
+                    )}
+            </p>
+          </>
+        ) : null}
+        <p className="mt-2 text-xs text-ink-soft">{copy.guests.targetHint}</p>
+      </Card>
 
       <Card>
         <GuestManager guests={guests} copy={copy} locale={locale} />

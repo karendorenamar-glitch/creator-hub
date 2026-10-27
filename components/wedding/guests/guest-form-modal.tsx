@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { createGuestAction, updateGuestAction } from "@/app/wedding/(app)/guests/actions";
 import { FormModal } from "@/components/wedding/form-modal";
 import {
@@ -13,18 +14,36 @@ import type { Guest } from "@/lib/wedding/db-types";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
+type GuestRow = {
+  key: string;
+  name: string;
+  phone: string;
+  plusOnes: string;
+};
+
+function newGuestRow(): GuestRow {
+  return {
+    key: crypto.randomUUID(),
+    name: "",
+    phone: "",
+    plusOnes: "0",
+  };
+}
+
 export function GuestFormModal({
   open,
   onClose,
   copy,
   guest,
   locale,
+  groups = [],
 }: {
   open: boolean;
   onClose: () => void;
   copy: ModuleCopy;
   guest: Guest | null;
   locale: "en" | "id";
+  groups?: string[];
 }) {
   const action = guest ? updateGuestAction : createGuestAction;
   const [state, formAction, pending] = useActionState(action, null);
@@ -32,6 +51,35 @@ export function GuestFormModal({
   useEffect(() => {
     if (state?.success) onClose();
   }, [state, onClose]);
+
+  const [rows, setRows] = useState<GuestRow[]>(() =>
+    guest
+      ? [
+          {
+            key: guest.id,
+            name: guest.name,
+            phone: guest.phone ?? "",
+            plusOnes: String(guest.plus_ones),
+          },
+        ]
+      : [newGuestRow()],
+  );
+
+  function updateRow(key: string, patch: Partial<GuestRow>) {
+    setRows((current) =>
+      current.map((row) => (row.key === key ? { ...row, ...patch } : row)),
+    );
+  }
+
+  function addRow() {
+    setRows((current) => (current.length >= 50 ? current : [...current, newGuestRow()]));
+  }
+
+  function removeRow(key: string) {
+    setRows((current) =>
+      current.length <= 1 ? current : current.filter((row) => row.key !== key),
+    );
+  }
 
   return (
     <FormModal
@@ -42,64 +90,126 @@ export function GuestFormModal({
     >
       <form action={formAction} className="space-y-4">
         {guest ? <input type="hidden" name="id" value={guest.id} /> : null}
+        {guest ? (
+          <input type="hidden" name="email" value={guest.email ?? ""} />
+        ) : null}
         <FormAlert error={state?.error} />
 
-        <Field label={copy.guests.name} htmlFor="guest-name">
+        <Field
+          label={`${copy.guests.group} (${copy.form.optional})`}
+          htmlFor="guest-group"
+          hint={copy.guests.groupHint}
+        >
           <input
-            id="guest-name"
-            name="name"
-            required
-            maxLength={120}
-            defaultValue={guest?.name ?? ""}
+            id="guest-group"
+            name="guestGroup"
+            list="guest-group-options"
+            maxLength={80}
+            placeholder={copy.guests.groupPlaceholder}
+            defaultValue={guest?.guest_group ?? ""}
             className={inputClass}
           />
+          <datalist id="guest-group-options">
+            {groups.map((group) => (
+              <option key={group} value={group} />
+            ))}
+          </datalist>
         </Field>
 
+        <div className="space-y-3 rounded-2xl border border-olive-100 bg-olive-50/35 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-ink">{copy.guests.people}</p>
+            <span className="text-xs text-ink-soft">{rows.length}</span>
+          </div>
+
+          {rows.map((row, index) => (
+            <div
+              key={row.key}
+              className="space-y-3 rounded-xl border border-olive-100 bg-white p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-ink-soft">
+                  {index + 1}
+                </p>
+                {!guest && rows.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => removeRow(row.key)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:underline"
+                  >
+                    <Trash2 className="size-3.5" aria-hidden />
+                    {copy.guests.removeName}
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field
+                  label={copy.guests.name}
+                  htmlFor={`guest-name-${row.key}`}
+                  className="sm:col-span-2"
+                >
+                  <input
+                    id={`guest-name-${row.key}`}
+                    name="name"
+                    maxLength={120}
+                    value={row.name}
+                    onChange={(event) =>
+                      updateRow(row.key, { name: event.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </Field>
+                <Field
+                  label={`${copy.guests.phone} (${copy.form.optional})`}
+                  htmlFor={`guest-phone-${row.key}`}
+                >
+                  <input
+                    id={`guest-phone-${row.key}`}
+                    name="phone"
+                    maxLength={40}
+                    value={row.phone}
+                    onChange={(event) =>
+                      updateRow(row.key, { phone: event.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </Field>
+                <Field
+                  label={copy.guests.plusOnes}
+                  htmlFor={`guest-plus-${row.key}`}
+                  hint={copy.guests.plusOnesHint}
+                >
+                  <input
+                    id={`guest-plus-${row.key}`}
+                    name="plusOnes"
+                    type="number"
+                    min={0}
+                    max={20}
+                    value={row.plusOnes}
+                    onChange={(event) =>
+                      updateRow(row.key, { plusOnes: event.target.value })
+                    }
+                    className={inputClass}
+                  />
+                </Field>
+              </div>
+            </div>
+          ))}
+
+          {!guest ? (
+            <button
+              type="button"
+              onClick={addRow}
+              className="inline-flex items-center gap-2 rounded-xl border border-olive-200 bg-white px-3 py-2 text-sm font-medium text-olive-700 hover:bg-olive-50"
+            >
+              <Plus className="size-4" aria-hidden />
+              {copy.guests.addName}
+            </button>
+          ) : null}
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={`${copy.guests.phone} (${copy.form.optional})`} htmlFor="guest-phone">
-            <input
-              id="guest-phone"
-              name="phone"
-              maxLength={40}
-              defaultValue={guest?.phone ?? ""}
-              className={inputClass}
-            />
-          </Field>
-          <Field label={`${copy.guests.email} (${copy.form.optional})`} htmlFor="guest-email">
-            <input
-              id="guest-email"
-              name="email"
-              type="email"
-              maxLength={200}
-              defaultValue={guest?.email ?? ""}
-              className={inputClass}
-            />
-          </Field>
-          <Field label={`${copy.guests.group} (${copy.form.optional})`} htmlFor="guest-group">
-            <input
-              id="guest-group"
-              name="guestGroup"
-              maxLength={80}
-              placeholder={copy.guests.groupPlaceholder}
-              defaultValue={guest?.guest_group ?? ""}
-              className={inputClass}
-            />
-          </Field>
-          <Field
-            label={copy.guests.plusOnes}
-            htmlFor="guest-plus"
-            hint={copy.guests.plusOnesHint}
-          >
-            <input
-              id="guest-plus"
-              name="plusOnes"
-              type="number"
-              min={0}
-              max={20}
-              defaultValue={guest?.plus_ones ?? 0}
-              className={inputClass}
-            />
-          </Field>
           <Field label={copy.guests.invitation} htmlFor="guest-invitation">
             <select
               id="guest-invitation"

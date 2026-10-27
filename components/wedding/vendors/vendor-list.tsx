@@ -134,6 +134,22 @@ function VendorRow({
   );
 }
 
+function paymentStatusRank(status?: VendorPaymentSummary["paymentStatus"]) {
+  switch (status) {
+    case "lunas":
+      return 0;
+    case "termin_lanjutan":
+      return 1;
+    case "dp":
+      return 2;
+    case "incomplete":
+      return 4;
+    case "diskusi":
+    default:
+      return 3;
+  }
+}
+
 export function VendorList({
   activeVendors,
   archivedVendors,
@@ -208,6 +224,18 @@ export function VendorList({
     [proofs],
   );
 
+  const sortedActiveVendors = useMemo(
+    () =>
+      [...activeVendors].sort((a, b) => {
+        const rankDiff =
+          paymentStatusRank(summaryByVendor[a.id]?.paymentStatus) -
+          paymentStatusRank(summaryByVendor[b.id]?.paymentStatus);
+        if (rankDiff !== 0) return rankDiff;
+        return (a.name ?? "").localeCompare(b.name ?? "");
+      }),
+    [activeVendors, summaryByVendor],
+  );
+
   function emptySummary(): VendorPaymentSummary {
     return {
       paymentCount: 0,
@@ -258,7 +286,7 @@ export function VendorList({
         </p>
       ) : (
         <div className="space-y-3">
-          {activeVendors.map((vendor) => (
+          {sortedActiveVendors.map((vendor) => (
             <VendorRow
               key={vendor.id}
               vendor={vendor}

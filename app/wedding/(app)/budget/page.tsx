@@ -73,9 +73,6 @@ export default async function BudgetPage({
         <TargetBudgetStatusCard
           status={calc.targetStatus}
           difference={calc.targetDifference}
-          targetBudget={calc.targetBudget}
-          vendorBudget={calc.vendorBudget}
-          otherCostsTotal={calc.otherCostsTotal}
           missingAgreedPriceCount={calc.missingAgreedPriceCount}
           copy={copy}
         />

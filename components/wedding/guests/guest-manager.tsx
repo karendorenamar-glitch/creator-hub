@@ -49,7 +49,7 @@ export function GuestManager({
   const needle = query.trim().toLowerCase();
   const filtered = guests.filter((guest) => {
     if (needle) {
-      const haystack = [guest.name, guest.phone, guest.email, guest.guest_group]
+      const haystack = [guest.name, guest.phone, guest.guest_group]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -150,7 +150,7 @@ export function GuestManager({
                   ) : null}
                 </p>
                 <p className="mt-0.5 truncate text-xs text-ink-soft">
-                  {[guest.guest_group, guest.phone, guest.email]
+                  {[guest.guest_group, guest.phone]
                     .filter(Boolean)
                     .join(" · ") || "—"}
                 </p>
@@ -194,6 +194,7 @@ export function GuestManager({
         copy={copy}
         guest={editing}
         locale={locale}
+        groups={groups}
       />
     </div>
   );

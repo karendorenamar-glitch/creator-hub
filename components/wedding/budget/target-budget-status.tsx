@@ -36,17 +36,11 @@ function statusClass(status: TargetBudgetStatus) {
 export function TargetBudgetStatusCard({
   status,
   difference,
-  targetBudget,
-  vendorBudget,
-  otherCostsTotal,
   missingAgreedPriceCount,
   copy,
 }: {
   status: TargetBudgetStatus;
   difference: number | null;
-  targetBudget: number;
-  vendorBudget: number;
-  otherCostsTotal: number;
   missingAgreedPriceCount: number;
   copy: ModuleCopy;
 }) {
@@ -74,26 +68,14 @@ export function TargetBudgetStatusCard({
 
   return (
     <Card className={`border ${statusClass(status)}`}>
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-[0.12em] opacity-70">
-            {copy.budget.targetStatus}
-          </p>
-          <p className="mt-1 font-heading text-xl font-semibold">
-            {statusLabel(status, copy)}
-          </p>
-          <p className="mt-1 text-sm opacity-80">{detail}</p>
-        </div>
-        <div className="text-sm sm:text-right">
-          <p className="opacity-70">{copy.budget.targetBudget}</p>
-          <p className="font-medium">
-            {targetBudget > 0 ? formatIDR(targetBudget) : "—"}
-          </p>
-          <p className="mt-1 opacity-70">{copy.budget.vendorBudget}</p>
-          <p className="font-medium">{formatIDR(vendorBudget)}</p>
-          <p className="mt-1 opacity-70">{copy.budget.otherCostsTotal}</p>
-          <p className="font-medium">{formatIDR(otherCostsTotal)}</p>
-        </div>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-[0.12em] opacity-70">
+          {copy.budget.targetStatus}
+        </p>
+        <p className="mt-1 font-heading text-xl font-semibold">
+          {statusLabel(status, copy)}
+        </p>
+        <p className="mt-1 text-sm opacity-80">{detail}</p>
       </div>
     </Card>
   );
