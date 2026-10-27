@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { GuestManager } from "@/components/wedding/guests/guest-manager";
 import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { totalGuestPeople } from "@/lib/wedding/guest-count";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
@@ -23,11 +24,16 @@ export default async function GuestsPage() {
     .order("name", { ascending: true });
 
   const guests = data ?? [];
-  const attending = guests.filter((g) => g.rsvp_status === "attending").length;
-  const pending = guests.filter((g) => g.rsvp_status === "pending").length;
-  const notAttending = guests.filter(
-    (g) => g.rsvp_status === "not_attending",
-  ).length;
+  const invited = totalGuestPeople(guests);
+  const attending = totalGuestPeople(
+    guests.filter((g) => g.rsvp_status === "attending"),
+  );
+  const pending = totalGuestPeople(
+    guests.filter((g) => g.rsvp_status === "pending"),
+  );
+  const notAttending = totalGuestPeople(
+    guests.filter((g) => g.rsvp_status === "not_attending"),
+  );
   const invitationsSent = guests.filter(
     (g) => g.invitation_status === "sent",
   ).length;
@@ -37,7 +43,11 @@ export default async function GuestsPage() {
       <PageHeader title={copy.guests.title} subtitle={copy.guests.subtitle} />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={copy.guests.invited} value={String(guests.length)} />
+        <StatCard
+          label={copy.guests.invited}
+          value={String(invited)}
+          hint={copy.guests.invitedHint}
+        />
         <StatCard
           label={copy.guests.attending}
           value={String(attending)}

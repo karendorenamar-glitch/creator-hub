@@ -85,7 +85,11 @@ export function GuestFormModal({
               className={inputClass}
             />
           </Field>
-          <Field label={copy.guests.plusOnes} htmlFor="guest-plus">
+          <Field
+            label={copy.guests.plusOnes}
+            htmlFor="guest-plus"
+            hint={copy.guests.plusOnesHint}
+          >
             <input
               id="guest-plus"
               name="plusOnes"

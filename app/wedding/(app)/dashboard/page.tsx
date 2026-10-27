@@ -21,6 +21,7 @@ import { weddingCopy } from "@/lib/wedding/copy";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { daysFromToday, formatIDR, formatWeddingDate } from "@/lib/wedding/format";
 import { loadBudgetData } from "@/lib/wedding/budget-data";
+import { totalGuestPeople } from "@/lib/wedding/guest-count";
 import { coupleNames, loadWeddingSession } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
@@ -41,7 +42,7 @@ export default async function DashboardPage() {
       session.wedding.id,
       Number(session.wedding.total_budget ?? 0),
     ),
-    supabase.from("guests").select("id, rsvp_status"),
+    supabase.from("guests").select("id, rsvp_status, plus_ones"),
     supabase
       .from("checklist_tasks")
       .select("id, title, status, due_date, priority")
@@ -52,9 +53,16 @@ export default async function DashboardPage() {
   const tasks = tasksResult.data ?? [];
   const calc = budgetData.calc;
 
-  const attending = guests.filter((g) => g.rsvp_status === "attending").length;
-  const pendingRsvp = guests.filter((g) => g.rsvp_status === "pending").length;
-  const notAttending = guests.filter((g) => g.rsvp_status === "not_attending").length;
+  const invitedPeople = totalGuestPeople(guests);
+  const attending = totalGuestPeople(
+    guests.filter((g) => g.rsvp_status === "attending"),
+  );
+  const pendingRsvp = totalGuestPeople(
+    guests.filter((g) => g.rsvp_status === "pending"),
+  );
+  const notAttending = totalGuestPeople(
+    guests.filter((g) => g.rsvp_status === "not_attending"),
+  );
 
   const doneTasks = tasks.filter((t) => t.status === "done").length;
 
@@ -189,7 +197,10 @@ export default async function DashboardPage() {
             <Users className="size-4 text-olive-400" aria-hidden />
           </div>
           <p className="mt-3 text-3xl font-semibold tracking-tight text-ink">
-            {guests.length}
+            {invitedPeople}
+          </p>
+          <p className="mt-1 text-xs text-ink-soft">
+            {moduleText.guests.invitedHint}
           </p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             <Badge tone="success">

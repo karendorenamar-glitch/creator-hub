@@ -8,6 +8,7 @@ import { GuestFormModal } from "@/components/wedding/guests/guest-form-modal";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { Badge } from "@/components/wedding/ui";
 import type { Guest } from "@/lib/wedding/db-types";
+import { guestPeopleCount } from "@/lib/wedding/guest-count";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -28,6 +29,7 @@ export function GuestManager({
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Guest | null>(null);
+  const [formVersion, setFormVersion] = useState(0);
   const [query, setQuery] = useState("");
   const [groupFilter, setGroupFilter] = useState("all");
   const [rsvpFilter, setRsvpFilter] = useState("all");
@@ -62,11 +64,13 @@ export function GuestManager({
 
   function openCreate() {
     setEditing(null);
+    setFormVersion((version) => version + 1);
     setModalOpen(true);
   }
 
   function openEdit(guest: Guest) {
     setEditing(guest);
+    setFormVersion((version) => version + 1);
     setModalOpen(true);
   }
 
@@ -150,6 +154,13 @@ export function GuestManager({
                     .filter(Boolean)
                     .join(" · ") || "—"}
                 </p>
+                <p className="mt-0.5 text-[11px] font-medium text-rosewood">
+                  {guest.plus_ones > 0
+                    ? copy.guests.plusOnesInfo
+                        .replace("{count}", String(guest.plus_ones))
+                        .replace("{total}", String(guestPeopleCount(guest)))
+                    : copy.guests.onePerson}
+                </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
@@ -177,6 +188,7 @@ export function GuestManager({
       )}
 
       <GuestFormModal
+        key={`${editing?.id ?? "new-guest"}-${formVersion}`}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         copy={copy}
