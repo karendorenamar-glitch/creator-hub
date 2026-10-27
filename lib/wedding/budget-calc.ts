@@ -349,7 +349,7 @@ export function calculateBudget(input: {
   );
   const paymentPercentage =
     plannedBudget > 0
-      ? Math.round((totalPaid / plannedBudget) * 10000) / 100
+      ? Math.round((cashPaid / plannedBudget) * 10000) / 100
       : 0;
 
   const targetBudget = Math.max(0, amountOf(input.targetBudget));

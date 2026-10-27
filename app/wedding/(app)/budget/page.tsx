@@ -111,10 +111,6 @@ export default async function BudgetPage({
   }
 
   const totalCost = calc.vendorBudget + calc.otherCostsTotal;
-  const usagePercentage =
-    targetBudget > 0
-      ? Math.round((totalCost / targetBudget) * 10000) / 100
-      : 0;
   const statusDetail = targetStatusDetail(
     calc.targetStatus,
     calc.targetDifference,
@@ -135,7 +131,15 @@ export default async function BudgetPage({
               </p>
               <TotalBudgetForm copy={copy} totalBudget={targetBudget} />
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
+                  {copy.budget.targetBudget}
+                </p>
+                <p className="mt-1 text-lg font-semibold text-ink">
+                  {formatIDR(targetBudget)}
+                </p>
+              </div>
               <div>
                 <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
                   {copy.budget.totalCost}
@@ -143,31 +147,6 @@ export default async function BudgetPage({
                 <p className="mt-1 text-lg font-semibold text-ink">
                   {formatIDR(totalCost)}
                 </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
-                  {copy.budget.budgetUsage}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-ink">
-                  {usagePercentage}%
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
-                  {copy.budget.donationTotal}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-rosewood">
-                  {formatIDR(calc.donationsTotal)}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Progress value={usagePercentage} />
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-soft">
-                <span>
-                  {copy.budget.targetBudget}: {formatIDR(targetBudget)}
-                </span>
-                <span>{usagePercentage}% {copy.budget.budgetUsage.toLowerCase()}</span>
               </div>
             </div>
           </div>
@@ -184,9 +163,6 @@ export default async function BudgetPage({
                 {statusDetail}
               </p>
             </div>
-            <p className="text-xs leading-relaxed opacity-70">
-              {copy.budget.targetBudget}: {formatIDR(targetBudget)} · {copy.budget.totalCost}: {formatIDR(totalCost)}
-            </p>
           </div>
         </div>
       </Card>
@@ -206,38 +182,46 @@ export default async function BudgetPage({
       ) : null}
 
       <section className="grid gap-4 lg:grid-cols-[1.45fr_1fr]">
-        <Card className="relative overflow-hidden border-petal-200 bg-gradient-to-br from-rosewood via-[#75434b] to-cocoa p-6 text-white sm:p-8">
-          <div className="pointer-events-none absolute -right-12 -top-16 size-48 rounded-full border border-white/10 bg-white/5" />
+        <Card className="relative overflow-hidden border-[#EAE0D7] bg-[#FBF7F2] p-6 sm:p-8">
+          <div className="pointer-events-none absolute -right-12 -top-16 size-48 rounded-full bg-[#F2E2E2]/70" />
           <div className="relative">
-            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-white/60">
+            <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#796779]">
               {copy.budget.sisaPerluDisiapkan}
             </p>
-            <p className="mt-3 font-heading text-4xl leading-none tracking-tight sm:text-5xl">
+            <p className="mt-3 font-heading text-4xl leading-none tracking-tight text-[#49463F] sm:text-5xl">
               {formatIDR(calc.sisaPerluDisiapkan)}
             </p>
-            <p className="mt-3 max-w-md text-xs leading-relaxed text-white/65">
+            <p className="mt-3 max-w-md text-xs leading-relaxed text-[#888176]">
               {copy.budget.sisaHint}
             </p>
-            <div className="mt-7 grid grid-cols-2 gap-4 border-t border-white/15 pt-4 text-xs text-white/65">
+            <div className="mt-7 grid grid-cols-2 gap-4 border-t border-[#EAE0D7] pt-4 text-xs text-[#888176]">
               <div>
                 <p>{copy.budget.sisaTagihan}</p>
-                <p className="mt-1 font-medium text-white">{formatIDR(calc.sisaTagihan)}</p>
+                <p className="mt-1 font-medium text-[#49463F]">{formatIDR(calc.sisaTagihan)}</p>
               </div>
               <div>
                 <p>{copy.budget.donationAvailable}</p>
-                <p className="mt-1 font-medium text-white">{formatIDR(calc.donationAvailable)}</p>
+                <p className="mt-1 font-medium text-[#49463F]">{formatIDR(calc.donationAvailable)}</p>
               </div>
             </div>
             {calc.donationShortfall > 0 ? (
-              <p className="mt-4 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-[11px] leading-relaxed text-amber-100">
+              <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
                 {copy.budget.donationShortfall}: {formatIDR(calc.donationShortfall)}
               </p>
             ) : null}
             <div className="mt-6">
-              <Progress value={calc.paymentPercentage} />
-              <div className="mt-2 flex justify-between text-[11px] text-white/60">
-                <span>{copy.budget.paymentPercentage}</span>
-                <span>{calc.paymentPercentage}%</span>
+              <div className="mb-2 flex items-end justify-between gap-3">
+                <span className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#796779]">
+                  {copy.budget.paymentProgress}
+                </span>
+                <span className="font-heading text-xl text-[#49463F]">
+                  {calc.paymentPercentage}%
+                </span>
+              </div>
+              <Progress value={calc.paymentPercentage} tone="olive" />
+              <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-[#888176]">
+                <span>{copy.budget.cashPaid}: {formatIDR(calc.cashPaid)}</span>
+                <span>{copy.budget.totalCost}: {formatIDR(totalCost)}</span>
               </div>
             </div>
           </div>

@@ -319,6 +319,7 @@ t("donor vendor: donor covered", r.donorCovered, 10_000_000);
 t("donor vendor: total paid", r.totalPaid, 10_000_000);
 t("donor vendor: remaining", r.remainingPayment, 0);
 t("donor vendor: status", r.statusByVendor.get("v1"), "donor");
+t("donor vendor: cash progress only", r.paymentPercentage, 0);
 t("donor vendor: shortfall", r.donationShortfall, 10_000_000);
 
 r = calculateBudget({

@@ -87,19 +87,31 @@ export function StatCard({
   );
 }
 
-export function Progress({ value }: { value: number }) {
+export function Progress({
+  value,
+  tone = "default",
+}: {
+  value: number;
+  tone?: "default" | "olive";
+}) {
   const safe = Math.min(100, Math.max(0, Math.round(value)));
 
   return (
     <div
-      className="h-2 w-full overflow-hidden rounded-full bg-petal-100"
+      className={`h-2 w-full overflow-hidden rounded-full ${
+        tone === "olive" ? "bg-[#EAE0D7]" : "bg-petal-100"
+      }`}
       role="progressbar"
       aria-valuenow={safe}
       aria-valuemin={0}
       aria-valuemax={100}
     >
       <div
-        className="h-full rounded-full bg-gradient-to-r from-petal-300 via-olive-300 to-olive-500 transition-[width] duration-500"
+        className={`h-full rounded-full transition-[width] duration-500 ${
+          tone === "olive"
+            ? "bg-[#788568]"
+            : "bg-gradient-to-r from-petal-300 via-olive-300 to-olive-500"
+        }`}
         style={{ width: `${safe}%` }}
       />
     </div>
