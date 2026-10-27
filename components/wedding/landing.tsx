@@ -315,6 +315,13 @@ export function WeddingLanding() {
                 <p className="mt-2 text-sm leading-relaxed text-cocoa/65">
                   Tentukan anggaran, alokasikan per kategori, dan pantau sisa budget.
                 </p>
+                <Link
+                  href="/wedding-budget-planner"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-rosewood hover:underline"
+                >
+                  Panduan budget pernikahan
+                  <ArrowRight className="size-3.5" aria-hidden />
+                </Link>
                 <div className="mt-4 rounded-2xl bg-ivory p-4">
                   <div className="flex items-baseline justify-between">
                     <span className="text-[10px] uppercase tracking-[0.12em] text-cocoa/45">Total</span>
