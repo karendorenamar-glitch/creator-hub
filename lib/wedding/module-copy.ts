@@ -506,6 +506,7 @@ const en = {
     paymentKind: "Payment type",
     priceFinal: "Agreed price",
     proofAttached: "Receipt attached",
+    noProofAttached: "No proof attached",
     overpayConfirm: "The amount exceeds the remaining bill. Please confirm.",
     confirmSwitchVendor:
       "This vendor already has payments. Its history stays saved. Switch the selected vendor?",
@@ -1255,6 +1256,7 @@ const id: ModuleCopy = {
     paymentKind: "Jenis pembayaran",
     priceFinal: "Harga final",
     proofAttached: "Bukti terlampir",
+    noProofAttached: "Belum ada bukti",
     overpayConfirm: "Nominal melebihi sisa tagihan. Mohon konfirmasi.",
     confirmSwitchVendor:
       "Vendor sebelumnya sudah punya pembayaran. Riwayatnya tetap tersimpan. Ganti vendor terpilih?",

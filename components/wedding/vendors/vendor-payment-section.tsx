@@ -1,10 +1,13 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { CalendarDays, FileText } from "lucide-react";
+import { CalendarDays, FileText, Plus } from "lucide-react";
 import { createVendorPaymentAction } from "@/app/wedding/(app)/vendors/actions";
 import { Field, FormAlert, inputClass } from "@/components/wedding/form-kit";
-import type { BudgetVendor } from "@/lib/wedding/budget-calc";
+import type {
+  BudgetVendor,
+  VendorPaymentSummary,
+} from "@/lib/wedding/budget-calc";
 import type {
   VendorPayment,
   VendorPaymentProof,
@@ -19,24 +22,26 @@ export function VendorPaymentSection({
   payments,
   proofsByPayment,
   proofUrls,
+  summary,
   copy,
   locale,
   idempotencyKey,
   showForm,
   onRequestPayment,
-  onOpenHistory,
+  onCancelPayment,
   onSaved,
 }: {
   vendor: BudgetVendor;
   payments: VendorPayment[];
   proofsByPayment: Record<string, VendorPaymentProof[]>;
   proofUrls: Record<string, string>;
+  summary?: VendorPaymentSummary;
   copy: ModuleCopy;
   locale: "en" | "id";
   idempotencyKey: string;
   showForm: boolean;
   onRequestPayment: () => void;
-  onOpenHistory: () => void;
+  onCancelPayment: () => void;
   onSaved: () => void;
 }) {
   const [state, formAction, pending] = useActionState(
@@ -50,39 +55,39 @@ export function VendorPaymentSection({
     if (state?.success) onSaved();
   }, [state, onSaved]);
 
-  const recent = payments.slice(-3).reverse();
+  const history = [...payments].reverse();
+  const totalPaid =
+    summary?.cashPaid ??
+    payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
 
   return (
-    <div className="space-y-4 rounded-2xl border border-olive-100 bg-olive-50/40 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <div className="space-y-4 rounded-2xl border border-[#EAE0D7] bg-[#FBF7F2] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
-            {showForm ? copy.vendors.addPayment : copy.vendors.paymentHistory}
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#888176]">
+            {copy.vendors.paymentHistory}
           </p>
-          <p className="mt-1 text-xs text-ink-soft">
-            {showForm
-              ? copy.vendors.addPaymentHint
-              : copy.vendors.paymentHistoryHint}
+          <p className="mt-1 text-sm text-[#49463F]">
+            {copy.vendors.totalPaid}:{" "}
+            <span className="font-medium">{formatIDR(totalPaid)}</span>
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {!showForm && !vendor.funded_by_donor ? (
-            <button
-              type="button"
-              onClick={onRequestPayment}
-              className="rounded-lg bg-olive-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-olive-700"
-            >
-              {copy.vendors.recordPayment}
-            </button>
+          {vendor.agreed_price !== null ? (
+            <p className="mt-0.5 text-xs text-[#888176]">
+              {copy.vendors.remainingPayment}:{" "}
+              {formatIDR(summary?.remainingPayment ?? 0)}
+            </p>
           ) : null}
+        </div>
+        {!showForm && !vendor.funded_by_donor ? (
           <button
             type="button"
-            onClick={onOpenHistory}
-            className="rounded-lg border border-olive-200 bg-white px-3 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-50"
+            onClick={onRequestPayment}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#788568] px-3 py-2 text-xs font-medium text-white hover:bg-[#687558]"
           >
-            {copy.vendors.viewPaymentHistory}
+            <Plus className="size-3.5" aria-hidden />
+            {copy.vendors.addPayment}
           </button>
-        </div>
+        ) : null}
       </div>
 
       {vendor.funded_by_donor ? (
@@ -91,8 +96,54 @@ export function VendorPaymentSection({
         </p>
       ) : null}
 
+      {history.length === 0 ? (
+        <p className="border-t border-[#EAE0D7] pt-3 text-xs text-[#888176]">
+          {copy.vendors.noPayments}
+        </p>
+      ) : (
+        <ul className="divide-y divide-[#EAE0D7] border-t border-[#EAE0D7]">
+          {history.map((payment) => {
+            const proofs = proofsByPayment[payment.id] ?? [];
+            const firstPath = proofs[0]?.path ?? payment.proof_path ?? "";
+            const firstUrl = firstPath ? proofUrls[firstPath] : undefined;
+            return (
+              <li key={payment.id} className="py-3">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[#49463F]">
+                      {label("paymentKind", payment.payment_kind, locale)}
+                    </p>
+                    <p className="mt-0.5 text-sm text-[#49463F]">
+                      {formatIDR(payment.amount)}
+                    </p>
+                    <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#888176]">
+                      <CalendarDays className="size-3" aria-hidden />
+                      {formatWeddingDate(payment.paid_on, locale)}
+                      <span aria-hidden>·</span>
+                      {firstUrl ? (
+                        <a
+                          href={firstUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[#788568] hover:underline"
+                        >
+                          <FileText className="size-3" aria-hidden />
+                          {copy.vendors.proofAttached}
+                        </a>
+                      ) : (
+                        <span>{copy.vendors.noProofAttached}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
       {showForm ? (
-        <form action={formAction} className="space-y-3">
+        <form action={formAction} className="space-y-3 border-t border-[#EAE0D7] pt-4">
           <input type="hidden" name="vendorId" value={vendor.id} />
           <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
           <FormAlert error={state?.error} />
@@ -173,58 +224,24 @@ export function VendorPaymentSection({
             />
           </Field>
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
-          >
-            {pending ? copy.form.saving : copy.vendors.savePayment}
-          </button>
+          <div className="flex flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancelPayment}
+              className="rounded-xl px-3 py-2 text-xs text-[#888176] hover:bg-white"
+            >
+              {copy.form.cancel}
+            </button>
+            <button
+              type="submit"
+              disabled={pending}
+              className="rounded-xl bg-[#788568] px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-[#687558] disabled:opacity-60"
+            >
+              {pending ? copy.form.saving : copy.vendors.savePayment}
+            </button>
+          </div>
         </form>
       ) : null}
-
-      <div className="space-y-2 border-t border-olive-100 pt-3">
-        <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
-          {copy.vendors.recentPayments}
-        </p>
-        {recent.length === 0 ? (
-          <p className="text-xs text-ink-soft">{copy.vendors.noPayments}</p>
-        ) : (
-          <ul className="space-y-1.5">
-            {recent.map((payment) => {
-              const proofs = proofsByPayment[payment.id] ?? [];
-              const firstPath = proofs[0]?.path ?? payment.proof_path ?? "";
-              const firstUrl = firstPath ? proofUrls[firstPath] : undefined;
-              return (
-                <li
-                  key={payment.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5 text-xs"
-                >
-                  <span className="text-ink">
-                    {formatIDR(payment.amount)} ·{" "}
-                    {label("paymentKind", payment.payment_kind, locale)}
-                  </span>
-                  <span className="flex items-center gap-1.5 text-ink-soft">
-                    <CalendarDays className="size-3" aria-hidden />
-                    {formatWeddingDate(payment.paid_on, locale)}
-                    {firstUrl ? (
-                      <a
-                        href={firstUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-olive-700 hover:underline"
-                      >
-                        <FileText className="size-3" aria-hidden />
-                        {copy.vendors.proofAttached}
-                      </a>
-                    ) : null}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
     </div>
   );
 }

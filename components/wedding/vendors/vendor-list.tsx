@@ -345,16 +345,6 @@ export function VendorList({
         }
         idempotencyKey={vendorModal.idempotencyKey}
         prefill={vendorModal.prefill}
-        onOpenHistory={() => {
-          const vendor = vendorModal.editing;
-          setVendorModal({
-            open: false,
-            editing: null,
-            idempotencyKey: "",
-            prefill: null,
-          });
-          if (vendor) openPayment(vendor, false, true);
-        }}
         onPaymentSaved={() =>
           setVendorModal({
             open: false,

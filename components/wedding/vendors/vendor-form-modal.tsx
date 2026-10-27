@@ -23,7 +23,6 @@ import type {
   VendorPayment,
   VendorPaymentProof,
 } from "@/lib/wedding/db-types";
-import { formatIDR } from "@/lib/wedding/format";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { PAYMENT_PROOF_TYPES } from "@/lib/wedding/uploads";
@@ -54,7 +53,6 @@ export function VendorFormModal({
   summary,
   idempotencyKey,
   prefill,
-  onOpenHistory,
   onPaymentSaved,
 }: {
   open: boolean;
@@ -68,7 +66,6 @@ export function VendorFormModal({
   summary?: VendorPaymentSummary;
   idempotencyKey: string;
   prefill?: VendorOptionPrefill | null;
-  onOpenHistory: () => void;
   onPaymentSaved: () => void;
 }) {
   const action = vendor ? updateVendorAction : createVendorAction;
@@ -84,11 +81,7 @@ export function VendorFormModal({
   const [completed, setCompleted] = useState(
     Boolean(vendor?.collaboration_completed_at),
   );
-  const [showPaymentForm, setShowPaymentForm] = useState(
-    summary?.paymentStatus === "dp" ||
-      summary?.paymentStatus === "termin_lanjutan" ||
-      summary?.paymentStatus === "lunas",
-  );
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [initialKind, setInitialKind] = useState<
     "dp" | "lanjutan" | "pelunasan"
   >("dp");
@@ -437,62 +430,19 @@ export function VendorFormModal({
       </form>
 
       {vendor && summary ? (
-        <div className="mt-4 space-y-4 border-t border-olive-100 pt-4">
-          <div className="rounded-2xl border border-olive-100 bg-white p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-[0.1em] text-ink-soft">
-                {copy.vendors.currentPaymentSummary}
-              </p>
-            </div>
-            <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-              <p className="flex justify-between gap-2">
-                <span className="text-ink-soft">{copy.vendors.agreedPrice}</span>
-                <span className="font-medium text-ink">
-                  {price === ""
-                    ? copy.vendors.priceUnknown
-                    : formatIDR(Number(price))}
-                </span>
-              </p>
-              <p className="flex justify-between gap-2">
-                <span className="text-ink-soft">{copy.vendors.totalPaid}</span>
-                <span className="font-medium text-ink">
-                  {formatIDR(summary.totalPaid)}
-                </span>
-              </p>
-              <p className="flex justify-between gap-2">
-                <span className="text-ink-soft">
-                  {copy.vendors.remainingPayment}
-                </span>
-                <span className="font-medium text-ink">
-                  {price === ""
-                    ? "—"
-                    : formatIDR(summary.remainingPayment)}
-                </span>
-              </p>
-              <p className="flex justify-between gap-2">
-                <span className="text-ink-soft">
-                  {copy.vendors.overpayment}
-                </span>
-                <span className="font-medium text-ink">
-                  {price === ""
-                    ? "—"
-                    : formatIDR(summary.overpayment)}
-                </span>
-              </p>
-            </div>
-          </div>
-
+        <div className="mt-4 border-t border-olive-100 pt-4">
           <VendorPaymentSection
             vendor={vendor}
             payments={payments}
             proofsByPayment={proofsByPayment}
             proofUrls={proofUrls}
+            summary={summary}
             copy={copy}
             locale={locale}
             idempotencyKey={idempotencyKey}
             showForm={showPaymentForm}
             onRequestPayment={() => setShowPaymentForm(true)}
-            onOpenHistory={onOpenHistory}
+            onCancelPayment={() => setShowPaymentForm(false)}
             onSaved={onPaymentSaved}
           />
         </div>
