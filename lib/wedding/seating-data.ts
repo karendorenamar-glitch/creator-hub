@@ -97,13 +97,43 @@ export async function loadSeatingData(
 
   let tables = tablesResult.data ?? [];
   const akadEvent = events.find((event) => event.event_type === "akad");
+  const dinnerEvent = events.find((event) => event.event_type === "dinner");
   const akadTables = akadEvent
     ? tables.filter((table) => table.event_id === akadEvent.id)
     : [];
-  const hasIndividualChairs = akadTables.some((table) => table.capacity === 1);
+  const hasIndividualChairs = akadTables.some(
+    (table) => table.kind === "chair" || table.capacity === 1,
+  );
+  let didInsertSeats = false;
 
-  // Akad is a chair-only layout. Give every chair its own seating-table row so
-  // it has a unique ID, independent position and independent guest assignment.
+  type NewSeat = {
+    wedding_id: string;
+    event_id: string;
+    name: string;
+    shape: "round" | "rect";
+    capacity: number;
+    canvas_x: number;
+    canvas_y: number;
+    width: number;
+    height: number;
+    sort_order: number;
+    kind: "chair";
+    side: "left" | "right" | "none";
+    rotation: number;
+    parent_table_id: string | null;
+  };
+
+  const baseSeat = (seat: NewSeat) => {
+    const { kind, side, rotation, parent_table_id, ...base } = seat;
+    void kind;
+    void side;
+    void rotation;
+    void parent_table_id;
+    return base;
+  };
+
+  // Akad is a chair-only layout. Give every chair its own row so it has a
+  // unique ID, independent position, rotation and guest assignment.
   if (akadEvent && !hasIndividualChairs) {
     const assignedTableIds = new Set(
       (assignmentsResult.data ?? []).map((assignment) => assignment.table_id),
@@ -115,18 +145,7 @@ export async function loadSeatingData(
       await supabase.from("seating_tables").delete().in("id", emptyLegacyIds);
     }
 
-    const chairs = [] as Array<{
-      wedding_id: string;
-      event_id: string;
-      name: string;
-      shape: "rect";
-      capacity: number;
-      canvas_x: number;
-      canvas_y: number;
-      width: number;
-      height: number;
-      sort_order: number;
-    }>;
+    const chairs: NewSeat[] = [];
     let order = 0;
     for (const side of ["left", "right"] as const) {
       for (let row = 0; row < 5; row += 1) {
@@ -143,22 +162,118 @@ export async function loadSeatingData(
             width: 4.5,
             height: 6,
             sort_order: order++,
+            kind: "chair",
+            side,
+            rotation: 0,
+            parent_table_id: null,
           });
         }
       }
     }
-    const { error: chairError } = await supabase
+    let { error: chairError } = await supabase
       .from("seating_tables")
       .insert(chairs);
-    if (!chairError) {
-      const refreshedTables = await supabase
+    if (chairError?.code === "42703") {
+      const fallback = await supabase
         .from("seating_tables")
-        .select("*")
-        .eq("wedding_id", weddingId)
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true });
-      tables = refreshedTables.data ?? tables;
+        .insert(chairs.map(baseSeat));
+      chairError = fallback.error;
     }
+    didInsertSeats = !chairError;
+  }
+
+  // Dinner tables also get individual seats around the table. The table row
+  // stays as the visual table, while every chair is an independently movable
+  // seating object. Existing table-level assignments stay untouched.
+  if (dinnerEvent) {
+    const dinnerTables = tables.filter(
+      (table) => table.event_id === dinnerEvent.id && table.capacity > 1,
+    );
+    const dinnerChairs = tables.filter(
+      (table) => table.event_id === dinnerEvent.id && table.capacity === 1,
+    );
+    const fallbackParentIds = new Set<string>();
+
+    // Chairs created before migration 034 have no parent_table_id. Reconnect
+    // them by their generated name so the table can be edited/deleted safely.
+    const unparented = dinnerChairs.filter((chair) => !chair.parent_table_id);
+    for (const chair of unparented) {
+      const parent = dinnerTables.find((table) =>
+        chair.name.startsWith(`${table.name} · `),
+      );
+      if (!parent) continue;
+      const { error: parentError } = await supabase
+        .from("seating_tables")
+        .update({ parent_table_id: parent.id })
+        .eq("id", chair.id)
+        .eq("wedding_id", weddingId);
+      if (parentError?.code === "42703") {
+        fallbackParentIds.add(parent.id);
+        continue;
+      }
+      if (!parentError) chair.parent_table_id = parent.id;
+    }
+
+    const parentsWithChairs = new Set(
+      [
+        ...dinnerChairs
+          .map((table) => table.parent_table_id)
+          .filter((value): value is string => Boolean(value)),
+        ...fallbackParentIds,
+      ],
+    );
+    const seats: NewSeat[] = [];
+    {
+      for (const table of dinnerTables) {
+        if (parentsWithChairs.has(table.id)) continue;
+        const count = Math.max(1, Math.min(30, table.capacity));
+        const radiusX = Math.max(7, table.width * 0.6);
+        const radiusY = Math.max(7, table.height * 0.75);
+        for (let index = 0; index < count; index += 1) {
+          const angle = (Math.PI * 2 * index) / count - Math.PI / 2;
+          const x = table.canvas_x + Math.cos(angle) * radiusX;
+          const y = table.canvas_y + Math.sin(angle) * radiusY;
+          seats.push({
+            wedding_id: weddingId,
+            event_id: dinnerEvent.id,
+            name: `${table.name} · ${index + 1}`,
+            shape: "round",
+            capacity: 1,
+            canvas_x: Math.min(96, Math.max(4, x)),
+            canvas_y: Math.min(96, Math.max(4, y)),
+            width: 4.5,
+            height: 6,
+            sort_order: table.sort_order * 100 + index,
+            kind: "chair",
+            side: "none",
+            rotation: (angle * 180) / Math.PI + 90,
+            parent_table_id: table.id,
+          });
+        }
+      }
+    }
+    if (seats.length > 0) {
+      let { error: seatError } = await supabase
+        .from("seating_tables")
+        .insert(seats);
+      if (seatError?.code === "42703") {
+        const fallback = await supabase
+          .from("seating_tables")
+          .insert(seats.map(baseSeat));
+        seatError = fallback.error;
+      }
+      didInsertSeats = didInsertSeats || !seatError;
+    }
+  }
+
+  if (didInsertSeats) {
+    const refreshedTables = await supabase
+      .from("seating_tables")
+      .select("*")
+      .eq("wedding_id", weddingId)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+    tables = refreshedTables.data ?? tables;
   }
 
   const firstError =

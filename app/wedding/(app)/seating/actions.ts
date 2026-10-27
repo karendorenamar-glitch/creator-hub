@@ -69,12 +69,17 @@ export async function saveTableAction(
   const name = text(formData, "name").slice(0, 80);
   if (!name) return { error: copy.form.required };
 
-  const capacity = parseCount(text(formData, "capacity"));
+  const kind = enumValue(formData, "kind", ["table", "chair"] as const, "table");
+  const capacity = kind === "chair" ? 1 : parseCount(text(formData, "capacity"));
   if (capacity === null || capacity > 100) {
     return { error: copy.form.invalidNumber };
   }
 
   const shape = enumValue(formData, "shape", SHAPES, "round");
+  const rotation = Math.min(
+    360,
+    Math.max(0, Number(text(formData, "rotation")) || 0),
+  );
   const width = Math.min(35, Math.max(4, Number(text(formData, "width")) || 12));
   const height = Math.min(35, Math.max(4, Number(text(formData, "height")) || 12));
   const canvasX = Math.min(100, Math.max(0, Number(text(formData, "x")) || 50));
@@ -89,7 +94,10 @@ export async function saveTableAction(
       .maybeSingle();
     if (!existing) return { error: copy.errors.notFound };
     const occupied = await tablePeople(ctx.supabase, id);
-    if (capacity < occupied) {
+    if (kind === "chair") {
+      // A household may occupy one chair record with plus-ones; editing the
+      // chair should not be blocked by its guest count.
+    } else if (capacity < occupied) {
       return { error: copy.seating.capacityTooLow };
     }
   }
@@ -104,9 +112,11 @@ export async function saveTableAction(
     canvas_y: canvasY,
     width,
     height,
+    kind,
+    rotation,
   };
 
-  const { error } = id
+  let { error } = id
     ? await ctx.supabase
         .from("seating_tables")
         .update(values)
@@ -114,7 +124,140 @@ export async function saveTableAction(
         .eq("wedding_id", ctx.weddingId)
     : await ctx.supabase.from("seating_tables").insert(values);
 
+  if (error?.code === "42703") {
+    const { kind: _kind, rotation: _rotation, ...legacyValues } = values;
+    void _kind;
+    void _rotation;
+    const retry = id
+      ? await ctx.supabase
+          .from("seating_tables")
+          .update(legacyValues)
+          .eq("id", id)
+          .eq("wedding_id", ctx.weddingId)
+      : await ctx.supabase.from("seating_tables").insert(legacyValues);
+    error = retry.error;
+  }
+
   if (error) return { error: actionError(error, ctx.copy) };
+  revalidateSeating();
+  return { success: copy.form.saved };
+}
+
+export async function generateAkadChairsAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const copy: ModuleCopy = ctx.copy;
+  const eventId = text(formData, "eventId");
+  if (!isUuid(eventId)) return { error: copy.errors.notFound };
+
+  const { data: event } = await ctx.supabase
+    .from("seating_events")
+    .select("id, event_type")
+    .eq("id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .maybeSingle();
+  if (!event || event.event_type !== "akad") {
+    return { error: copy.errors.notFound };
+  }
+
+  const left = parseCount(text(formData, "left"));
+  const right = parseCount(text(formData, "right"));
+  const rows = parseCount(text(formData, "rows"));
+  if (
+    left === null ||
+    right === null ||
+    rows === null ||
+    left > 100 ||
+    right > 100 ||
+    rows < 1 ||
+    rows > 20 ||
+    left + right === 0
+  ) {
+    return { error: copy.form.invalidNumber };
+  }
+
+  const { count: assigned, error: assignedError } = await ctx.supabase
+    .from("seating_assignments")
+    .select("id", { count: "exact", head: true })
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId);
+  if (assignedError) return { error: actionError(assignedError, copy) };
+  if ((assigned ?? 0) > 0) return { error: copy.seating.layoutHasGuests };
+
+  const { error: deleteError } = await ctx.supabase
+    .from("seating_tables")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .eq("capacity", 1);
+  if (deleteError) return { error: actionError(deleteError, copy) };
+
+  const seats = [] as Array<{
+    wedding_id: string;
+    event_id: string;
+    name: string;
+    shape: "rect";
+    capacity: number;
+    canvas_x: number;
+    canvas_y: number;
+    width: number;
+    height: number;
+    sort_order: number;
+    kind: "chair";
+    side: "left" | "right";
+    rotation: number;
+    parent_table_id: null;
+  }>;
+  let order = 0;
+  for (const side of ["left", "right"] as const) {
+    const count = side === "left" ? left : right;
+    const perRow = Math.ceil(count / rows);
+    for (let index = 0; index < count; index += 1) {
+      const row = Math.floor(index / perRow);
+      const column = index % perRow;
+      const spread = perRow > 1 ? 36 / (perRow - 1) : 0;
+      const x =
+        side === "left" ? 8 + column * spread : 92 - column * spread;
+      const y = rows > 1 ? 20 + (row * 65) / (rows - 1) : 52;
+      seats.push({
+        wedding_id: ctx.weddingId,
+        event_id: eventId,
+        name: `${side === "left" ? "L" : "R"}${index + 1}`,
+        shape: "rect",
+        capacity: 1,
+        canvas_x: x,
+        canvas_y: y,
+        width: 4.5,
+        height: 6,
+        sort_order: order++,
+        kind: "chair",
+        side,
+        rotation: 0,
+        parent_table_id: null,
+      });
+    }
+  }
+
+  let { error: insertError } = await ctx.supabase
+    .from("seating_tables")
+    .insert(seats);
+  if (insertError?.code === "42703") {
+    const fallback = await ctx.supabase.from("seating_tables").insert(
+      seats.map((seat) => {
+        const { kind, side, rotation, parent_table_id, ...base } = seat;
+        void kind;
+        void side;
+        void rotation;
+        void parent_table_id;
+        return base;
+      }),
+    );
+    insertError = fallback.error;
+  }
+  if (insertError) return { error: actionError(insertError, copy) };
+
   revalidateSeating();
   return { success: copy.form.saved };
 }
@@ -133,6 +276,23 @@ export async function moveTableAction(formData: FormData): Promise<ActionResult>
     .eq("wedding_id", ctx.weddingId);
 
   if (error) return { error: actionError(error, ctx.copy) };
+  return { success: ctx.copy.form.saved };
+}
+
+export async function moveStageAction(formData: FormData): Promise<ActionResult> {
+  const ctx = await context();
+  const eventId = text(formData, "id");
+  if (!isUuid(eventId)) return { error: ctx.copy.errors.notFound };
+  const x = Math.min(100, Math.max(0, Number(text(formData, "x")) || 50));
+  const y = Math.min(100, Math.max(0, Number(text(formData, "y")) || 7));
+
+  const { error } = await ctx.supabase
+    .from("seating_events")
+    .update({ stage_x: x, stage_y: y })
+    .eq("id", eventId)
+    .eq("wedding_id", ctx.weddingId);
+  if (error) return { error: actionError(error, ctx.copy) };
+  revalidateSeating();
   return { success: ctx.copy.form.saved };
 }
 

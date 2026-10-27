@@ -42,7 +42,7 @@ export type WeddingMember = {
 export type WeddingInvite = {
   id: string;
   wedding_id: string;
-  email: string;
+  email: string | null;
   token: string;
   invited_by: string;
   accepted_at: string | null;
@@ -189,7 +189,6 @@ export type Guest = {
   updated_at: string;
 };
 
-
 export type SeatingEventType = "akad" | "dinner";
 export type SeatingTableShape = "round" | "rect";
 
@@ -203,6 +202,8 @@ export type SeatingEvent = {
   zoom: number;
   pan_x: number;
   pan_y: number;
+  stage_x: number;
+  stage_y: number;
   created_at: string;
   updated_at: string;
 };
@@ -219,6 +220,10 @@ export type SeatingTable = {
   width: number;
   height: number;
   sort_order: number;
+  kind: "table" | "chair";
+  side: "left" | "right" | "none";
+  rotation: number;
+  parent_table_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -561,6 +566,10 @@ export type WeddingDatabase = {
         Returns: string;
       };
       accept_wedding_invite: {
+        Args: { p_token: string };
+        Returns: string;
+      };
+      accept_wedding_invite_link: {
         Args: { p_token: string };
         Returns: string;
       };

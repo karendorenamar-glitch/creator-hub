@@ -20,6 +20,8 @@ import {
 import {
   assignGuestAction,
   deleteTableAction,
+  generateAkadChairsAction,
+  moveStageAction,
   moveTableAction,
   saveEventAction,
   saveTableAction,
@@ -89,6 +91,7 @@ function TableFormModal({
     >
       <form action={formAction} className="space-y-4">
         <input type="hidden" name="eventId" value={eventId} />
+        <input type="hidden" name="kind" value={mode === "chairs" ? "chair" : "table"} />
         {table ? <input type="hidden" name="id" value={table.id} /> : null}
         <input type="hidden" name="x" value={table?.canvas_x ?? 50} />
         <input
@@ -99,8 +102,8 @@ function TableFormModal({
         {mode === "chairs" ? (
           <>
             <input type="hidden" name="shape" value="rect" />
-            <input type="hidden" name="width" value="35" />
-            <input type="hidden" name="height" value="8" />
+            <input type="hidden" name="width" value="4.5" />
+            <input type="hidden" name="height" value="6" />
           </>
         ) : null}
         <FormAlert error={state?.error} success={state?.success} />
@@ -144,10 +147,25 @@ function TableFormModal({
               min={0}
               max={100}
               required
-              defaultValue={table?.capacity ?? (mode === "chairs" ? 10 : 8)}
+              defaultValue={table?.capacity ?? (mode === "chairs" ? 1 : 8)}
+              readOnly={mode === "chairs"}
               className={inputClass}
             />
           </Field>
+          {mode === "chairs" ? (
+            <Field label={copy.seating.rotation} htmlFor="seating-chair-rotation">
+              <input
+                id="seating-chair-rotation"
+                name="rotation"
+                type="number"
+                min={0}
+                max={360}
+                step={1}
+                defaultValue={table?.rotation ?? 0}
+                className={inputClass}
+              />
+            </Field>
+          ) : null}
           {mode === "tables" ? (
             <>
               <input type="hidden" name="width" value={table?.width ?? 12} />
@@ -158,6 +176,79 @@ function TableFormModal({
         <ModalFooter
           pending={pending}
           submitLabel={copy.seating.saveTable}
+          savingLabel={copy.form.saving}
+          cancelLabel={copy.form.cancel}
+          onCancel={onClose}
+        />
+      </form>
+    </FormModal>
+  );
+}
+
+function ChairLayoutModal({
+  open,
+  onClose,
+  copy,
+  eventId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  copy: ModuleCopy;
+  eventId: string;
+}) {
+  const [state, formAction, pending] = useActionState(
+    generateAkadChairsAction,
+    null,
+  );
+
+  useEffect(() => {
+    if (state?.success) onClose();
+  }, [state, onClose]);
+
+  return (
+    <FormModal open={open} onClose={onClose} title={copy.seating.manageChairs}>
+      <form action={formAction} className="space-y-4">
+        <input type="hidden" name="eventId" value={eventId} />
+        <FormAlert error={state?.error} success={state?.success} />
+        <p className="text-sm text-ink-soft">{copy.seating.layoutHasGuests}</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label={copy.seating.leftChairs} htmlFor="akad-left-chairs">
+            <input
+              id="akad-left-chairs"
+              name="left"
+              type="number"
+              min={0}
+              max={100}
+              defaultValue={25}
+              className={inputClass}
+            />
+          </Field>
+          <Field label={copy.seating.rightChairs} htmlFor="akad-right-chairs">
+            <input
+              id="akad-right-chairs"
+              name="right"
+              type="number"
+              min={0}
+              max={100}
+              defaultValue={25}
+              className={inputClass}
+            />
+          </Field>
+          <Field label={copy.seating.chairRowsLabel} htmlFor="akad-chair-rows">
+            <input
+              id="akad-chair-rows"
+              name="rows"
+              type="number"
+              min={1}
+              max={20}
+              defaultValue={5}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <ModalFooter
+          pending={pending}
+          submitLabel={copy.form.save}
           savingLabel={copy.form.saving}
           cancelLabel={copy.form.cancel}
           onCancel={onClose}
@@ -254,6 +345,7 @@ export function SeatingPlanner({
     open: false,
     editing: null,
   });
+  const [layoutOpen, setLayoutOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [zoom, setZoom] = useState(selectedEvent?.zoom ?? 1);
@@ -261,12 +353,24 @@ export function SeatingPlanner({
     x: selectedEvent?.pan_x ?? 0,
     y: selectedEvent?.pan_y ?? 0,
   });
+  const [stagePos, setStagePos] = useState({
+    x: selectedEvent?.stage_x ?? 50,
+    y: selectedEvent?.stage_y ?? 7,
+  });
   const canvasRef = useRef<HTMLDivElement>(null);
   const panDragRef = useRef<{
     startX: number;
     startY: number;
     originX: number;
     originY: number;
+  } | null>(null);
+  const stageDragRef = useRef<{
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+    x: number;
+    y: number;
   } | null>(null);
   const dragRef = useRef<{
     id: string;
@@ -299,9 +403,21 @@ export function SeatingPlanner({
     () => assignments.filter((item) => item.event_id === selectedEvent?.id),
     [assignments, selectedEvent?.id],
   );
+  const isCeremony = selectedEvent?.event_type === "akad";
+  const chairs = useMemo(
+    () =>
+      eventTables.filter(
+        (table) => table.kind === "chair" || table.capacity === 1,
+      ),
+    [eventTables],
+  );
+  const tableObjects = useMemo(
+    () => eventTables.filter((table) => !chairs.some((chair) => chair.id === table.id)),
+    [eventTables, chairs],
+  );
   const stats = useMemo(
-    () => seatingStats(eventTables, eventAssignments, guests),
-    [eventTables, eventAssignments, guests],
+    () => seatingStats(chairs, eventAssignments, guests),
+    [chairs, eventAssignments, guests],
   );
   const guestById = useMemo(
     () => new Map(guests.map((guest) => [guest.id, guest])),
@@ -338,7 +454,6 @@ export function SeatingPlanner({
 
   const eventLabel = (event: SeatingEvent) =>
     event.event_type === "akad" ? copy.seating.akad : copy.seating.dinner;
-  const isCeremony = selectedEvent?.event_type === "akad";
 
   async function assignGuest(
     guestId: string,
@@ -349,6 +464,7 @@ export function SeatingPlanner({
     const table = tableById.get(tableId);
     const guest = guestById.get(guestId);
     if (!table || !guest) return;
+    if (table.capacity > 1 && table.kind !== "chair") return;
     if (assignmentByGuest.get(guestId)?.table_id === tableId) {
       setSelectedTableId(tableId);
       return;
@@ -486,6 +602,51 @@ export function SeatingPlanner({
     void moveTableAction(formData);
   }
 
+  function stagePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    event.stopPropagation();
+    stageDragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: stagePos.x,
+      originY: stagePos.y,
+      x: stagePos.x,
+      y: stagePos.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function stagePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const drag = stageDragRef.current;
+    const canvas = canvasRef.current;
+    if (!drag || !canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.min(
+      96,
+      Math.max(4, drag.originX + ((event.clientX - drag.startX) / rect.width) * 100),
+    );
+    const y = Math.min(
+      96,
+      Math.max(2, drag.originY + ((event.clientY - drag.startY) / rect.height) * 100),
+    );
+    drag.x = x;
+    drag.y = y;
+    setStagePos({ x, y });
+  }
+
+  function stagePointerUp() {
+    const drag = stageDragRef.current;
+    stageDragRef.current = null;
+    if (!drag || !selectedEvent) return;
+    if (Math.abs(drag.x - drag.originX) < 0.1 && Math.abs(drag.y - drag.originY) < 0.1) {
+      return;
+    }
+    const formData = new FormData();
+    formData.set("id", selectedEvent.id);
+    formData.set("x", String(drag.x));
+    formData.set("y", String(drag.y));
+    void moveStageAction(formData);
+  }
+
   if (!selectedEvent) return <div />;
 
   return (
@@ -501,6 +662,10 @@ export function SeatingPlanner({
                 setSelectedEventId(event.id);
                 setSelectedTableId(null);
                 setDetailsOpen(false);
+                setStagePos({
+                  x: event.stage_x ?? 50,
+                  y: event.stage_y ?? 7,
+                });
               }}
               className={`rounded-3xl border p-4 text-left transition-colors ${
                 active
@@ -527,7 +692,7 @@ export function SeatingPlanner({
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label={isCeremony ? copy.seating.totalChairs : copy.seating.totalTables}
-          value={String(stats.totalTables)}
+          value={String(isCeremony ? stats.totalTables : tableObjects.length)}
         />
         <StatCard
           label={copy.seating.totalSeats}
@@ -718,7 +883,16 @@ export function SeatingPlanner({
                     <Plus className="size-4" aria-hidden />
                     {copy.seating.addTable}
                   </button>
-                ) : null}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setLayoutOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700"
+                  >
+                    <Plus className="size-4" aria-hidden />
+                    {copy.seating.manageChairs}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -735,7 +909,21 @@ export function SeatingPlanner({
                   transformOrigin: "top left",
                 }}
               >
-                <div className="pointer-events-none absolute left-1/2 top-3 z-10 w-48 -translate-x-1/2 rounded-2xl border border-petal-200 bg-white/90 px-4 py-2 text-center shadow-sm">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  title={copy.seating.stage}
+                  onPointerDown={stagePointerDown}
+                  onPointerMove={stagePointerMove}
+                  onPointerUp={stagePointerUp}
+                  onPointerCancel={stagePointerUp}
+                  className="absolute z-10 w-48 cursor-grab touch-none rounded-2xl border border-petal-200 bg-white/90 px-4 py-2 text-center shadow-sm active:cursor-grabbing"
+                  style={{
+                    left: `${stagePos.x}%`,
+                    top: `${stagePos.y}%`,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                >
                   <p className="text-[10px] uppercase tracking-[0.2em] text-petal-500">
                     {copy.seating.stage}
                   </p>
@@ -750,101 +938,55 @@ export function SeatingPlanner({
                   </p>
                 ) : null}
 
-                {isCeremony
-                  ? eventTables.map((chair) => {
-                      const assignment = eventAssignments.find(
-                        (item) => item.table_id === chair.id,
-                      );
-                      const guest = assignment
-                        ? guestById.get(assignment.guest_id)
-                        : null;
-                      const selected = selectedTableId === chair.id;
-                      return (
-                        <div
-                          key={chair.id}
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => {
-                            if (selectedGuestId) {
-                              void assignGuest(selectedGuestId, chair.id);
-                            } else {
-                              setSelectedTableId(chair.id);
-                              setDetailsOpen(true);
-                            }
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              setSelectedTableId(chair.id);
-                              setDetailsOpen(true);
-                            }
-                          }}
-                          onDragOver={(event) => {
+                {!isCeremony
+                  ? tableObjects.map((table) => (
+                      <div
+                        key={table.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          setSelectedTableId(table.id);
+                          setDetailsOpen(true);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
                             event.preventDefault();
-                            event.dataTransfer.dropEffect = "move";
-                          }}
-                          onDrop={(event) => {
-                            event.preventDefault();
-                            const guestId =
-                              event.dataTransfer.getData("text/guest-id");
-                            if (guestId) void assignGuest(guestId, chair.id);
-                          }}
-                          title={guest?.name ?? chair.name}
-                          className={`absolute z-20 cursor-pointer rounded-t-xl rounded-b-md border-2 p-1 text-center shadow-sm transition-colors ${
-                            selected
-                              ? "border-olive-600 ring-2 ring-olive-200"
-                              : guest
-                                ? guestSideOf(guest) === "bride"
-                                  ? "border-petal-300 bg-petal-100"
-                                  : guestSideOf(guest) === "groom"
-                                    ? "border-baby-300 bg-baby-100"
-                                    : "border-champagne/70 bg-sand-100"
-                                : "border-olive-200 bg-white/95"
-                          }`}
-                          style={{
-                            left: `${chair.canvas_x}%`,
-                            top: `${chair.canvas_y}%`,
-                            width: `${chair.width}%`,
-                            height: `${chair.height}%`,
-                            transform: "translate(-50%, -50%)",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            aria-label="Move chair"
-                            onPointerDown={(event) =>
-                              moveTablePointerDown(event, chair)
-                            }
-                            onPointerMove={moveTablePointerMove}
-                            onPointerUp={moveTablePointerUp}
-                            onPointerCancel={moveTablePointerUp}
-                            onClick={(event) => event.stopPropagation()}
-                            className="absolute -right-1 -top-1 z-10 cursor-grab touch-none rounded-full border border-olive-200 bg-white p-0.5 text-ink-soft/60 shadow-sm hover:bg-olive-50 active:cursor-grabbing"
-                          >
-                            <GripVertical className="size-2.5" aria-hidden />
-                          </button>
-                          <span className="mt-1 block h-1 w-4/5 rounded-full bg-current opacity-20" />
-                          <span className="mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink">
-                            {guest ? guest.name : chair.name}
-                          </span>
-                          {guest && guestPeopleCount(guest) > 1 ? (
-                            <span className="block text-[7px] text-ink-soft">
-                              +{guestPeopleCount(guest) - 1}
-                            </span>
-                          ) : null}
-                        </div>
-                      );
-                    })
+                            setSelectedTableId(table.id);
+                            setDetailsOpen(true);
+                          }
+                        }}
+                        className={`absolute z-10 flex cursor-pointer flex-col items-center justify-center border-2 border-olive-200/80 bg-white/60 text-center shadow-sm ${
+                          table.shape === "round" ? "rounded-full" : "rounded-xl"
+                        }`}
+                        style={{
+                          left: `${table.canvas_x}%`,
+                          top: `${table.canvas_y}%`,
+                          width: `${table.width}%`,
+                          height: `${table.height}%`,
+                          transform: "translate(-50%, -50%)",
+                        }}
+                      >
+                        <span className="max-w-full truncate px-1 text-xs font-semibold text-ink">
+                          {table.name}
+                        </span>
+                        <span className="text-[10px] text-ink-soft">
+                          {table.capacity} seats
+                        </span>
+                      </div>
+                    ))
                   : null}
 
-                {!isCeremony
-                  ? eventTables.map((table) => {
-                  const people = stats.peopleByTable.get(table.id) ?? 0;
-                  const isFull = people >= Number(table.capacity);
-                  const isPartial = people > 0 && !isFull;
+                {chairs.map((chair) => {
+                  const assignment = eventAssignments.find(
+                    (item) => item.table_id === chair.id,
+                  );
+                  const guest = assignment
+                    ? guestById.get(assignment.guest_id)
+                    : null;
+                  const selected = selectedTableId === chair.id;
                   return (
                     <div
-                      key={table.id}
+                      key={chair.id}
                       role="button"
                       tabIndex={0}
                       onClick={() => {
@@ -853,16 +995,16 @@ export function SeatingPlanner({
                           return;
                         }
                         if (selectedGuestId) {
-                          void assignGuest(selectedGuestId, table.id);
+                          void assignGuest(selectedGuestId, chair.id);
                         } else {
-                          setSelectedTableId(table.id);
+                          setSelectedTableId(chair.id);
                           setDetailsOpen(true);
                         }
                       }}
                       onKeyDown={(event) => {
                         if (event.key === "Enter" || event.key === " ") {
                           event.preventDefault();
-                          setSelectedTableId(table.id);
+                          setSelectedTableId(chair.id);
                           setDetailsOpen(true);
                         }
                       }}
@@ -874,49 +1016,55 @@ export function SeatingPlanner({
                         event.preventDefault();
                         const guestId =
                           event.dataTransfer.getData("text/guest-id");
-                        if (guestId) void assignGuest(guestId, table.id);
+                        if (guestId) void assignGuest(guestId, chair.id);
                       }}
-                      className={`absolute z-20 flex cursor-pointer touch-none flex-col items-center justify-center border-2 text-center shadow-sm transition-colors ${
-                        table.shape === "round" ? "rounded-full" : "rounded-xl"
-                      } ${
-                        isFull
-                          ? "border-petal-300 bg-petal-100/90"
-                          : isPartial
-                            ? "border-champagne/70 bg-sand-100/90"
+                      title={guest?.name ?? chair.name}
+                      className={`absolute z-30 cursor-pointer rounded-t-xl rounded-b-md border-2 p-1 text-center shadow-sm transition-colors ${
+                        selected
+                          ? "border-olive-600 ring-2 ring-olive-200"
+                          : guest
+                            ? guestSideOf(guest) === "bride"
+                              ? "border-petal-300 bg-petal-100"
+                              : guestSideOf(guest) === "groom"
+                                ? "border-baby-300 bg-baby-100"
+                                : "border-champagne/70 bg-sand-100"
                             : "border-olive-200 bg-white/95"
                       }`}
                       style={{
-                        left: `${table.canvas_x}%`,
-                        top: `${table.canvas_y}%`,
-                        width: `${table.width}%`,
-                        height: `${table.height}%`,
-                        transform: "translate(-50%, -50%)",
+                        left: `${chair.canvas_x}%`,
+                        top: `${chair.canvas_y}%`,
+                        width: `${chair.width}%`,
+                        height: `${chair.height}%`,
+                        transform: `translate(-50%, -50%) rotate(${chair.rotation ?? 0}deg)`,
                       }}
                     >
                       <button
                         type="button"
-                        aria-label="Move table"
+                        aria-label="Move chair"
                         onPointerDown={(event) =>
-                          moveTablePointerDown(event, table)
+                          moveTablePointerDown(event, chair)
                         }
                         onPointerMove={moveTablePointerMove}
                         onPointerUp={moveTablePointerUp}
                         onPointerCancel={moveTablePointerUp}
                         onClick={(event) => event.stopPropagation()}
-                        className="absolute right-1 top-1 z-10 cursor-grab touch-none rounded p-1 text-ink-soft/60 hover:bg-white/80 active:cursor-grabbing"
+                        className="absolute -right-1 -top-1 z-10 cursor-grab touch-none rounded-full border border-olive-200 bg-white p-0.5 text-ink-soft/60 shadow-sm hover:bg-olive-50 active:cursor-grabbing"
                       >
-                        <GripVertical className="size-3" aria-hidden />
+                        <GripVertical className="size-2.5" aria-hidden />
                       </button>
-                      <span className="max-w-full truncate px-1 text-xs font-semibold text-ink">
-                        {table.name}
+                      <span className="mt-1 block h-1 w-4/5 rounded-full bg-current opacity-20" />
+                      <span className="mt-0.5 block max-w-full truncate px-0.5 text-[8px] font-semibold leading-tight text-ink">
+                        {guest ? guest.name : chair.name}
                       </span>
-                      <span className="text-[10px] text-ink-soft">
-                        {people}/{table.capacity}
-                      </span>
+                      {guest && guestPeopleCount(guest) > 1 ? (
+                        <span className="block text-[7px] text-ink-soft">
+                          +{guestPeopleCount(guest) - 1}
+                        </span>
+                      ) : null}
                     </div>
                   );
-                })
-                  : null}
+                })}
+
               </div>
             </div>
 
@@ -1064,6 +1212,13 @@ export function SeatingPlanner({
               </p>
             </Card>
           )}
+
+          <ChairLayoutModal
+            open={layoutOpen}
+            onClose={() => setLayoutOpen(false)}
+            copy={copy}
+            eventId={selectedEvent.id}
+          />
 
           <TableFormModal
             key={`${tableModal.editing?.id ?? "new-table"}-${selectedEvent.id}`}
