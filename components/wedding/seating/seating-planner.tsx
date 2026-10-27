@@ -35,6 +35,7 @@ import {
 } from "@/components/wedding/form-kit";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { FormModal } from "@/components/wedding/form-modal";
+import { DinnerSeatingBoard } from "@/components/wedding/seating/dinner-seating-board";
 import { Badge, Card, StatCard } from "@/components/wedding/ui";
 import type {
   Guest,
@@ -740,6 +741,21 @@ export function SeatingPlanner({
   }
 
   if (!selectedEvent) return <div />;
+
+  if (!isCeremony) {
+    return (
+      <DinnerSeatingBoard
+        events={events}
+        tables={tables}
+        assignments={assignments}
+        guests={guests}
+        copy={copy}
+        locale={locale}
+        selectedEventId={selectedEvent.id}
+        onSelectEvent={setSelectedEventId}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5">

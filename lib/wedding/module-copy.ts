@@ -11,6 +11,8 @@ const en = {
     save: "Save",
     saving: "Saving...",
     cancel: "Cancel",
+    collapse: "Collapse",
+    expand: "Expand",
     close: "Close",
     delete: "Delete",
     confirmDelete: "Delete this?",
@@ -254,6 +256,18 @@ const en = {
     chairsPerTable: "Chairs per table",
     dinnerLayoutHint:
       "The layout is generated automatically. Clear existing guest assignments before generating a new layout.",
+    dinnerBoardHint:
+      "Manage guests per table. Every guest can be moved to another table or removed without creating a duplicate.",
+    unassignedTitle: "Guests not seated yet",
+    searchUnassigned: "Search unseated guests",
+    noUnassigned: "All guests are seated at a table.",
+    moveTo: "Move to",
+    chooseTable: "Choose a table",
+    chooseGuest: "Choose a guest",
+    assignToTable: "Seat guest",
+    noTableSeats:
+      "This table has no seats yet. Set the dinner layout so the seats are created.",
+    capacityLeft: "seats left",
     replaceLayout:
       "Replace existing tables and clear dinner guest assignments",
     bridalTable: "Bridal Table",
@@ -771,6 +785,8 @@ const id: ModuleCopy = {
     save: "Simpan",
     saving: "Menyimpan...",
     cancel: "Batal",
+    collapse: "Tutup",
+    expand: "Buka",
     close: "Tutup",
     delete: "Hapus",
     confirmDelete: "Hapus data ini?",
@@ -1017,6 +1033,18 @@ const id: ModuleCopy = {
     chairsPerTable: "Kursi per meja",
     dinnerLayoutHint:
       "Layout dibuat otomatis. Kosongkan penempatan tamu sebelum membuat layout baru.",
+    dinnerBoardHint:
+      "Kelola tamu per meja. Setiap tamu bisa dipindahkan ke meja lain atau dikeluarkan tanpa membuat data ganda.",
+    unassignedTitle: "Tamu belum ditempatkan",
+    searchUnassigned: "Cari tamu yang belum ditempatkan",
+    noUnassigned: "Semua tamu sudah ditempatkan di meja.",
+    moveTo: "Pindah ke",
+    chooseTable: "Pilih meja",
+    chooseGuest: "Pilih tamu",
+    assignToTable: "Tempatkan tamu",
+    noTableSeats:
+      "Meja ini belum punya kursi. Atur layout dinner agar kursinya dibuat.",
+    capacityLeft: "kursi tersisa",
     replaceLayout:
       "Ganti meja lama dan kosongkan penempatan tamu dinner",
     bridalTable: "Meja Pengantin",
