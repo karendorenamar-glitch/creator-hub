@@ -3,11 +3,13 @@
 import { redirect } from "next/navigation";
 import {
   actionError,
-  getActionContext,
   revalidateWedding,
   type ActionResult,
 } from "@/lib/wedding/action-context";
-import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { getLocale } from "@/lib/i18n/get-locale";
+import { moduleCopy, type ModuleCopy } from "@/lib/wedding/module-copy";
+import { getCurrentUser } from "@/lib/wedding/session";
+import { createWeddingClient } from "@/lib/wedding/supabase";
 import {
   enumValue,
   isEmail,
@@ -21,9 +23,23 @@ const INVITATION_STATUSES = ["not_sent", "sent"] as const;
 const RSVP_STATUSES = ["pending", "attending", "not_attending"] as const;
 
 async function context() {
-  const ctx = await getActionContext();
-  if (!ctx) redirect("/wedding/login");
-  return ctx;
+  const [user, locale] = await Promise.all([getCurrentUser(), getLocale()]);
+  if (!user) redirect("/wedding/login");
+
+  const supabase = await createWeddingClient();
+  const { data: membership } = await supabase
+    .from("wedding_members")
+    .select("wedding_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!membership) redirect("/wedding/login");
+
+  return {
+    supabase,
+    weddingId: membership.wedding_id,
+    copy: moduleCopy[locale],
+  };
 }
 
 type GuestCommon = {
@@ -150,7 +166,7 @@ export async function createGuestAction(
 
   const { error } = await ctx.supabase.from("guests").insert(
     people.values.map((person) => ({
-      wedding_id: ctx.session.wedding.id,
+      wedding_id: ctx.weddingId,
       ...common.values,
       ...person,
     })),
@@ -158,7 +174,10 @@ export async function createGuestAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/guests");
+  // The guest modal closes immediately and refreshes the current route from the
+  // client. Revalidating /wedding/guests here makes the action response carry a
+  // full RSC refresh, which is noticeably slow with a long guest list.
+  revalidateWedding("/wedding/dashboard");
   return { success: ctx.copy.form.saved };
 }
 
@@ -177,11 +196,11 @@ export async function updateGuestAction(
     .from("guests")
     .update(parsed.values)
     .eq("id", id)
-    .eq("wedding_id", ctx.session.wedding.id);
+    .eq("wedding_id", ctx.weddingId);
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/guests");
+  revalidateWedding("/wedding/dashboard");
   return { success: ctx.copy.form.saved };
 }
 
@@ -196,7 +215,7 @@ export async function deleteGuestAction(
     .from("guests")
     .delete()
     .eq("id", id)
-    .eq("wedding_id", ctx.session.wedding.id);
+    .eq("wedding_id", ctx.weddingId);
 
   if (error) return { error: actionError(error, ctx.copy) };
 
