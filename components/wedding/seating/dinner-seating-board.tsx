@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useActionState } from "react";
+import { useEffect, useMemo, useRef, useState, useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Plus, Search, Users, X } from "lucide-react";
 import {
@@ -27,7 +27,6 @@ import { label } from "@/lib/wedding/labels";
 import {
   dinnerTableSummaries,
   unassignedDinnerGuests,
-  type DinnerTableSummary,
 } from "@/lib/wedding/dinner-seating";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -151,10 +150,11 @@ export function DinnerSeatingBoard({
     ) ?? events.find((item) => item.event_type === "dinner");
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [addingTableId, setAddingTableId] = useState<string | null>(null);
+  const [targetTableId, setTargetTableId] = useState<string | null>(null);
   const [layoutOpen, setLayoutOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const unassignedRef = useRef<HTMLDivElement>(null);
 
   const eventAssignments = useMemo(
     () =>
@@ -167,6 +167,9 @@ export function DinnerSeatingBoard({
     () => dinnerTableSummaries(tables, eventAssignments, guests),
     [tables, eventAssignments, guests],
   );
+  const targetSummary = targetTableId
+    ? summaries.find((summary) => summary.table.id === targetTableId) ?? null
+    : null;
   const unassigned = useMemo(
     () => unassignedDinnerGuests(guests, eventAssignments),
     [guests, eventAssignments],
@@ -241,7 +244,7 @@ export function DinnerSeatingBoard({
         setError(result.error);
         return;
       }
-      setAddingTableId(null);
+      setTargetTableId(null);
       router.refresh();
     } catch {
       setError(copy.errors.generic);
@@ -275,16 +278,6 @@ export function DinnerSeatingBoard({
       else next.add(tableId);
       return next;
     });
-  }
-
-  function tableAvailableToGuest(
-    guest: Guest,
-    summary: DinnerTableSummary,
-  ) {
-    return (
-      summary.remainingSeats >= guestPeopleCount(guest) &&
-      summary.freeChairIds.length >= guestPeopleCount(guest)
-    );
   }
 
   return (
@@ -376,10 +369,11 @@ export function DinnerSeatingBoard({
       ) : null}
 
 
-      <Card className="space-y-3">
+      <div ref={unassignedRef}>
+      <Card className="space-y-3 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h3 className="font-heading text-xl font-semibold text-ink">
+            <h3 className="font-heading text-lg font-semibold text-ink">
               {copy.seating.unassignedTitle}
             </h3>
             <p className="text-xs text-ink-soft">
@@ -401,6 +395,25 @@ export function DinnerSeatingBoard({
           </div>
         </div>
 
+        {targetSummary ? (
+          <div className="flex items-center justify-between gap-2 rounded-lg bg-sage/25 px-3 py-2 text-xs text-cocoa/75">
+            <span>
+              {copy.seating.assignToTable}:{" "}
+              <strong className="font-semibold text-cocoa">
+                {targetSummary.table.name}
+              </strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setTargetTableId(null)}
+              className="rounded p-0.5 text-cocoa/50 hover:bg-white/60 hover:text-cocoa"
+              aria-label={copy.form.cancel}
+            >
+              <X className="size-3.5" aria-hidden />
+            </button>
+          </div>
+        ) : null}
+
         {filteredUnassigned.length === 0 ? (
           <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
             {unassigned.length === 0
@@ -408,13 +421,19 @@ export function DinnerSeatingBoard({
               : copy.seating.noGuests}
           </p>
         ) : (
-          <div className="grid gap-2 lg:grid-cols-2">
+          <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
             {filteredUnassigned.map((guest) => {
-              const options = freeTableOptions(guest);
+              const options = targetSummary
+                ? [targetSummary].filter(
+                    (summary) =>
+                      summary.remainingSeats >= guestPeopleCount(guest) &&
+                      summary.freeChairIds.length >= guestPeopleCount(guest),
+                  )
+                : freeTableOptions(guest);
               return (
                 <div
                   key={guest.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-olive-100 bg-white/80 px-3 py-2.5"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-olive-100 bg-white/80 px-3 py-2"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ink">
@@ -436,7 +455,7 @@ export function DinnerSeatingBoard({
                       if (tableId) void assignGuestToTable(guest.id, tableId);
                     }}
                     aria-label={`${copy.seating.assignToTable}: ${guest.name}`}
-                    className="w-full rounded-xl border border-olive-200 bg-white px-2.5 py-2 text-xs sm:w-44"
+                    className="w-full rounded-lg border border-olive-200 bg-white px-2.5 py-1.5 text-xs sm:w-40"
                   >
                     <option value="">
                       {options.length === 0
@@ -456,7 +475,7 @@ export function DinnerSeatingBoard({
           </div>
         )}
       </Card>
-
+      </div>
 
       {summaries.length === 0 ? (
         <Card className="space-y-3 border-dashed border-olive-200 bg-ivory/70">
@@ -481,23 +500,19 @@ export function DinnerSeatingBoard({
                     (summary.occupiedSeats / summary.table.capacity) * 100,
                   )
                 : 0;
-            const canAdd = summary.remainingSeats > 0;
-            const availableGuests = unassigned.filter((guest) =>
-              tableAvailableToGuest(guest, summary),
-            );
-            const hasSeats = summary.freeChairIds.length > 0;
+            const canAdd =
+              summary.remainingSeats > 0 &&
+              summary.freeChairIds.length > 0 &&
+              summary.seatObjectCount > 0;
 
             return (
               <article
                 key={summary.table.id}
-                className="flex h-full flex-col rounded-2xl border border-blush/70 bg-ivory/90 p-4 shadow-[0_18px_40px_-38px_rgba(87,66,63,0.55)]"
+                className="flex h-full flex-col rounded-2xl border border-blush/60 bg-ivory/90 p-3.5"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-[10px] uppercase tracking-[0.16em] text-cocoa/45">
-                      {copy.seating.dinner}
-                    </p>
-                    <h3 className="mt-1 truncate font-heading text-xl text-cocoa">
+                    <h3 className="truncate font-heading text-lg text-cocoa">
                       {summary.table.name}
                     </h3>
                   </div>
@@ -515,81 +530,52 @@ export function DinnerSeatingBoard({
                   </button>
                 </div>
 
-                <div className="mt-4 flex items-end justify-between gap-2">
-                  <p className="font-heading text-2xl text-cocoa">
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium text-cocoa">
                     {summary.occupiedSeats}
-                    <span className="text-sm text-cocoa/45">
-                      {" "}/ {summary.table.capacity}
+                    <span className="text-xs font-normal text-cocoa/45">
+                      {" "}/ {summary.table.capacity} {copy.seating.capacityLeft}
                     </span>
                   </p>
-                  <p className="text-[11px] text-cocoa/50">
+                  <p className="text-[10px] text-cocoa/45">
                     {summary.remainingSeats} {copy.seating.capacityLeft}
                   </p>
                 </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-blush/60">
+                <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-blush/50">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-sage to-dusty transition-all"
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
+                <div className="mt-2.5 flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    disabled={!canAdd || !hasSeats || busy}
-                    onClick={() =>
-                      setAddingTableId((current) =>
-                        current === summary.table.id ? null : summary.table.id,
-                      )
-                    }
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-sage/35 px-2.5 py-1.5 text-xs font-medium text-cocoa transition-colors hover:bg-sage/55 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={!canAdd || busy}
+                    onClick={() => {
+                      setTargetTableId(summary.table.id);
+                      unassignedRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
+                    }}
+                    className="inline-flex items-center gap-1 rounded-lg bg-sage/30 px-2.5 py-1.5 text-[11px] font-medium text-cocoa transition-colors hover:bg-sage/50 disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     <Plus className="size-3.5" aria-hidden />
                     {copy.seating.addGuest}
                   </button>
-                  <span className="text-[11px] text-cocoa/45">
+                  <span className="text-[10px] text-cocoa/45">
                     {summary.guests.length} {copy.seating.guestList.toLowerCase()}
                   </span>
                 </div>
 
-                {!hasSeats ? (
-                  <p className="mt-3 rounded-xl border border-amber-100 bg-amber-50/70 px-3 py-2 text-xs leading-relaxed text-amber-800">
+                {summary.seatObjectCount === 0 ? (
+                  <p className="mt-2 text-[10px] leading-snug text-cocoa/45">
                     {copy.seating.noTableSeats}
                   </p>
                 ) : null}
 
 
-
-                {addingTableId === summary.table.id ? (
-                  <div className="mt-3 space-y-2 rounded-xl border border-olive-100 bg-white/75 p-3">
-                    {availableGuests.length === 0 ? (
-                      <p className="text-xs text-ink-soft">
-                        {copy.seating.noUnassigned}
-                      </p>
-                    ) : (
-                      <select
-                        defaultValue=""
-                        disabled={busy}
-                        onChange={(selectEvent) => {
-                          const guestId = selectEvent.target.value;
-                          selectEvent.currentTarget.value = "";
-                          if (guestId) {
-                            void assignGuestToTable(guestId, summary.table.id);
-                          }
-                        }}
-                        aria-label={`${copy.seating.addGuest}: ${summary.table.name}`}
-                        className="w-full rounded-xl border border-olive-200 bg-white px-2.5 py-2 text-xs"
-                      >
-                        <option value="">{copy.seating.chooseGuest}</option>
-                        {availableGuests.map((guest) => (
-                          <option key={guest.id} value={guest.id}>
-                            {guest.name} · {guestPeopleCount(guest)} pax
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                ) : null}
 
                 {expanded ? (
                   <div className="mt-3 space-y-2 border-t border-blush/60 pt-3">

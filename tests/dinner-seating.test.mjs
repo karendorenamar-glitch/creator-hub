@@ -92,6 +92,7 @@ test("group size counts toward table occupancy and remaining seats", () => {
   const first = summaries.find((row) => row.table.id === "t1");
   assert.equal(first.occupiedSeats, 4);
   assert.equal(first.remainingSeats, 0);
+  assert.equal(first.seatObjectCount, 3);
   assert.equal(first.freeChairIds.length, 1);
 });
 

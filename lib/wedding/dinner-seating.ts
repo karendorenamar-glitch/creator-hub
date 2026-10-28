@@ -18,6 +18,7 @@ export type DinnerTableSummary = {
   guests: DinnerTableGuest[];
   occupiedSeats: number;
   remainingSeats: number;
+  seatObjectCount: number;
   freeChairIds: string[];
 };
 
@@ -90,13 +91,12 @@ export function dinnerTableSummaries(
       (sum, item) => sum + countPeople(item.guest),
       0,
     );
-    const freeChairIds = tables
-      .filter(
-        (candidate) =>
-          candidate.parent_table_id === table.id &&
-          candidate.capacity === 1 &&
-          !assignedChairIds.has(candidate.id),
-      )
+    const childChairs = tables.filter(
+      (candidate) =>
+        candidate.parent_table_id === table.id && candidate.capacity === 1,
+    );
+    const freeChairIds = childChairs
+      .filter((candidate) => !assignedChairIds.has(candidate.id))
       .map((candidate) => candidate.id);
 
     return {
@@ -104,6 +104,7 @@ export function dinnerTableSummaries(
       guests: tableGuests,
       occupiedSeats,
       remainingSeats: Math.max(0, table.capacity - occupiedSeats),
+      seatObjectCount: childChairs.length,
       freeChairIds,
     };
   });
