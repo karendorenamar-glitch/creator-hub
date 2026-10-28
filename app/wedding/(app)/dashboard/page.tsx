@@ -19,6 +19,7 @@ import {
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 import { moduleCopy } from "@/lib/wedding/module-copy";
+import { InvitePartnerPanel } from "@/components/wedding/settings/invite-partner-panel";
 import { daysFromToday, formatIDR, formatWeddingDate } from "@/lib/wedding/format";
 import { loadBudgetData } from "@/lib/wedding/budget-data";
 import {
@@ -51,6 +52,24 @@ export default async function DashboardPage() {
       .select("id, title, status, due_date, priority")
       .order("due_date", { ascending: true, nullsFirst: false }),
   ]);
+
+  const [{ data: memberRows }, { data: pendingInviteRows }] = await Promise.all([
+    supabase
+      .from("wedding_members")
+      .select("user_id, role")
+      .eq("wedding_id", session.wedding.id),
+    supabase
+      .from("wedding_invites")
+      .select("*")
+      .eq("wedding_id", session.wedding.id)
+      .is("accepted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1),
+  ]);
+  const hasPartner = Boolean(
+    (memberRows ?? []).some((member) => member.role === "partner"),
+  );
+  const pendingInvite = pendingInviteRows?.[0] ?? null;
 
   const guests = guestsResult.data ?? [];
   const sideSummary = summarizeGuestSides(guests);
@@ -127,6 +146,17 @@ export default async function DashboardPage() {
           ) : null}
         </Card>
       ) : null}
+
+      <Card className="max-w-3xl">
+        <InvitePartnerPanel
+          canInvite={session.role === "owner"}
+          hasPartner={hasPartner}
+          pendingInvite={pendingInvite}
+          copy={copy}
+          locale={locale}
+        />
+      </Card>
+
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard

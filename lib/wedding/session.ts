@@ -103,6 +103,7 @@ export const loadWeddingSession = cache(async (): Promise<WeddingSession | null>
       { data: subscription },
       subscriptionRequired,
       { data: entitlement },
+      serverAccess,
     ] = await Promise.all([
       supabase
         .from("weddings")
@@ -120,9 +121,22 @@ export const loadWeddingSession = cache(async (): Promise<WeddingSession | null>
         .select("user_id, lifetime_access_granted_at")
         .eq("user_id", user.id)
         .maybeSingle(),
+      supabase.rpc("wedding_has_access", {
+        p_wedding_id: membership.wedding_id,
+      }),
     ]);
 
     if (!wedding) return null;
+
+    const localPlanningAccess =
+      !subscriptionRequired ||
+      isSubscriptionActive(subscription ?? null) ||
+      Boolean(entitlement?.lifetime_access_granted_at) ||
+      Boolean(wedding.lifetime_access_granted_at);
+    const hasPlanningAccess =
+      serverAccess.error || serverAccess.data === null
+        ? localPlanningAccess
+        : serverAccess.data === true;
 
     return {
       userId: user.id,
@@ -132,11 +146,7 @@ export const loadWeddingSession = cache(async (): Promise<WeddingSession | null>
       role: membership.role,
       subscriptionRequired,
       hasEntitlement: Boolean(entitlement?.lifetime_access_granted_at),
-      hasPlanningAccess:
-        !subscriptionRequired ||
-        isSubscriptionActive(subscription ?? null) ||
-        Boolean(entitlement?.lifetime_access_granted_at) ||
-        Boolean(wedding.lifetime_access_granted_at),
+      hasPlanningAccess,
     };
   } catch {
     return null;

@@ -63,7 +63,7 @@ export async function createWeddingInviteAction(
     return { error: actionError(error, ctx.copy) };
   }
 
-  revalidateWedding("/wedding/settings");
+  revalidateWedding("/wedding/dashboard");
   return { success: ui.inviteCreated };
 }
 
@@ -88,6 +88,6 @@ export async function revokeWeddingInviteAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/settings");
+  revalidateWedding("/wedding/dashboard");
   return { success: ui.inviteRevoked };
 }

@@ -566,6 +566,10 @@ export type WeddingDatabase = {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      wedding_has_access: {
+        Args: { p_wedding_id: string };
+        Returns: boolean;
+      };
       refresh_vendor_group_status: {
         Args: { p_group_id: string };
         Returns: string;
