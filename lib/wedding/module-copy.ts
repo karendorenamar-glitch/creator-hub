@@ -212,9 +212,9 @@ const en = {
     removeName: "Remove",
     invitation: "Invitation",
     rsvp: "RSVP",
-    plusOnes: "Plus ones",
+    plusOnes: "Total pax",
     plusOnesHint:
-      "Each companion is saved as a separate guest row with the same name.",
+      "2 pax becomes 2 separate guest records with the same name, so each person can sit anywhere.",
     splitPlusOnes: "Split companions",
     splitPlusOnesHint:
       "{count} guest rows still include companions. Split them so every person can be seated separately.",
@@ -999,9 +999,9 @@ const id: ModuleCopy = {
     removeName: "Hapus",
     invitation: "Undangan",
     rsvp: "RSVP",
-    plusOnes: "Tamu pendamping",
+    plusOnes: "Jumlah pax",
     plusOnesHint:
-      "Setiap pendamping disimpan sebagai baris tamu terpisah dengan nama yang sama.",
+      "2 pax menjadi 2 tamu terpisah dengan nama yang sama, jadi masing-masing bisa duduk di mana saja.",
     splitPlusOnes: "Pisahkan pendamping",
     splitPlusOnesHint:
       "{count} baris tamu masih memakai pendamping. Pisahkan agar setiap orang bisa diatur kursinya sendiri.",

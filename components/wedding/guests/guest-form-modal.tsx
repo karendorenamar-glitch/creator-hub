@@ -26,7 +26,7 @@ function newGuestRow(): GuestRow {
     key: crypto.randomUUID(),
     name: "",
     phone: "",
-    plusOnes: "0",
+    plusOnes: "1",
   };
 }
 
@@ -63,7 +63,7 @@ export function GuestFormModal({
             key: guest.id,
             name: guest.name,
             phone: guest.phone ?? "",
-            plusOnes: String(guest.plus_ones),
+            plusOnes: String(guest.plus_ones + 1),
           },
         ]
       : [newGuestRow()],
@@ -210,8 +210,8 @@ export function GuestFormModal({
                     id={`guest-plus-${row.key}`}
                     name="plusOnes"
                     type="number"
-                    min={0}
-                    max={20}
+                    min={1}
+                    max={21}
                     value={row.plusOnes}
                     onChange={(event) =>
                       updateRow(row.key, { plusOnes: event.target.value })

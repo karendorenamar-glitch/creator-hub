@@ -97,7 +97,10 @@ function readGuestPeople(
   copy: ModuleCopy,
 ): { ok: true; values: GuestPerson[] } | { ok: false; error: string } {
   // The form renders name/phone/plusOnes together for every row, so the three
-  // arrays stay aligned even when an empty row is submitted.
+  // arrays stay aligned even when an empty row is submitted. `plusOnes` in the
+  // form is the TOTAL number of people in that invitation row, not the number
+  // of additional companions. The database still stores `plus_ones` as the
+  // number of companions (total - 1).
   const names = formData.getAll("name").map((value) => String(value).trim());
   const phones = formData.getAll("phone").map((value) => String(value).trim());
   const plusOnes = formData
@@ -112,22 +115,23 @@ function readGuestPeople(
     const plusOnesRaw = plusOnes[index] ?? "";
     const normalizedPlusOnes = plusOnesRaw.replace(/[^\d]/g, "");
 
-    // Ignore a completely empty row (the default "0" companion value does not
-    // make an otherwise blank row count as a person).
-    if (!name && !phone && (!normalizedPlusOnes || normalizedPlusOnes === "0")) {
+    // Ignore a completely empty row. A blank/default total of 1 does not make
+    // an otherwise blank row count as a person.
+    if (!name && !phone && (!normalizedPlusOnes || normalizedPlusOnes === "1")) {
       continue;
     }
     if (!name) return { ok: false, error: copy.form.required };
 
-    const parsedPlusOnes = plusOnesRaw ? parseCount(plusOnesRaw) : 0;
-    if (parsedPlusOnes === null || parsedPlusOnes > 20) {
+    const totalPeople = plusOnesRaw ? parseCount(plusOnesRaw) : 1;
+    if (totalPeople === null || totalPeople < 1 || totalPeople > 21) {
       return { ok: false, error: copy.form.invalidNumber };
     }
 
     people.push({
       name: name.slice(0, 120),
       phone: phone ? phone.slice(0, 40) : null,
-      plus_ones: parsedPlusOnes,
+      // Stored as companions; 2 pax becomes 2 guest rows after expansion.
+      plus_ones: totalPeople - 1,
     });
   }
 
