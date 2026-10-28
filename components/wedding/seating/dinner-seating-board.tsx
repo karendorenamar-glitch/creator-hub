@@ -344,9 +344,14 @@ export function DinnerSeatingBoard({
         : [],
     [assignments, event],
   );
+  const eventTables = useMemo(
+    () =>
+      event ? tables.filter((table) => table.event_id === event.id) : [],
+    [event, tables],
+  );
   const summaries = useMemo(
-    () => dinnerTableSummaries(tables, eventAssignments, guests),
-    [tables, eventAssignments, guests],
+    () => dinnerTableSummaries(eventTables, eventAssignments, guests),
+    [eventTables, eventAssignments, guests],
   );
   const targetSummary = targetTableId
     ? summaries.find((summary) => summary.table.id === targetTableId) ?? null

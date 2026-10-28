@@ -303,26 +303,28 @@ export async function renameDinnerTableAction(
 ): Promise<ActionResult> {
   const ctx = await context();
   const id = text(formData, "id");
-  const eventId = text(formData, "eventId");
   const name = text(formData, "name").slice(0, 80);
 
-  if (!isUuid(id) || !isUuid(eventId) || !name) {
+  if (!isUuid(id) || !name) {
     return { error: ctx.copy.form.required };
   }
 
+  // Resolve the event from the table itself. The UI can briefly carry a stale
+  // event id after a layout refresh; the table row is the source of truth.
   const { data: table } = await ctx.supabase
     .from("seating_tables")
-    .select("id, event_id")
+    .select("id, event_id, capacity, kind")
     .eq("id", id)
-    .eq("event_id", eventId)
     .eq("wedding_id", ctx.weddingId)
     .maybeSingle();
-  if (!table) return { error: ctx.copy.errors.notFound };
+  if (!table || Number(table.capacity) <= 1 || table.kind === "chair") {
+    return { error: ctx.copy.errors.notFound };
+  }
 
   const { data: event } = await ctx.supabase
     .from("seating_events")
     .select("event_type")
-    .eq("id", eventId)
+    .eq("id", table.event_id)
     .eq("wedding_id", ctx.weddingId)
     .maybeSingle();
   if (!event || event.event_type !== "dinner") {
@@ -333,7 +335,6 @@ export async function renameDinnerTableAction(
     .from("seating_tables")
     .update({ name })
     .eq("id", id)
-    .eq("event_id", eventId)
     .eq("wedding_id", ctx.weddingId);
 
   if (error) return { error: actionError(error, ctx.copy) };
