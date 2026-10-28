@@ -215,6 +215,12 @@ const en = {
     plusOnes: "Plus ones",
     plusOnesHint:
       "Each companion is saved as a separate guest row with the same name.",
+    splitPlusOnes: "Split companions",
+    splitPlusOnesHint:
+      "{count} guest rows still include companions. Split them so every person can be seated separately.",
+    splitPlusOnesDone:
+      "Companions split into individual rows ({count} guests updated).",
+    splitPlusOnesNone: "No guest rows with companions were found.",
     notes: "Notes",
     search: "Search guests",
     allGroups: "All groups",
@@ -996,6 +1002,12 @@ const id: ModuleCopy = {
     plusOnes: "Tamu pendamping",
     plusOnesHint:
       "Setiap pendamping disimpan sebagai baris tamu terpisah dengan nama yang sama.",
+    splitPlusOnes: "Pisahkan pendamping",
+    splitPlusOnesHint:
+      "{count} baris tamu masih memakai pendamping. Pisahkan agar setiap orang bisa diatur kursinya sendiri.",
+    splitPlusOnesDone:
+      "Pendamping sudah dipisahkan menjadi baris sendiri ({count} tamu diperbarui).",
+    splitPlusOnesNone: "Tidak ada tamu dengan pendamping yang perlu dipisahkan.",
     notes: "Catatan",
     search: "Cari tamu",
     allGroups: "Semua grup",

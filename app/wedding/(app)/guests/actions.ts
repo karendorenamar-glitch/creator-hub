@@ -232,6 +232,95 @@ export async function updateGuestAction(
   return { success: ctx.copy.form.saved };
 }
 
+export async function splitPlusOnesAction(
+  _prev: ActionResult,
+  _formData: FormData,
+): Promise<ActionResult> {
+  void _prev;
+  void _formData;
+  const ctx = await context();
+  const { data: legacy, error: legacyError } = await ctx.supabase
+    .from("guests")
+    .select("*")
+    .eq("wedding_id", ctx.weddingId)
+    .gt("plus_ones", 0);
+
+  if (legacyError) return { error: actionError(legacyError, ctx.copy) };
+
+  let split = 0;
+
+  for (const guest of legacy ?? []) {
+    const companions = expandGuestPeople(guest).slice(1);
+    if (companions.length === 0) continue;
+
+    const { data: inserted, error: insertError } = await ctx.supabase
+      .from("guests")
+      .insert(
+        companions.map((person) => ({
+          wedding_id: ctx.weddingId,
+          name: person.name,
+          phone: person.phone,
+          email: person.email,
+          guest_group: person.guest_group,
+          invitation_status: person.invitation_status,
+          rsvp_status: person.rsvp_status,
+          plus_ones: 0,
+          notes: person.notes,
+          side: person.side,
+        })),
+      )
+      .select("id");
+
+    if (insertError) return { error: actionError(insertError, ctx.copy) };
+    const companionIds = (inserted ?? []).map((row) => String(row.id));
+
+    const { error: updateError } = await ctx.supabase
+      .from("guests")
+      .update({ plus_ones: 0 })
+      .eq("id", guest.id)
+      .eq("wedding_id", ctx.weddingId);
+
+    if (updateError) {
+      if (companionIds.length > 0) {
+        await ctx.supabase
+          .from("guests")
+          .delete()
+          .in("id", companionIds)
+          .eq("wedding_id", ctx.weddingId);
+      }
+      return { error: actionError(updateError, ctx.copy) };
+    }
+
+    // Keep the original guest in its first chair and release any extra chairs
+    // so the newly split companions can be placed one by one.
+    const { data: assignments } = await ctx.supabase
+      .from("seating_assignments")
+      .select("id, seat_ids")
+      .eq("guest_id", guest.id)
+      .eq("wedding_id", ctx.weddingId);
+    for (const assignment of assignments ?? []) {
+      const seatIds = assignment.seat_ids ?? [];
+      if (seatIds.length > 1) {
+        await ctx.supabase
+          .from("seating_assignments")
+          .update({ seat_ids: [seatIds[0]] })
+          .eq("id", assignment.id)
+          .eq("wedding_id", ctx.weddingId);
+      }
+    }
+
+    split += 1;
+  }
+
+  revalidateWedding("/wedding/guests", "/wedding/seating");
+  return {
+    success:
+      split === 0
+        ? ctx.copy.guests.splitPlusOnesNone
+        : ctx.copy.guests.splitPlusOnesDone.replace("{count}", String(split)),
+  };
+}
+
 export async function deleteGuestAction(
   formData: FormData,
 ): Promise<ActionResult> {
