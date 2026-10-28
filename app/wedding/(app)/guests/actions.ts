@@ -7,6 +7,7 @@ import {
   type ActionResult,
 } from "@/lib/wedding/action-context";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { expandGuestPeople } from "@/lib/wedding/guest-count";
 import { moduleCopy, type ModuleCopy } from "@/lib/wedding/module-copy";
 import { getCurrentUser } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
@@ -165,16 +166,18 @@ export async function createGuestAction(
   if (!people.ok) return { error: people.error };
 
   const { error } = await ctx.supabase.from("guests").insert(
-    people.values.map((person) => ({
-      wedding_id: ctx.weddingId,
-      ...common.values,
-      ...person,
-    })),
+    people.values.flatMap((person) =>
+      expandGuestPeople(person).map((expanded) => ({
+        wedding_id: ctx.weddingId,
+        ...common.values,
+        ...expanded,
+      })),
+    ),
   );
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/guests");
+  revalidateWedding("/wedding/guests", "/wedding/seating");
   return { success: ctx.copy.form.saved };
 }
 
@@ -189,15 +192,43 @@ export async function updateGuestAction(
   const parsed = readGuest(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const expanded = expandGuestPeople(parsed.values);
+  const companions = expanded.slice(1);
+  let companionIds: string[] = [];
+
+  if (companions.length > 0) {
+    const { data: inserted, error: insertError } = await ctx.supabase
+      .from("guests")
+      .insert(
+        companions.map((person) => ({
+          wedding_id: ctx.weddingId,
+          ...person,
+        })),
+      )
+      .select("id");
+
+    if (insertError) return { error: actionError(insertError, ctx.copy) };
+    companionIds = (inserted ?? []).map((row) => String(row.id));
+  }
+
   const { error } = await ctx.supabase
     .from("guests")
-    .update(parsed.values)
+    .update({ ...parsed.values, plus_ones: 0 })
     .eq("id", id)
     .eq("wedding_id", ctx.weddingId);
 
-  if (error) return { error: actionError(error, ctx.copy) };
+  if (error) {
+    if (companionIds.length > 0) {
+      await ctx.supabase
+        .from("guests")
+        .delete()
+        .in("id", companionIds)
+        .eq("wedding_id", ctx.weddingId);
+    }
+    return { error: actionError(error, ctx.copy) };
+  }
 
-  revalidateWedding("/wedding/guests");
+  revalidateWedding("/wedding/guests", "/wedding/seating");
   return { success: ctx.copy.form.saved };
 }
 
@@ -216,6 +247,6 @@ export async function deleteGuestAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
-  revalidateWedding("/wedding/guests");
+  revalidateWedding("/wedding/guests", "/wedding/seating");
   return null;
 }

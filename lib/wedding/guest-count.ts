@@ -24,6 +24,21 @@ export function totalGuestPeople(
 }
 
 /**
+ * Turn a guest row with companions into one row per person. The name and the
+ * other guest fields stay the same so the original invitation grouping is not
+ * lost; seating can then be assigned one chair at a time per row.
+ */
+export function expandGuestPeople<T extends { plus_ones?: number | null }>(
+  guest: T,
+): T[] {
+  const people = guestPeopleCount(guest);
+  return Array.from({ length: people }, () => ({
+    ...guest,
+    plus_ones: 0,
+  }));
+}
+
+/**
  * Older rows (before migration 030) have no `side` value. Treat those rows as
  * unassigned so the UI and totals remain safe during a phased deploy.
  */

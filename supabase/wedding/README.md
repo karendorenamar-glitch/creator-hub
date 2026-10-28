@@ -26,7 +26,8 @@ invites. The current guest migration is `030_guest_side.sql`: it adds an
 additive `side` category (`bride`, `groom`, `unassigned`) without changing
 existing guest records or RLS policies. The seating/rooms migration is
 `031_seating_rooms.sql`: five additive tables with wedding-scoped composite
-foreign keys and the existing `wedding_has_access` RLS rule.
+foreign keys and the existing `wedding_has_access` RLS rule. The one-person
+guest split is `039_split_plus_ones.sql` (data-only; documented in `APPLY_039.md`).
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

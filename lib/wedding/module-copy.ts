@@ -213,7 +213,8 @@ const en = {
     invitation: "Invitation",
     rsvp: "RSVP",
     plusOnes: "Plus ones",
-    plusOnesHint: "Additional people included in this invitation, not the total.",
+    plusOnesHint:
+      "Each companion is saved as a separate guest row with the same name.",
     notes: "Notes",
     search: "Search guests",
     allGroups: "All groups",
@@ -993,7 +994,8 @@ const id: ModuleCopy = {
     invitation: "Undangan",
     rsvp: "RSVP",
     plusOnes: "Tamu pendamping",
-    plusOnesHint: "Jumlah orang tambahan yang ikut diundang, bukan total orang.",
+    plusOnesHint:
+      "Setiap pendamping disimpan sebagai baris tamu terpisah dengan nama yang sama.",
     notes: "Catatan",
     search: "Cari tamu",
     allGroups: "Semua grup",

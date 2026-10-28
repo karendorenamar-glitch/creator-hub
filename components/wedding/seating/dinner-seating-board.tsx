@@ -38,6 +38,7 @@ import { label } from "@/lib/wedding/labels";
 import {
   dinnerTableSummaries,
   unassignedDinnerGuests,
+  type DinnerTableSummary,
 } from "@/lib/wedding/dinner-seating";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -204,6 +205,101 @@ function DinnerTableNameModal({
 }
 
 
+function DinnerGuestPickerModal({
+  table,
+  unassigned,
+  copy,
+  busy,
+  onClose,
+  onAssign,
+}: {
+  table: DinnerTableSummary | null;
+  unassigned: Guest[];
+  copy: ModuleCopy;
+  busy: boolean;
+  onClose: () => void;
+  onAssign: (guestId: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  if (!table) return null;
+
+  const needle = query.trim().toLowerCase();
+  const matching = unassigned.filter((guest) => {
+    if (!needle) return true;
+    return [guest.name, guest.guest_group, guest.phone]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(needle);
+  });
+  const eligible = matching.filter(
+    (guest) =>
+      table.remainingSeats >= guestPeopleCount(guest) &&
+      table.freeChairIds.length >= guestPeopleCount(guest),
+  );
+
+  return (
+    <FormModal
+      open={Boolean(table)}
+      onClose={onClose}
+      title={`${copy.seating.addGuest} · ${table.table.name}`}
+    >
+      <div className="space-y-3">
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
+            aria-hidden
+          />
+          <input
+            value={query}
+            onChange={(inputEvent) => setQuery(inputEvent.target.value)}
+            placeholder={copy.seating.searchUnassigned}
+            className={`${inputClass} pl-9`}
+            autoFocus
+          />
+        </div>
+        <p className="text-xs text-ink-soft">
+          {table.remainingSeats} {copy.seating.capacityLeft}
+        </p>
+        {eligible.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
+            {unassigned.length === 0
+              ? copy.seating.noUnassigned
+              : copy.seating.tableFull}
+          </p>
+        ) : (
+          <div className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
+            {eligible.map((guest) => (
+              <button
+                key={guest.id}
+                type="button"
+                disabled={busy}
+                onClick={() => onAssign(guest.id)}
+                className="flex w-full items-center justify-between gap-3 rounded-xl border border-olive-100 bg-white/80 px-3 py-2.5 text-left transition-colors hover:border-sage hover:bg-sage/15 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium text-ink">
+                    {guest.name}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[11px] text-ink-soft">
+                    {[guest.guest_group, guest.phone]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}{" "}
+                    · {guestPeopleCount(guest)} pax
+                  </span>
+                </span>
+                <Plus className="size-4 shrink-0 text-cocoa" aria-hidden />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </FormModal>
+  );
+}
+
+
 export function DinnerSeatingBoard({
   events,
   tables,
@@ -222,6 +318,7 @@ export function DinnerSeatingBoard({
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [targetTableId, setTargetTableId] = useState<string | null>(null);
+  const [assignTableId, setAssignTableId] = useState<string | null>(null);
   const [layoutOpen, setLayoutOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<SeatingTable | null>(null);
   const [busy, setBusy] = useState(false);
@@ -249,6 +346,9 @@ export function DinnerSeatingBoard({
   );
   const targetSummary = targetTableId
     ? summaries.find((summary) => summary.table.id === targetTableId) ?? null
+    : null;
+  const assignTable = assignTableId
+    ? summaries.find((summary) => summary.table.id === assignTableId) ?? null
     : null;
   const unassigned = useMemo(
     () => unassignedDinnerGuests(guests, eventAssignments),
@@ -325,6 +425,7 @@ export function DinnerSeatingBoard({
         return;
       }
       setTargetTableId(null);
+      setAssignTableId(null);
       router.refresh();
     } catch {
       setError(copy.errors.generic);
@@ -517,10 +618,7 @@ export function DinnerSeatingBoard({
                     (summary.occupiedSeats / summary.table.capacity) * 100,
                   )
                 : 0;
-            const canAdd =
-              summary.remainingSeats > 0 &&
-              summary.freeChairIds.length > 0 &&
-              summary.seatObjectCount > 0;
+            const canAdd = summary.remainingSeats > 0;
 
             return (
               <article
@@ -587,11 +685,12 @@ export function DinnerSeatingBoard({
                     type="button"
                     disabled={!canAdd || busy}
                     onClick={() => {
+                      if (summary.seatObjectCount === 0) {
+                        setLayoutOpen(true);
+                        return;
+                      }
                       setTargetTableId(summary.table.id);
-                      unassignedRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                        block: "center",
-                      });
+                      setAssignTableId(summary.table.id);
                     }}
                     className="inline-flex items-center gap-1 rounded-lg bg-sage/30 px-2.5 py-1.5 text-[11px] font-medium text-cocoa transition-colors hover:bg-sage/50 disabled:cursor-not-allowed disabled:opacity-45"
                   >
@@ -810,6 +909,20 @@ export function DinnerSeatingBoard({
         )}
       </Card>
       </div>
+
+      <DinnerGuestPickerModal
+        table={assignTable}
+        unassigned={unassigned}
+        copy={copy}
+        busy={busy}
+        onAssign={(guestId) => {
+          if (assignTable) void assignGuestToTable(guestId, assignTable.table.id);
+        }}
+        onClose={() => {
+          setAssignTableId(null);
+          setTargetTableId(null);
+        }}
+      />
 
       <DinnerLayoutModal
         open={layoutOpen}
