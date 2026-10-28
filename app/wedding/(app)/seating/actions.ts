@@ -8,7 +8,7 @@ import {
   type ActionResult,
 } from "@/lib/wedding/action-context";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
-import { guestPeopleCount, totalGuestPeople } from "@/lib/wedding/guest-count";
+import { guestPeopleCount } from "@/lib/wedding/guest-count";
 import {
   enumValue,
   isUuid,
@@ -29,77 +29,52 @@ async function tablePeople(
   supabase: Awaited<ReturnType<typeof context>>["supabase"],
   tableId: string,
 ) {
-  const { data: assignments } = await supabase
+  const { data: table } = await supabase
+    .from("seating_tables")
+    .select("id, event_id, parent_table_id")
+    .eq("id", tableId)
+    .maybeSingle();
+  if (!table) return 0;
+
+  const { data: event } = await supabase
+    .from("seating_events")
+    .select("id, event_type")
+    .eq("id", table.event_id)
+    .maybeSingle();
+  if (!event) return 0;
+
+  const targetId = table.parent_table_id ?? table.id;
+  const { data: rows } = await supabase
     .from("seating_assignments")
-    .select("guest_id")
-    .eq("table_id", tableId);
-  const guestIds = (assignments ?? []).map((row) => row.guest_id);
+    .select("guest_id, table_id, seat_ids")
+    .eq("event_id", event.id);
+  const guestIds = Array.from(new Set((rows ?? []).map((row) => row.guest_id)));
   if (guestIds.length === 0) return 0;
   const { data: guests } = await supabase
     .from("guests")
     .select("id, plus_ones")
     .in("id", guestIds);
-  return totalGuestPeople(guests ?? []);
-}
-
-type SeatRow = {
-  id: string;
-  event_id: string;
-  capacity: number;
-  kind?: string | null;
-  side?: string | null;
-  parent_table_id?: string | null;
-  canvas_x: number;
-  canvas_y: number;
-  rotation?: number | null;
-};
-
-function chooseAdjacentSeats(
-  target: SeatRow,
-  seats: SeatRow[],
-  occupied: Set<string>,
-  needed: number,
-): string[] | null {
-  const candidates = seats.filter((seat) => {
-    if (seat.event_id !== target.event_id) return false;
-    if (seat.capacity !== 1) return false;
-    if (target.parent_table_id) {
-      return seat.parent_table_id === target.parent_table_id;
-    }
-    if (target.side === "left" || target.side === "right") {
-      return seat.side === target.side;
-    }
-    return true;
-  });
-
-  const sorted = [...candidates].sort((a, b) => {
-    if (target.parent_table_id) {
-      const rotationA = Number(a.rotation ?? 0);
-      const rotationB = Number(b.rotation ?? 0);
-      if (rotationA !== rotationB) return rotationA - rotationB;
-    }
-    if (Number(a.canvas_y) !== Number(b.canvas_y)) {
-      return Number(a.canvas_y) - Number(b.canvas_y);
-    }
-    return Number(a.canvas_x) - Number(b.canvas_x);
-  });
-
-  const targetIndex = sorted.findIndex((seat) => seat.id === target.id);
-  if (targetIndex < 0 || occupied.has(target.id)) return null;
-  if (needed <= 1) return [target.id];
-
-  const maxStart = Math.min(targetIndex, sorted.length - needed);
-  const minStart = Math.max(0, targetIndex - needed + 1);
-  let best: { ids: string[]; distance: number } | null = null;
-  for (let start = minStart; start <= maxStart; start += 1) {
-    const window = sorted.slice(start, start + needed);
-    if (window.some((seat) => occupied.has(seat.id))) continue;
-    const distance = Math.abs(start - targetIndex);
-    if (!best || distance < best.distance) {
-      best = { ids: window.map((seat) => seat.id), distance };
+  const { data: tables } = await supabase
+    .from("seating_tables")
+    .select("id, parent_table_id")
+    .eq("event_id", event.id);
+  const parentById = new Map((tables ?? []).map((row) => [row.id, row.parent_table_id]));
+  const guestTotal = new Map(
+    (guests ?? []).map((row) => [row.id, guestPeopleCount(row)]),
+  );
+  let count = 0;
+  for (const row of rows ?? []) {
+    const total = guestTotal.get(row.guest_id) ?? 1;
+    const seats = (row.seat_ids?.length ? row.seat_ids : [row.table_id]).slice(0, total);
+    for (const seatId of seats) {
+      const resolved =
+        event.event_type === "akad"
+          ? seatId
+          : parentById.get(seatId) ?? seatId;
+      if (resolved === targetId) count += 1;
     }
   }
-  return best?.ids ?? null;
+  return count;
 }
 
 function revalidateSeating() {
@@ -587,125 +562,142 @@ export async function assignGuestAction(
     return { error: ctx.copy.errors.notFound };
   }
 
-  let table: SeatRow | null = null;
-  const fullTable = await ctx.supabase
+  const { data: event } = await ctx.supabase
+    .from("seating_events")
+    .select("id, event_type")
+    .eq("id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .maybeSingle();
+  if (!event) return { error: ctx.copy.errors.notFound };
+
+  const { data: targetTable } = await ctx.supabase
     .from("seating_tables")
-    .select("id, event_id, capacity, kind, side, parent_table_id, canvas_x, canvas_y, rotation")
+    .select("id, event_id, capacity, kind, parent_table_id")
     .eq("id", tableId)
     .eq("event_id", eventId)
     .eq("wedding_id", ctx.weddingId)
     .maybeSingle();
-  table = fullTable.data as SeatRow | null;
-  let tableError = fullTable.error;
-  if (tableError?.code === "42703") {
-    const fallback = await ctx.supabase
-      .from("seating_tables")
-      .select("id, event_id, capacity, canvas_x, canvas_y")
-      .eq("id", tableId)
-      .eq("event_id", eventId)
-      .eq("wedding_id", ctx.weddingId)
-      .maybeSingle();
-    table = fallback.data as SeatRow | null;
-    tableError = fallback.error;
+  if (!targetTable) return { error: ctx.copy.errors.notFound };
+
+  const targetTableId =
+    event.event_type === "dinner"
+      ? targetTable.parent_table_id ?? targetTable.id
+      : targetTable.id;
+
+  const { data: targetParent } =
+    event.event_type === "dinner" && targetTableId !== targetTable.id
+      ? await ctx.supabase
+          .from("seating_tables")
+          .select("id, capacity, kind")
+          .eq("id", targetTableId)
+          .eq("event_id", eventId)
+          .eq("wedding_id", ctx.weddingId)
+          .maybeSingle()
+      : { data: targetTable };
+  if (!targetParent) return { error: ctx.copy.errors.notFound };
+
+  if (event.event_type === "akad" && Number(targetParent.capacity) !== 1) {
+    return { error: ctx.copy.seating.seatTaken };
   }
+  if (event.event_type === "dinner" && Number(targetParent.capacity) < 1) {
+    return { error: ctx.copy.seating.notEnoughSeats };
+  }
+
   const { data: guest } = await ctx.supabase
     .from("guests")
     .select("id, plus_ones")
     .eq("id", guestId)
     .eq("wedding_id", ctx.weddingId)
     .maybeSingle();
+  if (!guest) return { error: ctx.copy.errors.notFound };
 
-  if (tableError || !table || !guest) return { error: ctx.copy.errors.notFound };
-  if (Number(table.capacity) !== 1) {
-    return { error: ctx.copy.seating.seatTaken };
+  const totalPax = guestPeopleCount(guest);
+  const requestedPax = text(formData, "paxIndex");
+  const parsedPax = requestedPax ? parseCount(requestedPax) : null;
+  if (requestedPax && (parsedPax === null || parsedPax < 1 || parsedPax > totalPax)) {
+    return { error: ctx.copy.form.invalidNumber };
   }
 
-  const needed = guestPeopleCount(guest);
   type AssignmentRow = {
     id: string;
     table_id: string;
     guest_id: string;
     seat_ids?: string[];
   };
-  const fullRows = await ctx.supabase
+  const { data: rows } = await ctx.supabase
     .from("seating_assignments")
     .select("id, table_id, guest_id, seat_ids")
     .eq("event_id", eventId)
     .eq("wedding_id", ctx.weddingId);
-  let currentRowsSafe: AssignmentRow[] = (fullRows.data ?? []) as AssignmentRow[];
-  if (fullRows.error?.code === "42703") {
-    const fallback = await ctx.supabase
-      .from("seating_assignments")
-      .select("id, table_id, guest_id")
-      .eq("event_id", eventId)
-      .eq("wedding_id", ctx.weddingId);
-    if (!fallback.error) currentRowsSafe = fallback.data ?? [];
-  }
-
-  const current = currentRowsSafe.find((row) => row.guest_id === guestId);
-  const alreadyCovers =
-    current?.table_id === tableId &&
-    (current.seat_ids?.length ?? 0) >= needed;
-  if (alreadyCovers) return { success: ctx.copy.seating.assigned };
-
-  const occupied = new Set<string>();
-  for (const row of currentRowsSafe) {
-    if (row.guest_id === guestId) continue;
-    occupied.add(row.table_id);
-    for (const seatId of row.seat_ids ?? []) occupied.add(seatId);
-  }
-
-  let seats: SeatRow[] | null = null;
-  const fullSeats = await ctx.supabase
+  const allRows = (rows ?? []) as AssignmentRow[];
+  const { data: allGuestRows } = await ctx.supabase
+    .from("guests")
+    .select("id, plus_ones")
+    .eq("wedding_id", ctx.weddingId);
+  const allGuests = new Map(
+    (allGuestRows ?? []).map((row) => [row.id, guestPeopleCount(row)]),
+  );
+  const { data: allTables } = await ctx.supabase
     .from("seating_tables")
-    .select("id, event_id, capacity, kind, side, parent_table_id, canvas_x, canvas_y, rotation")
+    .select("id, parent_table_id, capacity")
     .eq("event_id", eventId)
     .eq("wedding_id", ctx.weddingId);
-  seats = (fullSeats.data ?? []) as SeatRow[];
-  let seatsError = fullSeats.error;
-  if (seatsError?.code === "42703") {
-    const fallback = await ctx.supabase
-      .from("seating_tables")
-      .select("id, event_id, capacity, canvas_x, canvas_y")
-      .eq("event_id", eventId)
-      .eq("wedding_id", ctx.weddingId);
-    seats = (fallback.data ?? []) as SeatRow[];
-    seatsError = fallback.error;
-  }
-  if (seatsError || !seats) return { error: actionError(seatsError ?? { message: "" }, ctx.copy) };
+  const tableById = new Map((allTables ?? []).map((row) => [row.id, row]));
 
-  const chosen = chooseAdjacentSeats(
-    table as SeatRow,
-    seats as SeatRow[],
-    occupied,
-    needed,
-  );
-  if (!chosen) return { error: ctx.copy.seating.notEnoughSeats };
+  const normalizeTarget = (id: string) => {
+    if (event.event_type === "akad") return id;
+    const row = tableById.get(id);
+    return row?.parent_table_id ?? id;
+  };
+  const targetsFor = (row: AssignmentRow) => {
+    const total = allGuests.get(row.guest_id) ?? 1;
+    const raw = row.seat_ids?.length ? row.seat_ids : [row.table_id];
+    return raw.map(normalizeTarget).slice(0, total);
+  };
 
-  let { error } = await ctx.supabase.from("seating_assignments").upsert(
-    {
-      wedding_id: ctx.weddingId,
-      event_id: eventId,
-      table_id: tableId,
-      guest_id: guestId,
-      seat_ids: chosen,
-    },
-    { onConflict: "event_id,guest_id" },
-  );
-  if (error?.code === "42703") {
-    // Compatibility during a phased deploy: the assignment works, but extra
-    // seats cannot be reserved until migration 035 is applied.
-    const fallback = await ctx.supabase.from("seating_assignments").upsert(
-      {
-        wedding_id: ctx.weddingId,
-        event_id: eventId,
-        table_id: tableId,
-        guest_id: guestId,
-      },
-      { onConflict: "event_id,guest_id" },
-    );
-    error = fallback.error;
+  const current = allRows.find((row) => row.guest_id === guestId);
+  const currentTargets = current ? targetsFor(current) : [];
+  const paxIndex = parsedPax ?? Math.min(currentTargets.length + 1, totalPax);
+  if (paxIndex < 1 || paxIndex > totalPax) {
+    return { error: ctx.copy.seating.notEnoughSeats };
   }
+  if (paxIndex > currentTargets.length + 1) {
+    return { error: ctx.copy.seating.notEnoughSeats };
+  }
+
+  const counts = new Map<string, number>();
+  for (const row of allRows) {
+    for (const target of targetsFor(row)) {
+      counts.set(target, (counts.get(target) ?? 0) + 1);
+    }
+  }
+  const currentTarget = currentTargets[paxIndex - 1];
+  if (currentTarget !== targetTableId) {
+    const occupied = counts.get(targetTableId) ?? 0;
+    const capacity = Number(targetParent.capacity) || 0;
+    if (occupied >= capacity) {
+      return { error: ctx.copy.seating.notEnoughSeats };
+    }
+  }
+
+  const nextTargets = [...currentTargets];
+  if (paxIndex <= nextTargets.length) nextTargets[paxIndex - 1] = targetTableId;
+  else nextTargets.push(targetTableId);
+
+  const payload = {
+    wedding_id: ctx.weddingId,
+    event_id: eventId,
+    table_id: nextTargets[0],
+    guest_id: guestId,
+    seat_ids: nextTargets,
+  };
+  const { error } = current
+    ? await ctx.supabase
+        .from("seating_assignments")
+        .update(payload)
+        .eq("id", current.id)
+        .eq("wedding_id", ctx.weddingId)
+    : await ctx.supabase.from("seating_assignments").insert(payload);
 
   if (error) return { error: actionError(error, ctx.copy) };
   revalidateSeating();
@@ -785,6 +777,91 @@ export async function swapSeatGuestsAction(
   return { success: ctx.copy.seating.swapped };
 }
 
+
+export async function swapPaxAction(
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const eventId = text(formData, "eventId");
+  const guestA = text(formData, "guestA");
+  const guestB = text(formData, "guestB");
+  const paxA = parseCount(text(formData, "paxA"));
+  const paxB = parseCount(text(formData, "paxB"));
+  if (
+    !isUuid(eventId) ||
+    !isUuid(guestA) ||
+    !isUuid(guestB) ||
+    guestA === guestB ||
+    paxA === null ||
+    paxB === null ||
+    paxA < 1 ||
+    paxB < 1
+  ) {
+    return { error: ctx.copy.errors.notFound };
+  }
+
+  const { data: event } = await ctx.supabase
+    .from("seating_events")
+    .select("id, event_type")
+    .eq("id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .maybeSingle();
+  if (!event) return { error: ctx.copy.errors.notFound };
+
+  const { data: tables } = await ctx.supabase
+    .from("seating_tables")
+    .select("id, parent_table_id")
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId);
+  const parentById = new Map(
+    (tables ?? []).map((row) => [row.id, row.parent_table_id]),
+  );
+  const normalize = (id: string) =>
+    event.event_type === "akad" ? id : parentById.get(id) ?? id;
+
+  type Row = { id: string; guest_id: string; table_id: string; seat_ids?: string[] };
+  const { data: rows } = await ctx.supabase
+    .from("seating_assignments")
+    .select("id, guest_id, table_id, seat_ids")
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .in("guest_id", [guestA, guestB]);
+  const a = (rows ?? []).find((row) => row.guest_id === guestA) as Row | undefined;
+  const b = (rows ?? []).find((row) => row.guest_id === guestB) as Row | undefined;
+  if (!a || !b) return { error: ctx.copy.seating.swapNeedsBoth };
+
+  const seatsA = (a.seat_ids?.length ? a.seat_ids : [a.table_id]).map(normalize);
+  const seatsB = (b.seat_ids?.length ? b.seat_ids : [b.table_id]).map(normalize);
+  if (paxA > seatsA.length || paxB > seatsB.length) {
+    return { error: ctx.copy.errors.notFound };
+  }
+  [seatsA[paxA - 1], seatsB[paxB - 1]] = [seatsB[paxB - 1], seatsA[paxA - 1]];
+
+  const first = await ctx.supabase
+    .from("seating_assignments")
+    .update({ table_id: seatsA[0], seat_ids: seatsA })
+    .eq("id", a.id)
+    .eq("wedding_id", ctx.weddingId);
+  if (first.error) return { error: actionError(first.error, ctx.copy) };
+
+  const second = await ctx.supabase
+    .from("seating_assignments")
+    .update({ table_id: seatsB[0], seat_ids: seatsB })
+    .eq("id", b.id)
+    .eq("wedding_id", ctx.weddingId);
+  if (second.error) {
+    await ctx.supabase
+      .from("seating_assignments")
+      .update({ table_id: a.table_id, seat_ids: a.seat_ids ?? [] })
+      .eq("id", a.id)
+      .eq("wedding_id", ctx.weddingId);
+    return { error: actionError(second.error, ctx.copy) };
+  }
+
+  revalidateSeating();
+  return { success: ctx.copy.seating.swapped };
+}
+
 export async function unassignGuestAction(
   formData: FormData,
 ): Promise<ActionResult> {
@@ -795,12 +872,49 @@ export async function unassignGuestAction(
     return { error: ctx.copy.errors.notFound };
   }
 
-  const { error } = await ctx.supabase
+  const paxRaw = text(formData, "paxIndex");
+  const paxIndex = paxRaw ? parseCount(paxRaw) : null;
+  if (paxRaw && (paxIndex === null || paxIndex < 1)) {
+    return { error: ctx.copy.form.invalidNumber };
+  }
+
+  const { data: current } = await ctx.supabase
     .from("seating_assignments")
-    .delete()
+    .select("id, table_id, seat_ids")
     .eq("event_id", eventId)
     .eq("guest_id", guestId)
-    .eq("wedding_id", ctx.weddingId);
+    .eq("wedding_id", ctx.weddingId)
+    .maybeSingle();
+  if (!current) return { success: ctx.copy.seating.removed };
+
+  if (!paxIndex) {
+    const { error } = await ctx.supabase
+      .from("seating_assignments")
+      .delete()
+      .eq("id", current.id)
+      .eq("wedding_id", ctx.weddingId);
+    if (error) return { error: actionError(error, ctx.copy) };
+    revalidateSeating();
+    return { success: ctx.copy.seating.removed };
+  }
+
+  const seats = current.seat_ids?.length ? [...current.seat_ids] : [current.table_id];
+  if (paxIndex > seats.length) {
+    return { error: ctx.copy.errors.notFound };
+  }
+  seats.splice(paxIndex - 1, 1);
+
+  const { error } = seats.length > 0
+    ? await ctx.supabase
+        .from("seating_assignments")
+        .update({ table_id: seats[0], seat_ids: seats })
+        .eq("id", current.id)
+        .eq("wedding_id", ctx.weddingId)
+    : await ctx.supabase
+        .from("seating_assignments")
+        .delete()
+        .eq("id", current.id)
+        .eq("wedding_id", ctx.weddingId);
 
   if (error) return { error: actionError(error, ctx.copy) };
   revalidateSeating();

@@ -1,13 +1,23 @@
--- Kefoo Wedding Planner - 039: one real guest row per person.
--- DATA-ONLY migration. No schema objects are changed.
+-- Kefoo Wedding Planner - 039: superseded, DO NOT APPLY.
 --
--- A guest with plus_ones = N is expanded into N + 1 guest rows. Every row keeps
--- the same name, phone, side, group, invitation/RSVP state and notes, but has
--- plus_ones = 0. This lets the seating planner place each person in a separate
--- chair. Existing assignments are kept; a multi-seat assignment is reduced to
--- its first chair, and the newly created rows can be seated independently.
+-- The pax-seating design keeps ONE guest record per group and stores one
+-- allocation slot per pax in seating_assignments.seat_ids. It does not duplicate
+-- guest rows. This file is retained only as history for databases where it was
+-- already run; do not run it on a current database.
 --
--- Safe to re-run: after the update, plus_ones = 0 so the insert selects nothing.
+-- Original behavior (only if you intentionally need the old duplicate-row
+-- model): a guest with plus_ones = N became N + 1 guest rows.
+--
+-- The guard below intentionally stops an accidental run. The old statements are
+-- kept only for audit/history.
+
+do $$
+begin
+  raise exception 'Migration 039 is superseded. Do not duplicate guest rows; use the existing seat_ids pax model instead.';
+end;
+$$;
+
+begin;
 
 begin;
 

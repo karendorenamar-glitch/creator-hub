@@ -1,44 +1,12 @@
-# Apply migration 039 — one guest row per person
+# Migration 039 — SUPERSEDED, DO NOT APPLY
 
-Run `supabase/wedding/039_split_plus_ones.sql` in the Supabase SQL Editor **after
-all earlier migrations**. This is a data-only migration; it does not alter the
-schema.
+This migration belonged to an earlier duplicate-guest-row approach and is now
+**superseded**. Do not run it: the current seating design keeps one guest record
+per group and stores one allocation per pax in
+`seating_assignments.seat_ids`.
 
-It converts every existing `guests.plus_ones = N` row into `N + 1` guest rows:
+The SQL file has a guard that raises an exception if it is run accidentally. It
+remains in the repository only as history for databases where it was already
+applied.
 
-- every row keeps the same name, phone, side, group, invitation status, RSVP
-  status and notes;
-- every row gets `plus_ones = 0`;
-- one multi-chair assignment keeps its first chair; the new companion rows start
-  unassigned so they can be placed one by one.
-
-## Before running
-
-Take a database backup or export the `guests` and `seating_assignments` tables.
-
-## Verify
-
-Check that no guest still has companions:
-
-```sql
-select count(*) as guests_with_plus_ones
-from public.guests
-where plus_ones > 0;
-```
-
-Expected: `0`.
-
-Check the number of people is unchanged:
-
-```sql
-select
-  sum(1 + plus_ones) as people
-from public.guests;
-```
-
-Run this before and after; the result should stay the same.
-
-## Rollback
-
-There is no automatic rollback because the new rows are real guest records. If
-needed, restore the backup taken before applying the migration.
+No database migration is required for the pax-seating feature.

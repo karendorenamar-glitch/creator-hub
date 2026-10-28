@@ -215,12 +215,6 @@ const en = {
     plusOnes: "Total pax",
     plusOnesHint:
       "2 pax becomes 2 separate guest records with the same name, so each person can sit anywhere.",
-    splitPlusOnes: "Split companions",
-    splitPlusOnesHint:
-      "{count} guest rows still include companions. Split them so every person can be seated separately.",
-    splitPlusOnesDone:
-      "Companions split into individual rows ({count} guests updated).",
-    splitPlusOnesNone: "No guest rows with companions were found.",
     notes: "Notes",
     search: "Search guests",
     allGroups: "All groups",
@@ -323,6 +317,8 @@ const en = {
     selectGuest: "Select a guest first.",
     capacityWarning: "This table is full. Continue and override capacity?",
     seatTaken: "That chair is already occupied.",
+    allPaxSeated:
+      "All pax in this guest group are already placed. Remove one placement first to move a pax.",
     notEnoughSeats:
       "Not enough adjacent empty chairs for this guest and their plus-ones.",
     swapConfirm: "Swap seating positions for {a} and {b}?",
@@ -1002,12 +998,6 @@ const id: ModuleCopy = {
     plusOnes: "Jumlah pax",
     plusOnesHint:
       "2 pax menjadi 2 tamu terpisah dengan nama yang sama, jadi masing-masing bisa duduk di mana saja.",
-    splitPlusOnes: "Pisahkan pendamping",
-    splitPlusOnesHint:
-      "{count} baris tamu masih memakai pendamping. Pisahkan agar setiap orang bisa diatur kursinya sendiri.",
-    splitPlusOnesDone:
-      "Pendamping sudah dipisahkan menjadi baris sendiri ({count} tamu diperbarui).",
-    splitPlusOnesNone: "Tidak ada tamu dengan pendamping yang perlu dipisahkan.",
     notes: "Catatan",
     search: "Cari tamu",
     allGroups: "Semua grup",
@@ -1110,6 +1100,8 @@ const id: ModuleCopy = {
     selectGuest: "Pilih tamu terlebih dahulu.",
     capacityWarning: "Meja ini penuh. Tetap lanjutkan dan lewati kapasitas?",
     seatTaken: "Kursi itu sudah terisi.",
+    allPaxSeated:
+      "Semua pax dari grup ini sudah ditempatkan. Lepas satu penempatan dulu untuk memindahkannya.",
     notEnoughSeats:
       "Kursi kosong di sebelahnya tidak cukup untuk tamu ini beserta plus-ones-nya.",
     swapConfirm: "Tukar posisi duduk {a} dan {b}?",

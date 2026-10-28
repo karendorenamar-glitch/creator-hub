@@ -1,19 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Pencil, Search, Split } from "lucide-react";
-import {
-  deleteGuestAction,
-  splitPlusOnesAction,
-} from "@/app/wedding/(app)/guests/actions";
+import { useMemo, useState } from "react";
+import { Pencil, Search } from "lucide-react";
+import { deleteGuestAction } from "@/app/wedding/(app)/guests/actions";
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { GuestFormModal } from "@/components/wedding/guests/guest-form-modal";
-import {
-  AddButton,
-  FormAlert,
-  inputClass,
-} from "@/components/wedding/form-kit";
+import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { Badge } from "@/components/wedding/ui";
 import type { Guest, GuestSide } from "@/lib/wedding/db-types";
 import { guestPeopleCount, guestSideOf } from "@/lib/wedding/guest-count";
@@ -50,17 +42,6 @@ export function GuestManager({
   const [groupFilter, setGroupFilter] = useState("all");
   const [sideFilter, setSideFilter] = useState<"all" | GuestSide>("all");
   const [rsvpFilter, setRsvpFilter] = useState("all");
-  const [splitState, splitAction, splitPending] = useActionState(
-    splitPlusOnesAction,
-    null,
-  );
-  const router = useRouter();
-
-  useEffect(() => {
-    if (splitState?.success) router.refresh();
-  }, [splitState?.success, router]);
-
-  const legacyPlusOnes = guests.filter((guest) => guest.plus_ones > 0).length;
 
   const groupPeople = useMemo(() => {
     const counts = new Map<string, number>();
@@ -134,32 +115,6 @@ export function GuestManager({
         </h2>
         <AddButton label={copy.guests.add} onClick={openCreate} />
       </div>
-
-      {legacyPlusOnes > 0 ? (
-        <div className="space-y-2 rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-amber-900">
-              {copy.guests.splitPlusOnesHint.replace(
-                "{count}",
-                String(legacyPlusOnes),
-              )}
-            </p>
-            <form action={splitAction}>
-              <button
-                type="submit"
-                disabled={splitPending}
-                className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900 hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <Split className="size-3.5" aria-hidden />
-                {splitPending
-                  ? copy.form.saving
-                  : copy.guests.splitPlusOnes}
-              </button>
-            </form>
-          </div>
-          <FormAlert error={splitState?.error} success={splitState?.success} />
-        </div>
-      ) : null}
 
       {unassignedCount > 0 && sideFilter !== "unassigned" ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3">

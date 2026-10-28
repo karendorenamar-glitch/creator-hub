@@ -37,7 +37,7 @@ import { guestPeopleCount, guestSideOf } from "@/lib/wedding/guest-count";
 import { label } from "@/lib/wedding/labels";
 import {
   dinnerTableSummaries,
-  unassignedDinnerGuests,
+  unassignedDinnerPax,
   type DinnerTableSummary,
 } from "@/lib/wedding/dinner-seating";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
@@ -214,30 +214,34 @@ function DinnerGuestPickerModal({
   onAssign,
 }: {
   table: DinnerTableSummary | null;
-  unassigned: Guest[];
+  unassigned: { guest: Guest; paxIndex: number }[];
   copy: ModuleCopy;
   busy: boolean;
   onClose: () => void;
-  onAssign: (guestId: string) => void;
+  onAssign: (guestId: string, paxIndex: number) => void;
 }) {
   const [query, setQuery] = useState("");
 
   if (!table) return null;
 
   const needle = query.trim().toLowerCase();
-  const matching = unassigned.filter((guest) => {
+  const matching = unassigned.filter((unit) => {
     if (!needle) return true;
-    return [guest.name, guest.guest_group, guest.phone]
+    return [unit.guest.name, unit.guest.guest_group, unit.guest.phone]
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
       .includes(needle);
   });
-  const eligible = matching.filter(
-    (guest) =>
-      table.remainingSeats >= guestPeopleCount(guest) &&
-      table.freeChairIds.length >= guestPeopleCount(guest),
-  );
+  const firstPax = new Map<string, number>();
+  for (const unit of matching) {
+    if (!firstPax.has(unit.guest.id)) firstPax.set(unit.guest.id, unit.paxIndex);
+  }
+  const eligible = table.remainingSeats < 1
+    ? []
+    : matching.filter(
+        (unit) => unit.paxIndex === firstPax.get(unit.guest.id),
+      );
 
   return (
     <FormModal
@@ -270,23 +274,23 @@ function DinnerGuestPickerModal({
           </p>
         ) : (
           <div className="max-h-80 space-y-1.5 overflow-y-auto pr-1">
-            {eligible.map((guest) => (
+            {eligible.map((unit) => (
               <button
-                key={guest.id}
+                key={`${unit.guest.id}:${unit.paxIndex}`}
                 type="button"
                 disabled={busy}
-                onClick={() => onAssign(guest.id)}
+                onClick={() => onAssign(unit.guest.id, unit.paxIndex)}
                 className="flex w-full items-center justify-between gap-3 rounded-xl border border-olive-100 bg-white/80 px-3 py-2.5 text-left transition-colors hover:border-sage hover:bg-sage/15 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium text-ink">
-                    {guest.name}
+                    {unit.guest.name}
                   </span>
                   <span className="mt-0.5 block truncate text-[11px] text-ink-soft">
-                    {[guest.guest_group, guest.phone]
+                    {[unit.guest.guest_group, unit.guest.phone]
                       .filter(Boolean)
                       .join(" · ") || "—"}{" "}
-                    · {guestPeopleCount(guest)} pax
+                    · Pax {unit.paxIndex}/{guestPeopleCount(unit.guest)}
                   </span>
                 </span>
                 <Plus className="size-4 shrink-0 text-cocoa" aria-hidden />
@@ -351,20 +355,32 @@ export function DinnerSeatingBoard({
     ? summaries.find((summary) => summary.table.id === assignTableId) ?? null
     : null;
   const unassigned = useMemo(
-    () => unassignedDinnerGuests(guests, eventAssignments),
-    [guests, eventAssignments],
+    () => unassignedDinnerPax(guests, eventAssignments, tables),
+    [guests, eventAssignments, tables],
   );
   const filteredUnassigned = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return unassigned;
-    return unassigned.filter((guest) =>
-      [guest.name, guest.guest_group, guest.phone]
+    return unassigned.filter((unit) =>
+      [unit.guest.name, unit.guest.guest_group, unit.guest.phone]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
         .includes(needle),
     );
   }, [unassigned, query]);
+
+  const displayUnassigned = useMemo(() => {
+    const firstPax = new Map<string, number>();
+    for (const unit of filteredUnassigned) {
+      if (!firstPax.has(unit.guest.id)) {
+        firstPax.set(unit.guest.id, unit.paxIndex);
+      }
+    }
+    return filteredUnassigned.filter(
+      (unit) => unit.paxIndex === firstPax.get(unit.guest.id),
+    );
+  }, [filteredUnassigned]);
 
   const totalSeats = summaries.reduce(
     (sum, summary) => sum + summary.table.capacity,
@@ -374,41 +390,36 @@ export function DinnerSeatingBoard({
     (sum, summary) => sum + summary.occupiedSeats,
     0,
   );
-  const unassignedPeople = unassigned.reduce(
-    (sum, guest) => sum + guestPeopleCount(guest),
-    0,
-  );
+  const unassignedPeople = unassigned.length;
 
   if (!event) return null;
   const eventId = event.id;
 
-  function freeTableOptions(guest: Guest, currentTableId?: string) {
-    const needed = guestPeopleCount(guest);
+  function freeTableOptions(
+    guest: Guest,
+    currentTableId?: string,
+    paxIndex?: number,
+  ) {
+    void guest;
+    void paxIndex;
     return summaries.filter(
       (summary) =>
-        summary.table.id !== currentTableId &&
-        summary.remainingSeats >= needed &&
-        summary.freeChairIds.length >= needed,
+        summary.table.id !== currentTableId && summary.remainingSeats >= 1,
     );
   }
 
-  async function assignGuestToTable(guestId: string, tableId: string) {
+  async function assignGuestToTable(
+    guestId: string,
+    tableId: string,
+    paxIndex: number,
+  ) {
     if (busy) return;
     const summary = summaries.find((item) => item.table.id === tableId);
     const guest = guests.find((item) => item.id === guestId);
     if (!summary || !guest) return;
 
-    const needed = guestPeopleCount(guest);
-    if (summary.remainingSeats < needed) {
+    if (summary.remainingSeats < 1) {
       setError(copy.seating.notEnoughSeats);
-      return;
-    }
-    if (summary.freeChairIds.length < needed) {
-      setError(
-        summary.freeChairIds.length === 0
-          ? copy.seating.noTableSeats
-          : copy.seating.notEnoughSeats,
-      );
       return;
     }
 
@@ -417,8 +428,9 @@ export function DinnerSeatingBoard({
     try {
       const formData = new FormData();
       formData.set("eventId", eventId);
-      formData.set("tableId", summary.freeChairIds[0]);
+      formData.set("tableId", summary.table.id);
       formData.set("guestId", guestId);
+      formData.set("paxIndex", String(paxIndex));
       const result = await assignGuestAction(null, formData);
       if (result?.error) {
         setError(result.error);
@@ -434,7 +446,7 @@ export function DinnerSeatingBoard({
     }
   }
 
-  async function unassignGuest(guestId: string) {
+  async function unassignGuest(guestId: string, paxIndex: number) {
     if (busy) return;
     setBusy(true);
     setError(null);
@@ -442,6 +454,7 @@ export function DinnerSeatingBoard({
       const formData = new FormData();
       formData.set("eventId", eventId);
       formData.set("guestId", guestId);
+      formData.set("paxIndex", String(paxIndex));
       const result = await unassignGuestAction(formData);
       if (result?.error) setError(result.error);
       else router.refresh();
@@ -702,11 +715,6 @@ export function DinnerSeatingBoard({
                   </span>
                 </div>
 
-                {summary.seatObjectCount === 0 ? (
-                  <p className="mt-2 text-[10px] leading-snug text-cocoa/45">
-                    {copy.seating.noTableSeats}
-                  </p>
-                ) : null}
 
 
 
@@ -717,14 +725,15 @@ export function DinnerSeatingBoard({
                         {copy.seating.emptyTable}
                       </p>
                     ) : (
-                      summary.guests.map(({ assignment, guest }) => {
+                      summary.guests.map(({ guest, paxIndex }) => {
                         const moveOptions = freeTableOptions(
                           guest,
                           summary.table.id,
+                          paxIndex,
                         );
                         return (
                           <div
-                            key={assignment.id}
+                            key={`${guest.id}:${paxIndex}`}
                             className="rounded-xl border border-olive-100 bg-white/80 px-3 py-2.5"
                           >
                             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -736,7 +745,7 @@ export function DinnerSeatingBoard({
                                   {[guest.guest_group, guest.phone]
                                     .filter(Boolean)
                                     .join(" · ") || "—"}{" "}
-                                  · {guestPeopleCount(guest)} pax
+                                  · Pax {paxIndex}/{guestPeopleCount(guest)}
                                 </p>
                               </div>
                               <Badge
@@ -760,7 +769,11 @@ export function DinnerSeatingBoard({
                                   const tableId = selectEvent.target.value;
                                   selectEvent.currentTarget.value = "";
                                   if (tableId) {
-                                    void assignGuestToTable(guest.id, tableId);
+                                    void assignGuestToTable(
+                                      guest.id,
+                                      tableId,
+                                      paxIndex,
+                                    );
                                   }
                                 }}
                                 aria-label={`${copy.seating.moveTo}: ${guest.name}`}
@@ -783,7 +796,9 @@ export function DinnerSeatingBoard({
                               <button
                                 type="button"
                                 disabled={busy}
-                                onClick={() => void unassignGuest(guest.id)}
+                                onClick={() =>
+                                  void unassignGuest(guest.id, paxIndex)
+                                }
                                 className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-[11px] text-rose-600 hover:bg-rose-50 disabled:opacity-50"
                               >
                                 <X className="size-3" aria-hidden />
@@ -847,7 +862,7 @@ export function DinnerSeatingBoard({
           </div>
         ) : null}
 
-        {filteredUnassigned.length === 0 ? (
+        {displayUnassigned.length === 0 ? (
           <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
             {unassigned.length === 0
               ? copy.seating.noUnassigned
@@ -855,28 +870,26 @@ export function DinnerSeatingBoard({
           </p>
         ) : (
           <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
-            {filteredUnassigned.map((guest) => {
+            {displayUnassigned.map((unit) => {
               const options = targetSummary
                 ? [targetSummary].filter(
-                    (summary) =>
-                      summary.remainingSeats >= guestPeopleCount(guest) &&
-                      summary.freeChairIds.length >= guestPeopleCount(guest),
+                    (summary) => summary.remainingSeats >= 1,
                   )
-                : freeTableOptions(guest);
+                : freeTableOptions(unit.guest);
               return (
                 <div
-                  key={guest.id}
+                  key={`${unit.guest.id}:${unit.paxIndex}`}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-olive-100 bg-white/80 px-3 py-2"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-ink">
-                      {guest.name}
+                      {unit.guest.name}
                     </p>
                     <p className="mt-0.5 text-xs text-ink-soft">
-                      {[guest.guest_group, guest.phone]
+                      {[unit.guest.guest_group, unit.guest.phone]
                         .filter(Boolean)
                         .join(" · ") || "—"}{" "}
-                      · {guestPeopleCount(guest)} pax
+                      · Pax {unit.paxIndex}/{guestPeopleCount(unit.guest)}
                     </p>
                   </div>
                   <select
@@ -885,9 +898,15 @@ export function DinnerSeatingBoard({
                     onChange={(selectEvent) => {
                       const tableId = selectEvent.target.value;
                       selectEvent.currentTarget.value = "";
-                      if (tableId) void assignGuestToTable(guest.id, tableId);
+                      if (tableId) {
+                        void assignGuestToTable(
+                          unit.guest.id,
+                          tableId,
+                          unit.paxIndex,
+                        );
+                      }
                     }}
-                    aria-label={`${copy.seating.assignToTable}: ${guest.name}`}
+                    aria-label={`${copy.seating.assignToTable}: ${unit.guest.name}`}
                     className="w-full rounded-lg border border-olive-200 bg-white px-2.5 py-1.5 text-xs sm:w-40"
                   >
                     <option value="">
@@ -915,8 +934,10 @@ export function DinnerSeatingBoard({
         unassigned={unassigned}
         copy={copy}
         busy={busy}
-        onAssign={(guestId) => {
-          if (assignTable) void assignGuestToTable(guestId, assignTable.table.id);
+        onAssign={(guestId, paxIndex) => {
+          if (assignTable) {
+            void assignGuestToTable(guestId, assignTable.table.id, paxIndex);
+          }
         }}
         onClose={() => {
           setAssignTableId(null);

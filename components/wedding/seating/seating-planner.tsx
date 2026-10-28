@@ -24,7 +24,7 @@ import {
   generateDinnerLayoutAction,
   saveEventAction,
   saveTableAction,
-  swapSeatGuestsAction,
+  swapPaxAction,
   unassignGuestAction,
 } from "@/app/wedding/(app)/seating/actions";
 import {
@@ -44,7 +44,12 @@ import type {
   SeatingTable,
 } from "@/lib/wedding/db-types";
 import { guestPeopleCount, guestSideOf } from "@/lib/wedding/guest-count";
-import { seatingStats } from "@/lib/wedding/seating-calc";
+import {
+  buildPaxAllocations,
+  nextPaxIndex,
+  paxUnits,
+  type SeatingPaxAllocation,
+} from "@/lib/wedding/pax-seating";
 import { label } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -437,6 +442,7 @@ export function SeatingPlanner({
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedGuestId, setSelectedGuestId] = useState<string | null>(null);
+  const [selectedPaxIndex, setSelectedPaxIndex] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [sideFilter, setSideFilter] = useState<"all" | "bride" | "groom">("all");
   const [tableModal, setTableModal] = useState<TableModalState>({
@@ -485,83 +491,105 @@ export function SeatingPlanner({
     () => eventTables.filter((table) => !chairs.some((chair) => chair.id === table.id)),
     [eventTables, chairs],
   );
-  const stats = useMemo(
-    () => seatingStats(chairs, eventAssignments, guests),
-    [chairs, eventAssignments, guests],
+  const stats = useMemo(() => {
+    const allocations = selectedEvent
+      ? buildPaxAllocations(
+          eventAssignments,
+          guests,
+          tables,
+          selectedEvent.event_type,
+        )
+      : [];
+    const totalSeats = chairs.reduce(
+      (sum, table) => sum + Math.max(0, Number(table.capacity) || 0),
+      0,
+    );
+    const totalGuestPeople = guests.reduce(
+      (sum, guest) => sum + guestPeopleCount(guest),
+      0,
+    );
+    return {
+      totalTables: chairs.length,
+      totalSeats,
+      seatedPeople: allocations.length,
+      remainingSeats: Math.max(0, totalSeats - allocations.length),
+      unassignedPeople: Math.max(0, totalGuestPeople - allocations.length),
+    };
+  }, [chairs, eventAssignments, guests, selectedEvent, tables]);
+  const eventAllocations = useMemo(
+    () =>
+      selectedEvent
+        ? buildPaxAllocations(
+            eventAssignments,
+            guests,
+            tables,
+            selectedEvent.event_type,
+          )
+        : [],
+    [eventAssignments, guests, selectedEvent, tables],
+  );
+  const allocationsByGuestMap = useMemo(() => {
+    const result = new Map<string, SeatingPaxAllocation[]>();
+    for (const allocation of eventAllocations) {
+      const list = result.get(allocation.guest.id) ?? [];
+      list.push(allocation);
+      result.set(allocation.guest.id, list);
+    }
+    return result;
+  }, [eventAllocations]);
+  const allocationByTarget = useMemo(
+    () => new Map(eventAllocations.map((item) => [item.targetId, item])),
+    [eventAllocations],
   );
   const guestById = useMemo(
     () => new Map(guests.map((guest) => [guest.id, guest])),
     [guests],
   );
-  const assignmentByGuest = useMemo(
-    () => new Map(eventAssignments.map((item) => [item.guest_id, item])),
-    [eventAssignments],
-  );
   const tableById = useMemo(
     () => new Map(eventTables.map((table) => [table.id, table])),
     [eventTables],
   );
-  const assignmentByChair = useMemo(() => {
-    const result = new Map<string, SeatingAssignment>();
-    for (const assignment of eventAssignments) {
-      result.set(assignment.table_id, assignment);
-      for (const seatId of assignment.seat_ids ?? []) {
-        result.set(seatId, assignment);
-      }
-    }
-    return result;
-  }, [eventAssignments]);
   const selectedChairIds = useMemo(() => {
     const table = selectedTableId ? tableById.get(selectedTableId) : null;
     if (!table) return [];
     if (table.capacity <= 1) return [table.id];
-    return [
-      table.id,
-      ...chairs
-        .filter((chair) => chair.parent_table_id === table.id)
-        .map((chair) => chair.id),
-    ];
-  }, [chairs, selectedTableId, tableById]);
+    return [table.id];
+  }, [selectedTableId, tableById]);
   const selectedAssignments = useMemo(
     () =>
       selectedChairIds.length > 0
-        ? eventAssignments.filter(
-            (assignment) =>
-              selectedChairIds.includes(assignment.table_id) ||
-              (assignment.seat_ids ?? []).some((seatId) =>
-                selectedChairIds.includes(seatId),
-              ),
+        ? eventAllocations.filter((allocation) =>
+            selectedChairIds.includes(allocation.targetId),
           )
         : [],
-    [eventAssignments, selectedChairIds],
+    [eventAllocations, selectedChairIds],
   );
-  const selectedGuestIds = useMemo(
-    () => new Set(selectedAssignments.map((assignment) => assignment.guest_id)),
-    [selectedAssignments],
-  );
-  const selectedPeople = useMemo(
-    () =>
-      selectedAssignments.reduce((sum, assignment) => {
-        const guest = guestById.get(assignment.guest_id);
-        return sum + (guest ? guestPeopleCount(guest) : 0);
-      }, 0),
-    [selectedAssignments, guestById],
-  );
-  const selectedSeatCount = useMemo(
-    () =>
-      selectedAssignments.reduce(
-        (sum, assignment) =>
-          sum + Math.max(1, assignment.seat_ids?.length ?? 1),
-        0,
-      ),
-    [selectedAssignments],
-  );
+  const selectedPeople = selectedAssignments.length;
+  const selectedSeatCount = selectedAssignments.length;
   const selectedTable = selectedTableId
     ? tableById.get(selectedTableId) ?? null
     : null;
   const selectedGuest = selectedGuestId
     ? guestById.get(selectedGuestId) ?? null
     : null;
+  const unassignedUnits = useMemo(
+    () =>
+      paxUnits(guests, eventAllocations).filter(
+        (unit) => unit.allocation === null,
+      ),
+    [eventAllocations, guests],
+  );
+  const displayUnits = useMemo(() => {
+    const firstPax = new Map<string, number>();
+    for (const unit of unassignedUnits) {
+      if (!firstPax.has(unit.guest.id)) {
+        firstPax.set(unit.guest.id, unit.paxIndex);
+      }
+    }
+    return unassignedUnits.filter(
+      (unit) => unit.paxIndex === firstPax.get(unit.guest.id),
+    );
+  }, [unassignedUnits]);
 
   const filteredGuests = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -583,22 +611,20 @@ export function SeatingPlanner({
   async function assignGuest(
     guestId: string,
     tableId: string,
-    allowOverCapacity = false,
+    requestedPax?: number,
   ) {
     if (!selectedEvent || busy) return;
     const table = tableById.get(tableId);
     const guest = guestById.get(guestId);
     if (!table || !guest) return;
-    if (table.capacity > 1 && table.kind !== "chair") return;
-    if (Number(table.capacity) > 1) return;
-    const current = assignmentByGuest.get(guestId);
-    if (
-      current &&
-      (current.table_id === tableId ||
-        (current.seat_ids ?? []).includes(tableId)) &&
-      (current.seat_ids?.length ?? 0) >= guestPeopleCount(guest)
-    ) {
-      setSelectedTableId(tableId);
+    if (isCeremony && Number(table.capacity) > 1) return;
+
+    const paxIndex =
+      requestedPax ??
+      (selectedGuestId === guestId ? selectedPaxIndex : null) ??
+      nextPaxIndex(guest, eventAllocations);
+    if (paxIndex === null) {
+      setError(copy.seating.allPaxSeated);
       return;
     }
 
@@ -609,12 +635,13 @@ export function SeatingPlanner({
       formData.set("eventId", selectedEvent.id);
       formData.set("tableId", tableId);
       formData.set("guestId", guestId);
-      if (allowOverCapacity) formData.set("allowOverCapacity", "1");
+      formData.set("paxIndex", String(paxIndex));
       const result = await assignGuestAction(null, formData);
       if (result?.error) {
         setError(result.error);
         return;
       }
+      setSelectedPaxIndex(null);
       setSelectedTableId(tableId);
       router.refresh();
     } catch {
@@ -631,32 +658,36 @@ export function SeatingPlanner({
     return (
       chairs.find(
         (chair) =>
-          chair.parent_table_id === tableId && !assignmentByChair.has(chair.id),
+          chair.parent_table_id === tableId && !allocationByTarget.has(chair.id),
       ) ?? null
     );
   }
 
-  async function assignToSelectedTable(guestId: string) {
-    if (!selectedTable) return;
+  async function assignUnitToSelectedTable(guestId: string, paxIndex?: number) {
+    if (!selectedTable || !selectedEvent) return;
+    if (selectedEvent.event_type === "dinner") {
+      await assignGuest(guestId, selectedTable.id, paxIndex);
+      return;
+    }
     const target = firstFreeChairForTable(selectedTable.id);
     if (!target) {
       setError(copy.seating.tableFull);
       return;
     }
-    await assignGuest(guestId, target.id);
+    await assignGuest(guestId, target.id, paxIndex);
   }
 
   async function handleTableDrop(guestId: string, tableId: string) {
     if (!selectedEvent || busy) return;
-    const target = firstFreeChairForTable(tableId);
-    if (!target) {
-      setError(copy.seating.tableFull);
-      return;
-    }
-    await assignGuest(guestId, target.id);
+    await assignGuest(guestId, tableId);
   }
 
-  async function swapGuests(guestA: string, guestB: string) {
+  async function swapPax(
+    guestA: string,
+    paxA: number,
+    guestB: string,
+    paxB: number,
+  ) {
     if (!selectedEvent || busy) return;
     setBusy(true);
     setError(null);
@@ -664,10 +695,15 @@ export function SeatingPlanner({
       const formData = new FormData();
       formData.set("eventId", selectedEvent.id);
       formData.set("guestA", guestA);
+      formData.set("paxA", String(paxA));
       formData.set("guestB", guestB);
-      const result = await swapSeatGuestsAction(formData);
+      formData.set("paxB", String(paxB));
+      const result = await swapPaxAction(formData);
       if (result?.error) setError(result.error);
-      else router.refresh();
+      else {
+        setSelectedPaxIndex(null);
+        router.refresh();
+      }
     } catch {
       setError(copy.errors.generic);
     } finally {
@@ -675,31 +711,58 @@ export function SeatingPlanner({
     }
   }
 
-  async function moveGuestToChair(guestId: string, chairId: string) {
+  async function moveGuestToChair(
+    guestId: string,
+    chairId: string,
+    paxIndex: number | null = null,
+  ) {
     if (!selectedEvent || busy) return;
-    const targetAssignment = assignmentByChair.get(chairId);
-    if (targetAssignment && targetAssignment.guest_id !== guestId) {
-      const movingGuest = guestById.get(guestId);
-      const targetGuest = guestById.get(targetAssignment.guest_id);
-      if (!movingGuest || !targetGuest) return;
-      if (!assignmentByGuest.has(guestId)) {
+    const targetAllocation = allocationByTarget.get(chairId);
+    if (targetAllocation && targetAllocation.guest.id !== guestId) {
+      const guestAllocations = allocationsByGuestMap.get(guestId) ?? [];
+      const movingPax =
+        paxIndex ??
+        (selectedGuestId === guestId ? selectedPaxIndex : null) ??
+        guestAllocations[0]?.paxIndex ??
+        null;
+      if (movingPax === null) {
         setError(copy.seating.seatTaken);
         return;
       }
+      if (!guestAllocations.some((item) => item.paxIndex === movingPax)) {
+        setError(copy.seating.seatTaken);
+        return;
+      }
+      const guestA = guestById.get(guestId);
+      const guestB = targetAllocation.guest;
+      if (!guestA) return;
       const message = copy.seating.swapConfirm
-        .replace("{a}", movingGuest.name)
-        .replace("{b}", targetGuest.name);
+        .replace("{a}", `${guestA.name} (Pax ${movingPax})`)
+        .replace(
+          "{b}",
+          `${guestB.name} (Pax ${targetAllocation.paxIndex})`,
+        );
       if (!window.confirm(message)) return;
-      await swapGuests(guestId, targetAssignment.guest_id);
-      setSelectedTableId(chairId);
+      await swapPax(
+        guestId,
+        movingPax,
+        guestB.id,
+        targetAllocation.paxIndex,
+      );
       return;
     }
-    await assignGuest(guestId, chairId);
+    await assignGuest(
+      guestId,
+      chairId,
+      paxIndex ??
+        (selectedGuestId === guestId ? selectedPaxIndex : null) ??
+        undefined,
+    );
   }
 
   async function handleChairClick(chairId: string) {
     if (!selectedGuestId) return;
-    await moveGuestToChair(selectedGuestId, chairId);
+    await moveGuestToChair(selectedGuestId, chairId, selectedPaxIndex);
   }
 
   async function handleGuestDrop(guestId: string, chairId: string) {
@@ -707,7 +770,7 @@ export function SeatingPlanner({
     await moveGuestToChair(guestId, chairId);
   }
 
-  async function removeGuest(guestId: string) {
+  async function removeGuest(guestId: string, paxIndex: number) {
     if (!selectedEvent || busy) return;
     if (!window.confirm(copy.seating.removeConfirm)) return;
     setBusy(true);
@@ -716,6 +779,7 @@ export function SeatingPlanner({
       const formData = new FormData();
       formData.set("eventId", selectedEvent.id);
       formData.set("guestId", guestId);
+      formData.set("paxIndex", String(paxIndex));
       const result = await unassignGuestAction(formData);
       if (result?.error) setError(result.error);
       else router.refresh();
@@ -884,24 +948,29 @@ export function SeatingPlanner({
               </p>
             ) : (
               filteredGuests.map((guest) => {
-                const assignment = assignmentByGuest.get(guest.id);
-                const table = assignment
-                  ? tableById.get(assignment.table_id)
-                  : null;
+                const guestAllocations = allocationsByGuestMap.get(guest.id) ?? [];
+                const allocated = guestAllocations.length;
                 const selected = guest.id === selectedGuestId;
                 return (
+                  <div key={guest.id} className="space-y-1.5">
                   <button
-                    key={guest.id}
                     type="button"
                     draggable={isCeremony}
                     onDragStart={(event) => {
                       if (!isCeremony) return;
                       event.dataTransfer.setData("text/guest-id", guest.id);
+                      if (selectedPaxIndex) {
+                        event.dataTransfer.setData(
+                          "text/pax-index",
+                          String(selectedPaxIndex),
+                        );
+                      }
                       event.dataTransfer.effectAllowed = "move";
                     }}
-                    onClick={() =>
-                      setSelectedGuestId(selected ? null : guest.id)
-                    }
+                    onClick={() => {
+                      setSelectedGuestId(selected ? null : guest.id);
+                      setSelectedPaxIndex(null);
+                    }}
                     className={`w-full rounded-2xl border px-3 py-2.5 text-left transition-colors ${
                       selected
                         ? "border-petal-300 bg-petal-50"
@@ -920,7 +989,7 @@ export function SeatingPlanner({
                         </span>
                       </span>
                       <span className="shrink-0 text-xs text-ink-soft">
-                        {guestPeopleCount(guest)}
+                        {allocated}/{guestPeopleCount(guest)} pax
                       </span>
                     </span>
                     <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
@@ -935,13 +1004,53 @@ export function SeatingPlanner({
                       >
                         {label("guestSide", guestSideOf(guest), locale)}
                       </Badge>
-                      <Badge tone={table ? "success" : "muted"}>
-                        {table
-                          ? copy.seating.seatedAt.replace("{table}", table.name)
-                          : copy.seating.unassigned}
+                      <Badge tone={allocated > 0 ? "success" : "muted"}>
+                        {allocated === 0
+                          ? copy.seating.unassigned
+                          : `${allocated}/${guestPeopleCount(guest)} pax`}
                       </Badge>
                     </span>
                   </button>
+                  {guestPeopleCount(guest) > 1 ? (
+                    <div className="flex flex-wrap gap-1 px-1">
+                      {Array.from(
+                        { length: guestPeopleCount(guest) },
+                        (_, index) => index + 1,
+                      ).map((paxIndex) => {
+                        const allocation = guestAllocations.find(
+                          (item) => item.paxIndex === paxIndex,
+                        );
+                        const active =
+                          selected && selectedPaxIndex === paxIndex;
+                        const cannotAssignYet =
+                          !allocation && paxIndex > guestAllocations.length + 1;
+                        return (
+                          <button
+                            key={paxIndex}
+                            type="button"
+                            disabled={cannotAssignYet}
+                            onClick={() => {
+                              setSelectedGuestId(guest.id);
+                              setSelectedPaxIndex(paxIndex);
+                            }}
+                            className={`rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors ${
+                              cannotAssignYet
+                                ? "cursor-not-allowed border-olive-100 bg-white/50 text-ink-soft/40"
+                                : active
+                                  ? "border-olive-600 bg-olive-600 text-white"
+                                  : allocation
+                                    ? "border-sage bg-sage/30 text-cocoa"
+                                    : "border-olive-200 bg-white text-ink-soft hover:border-petal-300"
+                            }`}
+                          >
+                            Pax {paxIndex}
+                            {allocation ? " ✓" : ""}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                  </div>
                 );
               })
             )}
@@ -1104,10 +1213,8 @@ export function SeatingPlanner({
                   : null}
 
                 {chairs.map((chair) => {
-                  const assignment = assignmentByChair.get(chair.id);
-                  const guest = assignment
-                    ? guestById.get(assignment.guest_id)
-                    : null;
+                  const allocation = allocationByTarget.get(chair.id);
+                  const guest = allocation?.guest ?? null;
                   const selected = selectedTableId === chair.id;
                   return (
                     <div
@@ -1183,9 +1290,9 @@ export function SeatingPlanner({
                       >
                         {guest ? guest.name : chair.name}
                       </span>
-                      {guest && guestPeopleCount(guest) > 1 ? (
+                      {guest && allocation ? (
                         <span className="block text-[7px] text-ink-soft">
-                          +{guestPeopleCount(guest) - 1}
+                          Pax {allocation.paxIndex}/{guestPeopleCount(guest)}
                         </span>
                       ) : null}
                     </div>
@@ -1257,23 +1364,29 @@ export function SeatingPlanner({
                   defaultValue=""
                   disabled={busy}
                   onChange={(event) => {
-                    const guestId = event.target.value;
+                    const value = event.target.value;
                     event.currentTarget.value = "";
-                    if (guestId) void assignToSelectedTable(guestId);
+                    const [guestId, paxIndexRaw] = value.split(":");
+                    if (guestId) {
+                      void assignUnitToSelectedTable(
+                        guestId,
+                        paxIndexRaw ? Number(paxIndexRaw) : undefined,
+                      );
+                    }
                   }}
                   aria-label={copy.seating.addGuest}
                   className={inputClass}
                 >
                   <option value="">{copy.seating.addGuest}</option>
-                  {guests
-                    .filter(
-                      (guest) => !selectedGuestIds.has(guest.id),
-                    )
-                    .map((guest) => (
-                      <option key={guest.id} value={guest.id}>
-                        {guest.name} ({guestPeopleCount(guest)} pax)
-                      </option>
-                    ))}
+                  {displayUnits.map((unit) => (
+                    <option
+                      key={`${unit.guest.id}:${unit.paxIndex}`}
+                      value={`${unit.guest.id}:${unit.paxIndex}`}
+                    >
+                      {unit.guest.name} (Pax {unit.paxIndex}/
+                      {guestPeopleCount(unit.guest)})
+                    </option>
+                  ))}
                 </select>
 
                 {selectedAssignments.length === 0 ? (
@@ -1281,12 +1394,11 @@ export function SeatingPlanner({
                     {copy.seating.emptyTable}
                   </p>
                 ) : (
-                  selectedAssignments.map((assignment) => {
-                      const guest = guestById.get(assignment.guest_id);
-                      if (!guest) return null;
+                  selectedAssignments.map((allocation) => {
+                      const guest = allocation.guest;
                       return (
                         <div
-                          key={assignment.id}
+                          key={`${guest.id}:${allocation.paxIndex}`}
                           className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-olive-100 px-3 py-2"
                         >
                           <div className="min-w-0">
@@ -1294,13 +1406,15 @@ export function SeatingPlanner({
                               {guest.name}
                             </p>
                             <p className="text-xs text-ink-soft">
-                              {guestPeopleCount(guest)} {copy.seating.guestList.toLowerCase()}
+                              Pax {allocation.paxIndex}/{guestPeopleCount(guest)}
                             </p>
                           </div>
                           <button
                             type="button"
                             disabled={busy}
-                            onClick={() => void removeGuest(guest.id)}
+                            onClick={() =>
+                              void removeGuest(guest.id, allocation.paxIndex)
+                            }
                             className="text-xs font-medium text-rose-600 hover:underline disabled:opacity-60"
                           >
                             {copy.seating.remove}
@@ -1311,11 +1425,11 @@ export function SeatingPlanner({
                 )}
               </div>
 
-              {selectedGuest && !selectedGuestIds.has(selectedGuest.id) ? (
+              {selectedGuest ? (
                 <button
                   type="button"
                   disabled={busy}
-                  onClick={() => void assignToSelectedTable(selectedGuest.id)}
+                  onClick={() => void assignUnitToSelectedTable(selectedGuest.id)}
                   className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-3 py-2 text-sm font-medium text-white hover:bg-olive-700 disabled:opacity-60"
                 >
                   <Plus className="size-4" aria-hidden />
@@ -1399,23 +1513,29 @@ export function SeatingPlanner({
                   defaultValue=""
                   disabled={busy}
                   onChange={(event) => {
-                    const guestId = event.target.value;
+                    const value = event.target.value;
                     event.currentTarget.value = "";
-                    if (guestId) void assignToSelectedTable(guestId);
+                    const [guestId, paxIndexRaw] = value.split(":");
+                    if (guestId) {
+                      void assignUnitToSelectedTable(
+                        guestId,
+                        paxIndexRaw ? Number(paxIndexRaw) : undefined,
+                      );
+                    }
                   }}
                   aria-label={copy.seating.addGuest}
                   className={inputClass}
                 >
                   <option value="">{copy.seating.addGuest}</option>
-                  {guests
-                    .filter(
-                      (guest) => !selectedGuestIds.has(guest.id),
-                    )
-                    .map((guest) => (
-                      <option key={guest.id} value={guest.id}>
-                        {guest.name} ({guestPeopleCount(guest)} pax)
-                      </option>
-                    ))}
+                  {displayUnits.map((unit) => (
+                    <option
+                      key={`${unit.guest.id}:${unit.paxIndex}`}
+                      value={`${unit.guest.id}:${unit.paxIndex}`}
+                    >
+                      {unit.guest.name} (Pax {unit.paxIndex}/
+                      {guestPeopleCount(unit.guest)})
+                    </option>
+                  ))}
                 </select>
 
                 <div className="space-y-2">
@@ -1424,24 +1544,26 @@ export function SeatingPlanner({
                       {copy.seating.emptyTable}
                     </p>
                   ) : (
-                    selectedAssignments.map((assignment) => {
-                        const guest = guestById.get(assignment.guest_id);
-                        if (!guest) return null;
+                    selectedAssignments.map((allocation) => {
+                        const guest = allocation.guest;
                         return (
                           <div
-                            key={assignment.id}
+                            key={`${guest.id}:${allocation.paxIndex}`}
                             className="flex items-center justify-between gap-2 rounded-xl border border-olive-100 px-3 py-2"
                           >
                             <span className="min-w-0 truncate text-sm text-ink">
                               {guest.name}{" "}
                               <span className="text-xs text-ink-soft">
-                                ({guestPeopleCount(guest)} pax)
+                                (Pax {allocation.paxIndex}/
+                                {guestPeopleCount(guest)})
                               </span>
                             </span>
                             <button
                               type="button"
                               disabled={busy}
-                              onClick={() => void removeGuest(guest.id)}
+                              onClick={() =>
+                                void removeGuest(guest.id, allocation.paxIndex)
+                              }
                               className="shrink-0 text-xs font-medium text-rose-600 hover:underline disabled:opacity-60"
                             >
                               {copy.seating.remove}

@@ -1,5 +1,4 @@
 import {
-  expandGuestPeople,
   guestPeopleCount,
   guestSideOf,
   summarizeGuestSides,
@@ -36,31 +35,6 @@ t(
     { plus_ones: 2 },
   ]),
   6,
-);
-
-t(
-  "expand a solo guest into one row",
-  expandGuestPeople({ name: "Ayu", plus_ones: 0 }),
-  [{ name: "Ayu", plus_ones: 0 }],
-);
-t(
-  "expand a guest with two companions into three named rows",
-  expandGuestPeople({ name: "Budi", plus_ones: 2 }),
-  [
-    { name: "Budi", plus_ones: 0 },
-    { name: "Budi", plus_ones: 0 },
-    { name: "Budi", plus_ones: 0 },
-  ],
-);
-t(
-  "expanded rows total the same number of people",
-  totalGuestPeople(expandGuestPeople({ name: "Citra", plus_ones: 3 })),
-  4,
-);
-t(
-  "expanded rows clamp excessive companions",
-  expandGuestPeople({ name: "Dewi", plus_ones: 99 }).length,
-  21,
 );
 
 t("missing side is unassigned", guestSideOf({}), "unassigned");
