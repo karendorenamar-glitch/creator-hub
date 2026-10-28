@@ -13,10 +13,12 @@ import {
 } from "lucide-react";
 import {
   assignGuestAction,
+  deleteTableAction,
   generateDinnerLayoutAction,
   renameDinnerTableAction,
   unassignGuestAction,
 } from "@/app/wedding/(app)/seating/actions";
+import { DeleteForm } from "@/components/wedding/delete-form";
 import {
   Field,
   FormAlert,
@@ -449,114 +451,6 @@ export function DinnerSeatingBoard({
       ) : null}
 
 
-      <div ref={unassignedRef}>
-      <Card className="space-y-3 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 className="font-heading text-lg font-semibold text-ink">
-              {copy.seating.unassignedTitle}
-            </h3>
-            <p className="text-xs text-ink-soft">
-              {unassignedPeople} pax · {unassigned.length}{" "}
-              {copy.seating.guestList.toLowerCase()}
-            </p>
-          </div>
-          <div className="relative w-full sm:w-72">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
-              aria-hidden
-            />
-            <input
-              value={query}
-              onChange={(inputEvent) => setQuery(inputEvent.target.value)}
-              placeholder={copy.seating.searchUnassigned}
-              className={`${inputClass} pl-9`}
-            />
-          </div>
-        </div>
-
-        {targetSummary ? (
-          <div className="flex items-center justify-between gap-2 rounded-lg bg-sage/25 px-3 py-2 text-xs text-cocoa/75">
-            <span>
-              {copy.seating.assignToTable}:{" "}
-              <strong className="font-semibold text-cocoa">
-                {targetSummary.table.name}
-              </strong>
-            </span>
-            <button
-              type="button"
-              onClick={() => setTargetTableId(null)}
-              className="rounded p-0.5 text-cocoa/50 hover:bg-white/60 hover:text-cocoa"
-              aria-label={copy.form.cancel}
-            >
-              <X className="size-3.5" aria-hidden />
-            </button>
-          </div>
-        ) : null}
-
-        {filteredUnassigned.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
-            {unassigned.length === 0
-              ? copy.seating.noUnassigned
-              : copy.seating.noGuests}
-          </p>
-        ) : (
-          <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
-            {filteredUnassigned.map((guest) => {
-              const options = targetSummary
-                ? [targetSummary].filter(
-                    (summary) =>
-                      summary.remainingSeats >= guestPeopleCount(guest) &&
-                      summary.freeChairIds.length >= guestPeopleCount(guest),
-                  )
-                : freeTableOptions(guest);
-              return (
-                <div
-                  key={guest.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-olive-100 bg-white/80 px-3 py-2"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-ink">
-                      {guest.name}
-                    </p>
-                    <p className="mt-0.5 text-xs text-ink-soft">
-                      {[guest.guest_group, guest.phone]
-                        .filter(Boolean)
-                        .join(" · ") || "—"}{" "}
-                      · {guestPeopleCount(guest)} pax
-                    </p>
-                  </div>
-                  <select
-                    defaultValue=""
-                    disabled={busy || options.length === 0}
-                    onChange={(selectEvent) => {
-                      const tableId = selectEvent.target.value;
-                      selectEvent.currentTarget.value = "";
-                      if (tableId) void assignGuestToTable(guest.id, tableId);
-                    }}
-                    aria-label={`${copy.seating.assignToTable}: ${guest.name}`}
-                    className="w-full rounded-lg border border-olive-200 bg-white px-2.5 py-1.5 text-xs sm:w-40"
-                  >
-                    <option value="">
-                      {options.length === 0
-                        ? copy.seating.tableFull
-                        : copy.seating.chooseTable}
-                    </option>
-                    {options.map((summary) => (
-                      <option key={summary.table.id} value={summary.table.id}>
-                        {summary.table.name} · {summary.remainingSeats}{" "}
-                        {copy.seating.capacityLeft}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </Card>
-      </div>
-
       {summaries.length === 0 ? (
         <Card className="space-y-4 border-blush/60 bg-ivory/80">
           <div>
@@ -639,7 +533,7 @@ export function DinnerSeatingBoard({
                       {summary.table.name}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-0.5">
+                  <div className="flex flex-wrap items-center justify-end gap-0.5">
                     <button
                       type="button"
                       onClick={() => setEditingTable(summary.table)}
@@ -660,6 +554,13 @@ export function DinnerSeatingBoard({
                         <ChevronDown className="size-4" aria-hidden />
                       )}
                     </button>
+                    <DeleteForm
+                      action={deleteTableAction}
+                      id={summary.table.id}
+                      copy={copy}
+                      confirmMessage={copy.seating.deleteTableConfirm}
+                      compact
+                    />
                   </div>
                 </div>
 
@@ -801,6 +702,114 @@ export function DinnerSeatingBoard({
           })}
         </section>
       )}
+
+      <div ref={unassignedRef}>
+      <Card className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 className="font-heading text-lg font-semibold text-ink">
+              {copy.seating.unassignedTitle}
+            </h3>
+            <p className="text-xs text-ink-soft">
+              {unassignedPeople} pax · {unassigned.length}{" "}
+              {copy.seating.guestList.toLowerCase()}
+            </p>
+          </div>
+          <div className="relative w-full sm:w-72">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-ink-soft"
+              aria-hidden
+            />
+            <input
+              value={query}
+              onChange={(inputEvent) => setQuery(inputEvent.target.value)}
+              placeholder={copy.seating.searchUnassigned}
+              className={`${inputClass} pl-9`}
+            />
+          </div>
+        </div>
+
+        {targetSummary ? (
+          <div className="flex items-center justify-between gap-2 rounded-lg bg-sage/25 px-3 py-2 text-xs text-cocoa/75">
+            <span>
+              {copy.seating.assignToTable}:{" "}
+              <strong className="font-semibold text-cocoa">
+                {targetSummary.table.name}
+              </strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setTargetTableId(null)}
+              className="rounded p-0.5 text-cocoa/50 hover:bg-white/60 hover:text-cocoa"
+              aria-label={copy.form.cancel}
+            >
+              <X className="size-3.5" aria-hidden />
+            </button>
+          </div>
+        ) : null}
+
+        {filteredUnassigned.length === 0 ? (
+          <p className="rounded-xl border border-dashed border-olive-200 px-3 py-4 text-sm text-ink-soft">
+            {unassigned.length === 0
+              ? copy.seating.noUnassigned
+              : copy.seating.noGuests}
+          </p>
+        ) : (
+          <div className="grid max-h-72 gap-1.5 overflow-y-auto pr-1 sm:grid-cols-2">
+            {filteredUnassigned.map((guest) => {
+              const options = targetSummary
+                ? [targetSummary].filter(
+                    (summary) =>
+                      summary.remainingSeats >= guestPeopleCount(guest) &&
+                      summary.freeChairIds.length >= guestPeopleCount(guest),
+                  )
+                : freeTableOptions(guest);
+              return (
+                <div
+                  key={guest.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-olive-100 bg-white/80 px-3 py-2"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-ink">
+                      {guest.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-ink-soft">
+                      {[guest.guest_group, guest.phone]
+                        .filter(Boolean)
+                        .join(" · ") || "—"}{" "}
+                      · {guestPeopleCount(guest)} pax
+                    </p>
+                  </div>
+                  <select
+                    defaultValue=""
+                    disabled={busy || options.length === 0}
+                    onChange={(selectEvent) => {
+                      const tableId = selectEvent.target.value;
+                      selectEvent.currentTarget.value = "";
+                      if (tableId) void assignGuestToTable(guest.id, tableId);
+                    }}
+                    aria-label={`${copy.seating.assignToTable}: ${guest.name}`}
+                    className="w-full rounded-lg border border-olive-200 bg-white px-2.5 py-1.5 text-xs sm:w-40"
+                  >
+                    <option value="">
+                      {options.length === 0
+                        ? copy.seating.tableFull
+                        : copy.seating.chooseTable}
+                    </option>
+                    {options.map((summary) => (
+                      <option key={summary.table.id} value={summary.table.id}>
+                        {summary.table.name} · {summary.remainingSeats}{" "}
+                        {copy.seating.capacityLeft}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+      </div>
 
       <DinnerLayoutModal
         open={layoutOpen}
