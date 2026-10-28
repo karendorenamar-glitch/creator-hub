@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useActionState, useEffect, useState } from "react";
 import {
   createInspirationAction,
@@ -40,6 +41,7 @@ export function InspirationFormModal({
   const [state, formAction, pending] = useActionState(action, null);
   const [fileError, setFileError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -65,7 +67,7 @@ export function InspirationFormModal({
           id="inspiration-details-form"
           action={formAction}
           onSubmit={(event) => {
-            if (fileError) event.preventDefault();
+            if (fileError || preparing) event.preventDefault();
           }}
           className="space-y-5"
         >
@@ -163,6 +165,8 @@ export function InspirationFormModal({
                 accept="image/jpeg,image/png"
                 className={fileClass}
                 onChange={async (event) => {
+                  setPreparing(true);
+                  try {
                   const input = event.currentTarget;
                   const file = input.files?.[0];
                   if (!file) {
@@ -204,9 +208,23 @@ export function InspirationFormModal({
                     if (current) URL.revokeObjectURL(current);
                     return objectUrl;
                   });
+                  } finally {
+                    setPreparing(false);
+                  }
                 }}
               />
             </Field>
+
+            {preparing ? (
+              <p
+                role="status"
+                aria-live="polite"
+                className="flex items-center gap-2 rounded-xl border border-olive-100 bg-olive-50/60 px-3 py-2 text-xs text-ink-soft"
+              >
+                <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                {copy.inspiration.preparing}
+              </p>
+            ) : null}
 
             <Field
               label={copy.inspiration.photoCaption}
@@ -251,6 +269,7 @@ export function InspirationFormModal({
           cancelLabel={copy.form.cancel}
           onCancel={onClose}
           formId="inspiration-details-form"
+          disabled={preparing}
         />
       </div>
     </FormModal>

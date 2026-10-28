@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +62,7 @@ export function ModalFooter({
   cancelLabel,
   onCancel,
   formId,
+  disabled = false,
 }: {
   pending: boolean;
   submitLabel: string;
@@ -68,6 +70,7 @@ export function ModalFooter({
   cancelLabel: string;
   onCancel: () => void;
   formId?: string;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex justify-end gap-2 border-t border-olive-100 pt-4">
@@ -81,9 +84,10 @@ export function ModalFooter({
       <button
         type="submit"
         form={formId}
-        disabled={pending}
-        className="rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
+        disabled={pending || disabled}
+        className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-olive-700 disabled:opacity-60"
       >
+        {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
         {pending ? savingLabel : submitLabel}
       </button>
     </div>

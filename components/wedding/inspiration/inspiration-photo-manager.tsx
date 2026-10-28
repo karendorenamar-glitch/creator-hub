@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import { Loader2 } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addInspirationPhotoAction,
@@ -71,6 +72,7 @@ function PhotoRow({
     null as ActionResult,
   );
   const [clientError, setClientError] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
 
   return (
     <div className="space-y-1">
@@ -106,8 +108,15 @@ function PhotoRow({
       <div className="flex flex-wrap items-center justify-between gap-1">
         <form ref={formRef} action={formAction}>
           <input type="hidden" name="id" value={photo.id} />
-          <label className="cursor-pointer rounded-lg bg-olive-50 px-2 py-1 text-xs font-medium text-olive-700 hover:bg-olive-100">
-            {pending ? copy.form.saving : copy.inspiration.replace}
+          <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-olive-50 px-2 py-1 text-xs font-medium text-olive-700 hover:bg-olive-100 ${preparing || pending ? "pointer-events-none opacity-60" : ""}`}>
+            {preparing || pending ? (
+              <Loader2 className="size-3 animate-spin" aria-hidden />
+            ) : null}
+            {preparing
+              ? copy.inspiration.preparing
+              : pending
+                ? copy.inspiration.uploading
+                : copy.inspiration.replace}
             <input
               type="file"
               name="image"
@@ -115,8 +124,14 @@ function PhotoRow({
               className="hidden"
               onChange={async (event) => {
                 const input = event.currentTarget;
-                if (await preparePhoto(input, copy, setClientError)) {
-                  formRef.current?.requestSubmit();
+                setPreparing(true);
+                setClientError(null);
+                try {
+                  if (await preparePhoto(input, copy, setClientError)) {
+                    formRef.current?.requestSubmit();
+                  }
+                } finally {
+                  setPreparing(false);
                 }
               }}
             />
@@ -150,9 +165,17 @@ function AddPhotoForm({
     null as ActionResult,
   );
   const [clientError, setClientError] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [fileLabel, setFileLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    if (state?.success) formRef.current?.reset();
+    if (state?.success) {
+      formRef.current?.reset();
+      // The form input was reset above; clear the label as part of the same
+      // external form synchronization.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFileLabel(null);
+    }
   }, [state]);
 
   return (
@@ -166,26 +189,52 @@ function AddPhotoForm({
         className="w-full rounded-xl border border-petal-100 bg-cream/70 px-3 py-2 text-xs text-ink outline-none focus:border-olive-300"
       />
       <div className="flex flex-wrap items-center gap-2">
-        <label className="inline-flex cursor-pointer items-center rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100">
-          {copy.inspiration.addPhoto}
+        <label className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-olive-50 px-2.5 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-100 ${preparing || pending ? "pointer-events-none opacity-60" : ""}`}>
+          {preparing ? (
+            <Loader2 className="size-3 animate-spin" aria-hidden />
+          ) : null}
+          {preparing ? copy.inspiration.preparing : copy.inspiration.addPhoto}
           <input
             type="file"
             name="image"
             accept="image/jpeg,image/png"
             className="hidden"
             onChange={async (event) => {
-              await preparePhoto(event.currentTarget, copy, setClientError);
+              const input = event.currentTarget;
+              const file = input.files?.[0];
+              setPreparing(true);
+              setClientError(null);
+              setFileLabel(null);
+              try {
+                if (await preparePhoto(input, copy, setClientError)) {
+                  setFileLabel(file?.name ?? null);
+                }
+              } finally {
+                setPreparing(false);
+              }
             }}
           />
         </label>
         <button
           type="submit"
-          disabled={pending}
-          className="rounded-lg bg-olive-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-olive-700 disabled:opacity-60"
+          disabled={pending || preparing || !fileLabel}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-olive-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-olive-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {pending ? copy.form.saving : copy.form.save}
+          {pending || preparing ? (
+            <Loader2 className="size-3 animate-spin" aria-hidden />
+          ) : null}
+          {preparing
+            ? copy.inspiration.preparing
+            : pending
+              ? copy.inspiration.uploading
+              : copy.inspiration.uploadPhoto}
         </button>
       </div>
+      {fileLabel ? (
+        <p className="max-w-full truncate text-[11px] text-ink-soft" aria-live="polite">
+          {fileLabel}
+        </p>
+      ) : null}
       {clientError || state?.error ? (
         <p className="text-[11px] text-rose-600">
           {clientError ?? state?.error}
