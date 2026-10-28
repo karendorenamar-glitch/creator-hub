@@ -2,10 +2,19 @@
 
 import { useEffect, useMemo, useRef, useState, useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp, Plus, Search, Users, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
 import {
   assignGuestAction,
   generateDinnerLayoutAction,
+  renameDinnerTableAction,
   unassignGuestAction,
 } from "@/app/wedding/(app)/seating/actions";
 import {
@@ -133,6 +142,66 @@ function DinnerLayoutModal({
   );
 }
 
+function DinnerTableNameModal({
+  table,
+  eventId,
+  onClose,
+  copy,
+}: {
+  table: SeatingTable | null;
+  eventId: string;
+  onClose: () => void;
+  copy: ModuleCopy;
+}) {
+  const [state, formAction, pending] = useActionState(
+    renameDinnerTableAction,
+    null,
+  );
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state?.success) {
+      onClose();
+      router.refresh();
+    }
+  }, [state, onClose, router]);
+
+  if (!table) return null;
+
+  return (
+    <FormModal
+      open={Boolean(table)}
+      onClose={onClose}
+      title={copy.form.edit}
+    >
+      <form action={formAction} className="space-y-4">
+        <input type="hidden" name="id" value={table.id} />
+        <input type="hidden" name="eventId" value={eventId} />
+        <FormAlert error={state?.error} success={state?.success} />
+        <Field label={copy.seating.tableName} htmlFor="dinner-table-name">
+          <input
+            id="dinner-table-name"
+            name="name"
+            required
+            maxLength={80}
+            defaultValue={table.name}
+            className={inputClass}
+            autoFocus
+          />
+        </Field>
+        <ModalFooter
+          pending={pending}
+          submitLabel={copy.form.save}
+          savingLabel={copy.form.saving}
+          cancelLabel={copy.form.cancel}
+          onCancel={onClose}
+        />
+      </form>
+    </FormModal>
+  );
+}
+
+
 export function DinnerSeatingBoard({
   events,
   tables,
@@ -152,9 +221,18 @@ export function DinnerSeatingBoard({
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [targetTableId, setTargetTableId] = useState<string | null>(null);
   const [layoutOpen, setLayoutOpen] = useState(false);
+  const [editingTable, setEditingTable] = useState<SeatingTable | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [setupState, setupAction, setupPending] = useActionState(
+    generateDinnerLayoutAction,
+    null,
+  );
   const unassignedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (setupState?.success) router.refresh();
+  }, [setupState?.success, router]);
 
   const eventAssignments = useMemo(
     () =>
@@ -326,14 +404,16 @@ export function DinnerSeatingBoard({
             {copy.seating.dinnerBoardHint}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setLayoutOpen(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-olive-700"
-        >
-          <Users className="size-4" aria-hidden />
-          {copy.seating.setupDinnerLayout}
-        </button>
+        {summaries.length > 0 ? (
+          <button
+            type="button"
+            onClick={() => setLayoutOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-olive-700"
+          >
+            <Users className="size-4" aria-hidden />
+            {copy.seating.setupDinnerLayout}
+          </button>
+        ) : null}
       </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -478,16 +558,59 @@ export function DinnerSeatingBoard({
       </div>
 
       {summaries.length === 0 ? (
-        <Card className="space-y-3 border-dashed border-olive-200 bg-ivory/70">
-          <p className="text-sm text-ink-soft">{copy.seating.noTables}</p>
-          <button
-            type="button"
-            onClick={() => setLayoutOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-olive-700"
-          >
-            <Users className="size-4" aria-hidden />
-            {copy.seating.setupDinnerLayout}
-          </button>
+        <Card className="space-y-4 border-blush/60 bg-ivory/80">
+          <div>
+            <h3 className="font-heading text-xl text-cocoa">
+              {copy.seating.dinnerLayoutTitle}
+            </h3>
+            <p className="mt-1 text-sm leading-relaxed text-ink-soft">
+              {copy.seating.dinnerLayoutIntro}
+            </p>
+          </div>
+          <form action={setupAction} className="space-y-4">
+            <input type="hidden" name="eventId" value={eventId} />
+            <FormAlert error={setupState?.error} success={setupState?.success} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label={copy.seating.guestTables}
+                htmlFor="dinner-setup-table-count"
+              >
+                <input
+                  id="dinner-setup-table-count"
+                  name="tableCount"
+                  type="number"
+                  min={1}
+                  max={40}
+                  required
+                  defaultValue={8}
+                  className={inputClass}
+                />
+              </Field>
+              <Field
+                label={copy.seating.chairsPerTable}
+                htmlFor="dinner-setup-chairs"
+              >
+                <input
+                  id="dinner-setup-chairs"
+                  name="chairsPerTable"
+                  type="number"
+                  min={2}
+                  max={20}
+                  required
+                  defaultValue={8}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+            <button
+              type="submit"
+              disabled={setupPending}
+              className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-olive-700 disabled:opacity-60"
+            >
+              <Users className="size-4" aria-hidden />
+              {setupPending ? copy.form.saving : copy.seating.setupDinnerLayout}
+            </button>
+          </form>
         </Card>
       ) : (
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -516,18 +639,28 @@ export function DinnerSeatingBoard({
                       {summary.table.name}
                     </h3>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => toggleTable(summary.table.id)}
-                    aria-label={expanded ? copy.form.collapse : copy.form.expand}
-                    className="rounded-lg p-1.5 text-cocoa/50 hover:bg-blush/40 hover:text-cocoa"
-                  >
-                    {expanded ? (
-                      <ChevronUp className="size-4" aria-hidden />
-                    ) : (
-                      <ChevronDown className="size-4" aria-hidden />
-                    )}
-                  </button>
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditingTable(summary.table)}
+                      aria-label={`${copy.form.edit}: ${summary.table.name}`}
+                      className="rounded-lg p-1.5 text-cocoa/45 hover:bg-blush/40 hover:text-cocoa"
+                    >
+                      <Pencil className="size-3.5" aria-hidden />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleTable(summary.table.id)}
+                      aria-label={expanded ? copy.form.collapse : copy.form.expand}
+                      className="rounded-lg p-1.5 text-cocoa/50 hover:bg-blush/40 hover:text-cocoa"
+                    >
+                      {expanded ? (
+                        <ChevronUp className="size-4" aria-hidden />
+                      ) : (
+                        <ChevronDown className="size-4" aria-hidden />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-2 flex items-center justify-between gap-2">
@@ -674,6 +807,13 @@ export function DinnerSeatingBoard({
         onClose={() => setLayoutOpen(false)}
         copy={copy}
         eventId={eventId}
+      />
+
+      <DinnerTableNameModal
+        table={editingTable}
+        eventId={eventId}
+        copy={copy}
+        onClose={() => setEditingTable(null)}
       />
     </div>
   );

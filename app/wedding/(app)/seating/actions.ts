@@ -322,6 +322,50 @@ export async function generateAkadChairsAction(
   return { success: copy.form.saved };
 }
 
+export async function renameDinnerTableAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  const eventId = text(formData, "eventId");
+  const name = text(formData, "name").slice(0, 80);
+
+  if (!isUuid(id) || !isUuid(eventId) || !name) {
+    return { error: ctx.copy.form.required };
+  }
+
+  const { data: table } = await ctx.supabase
+    .from("seating_tables")
+    .select("id, event_id")
+    .eq("id", id)
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .maybeSingle();
+  if (!table) return { error: ctx.copy.errors.notFound };
+
+  const { data: event } = await ctx.supabase
+    .from("seating_events")
+    .select("event_type")
+    .eq("id", eventId)
+    .eq("wedding_id", ctx.weddingId)
+    .maybeSingle();
+  if (!event || event.event_type !== "dinner") {
+    return { error: ctx.copy.errors.notFound };
+  }
+
+  const { error } = await ctx.supabase
+    .from("seating_tables")
+    .update({ name })
+    .eq("id", id)
+    .eq("event_id", eventId)
+    .eq("wedding_id", ctx.weddingId);
+
+  if (error) return { error: actionError(error, ctx.copy) };
+  revalidateSeating();
+  return { success: ctx.copy.form.saved };
+}
+
 export async function generateDinnerLayoutAction(
   _prev: ActionResult,
   formData: FormData,
