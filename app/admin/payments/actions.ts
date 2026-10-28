@@ -9,6 +9,23 @@ import { text } from "@/lib/wedding/validation";
 
 export type AdminResult = { error?: string; success?: string } | null;
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+}
+
 async function requireAdmin() {
   const user = await getCurrentUser();
   if (!user) return { error: "Tidak memiliki akses." as const };
@@ -123,10 +140,10 @@ export async function retryEmailAction(formData: FormData): Promise<void> {
           from,
           to: [to],
           subject: `New Wedding Planner Payment Submission — ${payment.reference}`,
-          html: `<p><strong>${payment.reference}</strong></p>
-            <p>Pengirim: ${payment.sender_name}</p>
+          html: `<p><strong>${escapeHtml(payment.reference)}</strong></p>
+            <p>Pengirim: ${escapeHtml(payment.sender_name)}</p>
             <p>Nominal: Rp${Number(payment.amount_idr).toLocaleString("id-ID")}</p>
-            <p>Status: ${payment.status}</p>`,
+            <p>Status: ${escapeHtml(payment.status)}</p>`,
         }),
       });
       ok = response.ok;

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
@@ -216,14 +215,13 @@ export async function requestPasswordResetAction(
 
   if (!EMAIL_PATTERN.test(email)) return { error: copy.auth.invalidEmail };
 
-  const headerStore = await headers();
-  const host = headerStore.get("host") ?? "localhost:3000";
-  const protocol =
-    host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.kefoo.tech"
+  ).replace(/\/$/, "");
 
   const supabase = createWeddingAnonymousClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${protocol}://${host}/wedding/reset-password`,
+    redirectTo: `${siteUrl}/wedding/reset-password`,
   });
 
   if (error) {

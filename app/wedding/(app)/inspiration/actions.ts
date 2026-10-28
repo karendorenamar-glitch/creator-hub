@@ -39,6 +39,13 @@ async function storeImages(
   formData: FormData,
 ): Promise<{ ok: true; paths: string[] } | { ok: false; error: string }> {
   const files = readFiles(formData);
+  if (files.length > 6) {
+    return { ok: false, error: ctx.copy.inspiration.imageTooLarge };
+  }
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  if (totalBytes > 20 * 1024 * 1024) {
+    return { ok: false, error: ctx.copy.inspiration.imageTooLarge };
+  }
   const paths: string[] = [];
 
   for (const file of files) {

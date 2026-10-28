@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   deleteRsvpAction,
@@ -87,11 +86,10 @@ export default async function InvitationPage() {
   const attending = rsvps.filter((rsvp) => rsvp.attendance === "attending");
   const totalGuests = attending.reduce((sum, rsvp) => sum + rsvp.guests, 0);
 
-  const headerStore = await headers();
-  const host = headerStore.get("host") ?? "localhost:3000";
-  const protocol =
-    host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
-  const publicUrl = invitation ? `${protocol}://${host}/i/${invitation.slug}` : "";
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.kefoo.tech"
+  ).replace(/\/$/, "");
+  const publicUrl = invitation ? `${siteUrl}/i/${invitation.slug}` : "";
 
   const defaultSlug =
     slugify(
@@ -128,7 +126,7 @@ export default async function InvitationPage() {
             ) : null}
           </div>
           <p className="truncate text-sm text-ink">
-            {publicUrl || `${protocol}://${host}/i/${defaultSlug}`}
+            {publicUrl || `${siteUrl}/i/${defaultSlug}`}
           </p>
         </div>
 

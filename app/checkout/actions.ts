@@ -14,6 +14,23 @@ const BUCKET = "payment-receipts";
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
+}
+
 export async function submitPaymentAction(formData: FormData): Promise<void> {
   const account = await loadAccountContext();
   if (!account) redirect("/wedding/login?next=/checkout");
@@ -35,9 +52,14 @@ export async function submitPaymentAction(formData: FormData): Promise<void> {
   // Payment may happen BEFORE onboarding, so the wedding is optional.
   const weddingId = ((await loadWeddingSession())?.wedding.id) ?? null;
 
-  const extension = file.name.includes(".")
-    ? file.name.split(".").pop()!.toLowerCase()
-    : "jpg";
+  const extension =
+    file.type === "application/pdf"
+      ? "pdf"
+      : file.type === "image/png"
+        ? "png"
+        : file.type === "image/webp"
+          ? "webp"
+          : "jpg";
   const path = `${userId}/${crypto.randomUUID()}.${extension}`;
 
   const { error: uploadError } = await supabase.storage
@@ -107,12 +129,12 @@ async function notifyAdmin(input: {
   if (!apiKey || !from) return false;
 
   const html = `
-    <h2>Pengajuan pembayaran baru — ${input.reference}</h2>
-    <p><strong>Nama pemilik rekening pengirim:</strong> ${input.senderName}</p>
-    <p><strong>Email customer:</strong> ${input.email}</p>
-    <p><strong>Referensi:</strong> ${input.reference}</p>
+    <h2>Pengajuan pembayaran baru — ${escapeHtml(input.reference)}</h2>
+    <p><strong>Nama pemilik rekening pengirim:</strong> ${escapeHtml(input.senderName)}</p>
+    <p><strong>Email customer:</strong> ${escapeHtml(input.email)}</p>
+    <p><strong>Referensi:</strong> ${escapeHtml(input.reference)}</p>
     <p><strong>Nominal:</strong> Rp${input.amount.toLocaleString("id-ID")}</p>
-    <p><strong>Waktu:</strong> ${input.submittedAt}</p>
+    <p><strong>Waktu:</strong> ${escapeHtml(input.submittedAt)}</p>
     <p><strong>Status:</strong> pending_review</p>
     <p>Buka dashboard admin untuk memverifikasi bukti transfer.</p>
   `;

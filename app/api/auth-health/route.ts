@@ -1,35 +1,31 @@
+import { getCurrentUser } from "@/lib/wedding/session";
+import { createWeddingClient } from "@/lib/wedding/supabase";
+
 export const dynamic = "force-dynamic";
 
 /**
- * Server-side auth health check. Uses the SAME environment variables as the
- * running deployment, so it reveals whether signup/login can actually work.
- *
- * Probes are read-only: a password grant with dummy credentials and a signup
- * with a deliberately weak password. Neither creates a user.
+ * Admin-only auth diagnostics. Keep this behind the same admin check as /admin
+ * so it cannot be used to fingerprint the project or generate auth traffic.
  */
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return new Response("Not found", { status: 404 });
+
+  const supabase = await createWeddingClient();
+  const { data: isAdmin } = await supabase.rpc("is_admin");
+  if (isAdmin !== true) return new Response("Not found", { status: 404 });
+
   const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").replace(/\/$/, "");
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
-  const report: Record<string, unknown> = {
-    project: url.replace("https://", "").replace(".supabase.co", ""),
-    hasUrl: Boolean(url),
-    hasAnonKey: Boolean(key),
-    anonKeyPrefix: key.slice(0, 14),
-    anonKeyLength: key.length,
-  };
-
   if (!url || !key) {
     return Response.json(
-      { ...report, verdict: "Env Supabase belum lengkap di deployment ini." },
+      { hasUrl: false, hasAnonKey: false, verdict: "Env Supabase belum lengkap." },
       { headers: { "cache-control": "no-store" } },
     );
   }
 
-  async function post(
-    path: string,
-    body: unknown,
-  ): Promise<{ status: number; body: string }> {
+  async function post(path: string, body: unknown) {
     try {
       const response = await fetch(`${url}${path}`, {
         method: "POST",
@@ -37,9 +33,9 @@ export async function GET() {
         body: JSON.stringify(body),
         cache: "no-store",
       });
-      return { status: response.status, body: (await response.text()).slice(0, 300) };
-    } catch (error) {
-      return { status: 0, body: String(error).slice(0, 200) };
+      return response.status;
+    } catch {
+      return 0;
     }
   }
 
@@ -47,40 +43,38 @@ export async function GET() {
     headers: { apikey: key },
     cache: "no-store",
   }).catch(() => null);
-
   const settings = settingsResponse
     ? await settingsResponse.json().catch(() => null)
     : null;
 
-  const tokenProbe = await post("/auth/v1/token?grant_type=password", {
+  const tokenStatus = await post("/auth/v1/token?grant_type=password", {
     email: "probe@invalid.test",
     password: "probe-password",
   });
-
-  const signupProbe = await post("/auth/v1/signup", {
+  const signupStatus = await post("/auth/v1/signup", {
     email: "probe@invalid.test",
     password: "x",
   });
 
-  const keyValid = tokenProbe.status === 400;
-  const signupReachable = [400, 422, 429].includes(signupProbe.status);
+  const keyValid = tokenStatus === 400;
+  const signupReachable = [400, 422, 429].includes(signupStatus);
 
   return Response.json(
     {
-      ...report,
+      hasUrl: true,
+      hasAnonKey: true,
       settings: settings
         ? {
             disable_signup: settings.disable_signup,
             mailer_autoconfirm: settings.mailer_autoconfirm,
-            email_provider: settings.external?.email,
           }
         : null,
-      tokenProbe: { status: tokenProbe.status, body: tokenProbe.body },
-      signupProbe: { status: signupProbe.status, body: signupProbe.body },
+      tokenStatus,
+      signupStatus,
       verdict: !keyValid
-        ? "ANON KEY TIDAK COCOK dengan project ini (token probe bukan 400)."
+        ? "Anon key tidak cocok dengan project ini."
         : !signupReachable
-          ? "Signup gagal di sisi Supabase — lihat signupProbe."
+          ? "Signup gagal di sisi Supabase."
           : "Kunci valid dan endpoint signup merespons normal.",
     },
     { headers: { "cache-control": "no-store" } },
