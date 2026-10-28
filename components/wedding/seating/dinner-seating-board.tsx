@@ -953,6 +953,7 @@ export function DinnerSeatingBoard({
       />
 
       <DinnerTableNameModal
+        key={editingTable?.id ?? "no-dinner-table"}
         table={editingTable}
         eventId={eventId}
         copy={copy}
