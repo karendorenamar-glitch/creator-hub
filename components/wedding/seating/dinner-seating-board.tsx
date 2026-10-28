@@ -16,6 +16,7 @@ import {
   deleteTableAction,
   generateDinnerLayoutAction,
   renameDinnerTableAction,
+  saveTableAction,
   unassignGuestAction,
 } from "@/app/wedding/(app)/seating/actions";
 import { DeleteForm } from "@/components/wedding/delete-form";
@@ -205,6 +206,76 @@ function DinnerTableNameModal({
 }
 
 
+function DinnerAddTableModal({
+  open,
+  onClose,
+  copy,
+  eventId,
+  defaultName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  copy: ModuleCopy;
+  eventId: string;
+  defaultName: string;
+}) {
+  const [state, formAction, pending] = useActionState(saveTableAction, null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state?.success) {
+      onClose();
+      router.refresh();
+    }
+  }, [state, onClose, router]);
+
+  return (
+    <FormModal open={open} onClose={onClose} title={copy.seating.addTable}>
+      <form action={formAction} className="space-y-4">
+        <input type="hidden" name="eventId" value={eventId} />
+        <input type="hidden" name="kind" value="table" />
+        <input type="hidden" name="shape" value="round" />
+        <input type="hidden" name="x" value="50" />
+        <input type="hidden" name="y" value="50" />
+        <input type="hidden" name="width" value="12" />
+        <input type="hidden" name="height" value="12" />
+        <input type="hidden" name="rotation" value="0" />
+        <FormAlert error={state?.error} success={state?.success} />
+        <Field label={copy.seating.tableName} htmlFor="dinner-add-table-name">
+          <input
+            id="dinner-add-table-name"
+            name="name"
+            required
+            maxLength={80}
+            defaultValue={defaultName}
+            className={inputClass}
+            autoFocus
+          />
+        </Field>
+        <Field label={copy.seating.capacity} htmlFor="dinner-add-table-capacity">
+          <input
+            id="dinner-add-table-capacity"
+            name="capacity"
+            type="number"
+            min={2}
+            max={20}
+            required
+            defaultValue={8}
+            className={inputClass}
+          />
+        </Field>
+        <ModalFooter
+          pending={pending}
+          submitLabel={copy.form.save}
+          savingLabel={copy.form.saving}
+          cancelLabel={copy.form.cancel}
+          onCancel={onClose}
+        />
+      </form>
+    </FormModal>
+  );
+}
+
 function DinnerGuestPickerModal({
   table,
   unassigned,
@@ -324,6 +395,7 @@ export function DinnerSeatingBoard({
   const [targetTableId, setTargetTableId] = useState<string | null>(null);
   const [assignTableId, setAssignTableId] = useState<string | null>(null);
   const [layoutOpen, setLayoutOpen] = useState(false);
+  const [addTableOpen, setAddTableOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<SeatingTable | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -525,16 +597,26 @@ export function DinnerSeatingBoard({
             {copy.seating.dinnerBoardHint}
           </p>
         </div>
-        {summaries.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {summaries.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setLayoutOpen(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-olive-700"
+            >
+              <Users className="size-4" aria-hidden />
+              {copy.seating.setupDinnerLayout}
+            </button>
+          ) : null}
           <button
             type="button"
-            onClick={() => setLayoutOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-olive-700"
+            onClick={() => setAddTableOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-olive-200 bg-white px-4 py-2.5 text-sm font-medium text-olive-700 hover:bg-olive-50"
           >
-            <Users className="size-4" aria-hidden />
-            {copy.seating.setupDinnerLayout}
+            <Plus className="size-4" aria-hidden />
+            {copy.seating.addTable}
           </button>
-        ) : null}
+        </div>
       </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -951,10 +1033,20 @@ export function DinnerSeatingBoard({
       />
 
       <DinnerLayoutModal
+        key={layoutOpen ? "layout-open" : "layout-closed"}
         open={layoutOpen}
         onClose={() => setLayoutOpen(false)}
         copy={copy}
         eventId={eventId}
+      />
+
+      <DinnerAddTableModal
+        key={addTableOpen ? "add-open" : "add-closed"}
+        open={addTableOpen}
+        onClose={() => setAddTableOpen(false)}
+        copy={copy}
+        eventId={eventId}
+        defaultName={`Meja ${summaries.length + 1}`}
       />
 
       <DinnerTableNameModal
