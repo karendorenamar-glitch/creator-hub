@@ -1,0 +1,101 @@
+:root {
+  --studio-cocoa: #4b342b;
+}
+
+body {
+  margin: 0;
+}
+
+.studio-tool-button {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.6rem;
+  color: color-mix(in srgb, var(--studio-cocoa) 58%, transparent);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.studio-tool-button:hover:not(:disabled) {
+  background: #f0ebe2;
+  color: var(--studio-cocoa);
+}
+.studio-tool-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+.studio-top-button {
+  display: inline-flex;
+  height: 2.25rem;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--studio-cocoa) 12%, transparent);
+  background: white;
+  padding: 0 0.7rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--studio-cocoa) 75%, transparent);
+  transition: background-color 160ms ease;
+}
+.studio-top-button:hover {
+  background: #f5f0e8;
+}
+.studio-property-action {
+  display: inline-flex;
+  height: 1.8rem;
+  width: 1.8rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.55rem;
+  color: color-mix(in srgb, var(--studio-cocoa) 55%, transparent);
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.studio-property-action:hover {
+  background: #f0ebe2;
+  color: var(--studio-cocoa);
+}
+.studio-format-button {
+  display: inline-flex;
+  height: 1.8rem;
+  min-width: 1.8rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--studio-cocoa) 10%, transparent);
+  background: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--studio-cocoa) 60%, transparent);
+}
+.studio-format-button.is-active {
+  border-color: #7f8d68;
+  background: #edf1e7;
+  color: #4f603d;
+}
+.studio-number-input {
+  display: block;
+  width: 100%;
+  margin-top: 0.2rem;
+  border-radius: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--studio-cocoa) 10%, transparent);
+  background: #fff;
+  padding: 0.38rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--studio-cocoa);
+}
+.studio-panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d7cec0 transparent;
+}
+.studio-workspace {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.55), transparent 48%),
+    #e9e5dd;
+}
+
+.video-editorial {
+  --font-heading: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --font-body: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
