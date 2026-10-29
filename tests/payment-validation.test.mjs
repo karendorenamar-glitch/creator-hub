@@ -10,6 +10,7 @@ import {
   validatePaymentProofFile,
 } from "../lib/wedding/uploads.ts";
 import { groupProofsByPayment } from "../lib/wedding/payment-proofs.ts";
+import { PAYMENT_CONFIG } from "../lib/wedding/payment-config.ts";
 
 let pass = 0;
 let fail = 0;
@@ -127,6 +128,28 @@ t("inspiration reference price zero", parseWholeRupiah("0", { allowZero: true })
 t("inspiration reference price negative", parseWholeRupiah("-1", { allowZero: true }), null);
 t("instagram https url", isHttpUrl("https://instagram.com/example"), true);
 t("instagram non-http url", isHttpUrl("javascript:alert(1)"), false);
+
+// Customer-facing verification copy is part of the payment contract.
+t(
+  "payment pending title",
+  PAYMENT_CONFIG.verification.title,
+  "Harap ditunggu, pembayaran sedang diproses.",
+);
+t(
+  "payment verification hours",
+  PAYMENT_CONFIG.verification.hours,
+  "09.00 - 21.00 WIB",
+);
+t(
+  "payment verification hours label",
+  PAYMENT_CONFIG.verification.hoursLabel,
+  "Jam kerja",
+);
+t(
+  "payment pending message mentions admin review",
+  PAYMENT_CONFIG.verification.message.includes("memverifikasi"),
+  true,
+);
 
 // Proof files stay linked to their own transaction.
 const grouped = groupProofsByPayment([

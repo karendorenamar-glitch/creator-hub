@@ -17,4 +17,13 @@ export const PAYMENT_CONFIG = {
   },
   notificationEmail: "hello@kefoo.tech",
   supportEmail: "hello@kefoo.tech",
+  verification: {
+    title: "Harap ditunggu, pembayaran sedang diproses.",
+    message:
+      "Bukti transfer sudah kami terima. Tim admin akan memverifikasi pembayaranmu sebelum mengaktifkan akses.",
+    hoursLabel: "Jam kerja",
+    hours: "09.00 - 21.00 WIB",
+    outsideHoursNote:
+      "Pengajuan di luar jam kerja akan diverifikasi pada jam kerja berikutnya.",
+  },
 } as const;

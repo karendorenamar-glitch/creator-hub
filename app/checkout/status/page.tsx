@@ -1,12 +1,20 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge, Card } from "@/components/wedding/ui";
+import { PaymentVerificationNotice } from "@/components/wedding/payment-verification-notice";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { loadAccountContext } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Status Pembayaran" };
+
+const STATUS_LABELS: Record<string, string> = {
+  awaiting_payment: "Menunggu pembayaran",
+  pending_review: "Menunggu verifikasi",
+  approved: "Disetujui",
+  rejected: "Ditolak",
+};
 
 export default async function CheckoutStatusPage() {
   const account = await loadAccountContext();
@@ -61,7 +69,7 @@ export default async function CheckoutStatusPage() {
                       : "neutral"
                 }
               >
-                {payment.status.replace("_", " ")}
+                {STATUS_LABELS[payment.status] ?? payment.status}
               </Badge>
             </div>
 
@@ -81,9 +89,7 @@ export default async function CheckoutStatusPage() {
             </dl>
 
             {payment.status === "pending_review" ? (
-              <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
-                Terima kasih! Bukti pembayaranmu sedang menunggu verifikasi admin.
-              </p>
+              <PaymentVerificationNotice />
             ) : null}
 
             {payment.status === "approved" ? (

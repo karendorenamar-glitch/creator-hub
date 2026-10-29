@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { submitPaymentAction } from "@/app/checkout/actions";
 import { Badge, Card } from "@/components/wedding/ui";
+import { PaymentVerificationNotice } from "@/components/wedding/payment-verification-notice";
 import { SubmitButton } from "@/components/wedding/submit-button";
 import { PAYMENT_CONFIG } from "@/lib/wedding/payment-config";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
@@ -24,13 +25,13 @@ const ERRORS: Record<string, string> = {
 export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; sent?: string }>;
 }) {
   const account = await loadAccountContext();
   if (!account) redirect("/wedding/login?next=/checkout");
 
   const locale = await getLocale();
-  const { error } = await searchParams;
+  const { error, sent } = await searchParams;
   const supabase = await createWeddingClient();
 
   const { data: rows } = await supabase
@@ -42,6 +43,8 @@ export default async function CheckoutPage({
 
   const payment = rows?.[0] ?? null;
   const active = account.hasEntitlement;
+  const pendingReview = payment?.status === "pending_review";
+  const justSubmitted = sent === "1";
 
   return (
     <div className="wedding-app wedding-surface min-h-screen px-4 py-10 text-cocoa sm:px-6">
@@ -51,7 +54,11 @@ export default async function CheckoutPage({
             Pembayaran
           </p>
           <h1 className="mt-3 font-heading text-3xl sm:text-4xl">
-            {active ? "Akses kamu sudah aktif" : "Mulai Perencanaan Pernikahanmu"}
+            {active
+              ? "Akses kamu sudah aktif"
+              : pendingReview
+                ? "Pembayaran sedang diproses"
+                : "Mulai Perencanaan Pernikahanmu"}
           </h1>
         </div>
 
@@ -71,13 +78,12 @@ export default async function CheckoutPage({
                 : "Lanjut isi data pernikahan"}
             </Link>
           </Card>
-        ) : payment?.status === "pending_review" ? (
-          <Card className="space-y-2 text-sm">
-            <Badge tone="warning">Menunggu verifikasi</Badge>
-            <p className="text-cocoa/75">
-              Terima kasih! Bukti transfer sudah dikirim. Akses aktif setelah
-              admin memverifikasi dana masuk ke rekening BCA.
-            </p>
+        ) : pendingReview ? (
+          <Card className="space-y-3 text-sm">
+            <Badge tone={justSubmitted ? "success" : "warning"}>
+              {justSubmitted ? "Bukti pembayaran terkirim" : "Menunggu verifikasi"}
+            </Badge>
+            <PaymentVerificationNotice />
             <p className="text-cocoa/55">
               Referensi <strong>{payment.reference}</strong> ·{" "}
               {payment.sender_name} · {formatIDR(payment.amount_idr)} ·{" "}
@@ -180,7 +186,8 @@ export default async function CheckoutPage({
 
                 <p className="text-xs leading-relaxed text-cocoa/50">
                   Akses aktif setelah admin memverifikasi dana masuk ke rekening
-                  BCA. Bukti transfer saja tidak membuka akses.
+                  BCA. Bukti transfer saja tidak membuka akses. Verifikasi
+                  dilakukan pada jam kerja {PAYMENT_CONFIG.verification.hours}.
                 </p>
               </form>
             </Card>
