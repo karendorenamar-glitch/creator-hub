@@ -173,9 +173,14 @@ export default async function DebtDashboardPage() {
                   <div>
                     <p className="font-medium text-ink">{account.creditor_name}</p>
                     <p className="mt-1 text-xs text-ink-soft">
-                      {account.due_date
-                        ? `Jatuh tempo ${formatDebtDate(account.due_date)}`
-                        : "Tanpa tanggal jatuh tempo"}
+                      {account.due_day
+                        ? `Setiap tanggal ${account.due_day}`
+                        : account.due_date
+                          ? `Jatuh tempo ${formatDebtDate(account.due_date)}`
+                          : "Tanpa tanggal jatuh tempo"}
+                      {account.installment_total_months > 0
+                        ? ` · ${account.installment_month}/${account.installment_total_months} bulan`
+                        : ""}
                     </p>
                   </div>
                   <div className="min-w-40 text-right">

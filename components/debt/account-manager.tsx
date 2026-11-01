@@ -19,6 +19,7 @@ import {
   daysUntil,
   formatDebtDate,
   formatRupiah,
+  nextDueDateForDay,
 } from "@/lib/debt/format";
 import type { DebtAccountType } from "@/lib/debt/db-types";
 
@@ -65,8 +66,11 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
         return false;
       }
       if (due === "all") return true;
-      if (!account.due_date || account.remaining <= 0) return false;
-      const days = daysUntil(account.due_date);
+      const dueDate = account.due_day
+        ? nextDueDateForDay(account.due_day)
+        : account.due_date;
+      if (!dueDate || account.remaining <= 0) return false;
+      const days = daysUntil(dueDate);
       if (due === "overdue") return days < 0;
       if (due === "7d") return days >= 0 && days <= 7;
       return days >= 0 && days <= 30;
@@ -167,9 +171,10 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {filtered.map((account) => {
-            const dueDays = account.due_date
-              ? daysUntil(account.due_date)
-              : null;
+            const dueDate = account.due_day
+              ? nextDueDateForDay(account.due_day)
+              : account.due_date;
+            const dueDays = dueDate ? daysUntil(dueDate) : null;
             const overdue =
               account.status === "active" &&
               dueDays !== null &&
@@ -190,6 +195,9 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
                       {TYPE_LABELS[account.account_type]}
                       {account.reference_label
                         ? ` · ${account.reference_label}`
+                        : ""}
+                      {account.installment_total_months > 0
+                        ? ` · ${account.installment_month}/${account.installment_total_months} bulan`
                         : ""}
                     </p>
                   </div>
@@ -243,10 +251,12 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
                         overdue ? "font-medium text-rose-700" : "text-ink-soft"
                       }
                     >
-                      {account.due_date
+                      {dueDate
                         ? overdue
                           ? `Terlambat ${Math.abs(dueDays ?? 0)} hari`
-                          : `Jatuh tempo ${formatDebtDate(account.due_date)}`
+                          : account.due_day
+                            ? `Tanggal ${account.due_day} · berikutnya ${formatDebtDate(dueDate)}`
+                            : `Jatuh tempo ${formatDebtDate(dueDate)}`
                         : "Tanpa jatuh tempo"}
                     </span>
                   </div>

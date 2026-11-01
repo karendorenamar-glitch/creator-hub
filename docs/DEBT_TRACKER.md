@@ -154,7 +154,7 @@ approval and migration:
 - `npx eslint app/debt components/debt lib/debt middleware.ts app/robots.ts tests/debt-ledger.test.mjs` — pass.
 - `npm run build` — pass; all five debt routes were built dynamically.
 - `node --experimental-strip-types --test tests/*.test.mjs` — 10 suites pass,
-  including 20 Debt Tracker calculation and formatting checks.
+  including 23 Debt Tracker calculation and formatting checks.
 - Unauthenticated smoke tests:
   - `/debt`, `/debt/accounts`, `/debt/payments`, `/debt/schedule` redirect
     (`307`) to `/debt/login`.
@@ -168,6 +168,25 @@ approval and migration:
 
 The following tests require the reviewed migration and explicit owner bootstrap:
 owner login/logout, authenticated CRUD, partial/full payment behavior, payment
+
+## Installment fields (migration 041)
+
+Account form supports:
+
+- application/creditor name,
+- optional loan label so one application can have multiple loans,
+- nominal amount,
+- installment status such as `5/12 bulan`,
+- recurring due day, e.g. every 5th.
+
+`041_debt_installments.sql` adds `installment_month`,
+`installment_total_months`, and `due_day`. Run it after `040` before deploying
+the updated account form. Existing `due_date` values are backfilled into
+`due_day`.
+
+Due days are calculated from the selected day each month; days 29–31 are
+clamped to the last valid day of shorter months.
+
 reversal, schedule transitions, and cross-owner RLS/REST tests.
 
 ## Remaining setup steps

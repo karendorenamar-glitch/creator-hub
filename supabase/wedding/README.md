@@ -31,6 +31,8 @@ or data migration is required. `039_split_plus_ones.sql` is superseded and
 must not be applied (see `APPLY_039.md`). `040_debt_tracker.sql` is the
 additive private Debt Tracker migration; review it and run it manually only
 after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
+`041_debt_installments.sql` adds recurring due day and installment status to
+`debt_accounts`; run it after 040 before deploying the updated account form.
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

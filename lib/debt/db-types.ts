@@ -19,6 +19,9 @@ export type DebtAccount = {
   total_amount_due: number;
   opening_date: string;
   due_date: string | null;
+  due_day: number | null;
+  installment_month: number;
+  installment_total_months: number;
   status: DebtAccountStatus;
   notes: string | null;
   created_at: string;

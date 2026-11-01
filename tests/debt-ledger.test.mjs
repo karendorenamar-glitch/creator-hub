@@ -5,7 +5,11 @@ import {
   calculateDebtTotals,
   nextSevenDays,
 } from "../lib/debt/ledger.ts";
-import { formatDebtDate, formatRupiah } from "../lib/debt/format.ts";
+import {
+  formatDebtDate,
+  formatRupiah,
+  nextDueDateForDay,
+} from "../lib/debt/format.ts";
 
 let pass = 0;
 let fail = 0;
@@ -121,6 +125,21 @@ t("monthly paid from active payments", target.monthlyPaid, 40_000);
 t("seven day boundary", nextSevenDays("2026-01-10"), "2026-01-17");
 t("IDR has no unnecessary decimals", formatRupiah(1_234_567), "Rp 1.234.567");
 t("date format is Indonesia-friendly", formatDebtDate("2026-01-01"), "1 Jan 2026");
+t(
+  "next due day after this month",
+  nextDueDateForDay(5, "2026-01-10"),
+  "2026-02-05",
+);
+t(
+  "next due day this month",
+  nextDueDateForDay(15, "2026-01-10"),
+  "2026-01-15",
+);
+t(
+  "short month clamps due day",
+  nextDueDateForDay(31, "2026-02-01"),
+  "2026-02-28",
+);
 
 const overpaid = accountBalance(accounts[0], [
   ...payments,

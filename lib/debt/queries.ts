@@ -49,6 +49,14 @@ export async function loadDebtData(
       original_principal: Number(account.original_principal),
       interest_fees: Number(account.interest_fees),
       total_amount_due: Number(account.total_amount_due),
+      installment_month: Number(account.installment_month ?? 0),
+      installment_total_months: Number(
+        account.installment_total_months ?? 0,
+      ),
+      due_day:
+        account.due_day === null || account.due_day === undefined
+          ? null
+          : Number(account.due_day),
     })) as DebtAccount[],
     payments: (payments.data ?? []).map((payment) => ({
       ...payment,

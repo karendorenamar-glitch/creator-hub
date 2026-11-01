@@ -41,6 +41,27 @@ export function addDaysISO(iso: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+/**
+ * The next occurrence of a monthly due day. Days beyond the end of a short
+ * month are clamped to that month's last day.
+ */
+export function nextDueDateForDay(day: number, today = todayISO()): string {
+  const [year, month] = today.split("-").map(Number);
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  function dateForMonth(y: number, m: number): string {
+    const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    return `${y}-${pad(m)}-${pad(Math.min(Math.max(day, 1), lastDay))}`;
+  }
+
+  const current = dateForMonth(year, month);
+  if (current >= today) return current;
+
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  return dateForMonth(nextYear, nextMonth);
+}
+
 export function monthKey(iso: string): string {
   return iso.slice(0, 7);
 }
