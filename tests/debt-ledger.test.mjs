@@ -357,6 +357,15 @@ t(
   500_000,
 );
 
+const variableTotals = calculateDebtTotals(
+  [variable],
+  [],
+  variableSchedules,
+  today,
+);
+t("variable target this month", variableTotals.monthlyTarget, 500_000);
+t("variable total remaining", variableTotals.remaining, 1_000_000);
+
 // --- Tenor model: due dates drive overdue and monthly target ---------------
 const tenorOverdue = account({
   id: "tenorOverdue",
@@ -400,7 +409,7 @@ const tenorTotals = calculateDebtTotals(
   today,
 );
 t("tenor overdue count", tenorTotals.overdueCount, 1);
-t("tenor overdue amount", tenorTotals.overdueAmount, 500_000);
+t("tenor overdue amount", tenorTotals.overdueAmount, 100_000);
 t("tenor monthly target", tenorTotals.monthlyTarget, 100_000);
 t("tenor due soon count", tenorTotals.dueSoonCount, 1);
 

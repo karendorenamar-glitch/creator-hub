@@ -334,9 +334,16 @@ export default async function DebtDashboardPage() {
                       {formatDebtDate(account.due_date)}
                     </p>
                   </div>
-                  <p className="text-sm font-medium text-ink">
-                    {formatRupiah(account.remaining)}
-                  </p>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-ink">
+                      {formatRupiah(
+                        account.nextInstallment?.remaining ?? account.remaining,
+                      )}
+                    </p>
+                    <p className="text-[11px] text-ink-soft">
+                      sisa total {formatRupiah(account.remaining)}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>

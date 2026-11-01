@@ -546,7 +546,8 @@ export function calculateDebtTotals(
     progress: percentOf(totalPaid, totalPaid + remaining),
     overdueCount: overdueAccounts.length,
     overdueAmount: overdueAccounts.reduce(
-      (sum, account) => sum + account.remaining,
+      (sum, account) =>
+        sum + (account.nextInstallment?.remaining ?? account.remaining),
       0,
     ),
     overdueAccounts,
@@ -555,10 +556,8 @@ export function calculateDebtTotals(
       .map((account) => account.nextInstallment)
       .filter((item): item is Installment => item !== null),
     monthlyTarget: monthAccounts.reduce((sum, account) => {
-      const bill =
-        account.installment_amount > 0
-          ? account.installment_amount
-          : account.remaining;
+      // Use this month's installment, never the whole remaining balance.
+      const bill = account.nextInstallment?.remaining ?? account.remaining;
       return sum + Math.min(bill, account.remaining);
     }, 0),
     monthlyPaid: activePayments(payments)
