@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import {
   createDebtAccountAction,
@@ -72,6 +73,7 @@ export function DebtAccountForm({
   const remainingMonths = Math.max(0, totalMonths - paidMonths);
   const rowsKey = `${firstDueMonth}:${remainingMonths}:${mode}`;
 
+  const router = useRouter();
   const action = account ? updateDebtAccountAction : createDebtAccountAction;
   const [state, formAction, pending] = useActionState<
     DebtActionResult,
@@ -79,8 +81,11 @@ export function DebtAccountForm({
   >(action, null);
 
   useEffect(() => {
-    if (state?.success) onDone();
-  }, [state?.success, onDone]);
+    if (state?.success) {
+      router.refresh();
+      onDone();
+    }
+  }, [state?.success, onDone, router]);
 
   return (
     <form action={formAction} className="space-y-4">
