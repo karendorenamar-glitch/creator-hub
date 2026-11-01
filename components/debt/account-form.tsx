@@ -155,7 +155,11 @@ export function DebtAccountForm({
         <Field
           label="Nominal per bulan (IDR)"
           htmlFor="monthlyAmount"
-          hint="Nominal yang sama untuk setiap angsuran."
+          hint={
+            vary
+              ? "Dipakai sebagai isi awal daftar nominal di bawah."
+              : "Nominal yang sama untuk setiap angsuran."
+          }
         >
           <input
             id="monthlyAmount"
@@ -167,6 +171,83 @@ export function DebtAccountForm({
             className={inputClass}
           />
         </Field>
+      </div>
+
+      <input type="hidden" name="vary" value={vary ? "1" : "0"} />
+
+      <div className="space-y-3 rounded-xl border border-olive-100 bg-[#f8f4ec] p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-medium text-ink">Nominal per bulan</p>
+          <span className="text-[11px] text-ink-soft">
+            {openMonths > 0 ? `${openMonths} bulan belum dibayar` : "isi tenor dulu"}
+          </span>
+        </div>
+
+        <div role="radiogroup" aria-label="Model nominal" className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            role="radio"
+            aria-checked={!vary}
+            onClick={() => setVary(false)}
+            className={`rounded-xl border p-3 text-left transition-colors ${
+              !vary
+                ? "border-olive-600 bg-olive-50"
+                : "border-olive-100 bg-white hover:bg-olive-50/60"
+            }`}
+          >
+            <span className="block text-sm font-medium text-ink">Sama tiap bulan</span>
+            <span className="mt-1 block text-xs leading-relaxed text-ink-soft">
+              Satu nominal untuk semua sisa angsuran.
+            </span>
+          </button>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={vary}
+            onClick={() => setVary(true)}
+            className={`rounded-xl border p-3 text-left transition-colors ${
+              vary
+                ? "border-olive-600 bg-olive-50"
+                : "border-olive-100 bg-white hover:bg-olive-50/60"
+            }`}
+          >
+            <span className="block text-sm font-medium text-ink">Beda tiap bulan</span>
+            <span className="mt-1 block text-xs leading-relaxed text-ink-soft">
+              Isi nominal per bulan, tanggal tetap sama.
+            </span>
+          </button>
+        </div>
+
+        {vary ? (
+          openMonths > 0 ? (
+            <div className="space-y-2">
+              {Array.from({ length: openMonths }, (_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[1fr_1.1fr] items-center gap-2"
+                >
+                  <span className="text-sm text-ink-soft">
+                    {monthLabel(addMonthsToMonth(firstDueMonth, index))}
+                  </span>
+                  <input
+                    name="amount"
+                    inputMode="numeric"
+                    required
+                    defaultValue={monthlyAmount}
+                    placeholder="Nominal"
+                    aria-label={`Nominal bulan ke-${index + 1}`}
+                    className={inputClass}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="rounded-xl bg-white px-3 py-2 text-xs text-ink-soft">
+              Isi total tenor lebih besar dari jumlah yang sudah dibayar agar
+              daftar bulan muncul.
+            </p>
+          )
+        ) : null}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -197,55 +278,7 @@ export function DebtAccountForm({
         </Field>
       </div>
 
-      <input type="hidden" name="vary" value={vary ? "1" : "0"} />
-
-      {openMonths > 0 ? (
-        <div className="space-y-3 rounded-xl border border-olive-100 bg-[#f8f4ec] p-3">
-          <label className="flex items-start gap-2 text-xs text-ink">
-            <input
-              type="checkbox"
-              checked={vary}
-              onChange={(event) => setVary(event.target.checked)}
-              className="mt-0.5"
-            />
-            <span>
-              <span className="font-medium">Nominal beda tiap bulan</span>
-              <span className="mt-0.5 block text-ink-soft">
-                Centang kalau nominal tiap bulan tidak sama. Tanggal tetap
-                tanggal {account?.due_day ?? "3"}.
-              </span>
-            </span>
-          </label>
-
-          {vary ? (
-            <div className="space-y-2">
-              {Array.from({ length: openMonths }, (_, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-[1fr_1.1fr] items-center gap-2"
-                >
-                  <span className="text-sm text-ink-soft">
-                    {monthLabel(
-                      addMonthsToMonth(firstDueMonth, index),
-                    )}
-                  </span>
-                  <input
-                    name="amount"
-                    inputMode="numeric"
-                    required
-                    defaultValue={monthlyAmount}
-                    placeholder="Nominal"
-                    aria-label={`Nominal bulan ke-${index + 1}`}
-                    className={inputClass}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {openMonths > 0 && monthly > 0 ? (
+      {!vary && openMonths > 0 && monthly > 0 ? (
         <p className="rounded-xl bg-olive-50 px-3 py-2.5 text-xs leading-relaxed text-ink-soft">
           Sisa <strong className="text-ink">{openMonths} angsuran</strong> x{" "}
           {formatRupiah(monthly)} ={" "}
