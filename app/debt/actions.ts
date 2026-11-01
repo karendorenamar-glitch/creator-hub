@@ -972,6 +972,57 @@ export async function payDebtInstallmentAction(
   };
 }
 
+/**
+ * Removes a duplicated manual payment. Installment payments are never deleted
+ * because they also advanced the tenor; cancel those instead.
+ */
+export async function deleteDebtPaymentAction(
+  formData: FormData,
+): Promise<DebtActionResult> {
+  const ctx = await actionContext();
+  if (!ctx) return { error: "Akses ditolak." };
+
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: "Pembayaran tidak valid." };
+
+  const { data: payment } = await ctx.supabase
+    .from("debt_payments")
+    .select("id, debt_account_id, payment_method, schedule_id, reversed_at")
+    .eq("id", id)
+    .eq("owner_user_id", ctx.owner.userId)
+    .maybeSingle();
+
+  if (!payment) return { error: "Pembayaran tidak ditemukan." };
+
+  if (payment.payment_method === "installment" || payment.schedule_id) {
+    return {
+      error:
+        "Pembayaran angsuran tidak bisa dihapus permanen. Klik Batalkan pembayaran, lalu sesuaikan tenor di menu Edit.",
+    };
+  }
+
+  const { error } = await ctx.supabase
+    .from("debt_payments")
+    .delete()
+    .eq("id", id)
+    .eq("owner_user_id", ctx.owner.userId);
+
+  if (error) return { error: messageForError(error) };
+
+  try {
+    await refreshAccountStatus(ctx.owner.userId, payment.debt_account_id);
+  } catch {
+    revalidateDebt();
+    return {
+      error:
+        "Pembayaran dihapus, tetapi status utang gagal diperbarui. Muat ulang halaman.",
+    };
+  }
+
+  revalidateDebt();
+  return { success: "Pembayaran dobel dihapus dan saldo diperbarui." };
+}
+
 export async function reverseDebtPaymentAction(
   formData: FormData,
 ): Promise<DebtActionResult> {

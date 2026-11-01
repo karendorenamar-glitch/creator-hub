@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import { ReceiptText } from "lucide-react";
 import { Badge, Card, EmptyState } from "@/components/wedding/ui";
 import { ConfirmAction } from "@/components/debt/confirm-action";
-import { reverseDebtPaymentAction } from "@/app/debt/actions";
+import {
+  deleteDebtPaymentAction,
+  reverseDebtPaymentAction,
+} from "@/app/debt/actions";
 import type { AccountBalance } from "@/lib/debt/calculations";
 import type { DebtPayment } from "@/lib/debt/db-types";
 import { formatDebtDate, formatRupiah } from "@/lib/debt/format";
@@ -134,6 +137,17 @@ export function DebtPaymentHistory({
                     ) : null}
                   </div>
                   {!reversed ? (
+                    <div className="flex flex-wrap items-start gap-2">
+                      {!payment.schedule_id &&
+                      payment.payment_method !== "installment" ? (
+                        <ConfirmAction
+                          action={deleteDebtPaymentAction}
+                          fields={{ id: payment.id }}
+                          label="Hapus dobel"
+                          confirmLabel="Ya, hapus"
+                          message="Transaksi ini dihapus permanen karena tercatat dobel. Saldo akan dihitung ulang."
+                        />
+                      ) : null}
                     <ConfirmAction
                       action={reverseDebtPaymentAction}
                       fields={{ id: payment.id }}
@@ -143,6 +157,7 @@ export function DebtPaymentHistory({
                       withReason
                       tone="neutral"
                     />
+                    </div>
                   ) : null}
                 </div>
               </Card>
