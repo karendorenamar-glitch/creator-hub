@@ -801,7 +801,26 @@ export async function payDebtInstallmentAction(
       .eq("idempotency_key", key)
       .maybeSingle();
     if (existingSchedulePayment) {
-      return { success: "Angsuran bulan ini sudah tercatat." };
+      await ctx.supabase
+        .from("debt_schedules")
+        .update({ status: "paid" })
+        .eq("id", nextSchedule.id)
+        .eq("owner_user_id", ctx.owner.userId);
+      await ctx.supabase
+        .from("debt_accounts")
+        .update({
+          installment_month: Math.min(
+            Number(account.installment_month ?? 0) + 1,
+            Number(account.installment_total_months ?? 0),
+          ),
+          due_date: addMonthsISO(nextSchedule.due_date, 1),
+        })
+        .eq("id", account.id)
+        .eq("owner_user_id", ctx.owner.userId);
+      revalidateDebt();
+      return {
+        success: "Angsuran bulan ini sudah tercatat dan status utang disesuaikan.",
+      };
     }
 
     const amount = Number(nextSchedule.amount_due);
@@ -874,7 +893,25 @@ export async function payDebtInstallmentAction(
     .eq("owner_user_id", ctx.owner.userId)
     .eq("idempotency_key", key)
     .maybeSingle();
-  if (existing) return { success: "Angsuran ini sudah tercatat." };
+  if (existing) {
+    // The payment was stored earlier but the account was not advanced.
+    await ctx.supabase
+      .from("debt_accounts")
+      .update({
+        installment_month: nextMonth,
+        due_date: addMonthsISO(
+          account.due_date ?? nextDueDateForDay(account.due_day ?? 1),
+          1,
+        ),
+        status: nextMonth >= months ? "paid" : "active",
+      })
+      .eq("id", account.id)
+      .eq("owner_user_id", ctx.owner.userId);
+    revalidateDebt();
+    return {
+      success: `Angsuran ${nextMonth}/${months} sudah tercatat dan status utang disesuaikan.`,
+    };
+  }
 
   const { data: recordedPayments } = await ctx.supabase
     .from("debt_payments")
