@@ -33,9 +33,11 @@ function percentOf(part: number, total: number): number {
 }
 
 export type AccountBalance = DebtAccount & {
+  total: number;
   paid: number;
   remaining: number;
   progress: number;
+  nextSchedule: DebtSchedule | null;
 };
 
 export type DebtTotals = {
@@ -59,33 +61,67 @@ export function activePayments(payments: DebtPayment[]): DebtPayment[] {
 export function accountBalance(
   account: DebtAccount,
   payments: DebtPayment[],
+  schedules: DebtSchedule[] = [],
 ): AccountBalance {
   const recordedPaid = activePayments(payments)
     .filter((payment) => payment.debt_account_id === account.id)
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
 
-  const total = Number(account.total_amount_due);
-  const scheduledPaid =
-    account.installment_amount > 0 && account.installment_total_months > 0
-      ? account.installment_amount *
-        Math.min(account.installment_month, account.installment_total_months)
-      : 0;
-  const paid = Math.min(total, Math.max(recordedPaid, scheduledPaid));
+  const accountSchedules = schedules.filter(
+    (schedule) =>
+      schedule.debt_account_id === account.id && schedule.status !== "cancelled",
+  );
+  const upcomingSchedules = accountSchedules.filter(
+    (schedule) => schedule.status === "upcoming",
+  );
+  const scheduleTotal = accountSchedules.reduce(
+    (sum, schedule) => sum + Number(schedule.amount_due),
+    0,
+  );
+  const upcomingTotal = upcomingSchedules.reduce(
+    (sum, schedule) => sum + Number(schedule.amount_due),
+    0,
+  );
+  const isVariable = account.installment_amount <= 0 && accountSchedules.length > 0;
+
+  let total = Number(account.total_amount_due);
+  let paid = recordedPaid;
+
+  if (isVariable) {
+    total = Math.max(total, scheduleTotal);
+    const paidFromSchedules = Math.max(0, total - upcomingTotal);
+    paid = Math.max(recordedPaid, paidFromSchedules);
+  } else {
+    const scheduledPaid =
+      account.installment_amount > 0 && account.installment_total_months > 0
+        ? account.installment_amount *
+          Math.min(account.installment_month, account.installment_total_months)
+        : 0;
+    paid = Math.max(recordedPaid, scheduledPaid);
+  }
+
+  paid = Math.min(total, paid);
   const remaining = Math.max(0, total - paid);
+  const nextSchedule =
+    upcomingSchedules.sort((a, b) => a.due_date.localeCompare(b.due_date))[0] ??
+    null;
 
   return {
     ...account,
+    total,
     paid,
     remaining,
     progress: percentOf(paid, total),
+    nextSchedule,
   };
 }
 
 export function buildAccountBalances(
   accounts: DebtAccount[],
   payments: DebtPayment[],
+  schedules: DebtSchedule[] = [],
 ): AccountBalance[] {
-  return accounts.map((account) => accountBalance(account, payments));
+  return accounts.map((account) => accountBalance(account, payments, schedules));
 }
 
 export function calculateDebtTotals(
@@ -96,11 +132,8 @@ export function calculateDebtTotals(
 ): DebtTotals {
   const openAccounts = accounts.filter((account) => account.status !== "closed");
   const openIds = new Set(openAccounts.map((account) => account.id));
-  const balances = buildAccountBalances(openAccounts, payments);
-  const originalTotal = openAccounts.reduce(
-    (sum, account) => sum + Number(account.total_amount_due),
-    0,
-  );
+  const balances = buildAccountBalances(openAccounts, payments, schedules);
+  const originalTotal = balances.reduce((sum, account) => sum + account.total, 0);
   const totalPaid = balances.reduce((sum, account) => sum + account.paid, 0);
   const remaining = Math.max(0, originalTotal - totalPaid);
 

@@ -36,7 +36,9 @@ after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
 `042_debt_installment_amount.sql` adds the per-installment nominal so
 `10/12 × Rp 200.000 = Rp 400.000` remaining can be calculated; run it after 041.
 `043_debt_pay_installment.sql` adds the atomic installment-payment RPC used by
-the **Bayar angsuran** button; run it after 042.
+the **Bayar angsuran** button; run it after 042. The same RPC supports fixed and
+variable schedules: variable accounts pay their earliest upcoming schedule
+amount.
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

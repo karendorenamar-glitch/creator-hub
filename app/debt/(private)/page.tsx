@@ -37,7 +37,11 @@ export default async function DebtDashboardPage() {
   const owner = await requireDebtOwner();
   const supabase = await createDebtClient();
   const data = await loadDebtData(supabase, owner.userId);
-  const balances = buildAccountBalances(data.accounts, data.payments);
+  const balances = buildAccountBalances(
+    data.accounts,
+    data.payments,
+    data.schedules,
+  );
   const today = todayISO();
   const totals = calculateDebtTotals(
     data.accounts,

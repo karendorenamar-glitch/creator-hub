@@ -154,7 +154,7 @@ approval and migration:
 - `npx eslint app/debt components/debt lib/debt middleware.ts app/robots.ts tests/debt-ledger.test.mjs` — pass.
 - `npm run build` — pass; all five debt routes were built dynamically.
 - `node --experimental-strip-types --test tests/*.test.mjs` — 10 suites pass,
-  including 28 Debt Tracker calculation and formatting checks.
+  including 31 Debt Tracker calculation and formatting checks.
 - Unauthenticated smoke tests:
   - `/debt`, `/debt/accounts`, `/debt/payments`, `/debt/schedule` redirect
     (`307`) to `/debt/login`.
@@ -203,6 +203,21 @@ next due date; `due_day` stores the recurring day for display. Existing due
 dates are preserved and can be backfilled by migration 041.
 
 clamped to the last valid day of shorter months.
+## Variable installments
+
+Choose **Nominal berbeda tiap bulan** in the account form. In this mode:
+
+- enter the total contract,
+- add one schedule row per month in `/debt/schedule` with its own amount and
+  due date,
+- the account card shows **Cicilan per bulan: Bervariasi**,
+- remaining is the sum of schedules that are not paid,
+- paying via the schedule button/RPC consumes the earliest upcoming schedule
+  amount and advances the account due date.
+
+Fixed and variable accounts can coexist under the same application name by
+using different loan labels.
+
 ## Paying an installment
 
 The account card shows:

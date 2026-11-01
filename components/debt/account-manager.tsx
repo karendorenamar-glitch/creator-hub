@@ -77,9 +77,11 @@ export function DebtAccountManager({
       if (due === "all") return true;
       const dueDate = account.due_date
         ? account.due_date
-        : account.due_day
-          ? nextDueDateForDay(account.due_day)
-          : null;
+        : account.nextSchedule
+          ? account.nextSchedule.due_date
+          : account.due_day
+            ? nextDueDateForDay(account.due_day)
+            : null;
       if (!dueDate || account.remaining <= 0) return false;
       const days = daysUntil(dueDate);
       if (due === "overdue") return days < 0;
@@ -191,9 +193,11 @@ export function DebtAccountManager({
           {filtered.map((account) => {
             const dueDate = account.due_date
               ? account.due_date
-              : account.due_day
-                ? nextDueDateForDay(account.due_day)
-                : null;
+              : account.nextSchedule
+                ? account.nextSchedule.due_date
+                : account.due_day
+                  ? nextDueDateForDay(account.due_day)
+                  : null;
             const dueDays = dueDate ? daysUntil(dueDate) : null;
             const overdue =
               account.status === "active" &&
@@ -203,9 +207,20 @@ export function DebtAccountManager({
             const canPay =
               paymentsReady &&
               account.status === "active" &&
-              account.installment_amount > 0 &&
-              account.installment_total_months > 0 &&
-              account.installment_month < account.installment_total_months;
+              ((account.installment_amount > 0 &&
+                account.installment_total_months > 0 &&
+                account.installment_month < account.installment_total_months) ||
+                (account.installment_amount <= 0 && Boolean(account.nextSchedule)));
+            const payAmount =
+              account.installment_amount > 0
+                ? account.installment_amount
+                : (account.nextSchedule?.amount_due ?? 0);
+            const payInstallmentLabel =
+              account.installment_total_months > 0
+                ? `ke-${account.installment_month + 1} dari ${account.installment_total_months}`
+                : account.nextSchedule
+                  ? `jadwal ${formatDebtDate(account.nextSchedule.due_date)}`
+                  : "berikutnya";
 
             return (
               <Card
@@ -241,7 +256,7 @@ export function DebtAccountManager({
                       Total kontrak
                     </p>
                     <p className="mt-1 font-medium text-ink">
-                      {formatRupiah(account.total_amount_due)}
+                      {formatRupiah(account.total)}
                     </p>
                   </div>
                   <div>
@@ -251,7 +266,9 @@ export function DebtAccountManager({
                     <p className="mt-1 font-medium text-ink">
                       {account.installment_amount > 0
                         ? formatRupiah(account.installment_amount)
-                        : "—"}
+                        : account.nextSchedule
+                          ? "Bervariasi"
+                          : "—"}
                     </p>
                   </div>
                   <div>
@@ -297,8 +314,8 @@ export function DebtAccountManager({
                         action={payDebtInstallmentAction}
                         fields={{ id: account.id }}
                         label="Bayar angsuran"
-                        confirmLabel={`Bayar ${formatRupiah(account.installment_amount)}`}
-                        message={`Catat angsuran ke-${account.installment_month + 1} dari ${account.installment_total_months}. Jatuh tempo akan maju satu bulan dan sisa berkurang.`}
+                        confirmLabel={`Bayar ${formatRupiah(payAmount)}`}
+                        message={`Catat angsuran ${payInstallmentLabel}. Jatuh tempo akan maju satu bulan dan sisa berkurang.`}
                       />
                     ) : null}
                     <button

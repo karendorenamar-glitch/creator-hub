@@ -168,6 +168,58 @@ const installmentTotals = calculateDebtTotals(
 t("tenor total paid reaches dashboard", installmentTotals.totalPaid, 2_000_000);
 t("tenor remaining reaches dashboard", installmentTotals.remaining, 400_000);
 
+const variableAccount = {
+  id: "e",
+  owner_user_id: owner,
+  total_amount_due: 2_000_000,
+  original_principal: 2_000_000,
+  interest_fees: 0,
+  installment_amount: 0,
+  installment_month: 0,
+  installment_total_months: 0,
+  status: "active",
+  due_date: "2026-01-10",
+};
+const variableSchedules = [
+  {
+    id: "vs1",
+    debt_account_id: "e",
+    due_date: "2026-01-10",
+    amount_due: 500_000,
+    status: "paid",
+  },
+  {
+    id: "vs2",
+    debt_account_id: "e",
+    due_date: "2026-02-10",
+    amount_due: 300_000,
+    status: "upcoming",
+  },
+  {
+    id: "vs3",
+    debt_account_id: "e",
+    due_date: "2026-03-10",
+    amount_due: 400_000,
+    status: "upcoming",
+  },
+  {
+    id: "vs4",
+    debt_account_id: "e",
+    due_date: "2026-04-10",
+    amount_due: 800_000,
+    status: "upcoming",
+  },
+];
+
+const variableBalance = accountBalance(
+  variableAccount,
+  [],
+  variableSchedules,
+);
+t("variable paid from paid schedule", variableBalance.paid, 500_000);
+t("variable remaining from unpaid schedules", variableBalance.remaining, 1_500_000);
+t("variable next schedule amount", variableBalance.nextSchedule?.amount_due, 300_000);
+
 const overpaid = accountBalance(accounts[0], [
   ...payments,
   { id: "p4", debt_account_id: "a", amount: 150_000, reversed_at: null },

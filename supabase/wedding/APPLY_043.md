@@ -31,7 +31,7 @@ Expected: one row.
 
 ## Behavior
 
-Example:
+### Fixed schedule
 
 ```text
 installment amount : 200.000
@@ -47,3 +47,9 @@ status             : 11/12
 due date           : 3 Dec 2026
 remaining          : 200.000
 ```
+
+### Variable schedule
+
+When `installment_amount = 0`, the RPC pays the earliest `upcoming` row in
+`debt_schedules`, marks that schedule `paid`, and advances the account to the
+next schedule date.

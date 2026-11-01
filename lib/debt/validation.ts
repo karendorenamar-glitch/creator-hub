@@ -83,18 +83,35 @@ export function parseDebtAccount(
     };
   }
 
-  // The form collects the nominal per installment. When a tenor exists, the
-  // contractual total is nominal × tenor. Without a tenor it is a one-off
-  // account and the nominal is the total.
-  const installmentAmount = parseWholeRupiah(
-    text(formData, "installmentAmount"),
-    { allowZero: false },
-  );
-  if (installmentAmount === null) {
-    return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+  // Variable mode uses the total contract plus per-month rows from the
+  // Jadwal page. Fixed mode uses nominal × tenor.
+  const variableMode = text(formData, "variableMode") === "1";
+  let installmentAmount = 0;
+  let total = 0;
+
+  if (variableMode) {
+    const totalValue = parseWholeRupiah(text(formData, "totalAmountDue"), {
+      allowZero: false,
+    });
+    if (totalValue === null) {
+      return {
+        ok: false,
+        error: "Total kontrak variabel harus lebih dari nol.",
+      };
+    }
+    total = totalValue;
+  } else {
+    const fixedAmount = parseWholeRupiah(
+      text(formData, "installmentAmount"),
+      { allowZero: false },
+    );
+    if (fixedAmount === null) {
+      return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+    }
+    installmentAmount = fixedAmount;
+    total =
+      totalMonths > 0 ? installmentAmount * totalMonths : installmentAmount;
   }
-  const total =
-    totalMonths > 0 ? installmentAmount * totalMonths : installmentAmount;
 
   // Existing interest/fees are preserved when editing, while the principal is
   // adjusted to keep the DB invariant total = principal + interest/fees.

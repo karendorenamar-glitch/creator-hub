@@ -455,6 +455,12 @@ export async function payDebtInstallmentAction(
     if (error.message.includes("no installment schedule")) {
       return { error: "Akun ini belum memiliki nominal per angsuran." };
     }
+    if (error.message.includes("No upcoming installment schedule")) {
+      return {
+        error:
+          "Belum ada jadwal angsuran yang belum dibayar. Tambahkan jadwal di halaman Jadwal.",
+      };
+    }
     if (error.message.includes("not active")) {
       return { error: "Akun ini tidak aktif atau sudah ditutup." };
     }

@@ -50,11 +50,19 @@ export function DebtAccountForm({
         )
       : "",
   );
+  const [totalNominal, setTotalNominal] = useState(
+    account ? String(account.total_amount_due) : "",
+  );
+  const [variableMode, setVariableMode] = useState(
+    account ? account.installment_amount <= 0 : false,
+  );
   const [totalMonths, setTotalMonths] = useState(
     account ? String(account.installment_total_months) : "0",
   );
   const installments = digits(totalMonths);
-  const total = digits(nominal) * (installments > 0 ? installments : 1);
+  const total = variableMode
+    ? digits(totalNominal)
+    : digits(nominal) * (installments > 0 ? installments : 1);
   const interest = account ? account.interest_fees : 0;
   const defaultDueMonth =
     account?.due_date?.slice(0, 7) ??
@@ -141,22 +149,59 @@ export function DebtAccountForm({
         </Field>
 
         <Field
-          label="Nominal per angsuran (IDR)"
-          htmlFor="nominal"
-          hint={`Total kontrak yang dihitung: ${formatRupiah(total)}.`}
+          label="Model cicilan"
+          htmlFor="variableMode"
           className="sm:col-span-2"
         >
-          <input
-            id="nominal"
-            name="installmentAmount"
-            required
-            inputMode="numeric"
-            value={nominal}
-            onChange={(event) => setNominal(event.target.value)}
-            placeholder="Contoh: 200.000"
+          <select
+            id="variableMode"
+            name="variableMode"
+            value={variableMode ? "1" : "0"}
+            onChange={(event) => setVariableMode(event.target.value === "1")}
             className={inputClass}
-          />
+          >
+            <option value="0">Nominal tetap setiap bulan</option>
+            <option value="1">Nominal berbeda tiap bulan</option>
+          </select>
         </Field>
+
+        {variableMode ? (
+          <Field
+            label="Total kontrak (IDR)"
+            htmlFor="totalNominal"
+            hint="Rincian nominal tiap bulan ditambahkan di halaman Jadwal."
+            className="sm:col-span-2"
+          >
+            <input
+              id="totalNominal"
+              name="totalAmountDue"
+              required
+              inputMode="numeric"
+              value={totalNominal}
+              onChange={(event) => setTotalNominal(event.target.value)}
+              placeholder="Contoh: 2.000.000"
+              className={inputClass}
+            />
+          </Field>
+        ) : (
+          <Field
+            label="Nominal per angsuran (IDR)"
+            htmlFor="nominal"
+            hint={`Total kontrak yang dihitung: ${formatRupiah(total)}.`}
+            className="sm:col-span-2"
+          >
+            <input
+              id="nominal"
+              name="installmentAmount"
+              required
+              inputMode="numeric"
+              value={nominal}
+              onChange={(event) => setNominal(event.target.value)}
+              placeholder="Contoh: 200.000"
+              className={inputClass}
+            />
+          </Field>
+        )}
 
         <Field
           label="Sudah dibayar / total tenor"
