@@ -28,6 +28,7 @@ import { formatDebtDate, formatRupiah, todayISO } from "@/lib/debt/format";
 import { MarkPaidButton } from "@/components/debt/mark-paid-button";
 
 export const metadata = { title: "Ringkasan" };
+export const dynamic = "force-dynamic";
 
 export default async function DebtDashboardPage() {
   const owner = await requireDebtOwner();
@@ -76,6 +77,17 @@ export default async function DebtDashboardPage() {
     .filter((account) => !isSettledThisMonth(account))
     .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))
     .slice(0, 5);
+  const dueSoonAccounts = unpaidAccounts
+    .filter((account) => {
+      if (isSettledThisMonth(account)) return false;
+      const due = String(account.due_date);
+      const days = Math.round(
+        (Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) /
+          86_400_000,
+      );
+      return days >= 0 && days <= 7;
+    })
+    .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)));
   const late = summaries.filter(
     (account) =>
       account.remaining > 0 &&
@@ -86,6 +98,12 @@ export default async function DebtDashboardPage() {
 
   return (
     <div className="space-y-7">
+      <div className="rounded-2xl border border-olive-200 bg-[#f3efe3] px-4 py-3 text-center">
+        <p className="font-heading text-[13px] leading-relaxed tracking-wide text-olive-800 sm:text-sm">
+          KAREN BISA TANPA GALBAY · YOK SEMANGAT 1M PERTAMA BY THE END OF 2026
+        </p>
+      </div>
+
       <PageHeader
         title="Ringkasan utang"
         subtitle="Gambaran tenang tentang apa yang sudah dibayar, apa yang tersisa, dan tagihan mana yang perlu disiapkan berikutnya."
@@ -169,6 +187,60 @@ export default async function DebtDashboardPage() {
           </div>
         </Card>
       </section>
+
+      <Card className="border-[#e8e1d4] bg-[#fffdf9]">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-xl text-ink">Jatuh tempo 7 hari</h2>
+            <p className="mt-1 text-xs text-ink-soft">
+              Klik bayar langsung dari sini. Kartu hilang setelah dibayar.
+            </p>
+          </div>
+          <Badge tone={dueSoonAccounts.length > 0 ? "warning" : "muted"}>
+            {dueSoonAccounts.length} tagihan
+          </Badge>
+        </div>
+
+        {dueSoonAccounts.length === 0 ? (
+          <p className="mt-4 rounded-xl bg-[#f8f4ec] px-3 py-2.5 text-xs text-ink-soft">
+            Tidak ada tagihan dalam 7 hari ke depan.
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {dueSoonAccounts.map((account) => (
+              <div
+                key={account.id}
+                className="rounded-2xl border border-olive-100 bg-[#f8f4ec] p-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-ink">{account.creditor_name}</p>
+                  <Badge
+                    tone={account.overdueInstallments > 0 ? "blush" : "warning"}
+                  >
+                    {account.overdueInstallments > 0 ? "Terlambat" : "Segera"}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-ink-soft">
+                  {formatDebtDate(account.due_date)} ·{" "}
+                  {account.installment_month}/{account.installment_total_months}{" "}
+                  bulan
+                </p>
+                <p className="mt-2 text-sm font-medium text-ink">
+                  {formatRupiah(
+                    account.nextInstallment?.remaining ?? account.remaining,
+                  )}
+                </p>
+                <MarkPaidButton
+                  accountId={account.id}
+                  amountLabel={formatRupiah(
+                    account.nextInstallment?.remaining ?? account.remaining,
+                  )}
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       <Card className="border-[#e8e1d4] bg-[#fffdf9]">
         <div className="flex flex-wrap items-end justify-between gap-3">

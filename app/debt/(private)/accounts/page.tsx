@@ -6,6 +6,7 @@ import { loadDebtData } from "@/lib/debt/queries";
 import { buildAccountSummaries } from "@/lib/debt/calculations";
 import { todayISO } from "@/lib/debt/format";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Daftar Utang" };
 
 export default async function DebtAccountsPage() {

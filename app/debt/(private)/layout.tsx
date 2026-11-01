@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { logoutDebtAction } from "@/app/debt/actions";
 import { requireDebtOwner } from "@/lib/debt/auth";
+import { DebtAutoRefresh } from "@/components/debt/auto-refresh";
 
 const NAV = [
   ["Ringkasan", "/debt"],
@@ -58,6 +59,7 @@ export default async function DebtPrivateLayout({
       </header>
 
       <main className="mx-auto w-full max-w-6xl px-4 py-7 sm:px-6 sm:py-10">
+        <DebtAutoRefresh />
         {children}
       </main>
 

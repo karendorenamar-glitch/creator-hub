@@ -56,6 +56,7 @@ export function DebtAccountManager({
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | AccountSummary["status"]>("all");
   const [due, setDue] = useState<DueFilter>("all");
+  const [sort, setSort] = useState<"name" | "remaining" | "monthly">("name");
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -78,6 +79,51 @@ export function DebtAccountManager({
       return days >= 0 && days <= 30;
     });
   }, [accounts, due, query, status]);
+
+  const groupedRows = useMemo(() => {
+    const groups = new Map<string, AccountSummary[]>();
+    for (const account of filtered) {
+      const key = account.creditor_name.trim() || "Tanpa nama";
+      groups.set(key, [...(groups.get(key) ?? []), account]);
+    }
+
+    const entries = Array.from(groups.entries()).map(([name, list]) => ({
+      name,
+      accounts:
+        sort === "name"
+          ? list
+          : [...list].sort((a, b) => b.remaining - a.remaining),
+      remaining: list.reduce((sum, account) => sum + account.remaining, 0),
+      monthly: list.reduce(
+        (sum, account) => sum + (account.nextInstallment?.remaining ?? 0),
+        0,
+      ),
+    }));
+
+    entries.sort((a, b) => {
+      if (sort === "remaining") return b.remaining - a.remaining;
+      if (sort === "monthly") return b.monthly - a.monthly;
+      return a.name.localeCompare(b.name);
+    });
+
+    const rows: Array<
+      | { type: "group"; name: string; count: number; remaining: number; monthly: number }
+      | { type: "account"; account: AccountSummary }
+    > = [];
+    for (const entry of entries) {
+      rows.push({
+        type: "group",
+        name: entry.name,
+        count: entry.accounts.length,
+        remaining: entry.remaining,
+        monthly: entry.monthly,
+      });
+      for (const account of entry.accounts) {
+        rows.push({ type: "account", account });
+      }
+    }
+    return rows;
+  }, [filtered, sort]);
 
   return (
     <div className="space-y-5">
@@ -161,6 +207,20 @@ export function DebtAccountManager({
             </button>
           ))}
         </div>
+        <label className="flex flex-wrap items-center gap-2 text-xs text-ink-soft">
+          Urutkan
+          <select
+            value={sort}
+            onChange={(event) =>
+              setSort(event.target.value as "name" | "remaining" | "monthly")
+            }
+            className="rounded-xl border border-olive-100 bg-white px-3 py-1.5 text-xs text-ink"
+          >
+            <option value="name">Nama aplikasi</option>
+            <option value="remaining">Sisa terbesar</option>
+            <option value="monthly">Tagihan bulan ini terbesar</option>
+          </select>
+        </label>
       </Card>
 
       {filtered.length === 0 ? (
@@ -175,7 +235,25 @@ export function DebtAccountManager({
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {filtered.map((account) => {
+          {groupedRows.map((row) => {
+            if (row.type === "group") {
+              return (
+                <div
+                  key={`group-${row.name}`}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#f3efe3] px-3 py-2 lg:col-span-2"
+                >
+                  <p className="text-sm font-medium text-ink">{row.name}</p>
+                  <p className="text-[11px] text-ink-soft">
+                    {row.count} pinjaman · sisa {formatRupiah(row.remaining)}
+                    {row.monthly > 0
+                      ? ` · tagihan bulan ini ${formatRupiah(row.monthly)}`
+                      : ""}
+                  </p>
+                </div>
+              );
+            }
+
+            const account = row.account;
             const next = account.nextInstallment;
             const nextDate = next?.schedule.due_date ?? null;
             const days = nextDate ? daysUntil(nextDate) : null;

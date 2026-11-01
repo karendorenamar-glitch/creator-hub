@@ -8,6 +8,7 @@ import { buildAccountSummaries } from "@/lib/debt/calculations";
 import { todayISO } from "@/lib/debt/format";
 import { isUuid } from "@/lib/wedding/validation";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Pembayaran" };
 
 export default async function DebtPaymentsPage({
