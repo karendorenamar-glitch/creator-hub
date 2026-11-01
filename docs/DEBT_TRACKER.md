@@ -203,6 +203,29 @@ next due date; `due_day` stores the recurring day for display. Existing due
 dates are preserved and can be backfilled by migration 041.
 
 clamped to the last valid day of shorter months.
+## Paying an installment
+
+The account card shows:
+
+- Total kontrak
+- Cicilan per bulan
+- Sisa
+
+For an eligible active account, **Bayar angsuran** calls the atomic
+`pay_debt_installment` RPC. It records the monthly payment, advances the due
+month by one, increments the installment status, and marks the account `paid`
+on the final installment.
+
+Example:
+
+```text
+Sebelum : 10/12 · Rp 200.000/bulan · sisa Rp 400.000
+Bayar   : Rp 200.000
+Sesudah : 11/12 · jatuh tempo bulan berikutnya · sisa Rp 200.000
+```
+
+Migration `043_debt_pay_installment.sql` is required for this button.
+
 
 reversal, schedule transitions, and cross-owner RLS/REST tests.
 

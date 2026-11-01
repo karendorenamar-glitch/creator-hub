@@ -435,6 +435,46 @@ export async function reverseDebtPaymentAction(
   return { success: "Pembayaran dibatalkan dan riwayatnya tetap tersimpan." };
 }
 
+export async function payDebtInstallmentAction(
+  formData: FormData,
+): Promise<DebtActionResult> {
+  const ctx = await actionContext();
+  if (!ctx) return { error: "Akses ditolak." };
+
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { error: "Akun tidak valid." };
+
+  const { error } = await ctx.supabase.rpc("pay_debt_installment", {
+    p_account_id: id,
+  });
+
+  if (error) {
+    if (error.message.includes("All installments")) {
+      return { error: "Semua angsuran sudah lunas." };
+    }
+    if (error.message.includes("no installment schedule")) {
+      return { error: "Akun ini belum memiliki nominal per angsuran." };
+    }
+    if (error.message.includes("not active")) {
+      return { error: "Akun ini tidak aktif atau sudah ditutup." };
+    }
+    if (error.code === "PGRST202") {
+      return {
+        error:
+          "Function pembayaran angsuran belum ada. Jalankan migration 043.",
+      };
+    }
+    return { error: messageForError(error) };
+  }
+
+  revalidateDebt();
+  return {
+    success:
+      "Pembayaran angsuran dicatat. Jatuh tempo maju satu bulan dan sisa berkurang.",
+  };
+}
+
+
 export async function createDebtScheduleAction(
   _prev: DebtActionResult,
   formData: FormData,

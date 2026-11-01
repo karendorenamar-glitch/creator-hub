@@ -35,6 +35,8 @@ after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
 `debt_accounts`; run it after 040 before deploying the updated account form.
 `042_debt_installment_amount.sql` adds the per-installment nominal so
 `10/12 × Rp 200.000 = Rp 400.000` remaining can be calculated; run it after 041.
+`043_debt_pay_installment.sql` adds the atomic installment-payment RPC used by
+the **Bayar angsuran** button; run it after 042.
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

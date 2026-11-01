@@ -14,7 +14,10 @@ import { FormModal } from "@/components/wedding/form-modal";
 import { ConfirmAction } from "@/components/debt/confirm-action";
 import { DebtAccountForm } from "@/components/debt/account-form";
 import type { AccountBalance } from "@/lib/debt/calculations";
-import { deleteDebtAccountAction } from "@/app/debt/actions";
+import {
+  deleteDebtAccountAction,
+  payDebtInstallmentAction,
+} from "@/app/debt/actions";
 import {
   daysUntil,
   formatDebtDate,
@@ -184,6 +187,11 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
               dueDays !== null &&
               dueDays < 0 &&
               account.remaining > 0;
+            const canPay =
+              account.status === "active" &&
+              account.installment_amount > 0 &&
+              account.installment_total_months > 0 &&
+              account.installment_month < account.installment_total_months;
 
             return (
               <Card
@@ -213,7 +221,7 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
                   </Badge>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 rounded-2xl bg-[#f8f4ec] p-3 text-sm">
+                <div className="grid grid-cols-1 gap-3 rounded-2xl bg-[#f8f4ec] p-3 text-sm sm:grid-cols-3">
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
                       Total kontrak
@@ -224,26 +232,20 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
                   </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
+                      Cicilan per bulan
+                    </p>
+                    <p className="mt-1 font-medium text-ink">
+                      {account.installment_amount > 0
+                        ? formatRupiah(account.installment_amount)
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
                       Sisa
                     </p>
                     <p className="mt-1 font-medium text-ink">
                       {formatRupiah(account.remaining)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
-                      Pokok
-                    </p>
-                    <p className="mt-1 text-ink-soft">
-                      {formatRupiah(account.original_principal)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-ink-soft">
-                      Bunga / biaya
-                    </p>
-                    <p className="mt-1 text-ink-soft">
-                      {formatRupiah(account.interest_fees)}
                     </p>
                   </div>
                 </div>
@@ -276,6 +278,15 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
                     Dibuka {formatDebtDate(account.opening_date)}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {canPay ? (
+                      <ConfirmAction
+                        action={payDebtInstallmentAction}
+                        fields={{ id: account.id }}
+                        label="Bayar angsuran"
+                        confirmLabel={`Bayar ${formatRupiah(account.installment_amount)}`}
+                        message={`Catat angsuran ke-${account.installment_month + 1} dari ${account.installment_total_months}. Jatuh tempo akan maju satu bulan dan sisa berkurang.`}
+                      />
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => setEditing(account)}

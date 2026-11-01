@@ -82,6 +82,16 @@ export type DebtDatabase = {
         Args: Record<string, never>;
         Returns: boolean;
       };
+      pay_debt_installment: {
+        Args: { p_account_id: string };
+        Returns: {
+          installment_month: number;
+          installment_total_months: number;
+          installment_amount: number;
+          due_date: string;
+          status: string;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
