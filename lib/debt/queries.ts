@@ -16,6 +16,18 @@ export type DebtData = {
  * Loads the owner's ledger through RLS. Every query is also filtered by owner
  * so an accidental policy regression does not turn into cross-owner reads.
  */
+export async function isDebtInstallmentPaymentReady(
+  supabase: SupabaseClient<DebtDatabase>,
+): Promise<boolean> {
+  // Safe probe: a fake UUID cannot mutate anything. PGRST202 means the RPC
+  // migration 043 has not been applied yet; any other response means the RPC
+  // exists and the UI may show the payment button.
+  const { error } = await supabase.rpc("pay_debt_installment", {
+    p_account_id: "00000000-0000-0000-0000-000000000000",
+  });
+  return error?.code !== "PGRST202";
+}
+
 export async function loadDebtData(
   supabase: SupabaseClient<DebtDatabase>,
   ownerId: string,

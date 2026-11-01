@@ -48,7 +48,13 @@ function statusTone(status: AccountBalance["status"]) {
   return "warning" as const;
 }
 
-export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] }) {
+export function DebtAccountManager({
+  accounts,
+  paymentsReady,
+}: {
+  accounts: AccountBalance[];
+  paymentsReady: boolean;
+}) {
   const [editing, setEditing] = useState<AccountBalance | null | undefined>(
     undefined,
   );
@@ -104,6 +110,13 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
           {filtered.length} dari {accounts.length} akun
         </span>
       </div>
+
+      {!paymentsReady ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          Tombol <strong>Bayar angsuran</strong> akan aktif setelah migration
+          <code className="mx-1">043</code> diterapkan.
+        </p>
+      ) : null}
 
       <Card className="space-y-3 border-[#e8e1d4] bg-[#fffdf9] p-4">
         <div className="relative">
@@ -188,6 +201,7 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
               dueDays < 0 &&
               account.remaining > 0;
             const canPay =
+              paymentsReady &&
               account.status === "active" &&
               account.installment_amount > 0 &&
               account.installment_total_months > 0 &&
