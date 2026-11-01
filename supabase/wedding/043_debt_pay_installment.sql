@@ -23,6 +23,7 @@ declare
   v_next_due date;
   v_inserted integer;
   v_next_status text;
+  v_key text;
 begin
   if not public.is_debt_owner() then
     raise exception 'Not authorized.';
@@ -55,6 +56,25 @@ begin
       when v_next_month >= v_account.installment_total_months then 'paid'
       else 'active'
     end;
+  v_key := format('installment:%s:%s', v_account.id, v_next_month);
+
+  -- Serialize the same account's payment attempts. A retry of the same
+  -- installment returns the current values without creating a second payment.
+  if exists (
+    select 1
+    from public.debt_payments
+    where owner_user_id = v_account.owner_user_id
+      and idempotency_key = v_key
+  ) then
+    return query
+      select
+        v_account.installment_month,
+        v_account.installment_total_months,
+        v_account.installment_amount,
+        v_account.due_date,
+        v_account.status;
+    return;
+  end if;
 
   insert into public.debt_payments (
     owner_user_id,
@@ -71,11 +91,8 @@ begin
     current_date,
     'installment',
     format('Angsuran %s/%s', v_next_month, v_account.installment_total_months),
-    format('installment:%s:%s', v_account.id, v_next_month)
-  )
-  on conflict (owner_user_id, idempotency_key)
-  where idempotency_key is not null
-  do nothing;
+    v_key
+  );
 
   get diagnostics v_inserted = row_count;
 
