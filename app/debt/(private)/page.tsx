@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarClock,
-  Check,
   CircleAlert,
   CircleDollarSign,
   HandCoins,
@@ -50,8 +49,31 @@ export default async function DebtDashboardPage() {
     data.schedules,
     today,
   );
-  const upcoming = summaries
-    .filter((account) => account.remaining > 0 && Boolean(account.due_date))
+  const currentMonth = today.slice(0, 7);
+  const paidThisMonth = new Map<string, number>();
+  for (const payment of data.payments) {
+    if (payment.reversed_at) continue;
+    if (!payment.payment_date.startsWith(currentMonth)) continue;
+    paidThisMonth.set(
+      payment.debt_account_id,
+      (paidThisMonth.get(payment.debt_account_id) ?? 0) + Number(payment.amount),
+    );
+  }
+  const isSettledThisMonth = (account: (typeof summaries)[number]) => {
+    const paid = paidThisMonth.get(account.id) ?? 0;
+    if (paid <= 0) return false;
+    const before = account.remaining + paid;
+    const target =
+      account.installment_amount > 0
+        ? Math.min(account.installment_amount, before)
+        : before;
+    return paid >= target;
+  };
+  const unpaidAccounts = summaries.filter(
+    (account) => account.remaining > 0 && Boolean(account.due_date),
+  );
+  const upcoming = unpaidAccounts
+    .filter((account) => !isSettledThisMonth(account))
     .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))
     .slice(0, 5);
   const late = summaries.filter(
@@ -61,15 +83,6 @@ export default async function DebtDashboardPage() {
       String(account.due_date) < today,
   );
   const recentAccounts = summaries.slice(0, 3);
-  const currentMonth = today.slice(0, 7);
-  const paidThisMonth = new Set(
-    data.payments
-      .filter(
-        (payment) =>
-          !payment.reversed_at && payment.payment_date.startsWith(currentMonth),
-      )
-      .map((payment) => payment.debt_account_id),
-  );
 
   return (
     <div className="space-y-7">
@@ -178,8 +191,16 @@ export default async function DebtDashboardPage() {
         {upcoming.length === 0 ? (
           <div className="mt-5">
             <EmptyState
-              title="Belum ada tagihan"
-              body="Tambahkan utang beserta nominal, tenor, dan bulan jatuh tempo."
+              title={
+                unpaidAccounts.length === 0
+                  ? "Belum ada tagihan"
+                  : "Semua tagihan sudah dibayar"
+              }
+              body={
+                unpaidAccounts.length === 0
+                  ? "Tambahkan utang beserta nominal, tenor, dan bulan jatuh tempo."
+                  : "Tagihan yang sudah dibayar bulan ini tidak ditampilkan lagi."
+              }
               icon={<CalendarClock className="size-8" aria-hidden />}
             />
           </div>
@@ -216,20 +237,14 @@ export default async function DebtDashboardPage() {
                   · sisa {formatRupiah(account.remaining)}
                 </p>
 
-                {paidThisMonth.has(account.id) ? (
-                  <p className="mt-3 inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700">
-                    <Check className="size-3.5" aria-hidden /> Sudah dibayar bulan ini
-                  </p>
-                ) : (
-                  <MarkPaidButton
-                    accountId={account.id}
-                    amountLabel={formatRupiah(
-                      account.installment_amount > 0
-                        ? Math.min(account.installment_amount, account.remaining)
-                        : account.remaining,
-                    )}
-                  />
-                )}
+                <MarkPaidButton
+                  accountId={account.id}
+                  amountLabel={formatRupiah(
+                    account.installment_amount > 0
+                      ? Math.min(account.installment_amount, account.remaining)
+                      : account.remaining,
+                  )}
+                />
               </div>
             ))}
           </div>
