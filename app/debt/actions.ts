@@ -847,7 +847,10 @@ export async function payDebtInstallmentAction(
 
     revalidateDebt();
     return {
-      success: `Angsuran ${formatRupiah(amount)} tercatat. Sisa tagihan berkurang.`,
+      success: `Angsuran ${formatRupiah(amount)} tercatat (${Math.min(
+        paidMonths,
+        totalMonths,
+      )}/${totalMonths}). Sisa tagihan berkurang.`,
     };
   }
 
@@ -928,7 +931,7 @@ export async function payDebtInstallmentAction(
 
   revalidateDebt();
   return {
-    success: `Angsuran ${formatRupiah(amount)} tercatat. Jatuh tempo maju ke bulan berikutnya.`,
+    success: `Angsuran ${formatRupiah(amount)} tercatat (${nextMonth}/${months}). Jatuh tempo maju ke bulan berikutnya.`,
   };
 }
 

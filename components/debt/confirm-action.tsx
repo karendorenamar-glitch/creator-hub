@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { DebtActionResult } from "@/app/debt/actions";
 
@@ -24,10 +25,15 @@ export function ConfirmAction({
   tone?: "danger" | "neutral";
 }) {
   const [confirming, setConfirming] = useState(false);
+  const router = useRouter();
   const [state, formAction, pending] = useActionState<
     DebtActionResult,
     FormData
   >(async (_prev, formData) => (await action(formData)) ?? null, null);
+
+  useEffect(() => {
+    if (state?.success) router.refresh();
+  }, [state?.success, router]);
 
   if (!confirming) {
     return (
