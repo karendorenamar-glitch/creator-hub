@@ -127,23 +127,48 @@ export function parseDebtAccount(
   const firstMonth = firstDueMonthRaw || "";
   const installments: { month: string; amount: number }[] = [];
 
+  const vary = text(formData, "vary") === "1";
+
   if (tenorMonths > 0) {
-    if (monthlyAmount <= 0) {
-      return { ok: false, error: "Nominal per bulan wajib diisi." };
-    }
     if (!firstMonth) {
       return { ok: false, error: "Pilih bulan jatuh tempo." };
     }
     if (!parsedDueDay) {
       return { ok: false, error: "Pilih tanggal jatuh tempo." };
     }
-    for (let index = 0; index < openMonths; index += 1) {
-      installments.push({
-        month: addMonthsToMonth(firstMonth, index),
-        amount: monthlyAmount,
-      });
+
+    if (vary) {
+      const raw = formData.getAll("amount").map((value) => String(value));
+      if (raw.length !== openMonths) {
+        return {
+          ok: false,
+          error: `Isi nominal untuk ${openMonths} bulan yang belum dibayar.`,
+        };
+      }
+      for (let index = 0; index < raw.length; index += 1) {
+        const amount = parseWholeRupiah(raw[index], { allowZero: false });
+        if (amount === null) {
+          return { ok: false, error: "Setiap nominal bulan harus lebih dari nol." };
+        }
+        installments.push({
+          month: addMonthsToMonth(firstMonth, index),
+          amount,
+        });
+      }
+      const paidValue = monthlyAmount * paidMonths;
+      total = paidValue + installments.reduce((sum, item) => sum + item.amount, 0);
+    } else {
+      if (monthlyAmount <= 0) {
+        return { ok: false, error: "Nominal per bulan wajib diisi." };
+      }
+      for (let index = 0; index < openMonths; index += 1) {
+        installments.push({
+          month: addMonthsToMonth(firstMonth, index),
+          amount: monthlyAmount,
+        });
+      }
+      total = monthlyAmount * tenorMonths;
     }
-    total = monthlyAmount * tenorMonths;
   }
 
   const openingDate = text(formData, "openingDate");
@@ -181,7 +206,7 @@ export function parseDebtAccount(
       due_day: parsedDueDay,
       installment_month: paidMonths,
       installment_total_months: tenorMonths,
-      installment_amount: monthlyAmount,
+      installment_amount: vary ? 0 : monthlyAmount,
       status,
       notes: optionalText(formData, "notes", 2000),
     },

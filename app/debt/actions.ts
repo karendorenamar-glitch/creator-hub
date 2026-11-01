@@ -7,6 +7,7 @@ import { getDebtOwner } from "@/lib/debt/auth";
 import { isEmail, isUuid, parseWholeRupiah, text } from "@/lib/wedding/validation";
 import {
   parseDebtAccount,
+  type AccountPlan,
   parseDebtPayment,
   parseDebtSchedule,
   parseDebtScheduleBatch,
@@ -197,6 +198,26 @@ async function refreshAccountStatus(
   }
 }
 
+function planRows(
+  ownerId: string,
+  accountId: string,
+  plan: AccountPlan,
+  fallbackDueDate: string | null,
+) {
+  const day =
+    plan.due_day ??
+    (fallbackDueDate ? Number(fallbackDueDate.slice(8, 10)) : 1);
+
+  return plan.installments.map((item) => ({
+    owner_user_id: ownerId,
+    debt_account_id: accountId,
+    due_date: dueDateForMonth(day, item.month),
+    amount_due: item.amount,
+    notes: null,
+    status: "upcoming" as DebtScheduleStatus,
+  }));
+}
+
 export async function createDebtAccountAction(
   prev: DebtActionResult,
   formData: FormData,
@@ -233,6 +254,24 @@ async function createDebtAccount(
   if (error) return { error: diagnostic(error) };
 
   if (!created) return { error: "Utang gagal disimpan. Coba lagi." };
+
+  const rows = planRows(
+    ctx.owner.userId,
+    created.id,
+    parsed.plan,
+    created.due_date ?? null,
+  );
+  if (rows.length > 0) {
+    const { error: rowsError } = await ctx.supabase
+      .from("debt_schedules")
+      .insert(rows);
+    if (rowsError) {
+      revalidateDebt();
+      return {
+        error: `Utang tersimpan, tetapi nominal bulanan gagal dibuat (${rowsError.code ?? "?"}). Buka Atur nominal untuk mengisi ulang.`,
+      };
+    }
+  }
 
   revalidateDebt();
   return { success: "Utang berhasil disimpan." };
@@ -278,6 +317,59 @@ async function updateDebtAccount(
 
   if (error) return { error: messageForError(error) };
   if (!updated) return { error: "Akun tidak ditemukan." };
+
+  const rows = planRows(
+    ctx.owner.userId,
+    id,
+    parsed.plan,
+    parsed.values.due_date,
+  );
+
+  if (rows.length > 0) {
+    const { data: existing } = await ctx.supabase
+      .from("debt_schedules")
+      .select("id, due_date, amount_due")
+      .eq("debt_account_id", id)
+      .eq("owner_user_id", ctx.owner.userId);
+
+    const existingKey = JSON.stringify(
+      (existing ?? [])
+        .map((row) => `${row.due_date}:${Number(row.amount_due)}`)
+        .sort(),
+    );
+    const planKey = JSON.stringify(
+      rows
+        .map((row) => `${row.due_date}:${row.amount_due}`)
+        .sort(),
+    );
+
+    if (existingKey !== planKey) {
+      const { count: linkedPayments } = await ctx.supabase
+        .from("debt_payments")
+        .select("id", { count: "exact", head: true })
+        .eq("debt_account_id", id)
+        .eq("owner_user_id", ctx.owner.userId)
+        .not("schedule_id", "is", null);
+
+      if ((linkedPayments ?? 0) === 0) {
+        await ctx.supabase
+          .from("debt_schedules")
+          .delete()
+          .eq("debt_account_id", id)
+          .eq("owner_user_id", ctx.owner.userId);
+        const { error: rowsError } = await ctx.supabase
+          .from("debt_schedules")
+          .insert(rows);
+        if (rowsError) {
+          revalidateDebt();
+          return {
+            error:
+              "Utang diperbarui, tetapi nominal bulanan gagal dibuat ulang. Gunakan Atur nominal.",
+          };
+        }
+      }
+    }
+  }
 
   revalidateDebt();
   return { success: "Utang berhasil diperbarui." };

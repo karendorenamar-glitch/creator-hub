@@ -10,7 +10,7 @@ import {
 } from "@/app/debt/actions";
 import { Field, FormAlert, inputClass } from "@/components/wedding/form-kit";
 import type { DebtAccount } from "@/lib/debt/db-types";
-import { formatRupiah, todayISO } from "@/lib/debt/format";
+import { formatRupiah, monthLabel, todayISO } from "@/lib/debt/format";
 
 const ACCOUNT_TYPES = [
   ["bank_loan", "Pinjaman bank"],
@@ -30,6 +30,13 @@ function toAmount(value: string): number {
   const digits = value.replace(/[^\d]/g, "");
   const parsed = Number(digits);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function addMonthsToMonth(month: string, offset: number): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  if (!year || !monthNumber) return month;
+  const date = new Date(Date.UTC(year, monthNumber - 1 + offset, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 export function DebtAccountForm({
@@ -54,6 +61,10 @@ export function DebtAccountForm({
       ? String(account.installment_amount)
       : "",
   );
+  const [firstDueMonth, setFirstDueMonth] = useState(
+    account?.due_date?.slice(0, 7) ?? todayISO().slice(0, 7),
+  );
+  const [vary, setVary] = useState(false);
 
   const router = useRouter();
   const action = account ? updateDebtAccountAction : createDebtAccountAction;
@@ -164,7 +175,8 @@ export function DebtAccountForm({
             id="firstDueMonth"
             name="firstDueMonth"
             type="month"
-            defaultValue={account?.due_date?.slice(0, 7) ?? todayISO().slice(0, 7)}
+            value={firstDueMonth}
+            onChange={(event) => setFirstDueMonth(event.target.value)}
             className={inputClass}
           />
         </Field>
@@ -184,6 +196,54 @@ export function DebtAccountForm({
           </select>
         </Field>
       </div>
+
+      <input type="hidden" name="vary" value={vary ? "1" : "0"} />
+
+      {openMonths > 0 ? (
+        <div className="space-y-3 rounded-xl border border-olive-100 bg-[#f8f4ec] p-3">
+          <label className="flex items-start gap-2 text-xs text-ink">
+            <input
+              type="checkbox"
+              checked={vary}
+              onChange={(event) => setVary(event.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">Nominal beda tiap bulan</span>
+              <span className="mt-0.5 block text-ink-soft">
+                Centang kalau nominal tiap bulan tidak sama. Tanggal tetap
+                tanggal {account?.due_day ?? "3"}.
+              </span>
+            </span>
+          </label>
+
+          {vary ? (
+            <div className="space-y-2">
+              {Array.from({ length: openMonths }, (_, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[1fr_1.1fr] items-center gap-2"
+                >
+                  <span className="text-sm text-ink-soft">
+                    {monthLabel(
+                      addMonthsToMonth(firstDueMonth, index),
+                    )}
+                  </span>
+                  <input
+                    name="amount"
+                    inputMode="numeric"
+                    required
+                    defaultValue={monthlyAmount}
+                    placeholder="Nominal"
+                    aria-label={`Nominal bulan ke-${index + 1}`}
+                    className={inputClass}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {openMonths > 0 && monthly > 0 ? (
         <p className="rounded-xl bg-olive-50 px-3 py-2.5 text-xs leading-relaxed text-ink-soft">
