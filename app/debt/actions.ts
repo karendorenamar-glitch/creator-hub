@@ -310,10 +310,20 @@ export async function createDebtPaymentAction(
     .eq("owner_user_id", ctx.owner.userId)
     .is("reversed_at", null);
 
-  const alreadyPaid = (accountPayments ?? []).reduce(
+  const alreadyPaidRecorded = (accountPayments ?? []).reduce(
     (sum, payment) => sum + Number(payment.amount),
     0,
   );
+  const scheduledPaid =
+    Number(account.installment_amount ?? 0) > 0 &&
+    Number(account.installment_total_months ?? 0) > 0
+      ? Number(account.installment_amount) *
+        Math.min(
+          Number(account.installment_month ?? 0),
+          Number(account.installment_total_months),
+        )
+      : 0;
+  const alreadyPaid = Math.max(alreadyPaidRecorded, scheduledPaid);
   const accountRemaining = Math.max(
     0,
     Number(account.total_amount_due) - alreadyPaid,

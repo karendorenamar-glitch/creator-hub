@@ -33,6 +33,8 @@ additive private Debt Tracker migration; review it and run it manually only
 after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
 `041_debt_installments.sql` adds recurring due day and installment status to
 `debt_accounts`; run it after 040 before deploying the updated account form.
+`042_debt_installment_amount.sql` adds the per-installment nominal so
+`10/12 × Rp 200.000 = Rp 400.000` remaining can be calculated; run it after 041.
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

@@ -66,9 +66,11 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
         return false;
       }
       if (due === "all") return true;
-      const dueDate = account.due_day
-        ? nextDueDateForDay(account.due_day)
-        : account.due_date;
+      const dueDate = account.due_date
+        ? account.due_date
+        : account.due_day
+          ? nextDueDateForDay(account.due_day)
+          : null;
       if (!dueDate || account.remaining <= 0) return false;
       const days = daysUntil(dueDate);
       if (due === "overdue") return days < 0;
@@ -171,9 +173,11 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {filtered.map((account) => {
-            const dueDate = account.due_day
-              ? nextDueDateForDay(account.due_day)
-              : account.due_date;
+            const dueDate = account.due_date
+              ? account.due_date
+              : account.due_day
+                ? nextDueDateForDay(account.due_day)
+                : null;
             const dueDays = dueDate ? daysUntil(dueDate) : null;
             const overdue =
               account.status === "active" &&
@@ -198,6 +202,9 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
                         : ""}
                       {account.installment_total_months > 0
                         ? ` · ${account.installment_month}/${account.installment_total_months} bulan`
+                        : ""}
+                      {account.installment_amount > 0
+                        ? ` · ${formatRupiah(account.installment_amount)}/bulan`
                         : ""}
                     </p>
                   </div>
@@ -255,7 +262,7 @@ export function DebtAccountManager({ accounts }: { accounts: AccountBalance[] })
                         ? overdue
                           ? `Terlambat ${Math.abs(dueDays ?? 0)} hari`
                           : account.due_day
-                            ? `Tanggal ${account.due_day} · berikutnya ${formatDebtDate(dueDate)}`
+                            ? `Tanggal ${account.due_day} · jatuh tempo ${formatDebtDate(dueDate)}`
                             : `Jatuh tempo ${formatDebtDate(dueDate)}`
                         : "Tanpa jatuh tempo"}
                     </span>

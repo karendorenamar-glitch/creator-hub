@@ -7,7 +7,7 @@ import {
   parseWholeRupiah,
   text,
 } from "@/lib/wedding/validation";
-import { nextDueDateForDay } from "@/lib/debt/format";
+import { dueDateForMonth, nextDueDateForDay } from "@/lib/debt/format";
 import type {
   DebtAccountStatus,
   DebtAccountType,
@@ -44,6 +44,7 @@ export type ParsedAccount = {
   due_day: number | null;
   installment_month: number;
   installment_total_months: number;
+  installment_amount: number;
   status: DebtAccountStatus;
   notes: string | null;
 };
@@ -56,16 +57,47 @@ export function parseDebtAccount(
 
   const accountType = enumValue(formData, "accountType", ACCOUNT_TYPES, "other");
 
-  const total = parseWholeRupiah(text(formData, "totalAmountDue"), {
-    allowZero: false,
-  });
-  if (total === null) {
-    return { ok: false, error: "Nominal pinjaman harus lebih dari nol." };
+  const totalMonthsRaw = text(formData, "installmentTotalMonths");
+  const totalMonths = totalMonthsRaw ? parseCount(totalMonthsRaw) : 0;
+  if (totalMonths === null || totalMonths < 0) {
+    return { ok: false, error: "Total tenor tidak valid." };
   }
 
-  // The form collects a single nominal field. Existing interest/fees are
-  // preserved when editing, while the principal is adjusted to keep the DB
-  // invariant total = principal + interest/fees.
+  const installmentMonthRaw = text(formData, "installmentMonth");
+  const installmentMonth = installmentMonthRaw
+    ? parseCount(installmentMonthRaw)
+    : 0;
+  if (installmentMonth === null || installmentMonth < 0) {
+    return { ok: false, error: "Angsuran sudah dibayar tidak valid." };
+  }
+  if (totalMonths === 0 && installmentMonth !== 0) {
+    return {
+      ok: false,
+      error: "Isi total tenor jika mengisi angsuran yang sudah dibayar.",
+    };
+  }
+  if (totalMonths > 0 && installmentMonth > totalMonths) {
+    return {
+      ok: false,
+      error: "Angsuran yang sudah dibayar tidak boleh melebihi total tenor.",
+    };
+  }
+
+  // The form collects the nominal per installment. When a tenor exists, the
+  // contractual total is nominal × tenor. Without a tenor it is a one-off
+  // account and the nominal is the total.
+  const installmentAmount = parseWholeRupiah(
+    text(formData, "installmentAmount"),
+    { allowZero: false },
+  );
+  if (installmentAmount === null) {
+    return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+  }
+  const total =
+    totalMonths > 0 ? installmentAmount * totalMonths : installmentAmount;
+
+  // Existing interest/fees are preserved when editing, while the principal is
+  // adjusted to keep the DB invariant total = principal + interest/fees.
   const interest = parseWholeRupiah(text(formData, "interestFees") || "0", {
     allowZero: true,
   });
@@ -85,39 +117,23 @@ export function parseDebtAccount(
     return { ok: false, error: "Tanggal jatuh tempo harus 1–31." };
   }
 
+  const dueMonth = text(formData, "dueMonth");
+  if (dueMonth && !isRealDate(`${dueMonth}-01`)) {
+    return { ok: false, error: "Bulan jatuh tempo tidak valid." };
+  }
+  if (dueMonth && !dueDay) {
+    return { ok: false, error: "Pilih tanggal jatuh tempo." };
+  }
+
   const submittedDueDate = text(formData, "dueDate") || null;
   if (submittedDueDate && !isRealDate(submittedDueDate)) {
     return { ok: false, error: "Tanggal jatuh tempo tidak valid." };
   }
   const dueDate = dueDay
-    ? nextDueDateForDay(dueDay)
+    ? dueMonth
+      ? dueDateForMonth(dueDay, dueMonth)
+      : nextDueDateForDay(dueDay)
     : submittedDueDate;
-
-  const totalMonthsRaw = text(formData, "installmentTotalMonths");
-  const totalMonths = totalMonthsRaw ? parseCount(totalMonthsRaw) : 0;
-  if (totalMonths === null || totalMonths < 0) {
-    return { ok: false, error: "Total tenor tidak valid." };
-  }
-
-  const installmentMonthRaw = text(formData, "installmentMonth");
-  const installmentMonth = installmentMonthRaw
-    ? parseCount(installmentMonthRaw)
-    : 0;
-  if (installmentMonth === null || installmentMonth < 0) {
-    return { ok: false, error: "Angsuran ke berapa tidak valid." };
-  }
-  if (totalMonths === 0 && installmentMonth !== 0) {
-    return {
-      ok: false,
-      error: "Isi total tenor jika mengisi angsuran berjalan.",
-    };
-  }
-  if (totalMonths > 0 && installmentMonth > totalMonths) {
-    return {
-      ok: false,
-      error: "Angsuran berjalan tidak boleh melebihi total tenor.",
-    };
-  }
 
   const status = enumValue(formData, "status", ACCOUNT_STATUSES, "active");
 
@@ -135,6 +151,7 @@ export function parseDebtAccount(
       due_day: dueDay,
       installment_month: installmentMonth,
       installment_total_months: totalMonths,
+      installment_amount: installmentAmount,
       status,
       notes: optionalText(formData, "notes", 2000),
     },

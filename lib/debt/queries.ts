@@ -53,6 +53,7 @@ export async function loadDebtData(
       installment_total_months: Number(
         account.installment_total_months ?? 0,
       ),
+      installment_amount: Number(account.installment_amount ?? 0),
       due_day:
         account.due_day === null || account.due_day === undefined
           ? null

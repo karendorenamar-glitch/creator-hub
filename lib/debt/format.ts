@@ -25,6 +25,17 @@ export function formatDebtDate(
   }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
+/**
+ * A specific month's due date, clamped to the last day of short months.
+ * `month` must be YYYY-MM.
+ */
+export function dueDateForMonth(day: number, month: string): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+  const safeDay = Math.min(Math.max(day, 1), lastDay);
+  return `${month}-${String(safeDay).padStart(2, "0")}`;
+}
+
 /** YYYY-MM-DD in the business timezone, without locale-dependent parsing. */
 export function todayISO(): string {
   return new Intl.DateTimeFormat("en-CA", {

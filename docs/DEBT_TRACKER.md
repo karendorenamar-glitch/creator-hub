@@ -154,7 +154,7 @@ approval and migration:
 - `npx eslint app/debt components/debt lib/debt middleware.ts app/robots.ts tests/debt-ledger.test.mjs` — pass.
 - `npm run build` — pass; all five debt routes were built dynamically.
 - `node --experimental-strip-types --test tests/*.test.mjs` — 10 suites pass,
-  including 23 Debt Tracker calculation and formatting checks.
+  including 28 Debt Tracker calculation and formatting checks.
 - Unauthenticated smoke tests:
   - `/debt`, `/debt/accounts`, `/debt/payments`, `/debt/schedule` redirect
     (`307`) to `/debt/login`.
@@ -185,6 +185,23 @@ the updated account form. Existing `due_date` values are backfilled into
 `due_day`.
 
 Due days are calculated from the selected day each month; days 29–31 are
+
+## Per-installment nominal (migration 042)
+
+`042_debt_installment_amount.sql` adds `installment_amount`.
+
+Example:
+
+```text
+Nominal per angsuran : Rp 200.000
+Status tenor         : 10/12 bulan
+Remaining            : 2 × Rp 200.000 = Rp 400.000
+```
+
+The form also accepts a due month plus due day. `due_date` stores the selected
+next due date; `due_day` stores the recurring day for display. Existing due
+dates are preserved and can be backfilled by migration 041.
+
 clamped to the last valid day of shorter months.
 
 reversal, schedule transitions, and cross-owner RLS/REST tests.

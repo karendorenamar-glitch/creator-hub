@@ -9,7 +9,7 @@ import {
 } from "@/app/debt/actions";
 import { Field, FormAlert, inputClass } from "@/components/wedding/form-kit";
 import type { DebtAccount } from "@/lib/debt/db-types";
-import { formatRupiah, todayISO } from "@/lib/debt/format";
+import { formatRupiah, nextDueDateForDay, todayISO } from "@/lib/debt/format";
 
 const ACCOUNT_TYPES = [
   ["bank_loan", "Pinjaman bank"],
@@ -38,10 +38,27 @@ export function DebtAccountForm({
   onDone: () => void;
 }) {
   const [nominal, setNominal] = useState(
-    account ? String(account.total_amount_due) : "",
+    account
+      ? String(
+          account.installment_amount > 0
+            ? account.installment_amount
+            : account.installment_total_months > 0
+              ? Math.round(
+                  account.total_amount_due / account.installment_total_months,
+                )
+              : account.total_amount_due,
+        )
+      : "",
   );
-  const total = digits(nominal);
+  const [totalMonths, setTotalMonths] = useState(
+    account ? String(account.installment_total_months) : "0",
+  );
+  const installments = digits(totalMonths);
+  const total = digits(nominal) * (installments > 0 ? installments : 1);
   const interest = account ? account.interest_fees : 0;
+  const defaultDueMonth =
+    account?.due_date?.slice(0, 7) ??
+    nextDueDateForDay(account?.due_day ?? 3).slice(0, 7);
   const action = account ? updateDebtAccountAction : createDebtAccountAction;
   const [state, formAction, pending] = useActionState<
     DebtActionResult,
@@ -64,7 +81,6 @@ export function DebtAccountForm({
         value={account?.opening_date ?? todayISO()}
       />
       <input type="hidden" name="dueDate" value={account?.due_date ?? ""} />
-      <input type="hidden" name="totalAmountDue" value={total} />
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nama aplikasi" htmlFor="creditorName">
@@ -125,27 +141,27 @@ export function DebtAccountForm({
         </Field>
 
         <Field
-          label="Nominal pinjaman (IDR)"
+          label="Nominal per angsuran (IDR)"
           htmlFor="nominal"
-          hint={`Tersimpan sebagai ${formatRupiah(total)}.`}
+          hint={`Total kontrak yang dihitung: ${formatRupiah(total)}.`}
           className="sm:col-span-2"
         >
           <input
             id="nominal"
-            name="nominalDisplay"
+            name="installmentAmount"
             required
             inputMode="numeric"
             value={nominal}
             onChange={(event) => setNominal(event.target.value)}
-            placeholder="Contoh: 5.000.000"
+            placeholder="Contoh: 200.000"
             className={inputClass}
           />
         </Field>
 
         <Field
-          label="Status tenor"
+          label="Sudah dibayar / total tenor"
           htmlFor="installmentMonth"
-          hint="Contoh: 5 / 12 bulan. Isi 0 / 0 jika belum ditentukan."
+          hint="Contoh: 10 / 12 bulan. Sisa = 2 × nominal angsuran."
         >
           <div className="flex items-center gap-2">
             <input
@@ -163,7 +179,8 @@ export function DebtAccountForm({
               type="number"
               min={0}
               max={999}
-              defaultValue={account?.installment_total_months ?? 0}
+              value={totalMonths}
+              onChange={(event) => setTotalMonths(event.target.value)}
               className={`${inputClass} text-center`}
             />
             <span className="shrink-0 text-sm text-ink-soft">bulan</span>
@@ -171,17 +188,30 @@ export function DebtAccountForm({
         </Field>
 
         <Field
-          label="Jatuh tempo setiap tanggal"
+          label="Bulan jatuh tempo"
+          htmlFor="dueMonth"
+          hint="Pilih bulan tagihan berikutnya."
+        >
+          <input
+            id="dueMonth"
+            name="dueMonth"
+            type="month"
+            defaultValue={defaultDueMonth}
+            className={inputClass}
+          />
+        </Field>
+
+        <Field
+          label="Tanggal jatuh tempo"
           htmlFor="dueDay"
-          hint="Contoh: tanggal 5 setiap bulan."
+          hint="Contoh: setiap tanggal 3."
         >
           <select
             id="dueDay"
             name="dueDay"
-            defaultValue={account?.due_day ? String(account.due_day) : ""}
+            defaultValue={account?.due_day ? String(account.due_day) : "3"}
             className={inputClass}
           >
-            <option value="">Tidak ditentukan</option>
             {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
               <option key={day} value={day}>
                 Tanggal {day}

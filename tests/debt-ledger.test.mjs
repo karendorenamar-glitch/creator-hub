@@ -141,6 +141,33 @@ t(
   "2026-02-28",
 );
 
+const installmentAccount = {
+  id: "d",
+  owner_user_id: owner,
+  total_amount_due: 2_400_000,
+  original_principal: 2_400_000,
+  interest_fees: 0,
+  installment_amount: 200_000,
+  installment_month: 10,
+  installment_total_months: 12,
+  status: "active",
+  due_date: "2026-02-03",
+};
+
+const installmentBalance = accountBalance(installmentAccount, []);
+t("10/12 tenor paid amount", installmentBalance.paid, 2_000_000);
+t("10/12 tenor remaining is two installments", installmentBalance.remaining, 400_000);
+t("10/12 tenor progress", installmentBalance.progress, 83);
+
+const installmentTotals = calculateDebtTotals(
+  [installmentAccount],
+  [],
+  [],
+  "2026-01-10",
+);
+t("tenor total paid reaches dashboard", installmentTotals.totalPaid, 2_000_000);
+t("tenor remaining reaches dashboard", installmentTotals.remaining, 400_000);
+
 const overpaid = accountBalance(accounts[0], [
   ...payments,
   { id: "p4", debt_account_id: "a", amount: 150_000, reversed_at: null },

@@ -60,10 +60,17 @@ export function accountBalance(
   account: DebtAccount,
   payments: DebtPayment[],
 ): AccountBalance {
-  const paid = activePayments(payments)
+  const recordedPaid = activePayments(payments)
     .filter((payment) => payment.debt_account_id === account.id)
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
+
   const total = Number(account.total_amount_due);
+  const scheduledPaid =
+    account.installment_amount > 0 && account.installment_total_months > 0
+      ? account.installment_amount *
+        Math.min(account.installment_month, account.installment_total_months)
+      : 0;
+  const paid = Math.min(total, Math.max(recordedPaid, scheduledPaid));
   const remaining = Math.max(0, total - paid);
 
   return {
@@ -94,9 +101,7 @@ export function calculateDebtTotals(
     (sum, account) => sum + Number(account.total_amount_due),
     0,
   );
-  const totalPaid = activePayments(payments)
-    .filter((payment) => openIds.has(payment.debt_account_id))
-    .reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const totalPaid = balances.reduce((sum, account) => sum + account.paid, 0);
   const remaining = Math.max(0, originalTotal - totalPaid);
 
   const openSchedules = schedules.filter((schedule) => {
