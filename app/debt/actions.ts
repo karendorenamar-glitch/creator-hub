@@ -11,8 +11,16 @@ import {
   parseDebtSchedule,
   SCHEDULE_STATUSES,
 } from "@/lib/debt/validation";
-import type { DebtAccount, DebtScheduleStatus } from "@/lib/debt/db-types";
-import { formatRupiah } from "@/lib/debt/format";
+import type {
+  DebtAccount,
+  DebtScheduleStatus,
+} from "@/lib/debt/db-types";
+import {
+  addMonthsISO,
+  formatRupiah,
+  nextDueDateForDay,
+  todayISO,
+} from "@/lib/debt/format";
 
 export type DebtActionResult = { error?: string; success?: string } | null;
 export type DebtAuthState = { error?: string; success?: string } | null;
@@ -465,10 +473,7 @@ export async function payDebtInstallmentAction(
       return { error: "Akun ini tidak aktif atau sudah ditutup." };
     }
     if (error.code === "PGRST202") {
-      return {
-        error:
-          "Function pembayaran angsuran belum ada. Jalankan migration 043.",
-      };
+      return payDebtInstallmentFallback(ctx, id);
     }
     return { error: messageForError(error) };
   }
@@ -543,4 +548,178 @@ export async function updateDebtScheduleStatusAction(
 
   revalidateDebt();
   return { success: "Status jadwal diperbarui." };
+}
+
+async function payDebtInstallmentFallback(
+  ctx: NonNullable<Awaited<ReturnType<typeof actionContext>>>,
+  id: string,
+): Promise<DebtActionResult> {
+  const account = await findAccount(ctx.owner.userId, id);
+  if (!account) return { error: "Akun tidak ditemukan." };
+  if (account.status !== "active") {
+    return { error: "Akun ini tidak aktif atau sudah ditutup." };
+  }
+
+  if (Number(account.installment_amount) <= 0) {
+    const { data: schedule, error: scheduleError } = await ctx.supabase
+      .from("debt_schedules")
+      .select("*")
+      .eq("debt_account_id", account.id)
+      .eq("owner_user_id", ctx.owner.userId)
+      .eq("status", "upcoming")
+      .order("due_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (scheduleError) return { error: messageForError(scheduleError) };
+    if (!schedule) {
+      return {
+        error:
+          "Belum ada jadwal angsuran yang belum dibayar. Tambahkan jadwal di halaman Jadwal.",
+      };
+    }
+
+    const key = `schedule:${schedule.id}`;
+    const { data: existing } = await ctx.supabase
+      .from("debt_payments")
+      .select("id")
+      .eq("owner_user_id", ctx.owner.userId)
+      .eq("idempotency_key", key)
+      .maybeSingle();
+
+    if (existing) return { success: "Pembayaran jadwal ini sudah tercatat." };
+
+    const { error: paymentError } = await ctx.supabase
+      .from("debt_payments")
+      .insert({
+        owner_user_id: ctx.owner.userId,
+        debt_account_id: account.id,
+        schedule_id: schedule.id,
+        amount: Number(schedule.amount_due),
+        payment_date: todayISO(),
+        payment_method: "installment",
+        reference: `Jadwal ${schedule.due_date}`,
+        idempotency_key: key,
+      });
+
+    if (paymentError) return { error: messageForError(paymentError) };
+
+    const { data: paidSchedule, error: scheduleUpdateError } =
+      await ctx.supabase
+        .from("debt_schedules")
+        .update({ status: "paid" })
+        .eq("id", schedule.id)
+        .eq("owner_user_id", ctx.owner.userId)
+        .eq("status", "upcoming")
+        .select("id")
+        .maybeSingle();
+
+    if (scheduleUpdateError || !paidSchedule) {
+      return {
+        error:
+          "Pembayaran tercatat, tetapi status jadwal gagal diperbarui. Muat ulang halaman.",
+      };
+    }
+
+    const { data: nextSchedule } = await ctx.supabase
+      .from("debt_schedules")
+      .select("due_date")
+      .eq("debt_account_id", account.id)
+      .eq("owner_user_id", ctx.owner.userId)
+      .eq("status", "upcoming")
+      .order("due_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    const nextMonth = Number(account.installment_month) + 1;
+    const nextStatus = nextSchedule ? "active" : "paid";
+    const { data: updated, error: accountError } = await ctx.supabase
+      .from("debt_accounts")
+      .update({
+        installment_month: nextMonth,
+        due_date: nextSchedule?.due_date ?? null,
+        status: nextStatus,
+      })
+      .eq("id", account.id)
+      .eq("owner_user_id", ctx.owner.userId)
+      .select("id")
+      .maybeSingle();
+
+    if (accountError || !updated) {
+      return {
+        error:
+          "Pembayaran dan jadwal tercatat, tetapi status akun gagal diperbarui. Muat ulang halaman.",
+      };
+    }
+
+    revalidateDebt();
+    return {
+      success:
+        "Pembayaran angsuran dicatat. Jadwal maju dan sisa tagihan berkurang.",
+    };
+  }
+
+
+  const totalMonths = Number(account.installment_total_months);
+  const currentMonth = Number(account.installment_month);
+  if (totalMonths <= 0 || currentMonth >= totalMonths) {
+    return { error: "Semua angsuran sudah lunas." };
+  }
+
+  const nextMonth = currentMonth + 1;
+  const key = `installment:${account.id}:${nextMonth}`;
+  const { data: existing } = await ctx.supabase
+    .from("debt_payments")
+    .select("id")
+    .eq("owner_user_id", ctx.owner.userId)
+    .eq("idempotency_key", key)
+    .maybeSingle();
+
+  if (existing) return { success: "Angsuran ini sudah tercatat." };
+
+  const { error: paymentError } = await ctx.supabase
+    .from("debt_payments")
+    .insert({
+      owner_user_id: ctx.owner.userId,
+      debt_account_id: account.id,
+      amount: Number(account.installment_amount),
+      payment_date: todayISO(),
+      payment_method: "installment",
+      reference: `Angsuran ${nextMonth}/${totalMonths}`,
+      idempotency_key: key,
+    });
+
+  if (paymentError) return { error: messageForError(paymentError) };
+
+  const nextDueDate = addMonthsISO(
+    account.due_date ?? nextDueDateForDay(account.due_day ?? 1),
+    1,
+  );
+  const nextStatus = nextMonth >= totalMonths ? "paid" : "active";
+  const { data: updated, error: accountError } = await ctx.supabase
+    .from("debt_accounts")
+    .update({
+      installment_month: nextMonth,
+      due_date: nextDueDate,
+      status: nextStatus,
+    })
+    .eq("id", account.id)
+    .eq("owner_user_id", ctx.owner.userId)
+    .select("id")
+    .maybeSingle();
+
+  if (accountError || !updated) {
+    return {
+      error:
+        "Pembayaran tercatat, tetapi status akun gagal diperbarui. Muat ulang halaman.",
+    };
+  }
+
+  revalidateDebt();
+  return {
+    success:
+      "Pembayaran angsuran dicatat. Jatuh tempo maju satu bulan dan sisa berkurang.",
+  };
 }

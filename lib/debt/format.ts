@@ -52,6 +52,13 @@ export function addDaysISO(iso: string, days: number): string {
   return date.toISOString().slice(0, 10);
 }
 
+/** Advance a date by whole calendar months, letting JS clamp short months. */
+export function addMonthsISO(iso: string, months = 1): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1 + months, day));
+  return date.toISOString().slice(0, 10);
+}
+
 /**
  * The next occurrence of a monthly due day. Days beyond the end of a short
  * month are clamped to that month's last day.

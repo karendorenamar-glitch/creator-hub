@@ -19,7 +19,7 @@ export default async function DebtAccountsPage() {
     data.payments,
     data.schedules,
   );
-  const paymentsReady = await isDebtInstallmentPaymentReady(supabase);
+  const paymentsReady = await isDebtInstallmentPaymentReady();
 
   return (
     <div className="space-y-6">
