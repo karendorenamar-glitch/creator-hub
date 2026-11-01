@@ -22,21 +22,11 @@ import { createDebtClient } from "@/lib/debt/supabase";
 import { loadDebtData } from "@/lib/debt/queries";
 import {
   buildAccountSummaries,
-  buildInstallments,
   calculateDebtTotals,
 } from "@/lib/debt/calculations";
 import { formatDebtDate, formatRupiah, todayISO } from "@/lib/debt/format";
 
 export const metadata = { title: "Ringkasan" };
-
-const STATUS_LABELS = {
-  upcoming: "Akan datang",
-  unpaid: "Belum dibayar",
-  partially_paid: "Dibayar sebagian",
-  paid: "Lunas",
-  overdue: "Terlambat",
-  cancelled: "Dibatalkan",
-} as const;
 
 export default async function DebtDashboardPage() {
   const owner = await requireDebtOwner();
@@ -58,20 +48,23 @@ export default async function DebtDashboardPage() {
     data.schedules,
     today,
   );
-  const installments = buildInstallments(
-    openAccounts,
-    data.schedules,
-    data.payments,
-    today,
-  ).filter((item) => item.status !== "cancelled" && item.remaining > 0);
-  const nextInstallments = installments.slice(0, 5);
+  const upcoming = summaries
+    .filter((account) => account.remaining > 0 && Boolean(account.due_date))
+    .sort((a, b) => String(a.due_date).localeCompare(String(b.due_date)))
+    .slice(0, 5);
+  const late = summaries.filter(
+    (account) =>
+      account.remaining > 0 &&
+      Boolean(account.due_date) &&
+      String(account.due_date) < today,
+  );
   const recentAccounts = summaries.slice(0, 3);
 
   return (
     <div className="space-y-7">
       <PageHeader
         title="Ringkasan utang"
-        subtitle="Gambaran tenang tentang apa yang sudah dibayar, apa yang tersisa, dan angsuran mana yang perlu disiapkan berikutnya."
+        subtitle="Gambaran tenang tentang apa yang sudah dibayar, apa yang tersisa, dan tagihan mana yang perlu disiapkan berikutnya."
         action={
           <Link
             href="/debt/payments"
@@ -86,7 +79,7 @@ export default async function DebtDashboardPage() {
         <StatCard
           label="Total utang"
           value={formatRupiah(totals.originalTotal)}
-          hint="Utang awal, atau total angsuran jika utang awal dikosongkan"
+          hint="Nominal per bulan x total tenor"
           icon={<Landmark className="size-4" aria-hidden />}
         />
         <StatCard
@@ -99,7 +92,7 @@ export default async function DebtDashboardPage() {
         <StatCard
           label="Sisa tagihan"
           value={formatRupiah(totals.remaining)}
-          hint="Jumlah sisa seluruh angsuran"
+          hint="Tidak pernah ditampilkan negatif"
           icon={<TrendingDown className="size-4" aria-hidden />}
           tone="neutral"
         />
@@ -108,8 +101,8 @@ export default async function DebtDashboardPage() {
           value={String(totals.overdueCount)}
           hint={
             totals.overdueAmount > 0
-              ? `${formatRupiah(totals.overdueAmount)} perlu segera diselesaikan`
-              : "Tidak ada angsuran terlambat"
+              ? `${formatRupiah(totals.overdueAmount)} perlu disiapkan`
+              : "Tidak ada tagihan terlambat"
           }
           icon={<CircleAlert className="size-4" aria-hidden />}
         />
@@ -118,8 +111,8 @@ export default async function DebtDashboardPage() {
           value={String(totals.dueSoonCount)}
           hint={
             totals.dueSoonCount > 0
-              ? "Angsuran yang perlu disiapkan"
-              : "Tidak ada angsuran minggu ini"
+              ? "Tagihan yang perlu disiapkan"
+              : "Tidak ada tagihan minggu ini"
           }
           icon={<CalendarClock className="size-4" aria-hidden />}
           tone="champagne"
@@ -157,63 +150,59 @@ export default async function DebtDashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl text-ink">
-              Angsuran berikutnya
+              Jatuh tempo berikutnya
             </h2>
             <p className="mt-1 text-xs text-ink-soft">
-              Tagihan terdekat dari setiap jadwal angsuran.
+              Tagihan terdekat beserta nominal per bulan.
             </p>
           </div>
           <Link
-            href="/debt/schedule"
+            href="/debt/accounts"
             className="text-xs font-medium text-olive-700 hover:underline"
           >
-            Lihat jadwal
+            Lihat utang
           </Link>
         </div>
 
-        {nextInstallments.length === 0 ? (
+        {upcoming.length === 0 ? (
           <div className="mt-5">
             <EmptyState
-              title="Belum ada angsuran"
-              body="Tambahkan angsuran pada setiap utang agar sisa dan jatuh tempo bisa dihitung."
+              title="Belum ada tagihan"
+              body="Tambahkan utang beserta nominal, tenor, dan bulan jatuh tempo."
               icon={<CalendarClock className="size-8" aria-hidden />}
             />
           </div>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {nextInstallments.map((item) => (
+            {upcoming.map((account) => (
               <div
-                key={item.schedule.id}
+                key={account.id}
                 className="rounded-2xl border border-olive-100 bg-[#f8f4ec] p-3"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-ink">
-                    {item.account.creditor_name}
+                    {account.creditor_name}
                   </p>
                   <Badge
-                    tone={
-                      item.status === "overdue"
-                        ? "blush"
-                        : item.status === "partially_paid"
-                          ? "warning"
-                          : "neutral"
-                    }
+                    tone={account.overdueInstallments > 0 ? "blush" : "neutral"}
                   >
-                    {STATUS_LABELS[item.status]}
+                    {account.overdueInstallments > 0 ? "Terlambat" : "Berikutnya"}
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-ink-soft">
-                  {item.account.reference_label
-                    ? `${item.account.reference_label} · `
-                    : ""}
-                  {formatDebtDate(item.schedule.due_date)}
+                  {account.reference_label ? `${account.reference_label} · ` : ""}
+                  {formatDebtDate(account.due_date)}
                 </p>
                 <p className="mt-2 text-sm font-medium text-ink">
-                  {formatRupiah(item.remaining)}
+                  {formatRupiah(
+                    account.installment_amount > 0
+                      ? Math.min(account.installment_amount, account.remaining)
+                      : account.remaining,
+                  )}
                 </p>
                 <p className="mt-1 text-[11px] text-ink-soft">
-                  Tagihan {formatRupiah(item.schedule.amount_due)}
-                  {item.paid > 0 ? ` · dibayar ${formatRupiah(item.paid)}` : ""}
+                  {account.installment_month}/{account.installment_total_months} bulan
+                  · sisa {formatRupiah(account.remaining)}
                 </p>
               </div>
             ))}
@@ -256,10 +245,10 @@ export default async function DebtDashboardPage() {
                   <div>
                     <p className="font-medium text-ink">{account.creditor_name}</p>
                     <p className="mt-1 text-xs text-ink-soft">
-                      {account.nextInstallment
-                        ? `Angsuran berikutnya ${formatDebtDate(account.nextInstallment.schedule.due_date)}`
-                        : "Semua angsuran lunas"}
-                      {` · ${account.paidInstallments}/${account.installmentCount} lunas`}
+                      {account.due_date
+                        ? `Jatuh tempo ${formatDebtDate(account.due_date)}`
+                        : "Tanpa tanggal jatuh tempo"}
+                      {` · ${account.installment_month}/${account.installment_total_months} bulan`}
                     </p>
                   </div>
                   <div className="min-w-40 text-right">
@@ -277,46 +266,41 @@ export default async function DebtDashboardPage() {
         </Card>
 
         <Card className="border-[#e8e1d4] bg-[#fffdf9]">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="font-heading text-xl text-ink">Tagihan jatuh tempo</h2>
-              <p className="mt-1 text-xs text-ink-soft">
-                Angsuran yang jatuh tempo hari ini atau sudah lewat.
-              </p>
-            </div>
+          <div>
+            <h2 className="font-heading text-xl text-ink">Tagihan lewat</h2>
+            <p className="mt-1 text-xs text-ink-soft">
+              Tagihan yang sudah melewati tanggal jatuh tempo.
+            </p>
           </div>
 
-          {installments.filter((item) => item.schedule.due_date <= today).length === 0 ? (
+          {late.length === 0 ? (
             <div className="mt-5">
               <EmptyState
-                title="Tidak ada tagihan tertunggak"
-                body="Semua angsuran yang sudah lewat tanggalnya telah dibayar."
+                title="Tidak ada tagihan lewat"
+                body="Semua tagihan yang lewat tanggal sudah dibayar."
                 icon={<CalendarClock className="size-8" aria-hidden />}
               />
             </div>
           ) : (
             <div className="mt-4 space-y-3">
-              {installments
-                .filter((item) => item.schedule.due_date <= today)
-                .slice(0, 5)
-                .map((item) => (
-                  <div
-                    key={item.schedule.id}
-                    className="flex items-center justify-between gap-3 rounded-xl bg-[#f8f4ec] px-3 py-2.5"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-ink">
-                        {item.account.creditor_name}
-                      </p>
-                      <p className="text-xs text-ink-soft">
-                        {formatDebtDate(item.schedule.due_date)}
-                      </p>
-                    </div>
+              {late.slice(0, 5).map((account) => (
+                <div
+                  key={account.id}
+                  className="flex items-center justify-between gap-3 rounded-xl bg-[#f8f4ec] px-3 py-2.5"
+                >
+                  <div>
                     <p className="text-sm font-medium text-ink">
-                      {formatRupiah(item.remaining)}
+                      {account.creditor_name}
+                    </p>
+                    <p className="text-xs text-ink-soft">
+                      {formatDebtDate(account.due_date)}
                     </p>
                   </div>
-                ))}
+                  <p className="text-sm font-medium text-ink">
+                    {formatRupiah(account.remaining)}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
         </Card>

@@ -16,7 +16,6 @@ import { DebtAccountForm } from "@/components/debt/account-form";
 import type { AccountSummary } from "@/lib/debt/calculations";
 import {
   deleteDebtAccountAction,
-  materializeLegacySchedulesAction,
   payDebtInstallmentAction,
 } from "@/app/debt/actions";
 import { daysUntil, formatDebtDate, formatRupiah } from "@/lib/debt/format";
@@ -95,16 +94,6 @@ export function DebtAccountManager({
           >
             <WalletCards className="size-4" aria-hidden /> Catat pembayaran
           </Link>
-          {accounts.some((account) => account.legacy) ? (
-            <ConfirmAction
-              action={materializeLegacySchedulesAction}
-              fields={{}}
-              label="Buat angsuran dari tenor lama"
-              confirmLabel="Ya, buat angsuran"
-              message="Semua utang yang masih memakai tenor lama akan dibuatkan jadwal angsuran. Utang yang sudah punya jadwal dilewati."
-              tone="neutral"
-            />
-          ) : null}
         </div>
         <span className="text-xs text-ink-soft">
           {filtered.length} dari {accounts.length} akun
@@ -192,9 +181,13 @@ export function DebtAccountManager({
               account.status === "active" && account.overdueInstallments > 0;
             const canPay =
               account.status === "active" &&
-              next !== null &&
-              next.remaining > 0 &&
-              next.schedule.id !== "";
+              account.installment_amount > 0 &&
+              account.installment_total_months > 0 &&
+              account.installment_month < account.installment_total_months;
+            const payAmount = Math.min(
+              account.installment_amount,
+              account.remaining,
+            );
 
             return (
               <Card
@@ -275,27 +268,6 @@ export function DebtAccountManager({
                   <Progress value={account.progress} tone="olive" />
                 </div>
 
-                {account.legacy ? (
-                  <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-                    <p>
-                      {account.installment_total_months > 0
-                        ? `Angka di atas dihitung dari tenor lama (${formatRupiah(
-                            account.installment_amount,
-                          )} × ${account.installment_total_months} bulan).`
-                        : "Angka di atas dihitung dari utang awal dan pembayaran yang tercatat."}{" "}
-                      Buat angsuran agar bisa dibayar per bulan.
-                    </p>
-                    <ConfirmAction
-                      action={materializeLegacySchedulesAction}
-                      fields={{ id: account.id }}
-                      label="Buat angsuran"
-                      confirmLabel="Ya, buat"
-                      message="Jadwal angsuran akan dibuat dari sisa tagihan utang ini."
-                      tone="neutral"
-                    />
-                  </div>
-                ) : null}
-
                 {account.mismatch ? (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                     Total angsuran {formatRupiah(account.scheduled)} berbeda dengan
@@ -313,18 +285,12 @@ export function DebtAccountManager({
                     {canPay ? (
                       <ConfirmAction
                         action={payDebtInstallmentAction}
-                        fields={{ id: next.schedule.id }}
+                        fields={{ id: account.id }}
                         label="Bayar angsuran"
-                        confirmLabel={`Bayar ${formatRupiah(next.remaining)}`}
-                        message={`Catat pelunasan angsuran ${formatDebtDate(nextDate)} sebesar ${formatRupiah(next.remaining)}.`}
+                        confirmLabel={`Bayar ${formatRupiah(payAmount)}`}
+                        message={`Catat pembayaran angsuran ${formatRupiah(payAmount)}. Jatuh tempo akan maju ke bulan berikutnya.`}
                       />
                     ) : null}
-                    <Link
-                      href={`/debt/schedule?account=${account.id}`}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-50"
-                    >
-                      Atur angsuran
-                    </Link>
                     <button
                       type="button"
                       onClick={() => setEditing(account)}

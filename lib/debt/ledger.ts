@@ -294,12 +294,83 @@ function singleAmountSummary(
   };
 }
 
+/**
+ * The monthly tenor is the only thing the user maintains: nominal per month,
+ * months already paid, and the next due date. Everything else is derived.
+ */
+function tenorSummary(
+  account: DebtAccount,
+  payments: DebtPayment[],
+  today: string,
+): AccountSummary {
+  const monthly = Number(account.installment_amount ?? 0);
+  const months = Number(account.installment_total_months ?? 0);
+  const paidMonths = Math.min(
+    Math.max(Number(account.installment_month ?? 0), 0),
+    months,
+  );
+  const openMonths = months - paidMonths;
+  const recordedPaid = activePayments(payments)
+    .filter((payment) => payment.debt_account_id === account.id)
+    .reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const scheduledPaid = monthly * paidMonths;
+  const paid = Math.max(recordedPaid, scheduledPaid);
+  const contract = Number(account.total_amount_due);
+  const fullContract = monthly * months;
+  const remaining = Math.max(0, fullContract - paid);
+  const original = Math.max(contract, fullContract);
+  const dueDate = account.due_date;
+  const overdue = Boolean(dueDate && dueDate < today && remaining > 0);
+  const nextInstallment: Installment | null =
+    openMonths > 0
+      ? {
+          schedule: {
+            id: "",
+            owner_user_id: account.owner_user_id,
+            debt_account_id: account.id,
+            due_date: dueDate ?? today,
+            amount_due: Math.min(monthly, remaining),
+            status: "upcoming",
+            notes: null,
+            created_at: account.created_at,
+            updated_at: account.updated_at,
+          },
+          account,
+          paid: 0,
+          remaining: Math.min(monthly, remaining),
+          status: overdue ? "overdue" : "upcoming",
+        }
+      : null;
+
+  return {
+    ...account,
+    original,
+    scheduled: fullContract,
+    paid,
+    remaining,
+    progress: percentOf(paid, paid + remaining),
+    installmentCount: months,
+    paidInstallments: paidMonths,
+    openInstallments: openMonths,
+    overdueInstallments: overdue ? 1 : 0,
+    nextInstallment,
+    mismatch: false,
+    legacy: false,
+  };
+}
+
 export function summarizeAccount(
   account: DebtAccount,
   installments: Installment[],
   payments: DebtPayment[],
   today = todayISO(),
 ): AccountSummary {
+  const tenorMonths = Number(account.installment_total_months ?? 0);
+  const tenorAmount = Number(account.installment_amount ?? 0);
+  if (account.status !== "closed" && tenorMonths > 0 && tenorAmount > 0) {
+    return tenorSummary(account, payments, today);
+  }
+
   const own = installments.filter(
     (item) =>
       item.schedule.debt_account_id === account.id &&
@@ -423,23 +494,29 @@ export function calculateDebtTotals(
     schedules,
     today,
   );
-  const installments = buildInstallments(
-    openAccounts,
-    schedules,
-    payments,
-    today,
-  ).filter((item) => item.status !== "cancelled");
-  const overdue = installments.filter((item) => item.status === "overdue");
-  const dueSoon = installments.filter((item) => {
-    if (item.remaining <= 0) return false;
-    const days = daysUntil(item.schedule.due_date, today);
-    return days >= 0 && days <= 7;
-  });
-  const month = monthKey(today);
   const totalPaid = summaries.reduce((sum, account) => sum + account.paid, 0);
   const remaining = summaries.reduce(
     (sum, account) => sum + account.remaining,
     0,
+  );
+  const overdueAccounts = summaries.filter(
+    (account) =>
+      account.status === "active" &&
+      Boolean(account.due_date) &&
+      String(account.due_date) < today &&
+      account.remaining > 0,
+  );
+  const dueSoonAccounts = summaries.filter((account) => {
+    if (account.remaining <= 0 || !account.due_date) return false;
+    const days = daysUntil(account.due_date, today);
+    return days >= 0 && days <= 7;
+  });
+  const month = monthKey(today);
+  const monthAccounts = summaries.filter(
+    (account) =>
+      account.remaining > 0 &&
+      Boolean(account.due_date) &&
+      monthKey(String(account.due_date)) === month,
   );
 
   return {
@@ -447,16 +524,23 @@ export function calculateDebtTotals(
     totalPaid,
     remaining,
     progress: percentOf(totalPaid, totalPaid + remaining),
-    overdueCount: overdue.length,
-    overdueAmount: overdue.reduce((sum, item) => sum + item.remaining, 0),
-    overdueAccounts: summaries.filter(
-      (account) => account.overdueInstallments > 0,
+    overdueCount: overdueAccounts.length,
+    overdueAmount: overdueAccounts.reduce(
+      (sum, account) => sum + account.remaining,
+      0,
     ),
-    dueSoonCount: dueSoon.length,
-    dueSoonInstallments: dueSoon,
-    monthlyTarget: installments
-      .filter((item) => monthKey(item.schedule.due_date) === month)
-      .reduce((sum, item) => sum + Number(item.schedule.amount_due), 0),
+    overdueAccounts,
+    dueSoonCount: dueSoonAccounts.length,
+    dueSoonInstallments: dueSoonAccounts
+      .map((account) => account.nextInstallment)
+      .filter((item): item is Installment => item !== null),
+    monthlyTarget: monthAccounts.reduce((sum, account) => {
+      const bill =
+        account.installment_amount > 0
+          ? account.installment_amount
+          : account.remaining;
+      return sum + Math.min(bill, account.remaining);
+    }, 0),
     monthlyPaid: activePayments(payments)
       .filter(
         (payment) =>

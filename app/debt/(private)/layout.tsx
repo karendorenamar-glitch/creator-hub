@@ -6,7 +6,6 @@ const NAV = [
   ["Ringkasan", "/debt"],
   ["Akun utang", "/debt/accounts"],
   ["Pembayaran", "/debt/payments"],
-  ["Jadwal", "/debt/schedule"],
 ] as const;
 
 export default async function DebtPrivateLayout({

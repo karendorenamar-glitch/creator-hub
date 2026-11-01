@@ -7,7 +7,6 @@ import { getDebtOwner } from "@/lib/debt/auth";
 import { isEmail, isUuid, text } from "@/lib/wedding/validation";
 import {
   parseDebtAccount,
-  type AccountPlan,
   parseDebtPayment,
   parseDebtSchedule,
   parseDebtScheduleBatch,
@@ -198,44 +197,6 @@ async function refreshAccountStatus(
   }
 }
 
-function buildPlanRows(
-  ownerId: string,
-  accountId: string,
-  plan: AccountPlan,
-  fallbackDueDate: string | null,
-  today: string,
-) {
-  const day =
-    plan.due_day ??
-    (fallbackDueDate ? Number(fallbackDueDate.slice(8, 10)) : 1);
-  const months =
-    plan.installments.length > 0
-      ? plan.installments
-      : plan.monthly_amount > 0
-        ? Array.from(
-            {
-              length: Math.max(0, plan.tenor_months - plan.paid_months),
-            },
-            (_, index) => ({
-              month: addMonthsISO(
-                `${plan.first_due_month ?? (fallbackDueDate ? fallbackDueDate.slice(0, 7) : today.slice(0, 7))}-01`,
-                index,
-              ).slice(0, 7),
-              amount: plan.monthly_amount,
-            }),
-          )
-        : [];
-
-  return months.map((item) => ({
-    owner_user_id: ownerId,
-    debt_account_id: accountId,
-    due_date: dueDateForMonth(day, item.month),
-    amount_due: item.amount,
-    notes: null,
-    status: "upcoming" as DebtScheduleStatus,
-  }));
-}
-
 export async function createDebtAccountAction(
   prev: DebtActionResult,
   formData: FormData,
@@ -271,35 +232,10 @@ async function createDebtAccount(
 
   if (error) return { error: diagnostic(error) };
 
-  const rows = created
-    ? buildPlanRows(
-        ctx.owner.userId,
-        created.id,
-        parsed.plan,
-        created.due_date ?? null,
-        todayISO(),
-      )
-    : [];
-
-  if (rows.length > 0) {
-    const { error: rowsError } = await ctx.supabase
-      .from("debt_schedules")
-      .insert(rows);
-    if (rowsError) {
-      revalidateDebt();
-      return {
-        error: `Utang tersimpan, tetapi angsuran gagal dibuat (${rowsError.code ?? "?"}: ${rowsError.message}). Tambahkan manual di halaman Jadwal.`,
-      };
-    }
-  }
+  if (!created) return { error: "Utang gagal disimpan. Coba lagi." };
 
   revalidateDebt();
-  return {
-    success:
-      rows.length > 0
-        ? `Utang dibuat dengan ${rows.length} angsuran.`
-        : "Utang dibuat. Tambahkan angsuran di halaman Jadwal.",
-  };
+  return { success: "Utang berhasil disimpan." };
 }
 
 export async function updateDebtAccountAction(
@@ -342,52 +278,6 @@ async function updateDebtAccount(
 
   if (error) return { error: messageForError(error) };
   if (!updated) return { error: "Akun tidak ditemukan." };
-
-  const rows = buildPlanRows(
-    ctx.owner.userId,
-    id,
-    parsed.plan,
-    parsed.values.due_date,
-    todayISO(),
-  );
-  // Only regenerate when the tenor plan itself changed, so editing a name or a
-  // note never overwrites per-installment amounts that were edited by hand.
-  const planChanged =
-    Number(account.installment_amount) !== parsed.plan.monthly_amount ||
-    Number(account.installment_total_months) !== parsed.plan.tenor_months ||
-    Number(account.installment_month) !== parsed.plan.paid_months ||
-    (account.due_day ?? null) !== parsed.plan.due_day;
-
-  if (rows.length > 0 && planChanged) {
-    const { count: paidCount } = await ctx.supabase
-      .from("debt_payments")
-      .select("id", { count: "exact", head: true })
-      .eq("debt_account_id", id)
-      .eq("owner_user_id", ctx.owner.userId)
-      .not("schedule_id", "is", null);
-
-    if ((paidCount ?? 0) === 0) {
-      const { error: clearError } = await ctx.supabase
-        .from("debt_schedules")
-        .delete()
-        .eq("debt_account_id", id)
-        .eq("owner_user_id", ctx.owner.userId);
-
-      if (clearError) return { error: messageForError(clearError) };
-
-      const { error: rowsError } = await ctx.supabase
-        .from("debt_schedules")
-        .insert(rows);
-
-      if (rowsError) {
-        revalidateDebt();
-        return {
-          error:
-            "Utang diperbarui, tetapi angsuran gagal dibuat ulang. Tambahkan manual di halaman Jadwal.",
-        };
-      }
-    }
-  }
 
   revalidateDebt();
   return { success: "Utang berhasil diperbarui." };
@@ -595,20 +485,37 @@ export async function createDebtPaymentAction(
     return { error: "Akun tidak ditemukan atau sudah ditutup." };
   }
 
-  const { count: trackedInstallments } = await ctx.supabase
-    .from("debt_schedules")
-    .select("id", { count: "exact", head: true })
+  const { data: accountPayments } = await ctx.supabase
+    .from("debt_payments")
+    .select("amount, schedule_id")
     .eq("debt_account_id", account.id)
     .eq("owner_user_id", ctx.owner.userId)
-    .neq("status", "cancelled");
+    .is("reversed_at", null);
 
-  if (!parsed.values.schedule_id) {
-    if ((trackedInstallments ?? 0) > 0) {
-      return {
-        error: "Pilih angsuran yang dibayar agar sisa tagihan tetap akurat.",
-      };
-    }
-  } else {
+  const recordedPaid = (accountPayments ?? []).reduce(
+    (sum, payment) => sum + Number(payment.amount),
+    0,
+  );
+
+  const tenorMonths = Number(account.installment_total_months ?? 0);
+  const tenorAmount = Number(account.installment_amount ?? 0);
+  let accountRemaining = 0;
+
+  if (tenorMonths > 0 && tenorAmount > 0) {
+    const paidMonths = Math.min(
+      Math.max(Number(account.installment_month ?? 0), 0),
+      tenorMonths,
+    );
+    const paid = Math.max(recordedPaid, tenorAmount * paidMonths);
+    accountRemaining = Math.max(0, tenorAmount * tenorMonths - paid);
+  } else if (Number(account.total_amount_due) > 0) {
+    accountRemaining = Math.max(
+      0,
+      Number(account.total_amount_due) - recordedPaid,
+    );
+  }
+
+  if (parsed.values.schedule_id) {
     const schedule = await findSchedule(
       ctx.owner.userId,
       parsed.values.schedule_id,
@@ -616,23 +523,15 @@ export async function createDebtPaymentAction(
     if (!schedule || schedule.debt_account_id !== account.id) {
       return { error: "Angsuran tidak sesuai dengan akun yang dipilih." };
     }
-    if (schedule.status === "cancelled") {
-      return { error: "Angsuran ini sudah dibatalkan." };
-    }
+  }
 
-    const installments = await schedulePayments(
-      ctx.owner.userId,
-      schedule.id,
-    );
-    const paid = paidByScheduleId(installments).get(schedule.id) ?? 0;
-    const remaining = Math.max(0, Number(schedule.amount_due) - paid);
-
-    if (remaining <= 0) return { error: "Angsuran ini sudah lunas." };
-    if (parsed.values.amount > remaining) {
-      return {
-        error: `Nominal melebihi sisa angsuran (${formatRupiah(remaining)}).`,
-      };
-    }
+  if (accountRemaining <= 0) {
+    return { error: "Utang ini sudah lunas." };
+  }
+  if (parsed.values.amount > accountRemaining) {
+    return {
+      error: `Nominal melebihi sisa tagihan (${formatRupiah(accountRemaining)}).`,
+    };
   }
 
   const { error } = await ctx.supabase.from("debt_payments").insert({
@@ -675,60 +574,91 @@ export async function payDebtInstallmentAction(
   if (!ctx) return { error: "Akses ditolak." };
 
   const id = text(formData, "id");
-  if (!isUuid(id)) return { error: "Angsuran tidak valid." };
+  if (!isUuid(id)) return { error: "Utang tidak valid." };
 
-  const schedule = await findSchedule(ctx.owner.userId, id);
-  if (!schedule) return { error: "Angsuran tidak ditemukan." };
-
-  const account = await accountForPayment(
-    ctx.owner.userId,
-    schedule.debt_account_id,
-  );
-  if (!account) return { error: "Akun tidak ditemukan atau sudah ditutup." };
-  if (schedule.status === "cancelled") {
-    return { error: "Angsuran ini sudah dibatalkan." };
+  const account = await accountForPayment(ctx.owner.userId, id);
+  if (!account) {
+    return { error: "Utang tidak ditemukan atau sudah ditutup." };
   }
 
-  const payments = await schedulePayments(ctx.owner.userId, schedule.id);
-  const paid = paidByScheduleId(payments).get(schedule.id) ?? 0;
-  const remaining = Math.max(0, Number(schedule.amount_due) - paid);
-  if (remaining <= 0) return { error: "Angsuran ini sudah lunas." };
+  const months = Number(account.installment_total_months ?? 0);
+  const monthly = Number(account.installment_amount ?? 0);
+  if (months <= 0 || monthly <= 0) {
+    return { error: "Isi nominal per bulan dan tenor terlebih dahulu." };
+  }
 
-  const key = `schedule:${schedule.id}:${paid}:${remaining}`;
+  const paidMonths = Math.min(
+    Math.max(Number(account.installment_month ?? 0), 0),
+    months,
+  );
+  if (paidMonths >= months) return { error: "Semua angsuran sudah lunas." };
+
+  const nextMonth = paidMonths + 1;
+  const key = `installment:${account.id}:${nextMonth}`;
   const { data: existing } = await ctx.supabase
     .from("debt_payments")
     .select("id")
     .eq("owner_user_id", ctx.owner.userId)
     .eq("idempotency_key", key)
     .maybeSingle();
-  if (existing) return { success: "Pembayaran angsuran ini sudah tercatat." };
+  if (existing) return { success: "Angsuran ini sudah tercatat." };
+
+  const { data: recordedPayments } = await ctx.supabase
+    .from("debt_payments")
+    .select("amount")
+    .eq("debt_account_id", account.id)
+    .eq("owner_user_id", ctx.owner.userId)
+    .is("reversed_at", null);
+
+  const recordedPaid = (recordedPayments ?? []).reduce(
+    (sum, payment) => sum + Number(payment.amount),
+    0,
+  );
+  const paidBefore = Math.max(recordedPaid, monthly * paidMonths);
+  const remaining = Math.max(0, monthly * months - paidBefore);
+  const amount = Math.min(monthly, remaining);
+  if (amount <= 0) return { error: "Semua angsuran sudah lunas." };
 
   const { error } = await ctx.supabase.from("debt_payments").insert({
     owner_user_id: ctx.owner.userId,
     debt_account_id: account.id,
-    schedule_id: schedule.id,
-    amount: remaining,
+    schedule_id: null,
+    amount,
     payment_date: todayISO(),
     payment_method: "installment",
-    reference: `Angsuran ${schedule.due_date}`,
+    reference: `Angsuran ${nextMonth}/${months}`,
     idempotency_key: key,
   });
 
   if (error) return { error: messageForError(error) };
 
-  try {
-    await refreshAccountStatus(ctx.owner.userId, account.id);
-  } catch {
+  const nextDueDate = addMonthsISO(
+    account.due_date ?? nextDueDateForDay(account.due_day ?? 1),
+    1,
+  );
+  const { data: updated, error: accountError } = await ctx.supabase
+    .from("debt_accounts")
+    .update({
+      installment_month: nextMonth,
+      due_date: nextDueDate,
+      status: nextMonth >= months ? "paid" : "active",
+    })
+    .eq("id", account.id)
+    .eq("owner_user_id", ctx.owner.userId)
+    .select("id")
+    .maybeSingle();
+
+  if (accountError || !updated) {
     revalidateDebt();
     return {
       error:
-        "Pembayaran tersimpan, tetapi status akun gagal diperbarui. Muat ulang halaman.",
+        "Pembayaran tercatat, tetapi status utang gagal diperbarui. Muat ulang halaman.",
     };
   }
 
   revalidateDebt();
   return {
-    success: `Angsuran ${formatRupiah(remaining)} tercatat lunas.`,
+    success: `Angsuran ${formatRupiah(amount)} tercatat. Jatuh tempo maju ke bulan berikutnya.`,
   };
 }
 

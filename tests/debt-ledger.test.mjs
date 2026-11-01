@@ -230,11 +230,11 @@ t("total original", totals.originalTotal, 2_000_000);
 t("total paid", totals.totalPaid, 550_000);
 t("total remaining", totals.remaining, 750_000);
 t("total progress", totals.progress, 42);
-t("overdue count", totals.overdueCount, 1);
-t("overdue amount", totals.overdueAmount, 200_000);
-t("monthly target", totals.monthlyTarget, 700_000);
+t("overdue count", totals.overdueCount, 0);
+t("overdue amount", totals.overdueAmount, 0);
+t("monthly target", totals.monthlyTarget, 0);
 t("monthly paid", totals.monthlyPaid, 550_000);
-t("due soon count", totals.dueSoonCount, 1);
+t("due soon count", totals.dueSoonCount, 0);
 t("next seven days", nextSevenDays("2026-11-10"), "2026-11-17");
 
 // --- No negative balances -------------------------------------------------
@@ -314,7 +314,7 @@ t("legacy original", legacy.original, 2_400_000);
 t("legacy paid", legacy.paid, 2_000_000);
 t("legacy remaining", legacy.remaining, 400_000);
 t("legacy progress", legacy.progress, 83);
-t("legacy flagged", legacy.legacy, true);
+t("tenor account is not flagged legacy", legacy.legacy, false);
 t("legacy open installments", legacy.openInstallments, 2);
 t("legacy next installment amount", legacy.nextInstallment.remaining, 200_000);
 t("legacy next installment has no real id", legacy.nextInstallment.schedule.id, "");
@@ -322,6 +322,53 @@ t("legacy next installment has no real id", legacy.nextInstallment.schedule.id, 
 const legacyTotals = calculateDebtTotals([legacyAccount], [], [], today);
 t("legacy total remaining", legacyTotals.remaining, 400_000);
 t("legacy total paid", legacyTotals.totalPaid, 2_000_000);
+
+// --- Tenor model: due dates drive overdue and monthly target ---------------
+const tenorOverdue = account({
+  id: "tenorOverdue",
+  total_amount_due: 1_000_000,
+  installment_amount: 100_000,
+  installment_total_months: 10,
+  installment_month: 5,
+  due_date: "2026-10-10",
+});
+const tenorThisMonth = account({
+  id: "tenorThisMonth",
+  total_amount_due: 1_200_000,
+  installment_amount: 100_000,
+  installment_total_months: 12,
+  installment_month: 0,
+  due_date: "2026-11-15",
+});
+const tenorSummaries = buildAccountSummaries(
+  [tenorOverdue, tenorThisMonth],
+  [],
+  [],
+  today,
+);
+const overdueSummary = tenorSummaries.find((item) => item.id === "tenorOverdue");
+const thisMonthSummary = tenorSummaries.find((item) => item.id === "tenorThisMonth");
+t("tenor paid from months", overdueSummary.paid, 500_000);
+t("tenor remaining", overdueSummary.remaining, 500_000);
+t("tenor progress", overdueSummary.progress, 50);
+t("tenor overdue flag", overdueSummary.overdueInstallments, 1);
+t(
+  "tenor next installment amount",
+  overdueSummary.nextInstallment.remaining,
+  100_000,
+);
+t("tenor this month remaining", thisMonthSummary.remaining, 1_200_000);
+
+const tenorTotals = calculateDebtTotals(
+  [tenorOverdue, tenorThisMonth],
+  [],
+  [],
+  today,
+);
+t("tenor overdue count", tenorTotals.overdueCount, 1);
+t("tenor overdue amount", tenorTotals.overdueAmount, 500_000);
+t("tenor monthly target", tenorTotals.monthlyTarget, 100_000);
+t("tenor due soon count", tenorTotals.dueSoonCount, 1);
 
 // --- Single amount fallback -----------------------------------------------
 const single = buildAccountSummaries(
