@@ -103,6 +103,7 @@ export function parseDebtAccount(
   }
 
   const mode = text(formData, "amountMode") === "custom" ? "custom" : "same";
+  const editing = text(formData, "formMode") === "edit";
 
   const monthlyRaw = text(formData, "monthlyAmount");
   let monthlyAmount = 0;
@@ -151,35 +152,39 @@ export function parseDebtAccount(
       .getAll("customAmount")
       .map((value) => String(value));
 
-    if (months.length === 0) {
-      return { ok: false, error: "Isi nominal untuk minimal satu angsuran.",
-      };
-    }
-    if (months.length !== amounts.length) {
-      return { ok: false, error: "Data angsuran tidak lengkap." };
-    }
-    if (openMonths > 0 && months.length !== openMonths) {
-      return {
-        ok: false,
-        error: `Jumlah angsuran harus ${openMonths} baris sesuai sisa tenor.`,
-      };
-    }
+    // When editing, an empty custom list means "leave the schedule alone".
+    const skipCustomRows = editing && months.length === 0;
 
-    for (let index = 0; index < months.length; index += 1) {
-      if (!isRealDate(`${months[index]}-01`)) {
-        return { ok: false, error: "Bulan angsuran tidak valid." };
+    if (!skipCustomRows) {
+      if (months.length === 0) {
+        return { ok: false, error: "Isi nominal untuk minimal satu angsuran." };
       }
-      const amount = parseWholeRupiah(amounts[index], { allowZero: false });
-      if (amount === null) {
-        return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+      if (months.length !== amounts.length) {
+        return { ok: false, error: "Data angsuran tidak lengkap." };
       }
-      installments.push({ month: months[index], amount });
+      if (openMonths > 0 && months.length !== openMonths) {
+        return {
+          ok: false,
+          error: `Jumlah angsuran harus ${openMonths} baris sesuai sisa tenor.`,
+        };
+      }
+
+      for (let index = 0; index < months.length; index += 1) {
+        if (!isRealDate(`${months[index]}-01`)) {
+          return { ok: false, error: "Bulan angsuran tidak valid." };
+        }
+        const amount = parseWholeRupiah(amounts[index], { allowZero: false });
+        if (amount === null) {
+          return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+        }
+        installments.push({ month: months[index], amount });
+      }
     }
   }
 
   if (mode === "same" && tenorMonths > 0 && monthlyAmount > 0) {
     total = monthlyAmount * tenorMonths;
-  } else if (mode === "custom" && !total) {
+  } else if (mode === "custom" && !total && installments.length > 0) {
     // The paid months are unknown in custom mode, so only the remaining rows
     // are tracked. The tenor badge still shows how many months were paid.
     total = installments.reduce((sum, item) => sum + item.amount, 0);

@@ -48,6 +48,10 @@ function messageForError(error: { code?: string; message: string }): string {
   return "Terjadi kesalahan saat menyimpan data. Coba lagi.";
 }
 
+function diagnostic(error: { code?: string; message: string }): string {
+  return `${messageForError(error)} [${error.code ?? "?"}: ${error.message}]`;
+}
+
 function revalidateDebt() {
   for (const path of [
     "/debt",
@@ -233,6 +237,20 @@ function buildPlanRows(
 }
 
 export async function createDebtAccountAction(
+  prev: DebtActionResult,
+  formData: FormData,
+): Promise<DebtActionResult> {
+  try {
+    return await createDebtAccount(prev, formData);
+  } catch {
+    return {
+      error:
+        "Penyimpanan gagal karena kesalahan tak terduga. Coba lagi atau periksa isian.",
+    };
+  }
+}
+
+async function createDebtAccount(
   _prev: DebtActionResult,
   formData: FormData,
 ): Promise<DebtActionResult> {
@@ -251,7 +269,7 @@ export async function createDebtAccountAction(
     .select("id, due_date")
     .maybeSingle();
 
-  if (error) return { error: messageForError(error) };
+  if (error) return { error: diagnostic(error) };
 
   const rows = created
     ? buildPlanRows(
@@ -270,8 +288,7 @@ export async function createDebtAccountAction(
     if (rowsError) {
       revalidateDebt();
       return {
-        error:
-          "Utang tersimpan, tetapi angsuran gagal dibuat. Tambahkan manual di halaman Jadwal.",
+        error: `Utang tersimpan, tetapi angsuran gagal dibuat (${rowsError.code ?? "?"}: ${rowsError.message}). Tambahkan manual di halaman Jadwal.`,
       };
     }
   }
@@ -286,6 +303,20 @@ export async function createDebtAccountAction(
 }
 
 export async function updateDebtAccountAction(
+  prev: DebtActionResult,
+  formData: FormData,
+): Promise<DebtActionResult> {
+  try {
+    return await updateDebtAccount(prev, formData);
+  } catch {
+    return {
+      error:
+        "Penyimpanan gagal karena kesalahan tak terduga. Coba lagi atau periksa isian.",
+    };
+  }
+}
+
+async function updateDebtAccount(
   _prev: DebtActionResult,
   formData: FormData,
 ): Promise<DebtActionResult> {

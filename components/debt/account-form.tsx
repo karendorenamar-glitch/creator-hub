@@ -85,6 +85,7 @@ export function DebtAccountForm({
   return (
     <form action={formAction} className="space-y-4">
       {account ? <input type="hidden" name="id" value={account.id} /> : null}
+      <input type="hidden" name="formMode" value={account ? "edit" : "create"} />
       <FormAlert error={state?.error} />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -282,6 +283,7 @@ export function DebtAccountForm({
                 <input
                   name="customAmount"
                   inputMode="numeric"
+                  required={!account}
                   defaultValue={monthlyAmount}
                   placeholder="Nominal"
                   className={inputClass}
