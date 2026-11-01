@@ -25,6 +25,7 @@ import {
   calculateDebtTotals,
 } from "@/lib/debt/calculations";
 import {
+  addMonthsISO,
   formatDebtDate,
   formatRupiah,
   monthLabel,
@@ -74,6 +75,21 @@ export default async function DebtDashboardPage() {
     )
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
     .slice(0, 5);
+
+  const nextMonthKey = addMonthsISO(today, 1).slice(0, 7);
+  const nextMonthTarget = data.schedules
+    .filter(
+      (schedule) =>
+        schedule.status === "upcoming" &&
+        schedule.due_date.startsWith(nextMonthKey),
+    )
+    .reduce((sum, schedule) => sum + Number(schedule.amount_due), 0);
+  const targetHint =
+    totals.monthlyTarget > 0
+      ? `${monthLabel(totals.monthlyLabelKey)} · pembayaran tercatat ${formatRupiah(totals.monthlyPaid)}`
+      : nextMonthTarget > 0
+        ? `Tidak ada tagihan ${monthLabel(addMonthsISO(today, 0).slice(0, 7))} · ${monthLabel(nextMonthKey)} ${formatRupiah(nextMonthTarget)}`
+        : `Belum ada tagihan ${monthLabel(addMonthsISO(today, 0).slice(0, 7))}`;
 
   return (
     <div className="space-y-7">
@@ -135,7 +151,7 @@ export default async function DebtDashboardPage() {
         <StatCard
           label="Target bulan ini"
           value={formatRupiah(totals.monthlyTarget)}
-          hint={`${monthLabel(totals.monthlyLabelKey)} · terbayar ${formatRupiah(totals.monthlyPaid)}`}
+          hint={targetHint}
           icon={<Target className="size-4" aria-hidden />}
           tone="neutral"
         />
