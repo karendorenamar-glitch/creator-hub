@@ -82,7 +82,7 @@ export default async function DebtDashboardPage() {
           tone="champagne"
         />
         <StatCard
-          label="Sisa saldo"
+          label="Sisa tagihan"
           value={formatRupiah(totals.remaining)}
           hint="Tidak pernah ditampilkan negatif"
           icon={<TrendingDown className="size-4" aria-hidden />}
