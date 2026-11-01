@@ -243,6 +243,16 @@ export function DebtAccountManager({
                   </div>
                 </div>
 
+                {account.nextInstallment ? (
+                  <p className="text-xs text-ink-soft">
+                    Tagihan bulan ini{" "}
+                    <strong className="font-medium text-ink">
+                      {formatRupiah(account.nextInstallment.remaining)}
+                    </strong>{" "}
+                    · sisa total {formatRupiah(account.remaining)}
+                  </p>
+                ) : null}
+
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-soft">
                     <span>

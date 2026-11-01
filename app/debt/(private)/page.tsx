@@ -227,22 +227,19 @@ export default async function DebtDashboardPage() {
                 </p>
                 <p className="mt-2 text-sm font-medium text-ink">
                   {formatRupiah(
-                    account.installment_amount > 0
-                      ? Math.min(account.installment_amount, account.remaining)
-                      : account.remaining,
+                    account.nextInstallment?.remaining ?? account.remaining,
                   )}
                 </p>
                 <p className="mt-1 text-[11px] text-ink-soft">
-                  {account.installment_month}/{account.installment_total_months} bulan
-                  · sisa {formatRupiah(account.remaining)}
+                  tagihan bulan ini · {account.installment_month}/
+                  {account.installment_total_months} bulan · sisa total{" "}
+                  {formatRupiah(account.remaining)}
                 </p>
 
                 <MarkPaidButton
                   accountId={account.id}
                   amountLabel={formatRupiah(
-                    account.installment_amount > 0
-                      ? Math.min(account.installment_amount, account.remaining)
-                      : account.remaining,
+                    account.nextInstallment?.remaining ?? account.remaining,
                   )}
                 />
               </div>
