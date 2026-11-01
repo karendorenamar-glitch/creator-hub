@@ -16,6 +16,7 @@ import { DebtAccountForm } from "@/components/debt/account-form";
 import type { AccountSummary } from "@/lib/debt/calculations";
 import {
   deleteDebtAccountAction,
+  materializeLegacySchedulesAction,
   payDebtInstallmentAction,
 } from "@/app/debt/actions";
 import { daysUntil, formatDebtDate, formatRupiah } from "@/lib/debt/format";
@@ -94,6 +95,16 @@ export function DebtAccountManager({
           >
             <WalletCards className="size-4" aria-hidden /> Catat pembayaran
           </Link>
+          {accounts.some((account) => account.legacy) ? (
+            <ConfirmAction
+              action={materializeLegacySchedulesAction}
+              fields={{}}
+              label="Buat angsuran dari tenor lama"
+              confirmLabel="Ya, buat angsuran"
+              message="Semua utang yang masih memakai tenor lama akan dibuatkan jadwal angsuran. Utang yang sudah punya jadwal dilewati."
+              tone="neutral"
+            />
+          ) : null}
         </div>
         <span className="text-xs text-ink-soft">
           {filtered.length} dari {accounts.length} akun
@@ -180,7 +191,10 @@ export function DebtAccountManager({
             const overdue =
               account.status === "active" && account.overdueInstallments > 0;
             const canPay =
-              account.status === "active" && next !== null && next.remaining > 0;
+              account.status === "active" &&
+              next !== null &&
+              next.remaining > 0 &&
+              next.schedule.id !== "";
 
             return (
               <Card
@@ -243,17 +257,40 @@ export function DebtAccountManager({
                         overdue ? "font-medium text-rose-700" : "text-ink-soft"
                       }
                     >
-                      {nextDate
-                        ? overdue && account.overdueInstallments > 0
-                          ? `${account.overdueInstallments} angsuran terlambat`
-                          : days !== null && days < 0
-                            ? `${Math.abs(days)} hari lalu`
-                            : `Berikutnya ${formatDebtDate(nextDate)}`
-                        : "Semua angsuran lunas"}
+                      {account.legacy
+                        ? "Masih memakai tenor lama"
+                        : account.installmentCount === 0
+                          ? "Belum ada angsuran"
+                          : nextDate
+                            ? overdue && account.overdueInstallments > 0
+                              ? `${account.overdueInstallments} angsuran terlambat`
+                              : days !== null && days < 0
+                                ? `${Math.abs(days)} hari lalu`
+                                : `Berikutnya ${formatDebtDate(nextDate)}`
+                            : "Semua angsuran lunas"}
                     </span>
                   </div>
                   <Progress value={account.progress} tone="olive" />
                 </div>
+
+                {account.legacy ? (
+                  <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                    <p>
+                      Angka di atas dihitung dari tenor lama (Rp{" "}
+                      {formatRupiah(account.installment_amount)} ×{" "}
+                      {account.installment_total_months} bulan). Buat angsuran agar
+                      bisa dibayar per bulan.
+                    </p>
+                    <ConfirmAction
+                      action={materializeLegacySchedulesAction}
+                      fields={{ id: account.id }}
+                      label="Buat angsuran dari tenor"
+                      confirmLabel="Ya, buat"
+                      message="Jadwal angsuran akan dibuat dari sisa tenor utang ini."
+                      tone="neutral"
+                    />
+                  </div>
+                ) : null}
 
                 {account.mismatch ? (
                   <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">

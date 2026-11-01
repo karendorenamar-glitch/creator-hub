@@ -247,6 +247,37 @@ const overpaid = buildInstallments(
 t("overpaid remaining is zero", overpaid.remaining, 0);
 t("overpaid is paid", overpaid.status, "paid");
 
+// --- Legacy tenor fallback ------------------------------------------------
+const legacyAccount = account({
+  id: "legacy",
+  total_amount_due: 2_400_000,
+  original_principal: 2_400_000,
+  installment_amount: 200_000,
+  installment_total_months: 12,
+  installment_month: 10,
+  due_date: "2026-12-03",
+  due_day: 3,
+});
+const legacySummaries = buildAccountSummaries(
+  [legacyAccount],
+  [],
+  [],
+  today,
+);
+const legacy = legacySummaries[0];
+t("legacy original", legacy.original, 2_400_000);
+t("legacy paid", legacy.paid, 2_000_000);
+t("legacy remaining", legacy.remaining, 400_000);
+t("legacy progress", legacy.progress, 83);
+t("legacy flagged", legacy.legacy, true);
+t("legacy open installments", legacy.openInstallments, 2);
+t("legacy next installment amount", legacy.nextInstallment.remaining, 200_000);
+t("legacy next installment has no real id", legacy.nextInstallment.schedule.id, "");
+
+const legacyTotals = calculateDebtTotals([legacyAccount], [], [], today);
+t("legacy total remaining", legacyTotals.remaining, 400_000);
+t("legacy total paid", legacyTotals.totalPaid, 2_000_000);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 
 if (fail > 0) process.exit(1);

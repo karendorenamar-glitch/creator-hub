@@ -19,7 +19,13 @@ import type {
   DebtSchedule,
   DebtScheduleStatus,
 } from "@/lib/debt/db-types";
-import { dueDateForMonth, formatRupiah, todayISO } from "@/lib/debt/format";
+import {
+  addMonthsISO,
+  dueDateForMonth,
+  formatRupiah,
+  nextDueDateForDay,
+  todayISO,
+} from "@/lib/debt/format";
 import { paidByScheduleId } from "@/lib/debt/ledger";
 
 export type DebtActionResult = { error?: string; success?: string } | null;
@@ -239,6 +245,88 @@ export async function updateDebtAccountAction(
 
   revalidateDebt();
   return { success: "Akun berhasil diperbarui." };
+}
+
+/**
+ * Converts debts that still use the older tenor columns into real installment
+ * rows so they can be paid per month. Safe to repeat: debts that already have
+ * installments are skipped.
+ */
+export async function materializeLegacySchedulesAction(
+  formData: FormData,
+): Promise<DebtActionResult> {
+  const ctx = await actionContext();
+  if (!ctx) return { error: "Akses ditolak." };
+
+  const id = text(formData, "id");
+  const onlySingle = isUuid(id);
+  const { data: accounts, error: accountsError } = await ctx.supabase
+    .from("debt_accounts")
+    .select("*")
+    .eq("owner_user_id", ctx.owner.userId)
+    .neq("status", "closed");
+
+  if (accountsError) return { error: messageForError(accountsError) };
+
+  const targets = ((accounts ?? []) as DebtAccount[]).filter(
+    (account) =>
+      (!onlySingle || account.id === id) &&
+      Number(account.installment_amount) > 0 &&
+      Number(account.installment_total_months) >
+        Number(account.installment_month),
+  );
+
+  if (targets.length === 0) {
+    return { error: "Tidak ada utang tenor lama yang perlu dikonversi." };
+  }
+
+  const today = todayISO();
+  let created = 0;
+
+  for (const account of targets) {
+    const { count } = await ctx.supabase
+      .from("debt_schedules")
+      .select("id", { count: "exact", head: true })
+      .eq("debt_account_id", account.id)
+      .eq("owner_user_id", ctx.owner.userId);
+
+    if ((count ?? 0) > 0) continue;
+
+    const totalMonths = Number(account.installment_total_months);
+    const paidMonths = Math.min(
+      Math.max(Number(account.installment_month), 0),
+      totalMonths,
+    );
+    const openMonths = totalMonths - paidMonths;
+    if (openMonths <= 0) continue;
+
+    const start =
+      account.due_date ??
+      nextDueDateForDay(Number(account.due_day ?? 1), today);
+    const rows = Array.from({ length: openMonths }, (_, index) => ({
+      owner_user_id: ctx.owner.userId,
+      debt_account_id: account.id,
+      due_date: addMonthsISO(start, index),
+      amount_due: Number(account.installment_amount),
+      notes: "Dibuat dari tenor lama",
+      status: "upcoming" as DebtScheduleStatus,
+    }));
+
+    const { error } = await ctx.supabase.from("debt_schedules").insert(rows);
+    if (error) return { error: messageForError(error) };
+    created += rows.length;
+
+    await refreshAccountStatus(ctx.owner.userId, account.id);
+  }
+
+  if (created === 0) {
+    return { error: "Utang ini sudah punya jadwal angsuran." };
+  }
+
+  revalidateDebt();
+  return {
+    success: `${created} angsuran dibuat dari tenor lama. Nominalnya bisa diubah satu per satu.`,
+  };
 }
 
 export async function deleteDebtAccountAction(

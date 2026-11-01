@@ -54,6 +54,8 @@ export type AccountSummary = DebtAccount & {
   overdueInstallments: number;
   nextInstallment: Installment | null;
   mismatch: boolean;
+  /** True while the debt still relies on the older tenor columns. */
+  legacy: boolean;
 };
 
 export type MonthCounts = {
@@ -153,10 +155,93 @@ export function buildInstallments(
     .sort((a, b) => a.schedule.due_date.localeCompare(b.schedule.due_date));
 }
 
+function dueDateForDay(day: number, today: string): string {
+  const [year, month] = today.split("-").map(Number);
+  const pad = (value: number) => String(value).padStart(2, "0");
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const current = `${year}-${pad(month)}-${pad(Math.min(day, lastDay))}`;
+  if (current >= today) return current;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextYear = month === 12 ? year + 1 : year;
+  const lastNext = new Date(Date.UTC(nextYear, nextMonth, 0)).getUTCDate();
+  return `${nextYear}-${pad(nextMonth)}-${pad(Math.min(day, lastNext))}`;
+}
+
+/**
+ * Reads the pre-schedule tenor columns so existing debts keep their numbers
+ * after the switch to the installment-schedule model. It disappears as soon as
+ * the debt has real installment rows.
+ */
+function legacySummary(
+  account: DebtAccount,
+  payments: DebtPayment[],
+  today: string,
+): AccountSummary | null {
+  const amount = Number(account.installment_amount ?? 0);
+  const totalMonths = Number(account.installment_total_months ?? 0);
+  if (!(amount > 0) || !(totalMonths > 0)) return null;
+
+  const paidMonths = Math.min(
+    Math.max(Number(account.installment_month ?? 0), 0),
+    totalMonths,
+  );
+  const openMonths = totalMonths - paidMonths;
+  const recordedPaid = activePayments(payments)
+    .filter((payment) => payment.debt_account_id === account.id)
+    .reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const scheduledPaid = amount * paidMonths;
+  const paid = Math.max(recordedPaid, scheduledPaid);
+  const remaining = Math.max(0, amount * openMonths);
+  const contract = Number(account.total_amount_due);
+  const original = contract > 0 ? contract : amount * totalMonths;
+  const dueDate =
+    account.due_date ??
+    (account.due_day ? dueDateForDay(Number(account.due_day), today) : null);
+  const nextStatus =
+    dueDate && dueDate < today ? ("overdue" as const) : ("upcoming" as const);
+  const nextInstallment: Installment | null =
+    openMonths > 0
+      ? {
+          schedule: {
+            id: "",
+            owner_user_id: account.owner_user_id,
+            debt_account_id: account.id,
+            due_date: dueDate ?? today,
+            amount_due: amount,
+            status: "upcoming",
+            notes: null,
+            created_at: account.created_at,
+            updated_at: account.updated_at,
+          },
+          account,
+          paid: 0,
+          remaining: amount,
+          status: nextStatus,
+        }
+      : null;
+
+  return {
+    ...account,
+    original,
+    scheduled: amount * totalMonths,
+    paid,
+    remaining,
+    progress: percentOf(paid, paid + remaining),
+    installmentCount: totalMonths,
+    paidInstallments: paidMonths,
+    openInstallments: openMonths,
+    overdueInstallments: nextStatus === "overdue" ? 1 : 0,
+    nextInstallment,
+    mismatch: contract > 0 && amount * totalMonths !== contract,
+    legacy: true,
+  };
+}
+
 export function summarizeAccount(
   account: DebtAccount,
   installments: Installment[],
   payments: DebtPayment[],
+  today = todayISO(),
 ): AccountSummary {
   const own = installments.filter(
     (item) =>
@@ -171,6 +256,11 @@ export function summarizeAccount(
   const paid = activePayments(payments)
     .filter((payment) => payment.debt_account_id === account.id)
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
+  if (own.length === 0) {
+    const legacy = legacySummary(account, payments, today);
+    if (legacy) return legacy;
+  }
+
   const contract = Number(account.total_amount_due);
   // Without a contract total the schedule itself defines the original debt.
   const original = contract > 0 ? contract : scheduled;
@@ -189,6 +279,7 @@ export function summarizeAccount(
     overdueInstallments: own.filter((item) => item.status === "overdue").length,
     nextInstallment: own.find((item) => item.remaining > 0) ?? null,
     mismatch: contract > 0 && scheduled > 0 && contract !== scheduled,
+    legacy: false,
   };
 }
 
@@ -200,7 +291,7 @@ export function buildAccountSummaries(
 ): AccountSummary[] {
   const installments = buildInstallments(accounts, schedules, payments, today);
   return accounts.map((account) =>
-    summarizeAccount(account, installments, payments),
+    summarizeAccount(account, installments, payments, today),
   );
 }
 
@@ -330,6 +421,7 @@ export function accountBalance(
     account,
     buildInstallments([account], schedules, payments, today),
     payments,
+    today,
   );
 }
 
