@@ -247,6 +247,51 @@ const overpaid = buildInstallments(
 t("overpaid remaining is zero", overpaid.remaining, 0);
 t("overpaid is paid", overpaid.status, "paid");
 
+// --- Paid months entered at creation (e.g. 5/12) ---------------------------
+const started = account({
+  id: "started",
+  total_amount_due: 2_400_000,
+  original_principal: 2_400_000,
+  installment_amount: 200_000,
+  installment_total_months: 12,
+  installment_month: 5,
+});
+const startedSchedules = Array.from({ length: 7 }, (_, index) =>
+  schedule({
+    id: `st${index}`,
+    debt_account_id: "started",
+    due_date: `2027-0${index + 1}-03`,
+    amount_due: 200_000,
+  }),
+);
+const startedSummary = buildAccountSummaries(
+  [started],
+  [],
+  startedSchedules,
+  today,
+)[0];
+t("5/12 paid from contract", startedSummary.paid, 1_000_000);
+t("5/12 remaining is 7 rows", startedSummary.remaining, 1_400_000);
+t("5/12 progress", startedSummary.progress, 42);
+t("5/12 original", startedSummary.original, 2_400_000);
+
+// Custom 5/12 without a known contract only tracks the remaining rows.
+const customStarted = account({
+  id: "customStarted",
+  total_amount_due: 1_400_000,
+  installment_amount: 0,
+  installment_total_months: 12,
+  installment_month: 5,
+});
+const customSummary = buildAccountSummaries(
+  [customStarted],
+  [],
+  startedSchedules.map((item) => ({ ...item, debt_account_id: "customStarted" })),
+  today,
+)[0];
+t("custom 5/12 paid stays zero", customSummary.paid, 0);
+t("custom 5/12 remaining is tracked", customSummary.remaining, 1_400_000);
+
 // --- Legacy tenor fallback ------------------------------------------------
 const legacyAccount = account({
   id: "legacy",

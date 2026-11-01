@@ -138,24 +138,34 @@ stored in `debt_schedules`. There is no fixed-versus-flexible account type.
 - The monthly target is the sum of installments due in the current business
   month; monthly paid is the sum of payments dated in that month.
 
-### Creating a debt with a monthly amount
+### Creating a debt: tenor and monthly amount
 
-The account form accepts the familiar fields:
+The form mirrors how the debt is actually known:
 
-- nominal per bulan,
-- tenor (jumlah bulan),
-- jatuh tempo tiap tanggal,
-- bulan jatuh tempo pertama,
-- utang awal (optional; filled automatically from nominal x tenor).
+1. **Nama utang / kreditur**.
+2. **Tenor: sudah dibayar / total**, e.g. `5 / 12` bulan.
+3. **Nominal per bulan**, with two options:
+   - **Samakan nominal hingga akhir tempo** - one amount for every remaining
+     month. The form generates `total - paid` installments, e.g. `12 - 5 = 7`.
+   - **Nominal berbeda** - the form shows one box per remaining month, each with
+     its own month and amount.
+4. **Jatuh tempo tiap tanggal** and **bulan angsuran pertama**.
+5. Optional: utang awal, tanggal mulai/akhir, jenis, status, catatan.
 
-Saving the form creates the debt **and** its installment rows in one step: one
-row per month, starting from the first due month, using the monthly amount.
-Each row can later be edited to a different amount on the Jadwal page, and
-payments are recorded per installment.
+Saving creates the debt and its installment rows in one step. Only the months
+that are still unpaid are created; the already-paid months are reflected through
+the tenor badge and the balance.
 
-Editing the monthly amount or the tenor regenerates the schedule only when no
-installment has a payment yet. Renaming a debt or editing notes never
-touches the installments.
+Balance handling:
+
+- Same amount mode: contract = monthly x total tenor, paid = monthly x paid
+  months, remaining = monthly x remaining months.
+- Different amounts mode: only the remaining rows are tracked. If **utang awal**
+  is filled, paid is derived as `utang awal - total sisa angsuran`; otherwise
+  progress starts from what is recorded.
+- Editing the monthly amount or tenor regenerates the schedule only when no
+  installment has a payment yet. Renaming a debt or editing notes never touches
+  the installments.
 
 ### Debts that still use the older tenor columns
 

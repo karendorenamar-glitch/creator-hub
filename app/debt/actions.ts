@@ -201,26 +201,35 @@ function buildPlanRows(
   fallbackDueDate: string | null,
   today: string,
 ) {
-  if (plan.monthly_amount <= 0 || plan.tenor_months <= 0) return [];
-
-  const month =
-    plan.first_due_month ??
-    (fallbackDueDate ? fallbackDueDate.slice(0, 7) : today.slice(0, 7));
   const day =
     plan.due_day ??
     (fallbackDueDate ? Number(fallbackDueDate.slice(8, 10)) : 1);
+  const months =
+    plan.installments.length > 0
+      ? plan.installments
+      : plan.monthly_amount > 0
+        ? Array.from(
+            {
+              length: Math.max(0, plan.tenor_months - plan.paid_months),
+            },
+            (_, index) => ({
+              month: addMonthsISO(
+                `${plan.first_due_month ?? (fallbackDueDate ? fallbackDueDate.slice(0, 7) : today.slice(0, 7))}-01`,
+                index,
+              ).slice(0, 7),
+              amount: plan.monthly_amount,
+            }),
+          )
+        : [];
 
-  return Array.from({ length: plan.tenor_months }, (_, index) => {
-    const target = addMonthsISO(`${month}-01`, index).slice(0, 7);
-    return {
-      owner_user_id: ownerId,
-      debt_account_id: accountId,
-      due_date: dueDateForMonth(day, target),
-      amount_due: plan.monthly_amount,
-      notes: null,
-      status: "upcoming" as DebtScheduleStatus,
-    };
-  });
+  return months.map((item) => ({
+    owner_user_id: ownerId,
+    debt_account_id: accountId,
+    due_date: dueDateForMonth(day, item.month),
+    amount_due: item.amount,
+    notes: null,
+    status: "upcoming" as DebtScheduleStatus,
+  }));
 }
 
 export async function createDebtAccountAction(
@@ -315,6 +324,7 @@ export async function updateDebtAccountAction(
   const planChanged =
     Number(account.installment_amount) !== parsed.plan.monthly_amount ||
     Number(account.installment_total_months) !== parsed.plan.tenor_months ||
+    Number(account.installment_month) !== parsed.plan.paid_months ||
     (account.due_day ?? null) !== parsed.plan.due_day;
 
   if (rows.length > 0 && planChanged) {

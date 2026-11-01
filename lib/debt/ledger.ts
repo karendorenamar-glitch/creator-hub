@@ -310,7 +310,7 @@ export function summarizeAccount(
     0,
   );
   const remaining = own.reduce((sum, item) => sum + item.remaining, 0);
-  const paid = activePayments(payments)
+  const recordedPaid = activePayments(payments)
     .filter((payment) => payment.debt_account_id === account.id)
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
   if (own.length === 0 && account.status !== "closed") {
@@ -323,6 +323,13 @@ export function summarizeAccount(
   const contract = Number(account.total_amount_due);
   // Without a contract total the schedule itself defines the original debt.
   const original = contract > 0 ? contract : scheduled;
+  // Months already paid when the debt was created have no payment rows, so the
+  // paid part is whatever the remaining installments do not cover.
+  const paidFromContract =
+    contract > 0 && Number(account.installment_month ?? 0) > 0
+      ? Math.max(0, contract - remaining)
+      : 0;
+  const paid = Math.max(recordedPaid, paidFromContract);
   const base = paid + remaining;
 
   return {

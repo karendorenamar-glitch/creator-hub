@@ -211,7 +211,9 @@ export function DebtAccountManager({
                       {account.reference_label
                         ? ` · ${account.reference_label}`
                         : ""}
-                      {` · ${account.installmentCount} angsuran`}
+                      {account.installment_total_months > 0
+                        ? ` · ${account.installment_month}/${account.installment_total_months} bulan`
+                        : ` · ${account.installmentCount} angsuran`}
                     </p>
                   </div>
                   <Badge tone={statusTone(account.status)}>

@@ -54,10 +54,14 @@ export type ParsedAccount = {
  * optional: leaving it empty keeps the schedule as the source of truth.
  */
 export type AccountPlan = {
+  mode: "same" | "custom";
   monthly_amount: number;
   tenor_months: number;
+  paid_months: number;
   due_day: number | null;
   first_due_month: string | null;
+  /** Concrete rows that still have to be paid: month (YYYY-MM) + amount. */
+  installments: { month: string; amount: number }[];
 };
 
 export function parseDebtAccount(
@@ -80,6 +84,26 @@ export function parseDebtAccount(
     total = parsedTotal;
   }
 
+  const tenorTotalRaw = text(formData, "tenorTotal");
+  const tenorMonths = tenorTotalRaw ? parseCount(tenorTotalRaw) : 0;
+  if (tenorMonths === null || tenorMonths < 0 || tenorMonths > 600) {
+    return { ok: false, error: "Jumlah tenor tidak valid." };
+  }
+
+  const tenorPaidRaw = text(formData, "tenorPaid");
+  const paidMonths = tenorPaidRaw ? parseCount(tenorPaidRaw) : 0;
+  if (paidMonths === null || paidMonths < 0 || paidMonths > 600) {
+    return { ok: false, error: "Angsuran yang sudah dibayar tidak valid." };
+  }
+  if (tenorMonths > 0 && paidMonths > tenorMonths) {
+    return {
+      ok: false,
+      error: "Angsuran yang sudah dibayar tidak boleh melebihi total tenor.",
+    };
+  }
+
+  const mode = text(formData, "amountMode") === "custom" ? "custom" : "same";
+
   const monthlyRaw = text(formData, "monthlyAmount");
   let monthlyAmount = 0;
   if (monthlyRaw) {
@@ -88,21 +112,6 @@ export function parseDebtAccount(
       return { ok: false, error: "Nominal per bulan harus lebih dari nol." };
     }
     monthlyAmount = parsedMonthly;
-  }
-
-  const tenorRaw = text(formData, "tenorMonths");
-  const tenorMonths = tenorRaw ? parseCount(tenorRaw) : 0;
-  if (tenorMonths === null || tenorMonths < 0 || tenorMonths > 600) {
-    return { ok: false, error: "Jumlah tenor tidak valid." };
-  }
-  if (monthlyAmount > 0 && tenorMonths === 0) {
-    return {
-      ok: false,
-      error: "Isi jumlah tenor (bulan) untuk nominal per bulan.",
-    };
-  }
-  if (!total && monthlyAmount > 0 && tenorMonths > 0) {
-    total = monthlyAmount * tenorMonths;
   }
 
   const dueDayRaw = text(formData, "dueDay");
@@ -117,6 +126,63 @@ export function parseDebtAccount(
   }
   if (firstDueMonthRaw && !parsedDueDay) {
     return { ok: false, error: "Pilih tanggal jatuh tempo." };
+  }
+
+  const openMonths = Math.max(0, tenorMonths - paidMonths);
+  const firstMonth = firstDueMonthRaw || "";
+  const installments: { month: string; amount: number }[] = [];
+
+  if (mode === "same") {
+    if (tenorMonths > 0 && monthlyAmount <= 0) {
+      return { ok: false, error: "Nominal per bulan wajib diisi." };
+    }
+    if (tenorMonths > 0 && !firstMonth) {
+      return { ok: false, error: "Pilih bulan jatuh tempo pertama." };
+    }
+    for (let index = 0; index < openMonths; index += 1) {
+      installments.push({
+        month: addMonthsToMonth(firstMonth, index),
+        amount: monthlyAmount,
+      });
+    }
+  } else {
+    const months = formData.getAll("customMonth").map((value) => String(value));
+    const amounts = formData
+      .getAll("customAmount")
+      .map((value) => String(value));
+
+    if (months.length === 0) {
+      return { ok: false, error: "Isi nominal untuk minimal satu angsuran.",
+      };
+    }
+    if (months.length !== amounts.length) {
+      return { ok: false, error: "Data angsuran tidak lengkap." };
+    }
+    if (openMonths > 0 && months.length !== openMonths) {
+      return {
+        ok: false,
+        error: `Jumlah angsuran harus ${openMonths} baris sesuai sisa tenor.`,
+      };
+    }
+
+    for (let index = 0; index < months.length; index += 1) {
+      if (!isRealDate(`${months[index]}-01`)) {
+        return { ok: false, error: "Bulan angsuran tidak valid." };
+      }
+      const amount = parseWholeRupiah(amounts[index], { allowZero: false });
+      if (amount === null) {
+        return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+      }
+      installments.push({ month: months[index], amount });
+    }
+  }
+
+  if (mode === "same" && tenorMonths > 0 && monthlyAmount > 0) {
+    total = monthlyAmount * tenorMonths;
+  } else if (mode === "custom" && !total) {
+    // The paid months are unknown in custom mode, so only the remaining rows
+    // are tracked. The tenor badge still shows how many months were paid.
+    total = installments.reduce((sum, item) => sum + item.amount, 0);
   }
 
   const openingDate = text(formData, "openingDate");
@@ -152,17 +218,20 @@ export function parseDebtAccount(
           ? dueDateForMonth(parsedDueDay, firstDueMonthRaw)
           : finalDueRaw || null,
       due_day: parsedDueDay,
-      installment_month: 0,
+      installment_month: paidMonths,
       installment_total_months: tenorMonths,
-      installment_amount: monthlyAmount,
+      installment_amount: mode === "same" ? monthlyAmount : 0,
       status,
       notes: optionalText(formData, "notes", 2000),
     },
     plan: {
-      monthly_amount: monthlyAmount,
+      mode,
+      monthly_amount: mode === "same" ? monthlyAmount : 0,
       tenor_months: tenorMonths,
+      paid_months: paidMonths,
       due_day: parsedDueDay,
       first_due_month: firstDueMonthRaw || null,
+      installments,
     },
   };
 }
@@ -347,3 +416,12 @@ export function parseDebtScheduleUpdate(
 }
 
 export { dueDateForMonth };
+
+function addMonthsToMonth(month: string, offset: number): string {
+  const [year, monthNumber] = month.split("-").map(Number);
+  const date = new Date(Date.UTC(year, monthNumber - 1 + offset, 1));
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(
+    2,
+    "0",
+  )}`;
+}
