@@ -42,17 +42,31 @@ export async function middleware(request: NextRequest) {
     pathname === "/wedding/signup" ||
     pathname === "/wedding/forgot-password" ||
     pathname === "/wedding/reset-password";
+  const isPublicDebtPath = pathname === "/debt/login";
   const hasAuthCookie = request.cookies
     .getAll()
     .some((cookie) => cookie.name.includes("-auth-token"));
 
   // Public auth screens do not need a remote Supabase round trip unless a
   // session cookie exists and needs refreshing.
-  if (isPublicWeddingPath && !hasAuthCookie) {
+  if ((isPublicWeddingPath || isPublicDebtPath) && !hasAuthCookie) {
     return NextResponse.next({ request });
   }
 
   const { response, user } = await updateSession(request);
+
+  // Debt Tracker has its own route tree and dedicated login. The allowlist is
+  // enforced by the server layout/actions and RLS; this only refreshes the
+  // session and redirects unauthenticated visitors.
+  if (pathname === "/debt" || pathname.startsWith("/debt/")) {
+    if (!user && !isPublicDebtPath) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/debt/login";
+      loginUrl.search = "";
+      return NextResponse.redirect(loginUrl);
+    }
+    return response;
+  }
 
   // Wedding planner has its own sign-in screen and its own route tree.
   if (pathname === "/wedding" || pathname.startsWith("/wedding/")) {
@@ -103,6 +117,8 @@ export const config = {
     "/wedding/:path*",
     "/checkout",
     "/checkout/:path*",
+    "/debt",
+    "/debt/:path*",
     "/admin",
     "/admin/:path*",
   ],

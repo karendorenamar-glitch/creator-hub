@@ -6,7 +6,14 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: ["/", "/wedding-budget-planner"],
-      disallow: ["/wedding/", "/admin/", "/checkout/", "/api/"],
+      disallow: [
+        "/wedding/",
+        "/admin/",
+        "/checkout/",
+        "/api/",
+        "/debt/",
+        "/debt/login",
+      ],
     },
     sitemap: `${KEFOO_SITE_URL}/sitemap.xml`,
   };

@@ -28,7 +28,9 @@ existing guest records or RLS policies. The seating/rooms migration is
 `031_seating_rooms.sql`: five additive tables with wedding-scoped composite
 foreign keys and the existing `wedding_has_access` RLS rule. Pax seating uses the existing `seating_assignments.seat_ids` array; no schema
 or data migration is required. `039_split_plus_ones.sql` is superseded and
-must not be applied (see `APPLY_039.md`).
+must not be applied (see `APPLY_039.md`). `040_debt_tracker.sql` is the
+additive private Debt Tracker migration; review it and run it manually only
+after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing
