@@ -21,81 +21,57 @@ import { requireDebtOwner } from "@/lib/debt/auth";
 import { createDebtClient } from "@/lib/debt/supabase";
 import { loadDebtData } from "@/lib/debt/queries";
 import {
-  buildAccountBalances,
+  buildAccountSummaries,
+  buildInstallments,
   calculateDebtTotals,
 } from "@/lib/debt/calculations";
-import {
-  addMonthsISO,
-  formatDebtDate,
-  formatRupiah,
-  monthLabel,
-  nextDueDateForDay,
-  todayISO,
-} from "@/lib/debt/format";
+import { formatDebtDate, formatRupiah, todayISO } from "@/lib/debt/format";
 
 export const metadata = { title: "Ringkasan" };
+
+const STATUS_LABELS = {
+  upcoming: "Akan datang",
+  unpaid: "Belum dibayar",
+  partially_paid: "Dibayar sebagian",
+  paid: "Lunas",
+  overdue: "Terlambat",
+  cancelled: "Dibatalkan",
+} as const;
 
 export default async function DebtDashboardPage() {
   const owner = await requireDebtOwner();
   const supabase = await createDebtClient();
   const data = await loadDebtData(supabase, owner.userId);
-  const balances = buildAccountBalances(
-    data.accounts,
+  const today = todayISO();
+  const openAccounts = data.accounts.filter(
+    (account) => account.status !== "closed",
+  );
+  const summaries = buildAccountSummaries(
+    openAccounts,
     data.payments,
     data.schedules,
+    today,
   );
-  const today = todayISO();
   const totals = calculateDebtTotals(
     data.accounts,
     data.payments,
     data.schedules,
     today,
   );
-  const accountNames = new Map(
-    data.accounts.map((account) => [account.id, account.creditor_name]),
-  );
-  const recentAccounts = balances
-    .filter((account) => account.status !== "closed")
-    .slice(0, 3);
-  const nextDueAccounts = balances
-    .filter((account) => account.status !== "closed" && account.remaining > 0)
-    .map((account) => {
-      const dueDate =
-        account.due_date ??
-        account.nextSchedule?.due_date ??
-        (account.due_day ? nextDueDateForDay(account.due_day) : null);
-      const amount =
-        account.installment_amount > 0
-          ? account.installment_amount
-          : account.nextSchedule?.amount_due ?? account.remaining;
-      return { account, dueDate, amount };
-    })
-    .filter((item): item is typeof item & { dueDate: string } =>
-      Boolean(item.dueDate),
-    )
-    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
-    .slice(0, 5);
-
-  const nextMonthKey = addMonthsISO(today, 1).slice(0, 7);
-  const nextMonthTarget = data.schedules
-    .filter(
-      (schedule) =>
-        schedule.status === "upcoming" &&
-        schedule.due_date.startsWith(nextMonthKey),
-    )
-    .reduce((sum, schedule) => sum + Number(schedule.amount_due), 0);
-  const targetHint =
-    totals.monthlyTarget > 0
-      ? `${monthLabel(totals.monthlyLabelKey)} · pembayaran tercatat ${formatRupiah(totals.monthlyPaid)}`
-      : nextMonthTarget > 0
-        ? `Tidak ada tagihan ${monthLabel(addMonthsISO(today, 0).slice(0, 7))} · ${monthLabel(nextMonthKey)} ${formatRupiah(nextMonthTarget)}`
-        : `Belum ada tagihan ${monthLabel(addMonthsISO(today, 0).slice(0, 7))}`;
+  const installments = buildInstallments(
+    openAccounts,
+    data.schedules,
+    data.payments,
+    today,
+  ).filter((item) => item.status !== "cancelled" && item.remaining > 0);
+  const nextInstallments = installments.slice(0, 5);
+  const recentAccounts = summaries.slice(0, 3);
 
   return (
     <div className="space-y-7">
       <PageHeader
         title="Ringkasan utang"
-        subtitle="Gambaran tenang tentang apa yang sudah dibayar, apa yang tersisa, dan apa yang perlu disiapkan berikutnya."
+        subtitle="Gambaran tenang tentang apa yang sudah dibayar, apa yang tersisa, dan angsuran mana yang perlu disiapkan berikutnya."
         action={
           <Link
             href="/debt/payments"
@@ -108,9 +84,9 @@ export default async function DebtDashboardPage() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Total utang awal"
+          label="Total utang"
           value={formatRupiah(totals.originalTotal)}
-          hint="Total kontrak dari akun yang belum ditutup"
+          hint="Utang awal, atau total angsuran jika utang awal dikosongkan"
           icon={<Landmark className="size-4" aria-hidden />}
         />
         <StatCard
@@ -123,17 +99,17 @@ export default async function DebtDashboardPage() {
         <StatCard
           label="Sisa tagihan"
           value={formatRupiah(totals.remaining)}
-          hint="Tidak pernah ditampilkan negatif"
+          hint="Jumlah sisa seluruh angsuran"
           icon={<TrendingDown className="size-4" aria-hidden />}
           tone="neutral"
         />
         <StatCard
-          label="Akun terlambat"
+          label="Terlambat"
           value={String(totals.overdueCount)}
           hint={
-            totals.overdueCount > 0
-              ? "Perlu perhatian segera"
-              : "Tidak ada akun terlambat"
+            totals.overdueAmount > 0
+              ? `${formatRupiah(totals.overdueAmount)} perlu segera diselesaikan`
+              : "Tidak ada angsuran terlambat"
           }
           icon={<CircleAlert className="size-4" aria-hidden />}
         />
@@ -142,8 +118,8 @@ export default async function DebtDashboardPage() {
           value={String(totals.dueSoonCount)}
           hint={
             totals.dueSoonCount > 0
-              ? "Tagihan yang perlu disiapkan"
-              : "Tidak ada tagihan minggu ini"
+              ? "Angsuran yang perlu disiapkan"
+              : "Tidak ada angsuran minggu ini"
           }
           icon={<CalendarClock className="size-4" aria-hidden />}
           tone="champagne"
@@ -151,7 +127,7 @@ export default async function DebtDashboardPage() {
         <StatCard
           label="Target bulan ini"
           value={formatRupiah(totals.monthlyTarget)}
-          hint={targetHint}
+          hint={`Pembayaran tercatat bulan ini ${formatRupiah(totals.monthlyPaid)}`}
           icon={<Target className="size-4" aria-hidden />}
           tone="neutral"
         />
@@ -168,7 +144,7 @@ export default async function DebtDashboardPage() {
             <p className="font-heading text-2xl text-ink">{totals.progress}%</p>
             <p className="mt-1 text-xs text-ink-soft">
               {formatRupiah(totals.totalPaid)} dari{" "}
-              {formatRupiah(totals.originalTotal)}
+              {formatRupiah(totals.totalPaid + totals.remaining)}
             </p>
             <div className="mt-4">
               <Progress value={totals.progress} tone="olive" />
@@ -181,67 +157,77 @@ export default async function DebtDashboardPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="font-heading text-xl text-ink">
-              Jatuh tempo berikutnya
+              Angsuran berikutnya
             </h2>
             <p className="mt-1 text-xs text-ink-soft">
-              Tagihan terdekat, termasuk bulan yang sudah dipilih di akun.
+              Tagihan terdekat dari setiap jadwal angsuran.
             </p>
           </div>
           <Link
-            href="/debt/accounts"
+            href="/debt/schedule"
             className="text-xs font-medium text-olive-700 hover:underline"
           >
-            Lihat akun
+            Lihat jadwal
           </Link>
         </div>
 
-        {nextDueAccounts.length === 0 ? (
+        {nextInstallments.length === 0 ? (
           <div className="mt-5">
             <EmptyState
-              title="Belum ada jatuh tempo"
-              body="Atur bulan dan tanggal jatuh tempo pada akun, atau tambahkan jadwal."
+              title="Belum ada angsuran"
+              body="Tambahkan angsuran pada setiap utang agar sisa dan jatuh tempo bisa dihitung."
               icon={<CalendarClock className="size-8" aria-hidden />}
             />
           </div>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {nextDueAccounts.map(({ account, dueDate, amount }) => (
+            {nextInstallments.map((item) => (
               <div
-                key={account.id}
+                key={item.schedule.id}
                 className="rounded-2xl border border-olive-100 bg-[#f8f4ec] p-3"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium text-ink">{account.creditor_name}</p>
-                  <Badge tone={account.due_day ? "neutral" : "warning"}>
-                    {account.due_date === today ? "Hari ini" : "Berikutnya"}
+                  <p className="font-medium text-ink">
+                    {item.account.creditor_name}
+                  </p>
+                  <Badge
+                    tone={
+                      item.status === "overdue"
+                        ? "blush"
+                        : item.status === "partially_paid"
+                          ? "warning"
+                          : "neutral"
+                    }
+                  >
+                    {STATUS_LABELS[item.status]}
                   </Badge>
                 </div>
                 <p className="mt-1 text-xs text-ink-soft">
-                  {account.reference_label ? `${account.reference_label} · ` : ""}
-                  {formatDebtDate(dueDate)}
+                  {item.account.reference_label
+                    ? `${item.account.reference_label} · `
+                    : ""}
+                  {formatDebtDate(item.schedule.due_date)}
                 </p>
                 <p className="mt-2 text-sm font-medium text-ink">
-                  {formatRupiah(amount)}
+                  {formatRupiah(item.remaining)}
                 </p>
-                {account.installment_total_months > 0 ? (
-                  <p className="mt-1 text-[11px] text-ink-soft">
-                    {account.installment_month}/{account.installment_total_months} bulan
-                  </p>
-                ) : null}
+                <p className="mt-1 text-[11px] text-ink-soft">
+                  Tagihan {formatRupiah(item.schedule.amount_due)}
+                  {item.paid > 0 ? ` · dibayar ${formatRupiah(item.paid)}` : ""}
+                </p>
               </div>
             ))}
           </div>
         )}
       </Card>
 
-
       <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
         <Card className="border-[#e8e1d4] bg-[#fffdf9]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-heading text-xl text-ink">Akun terbaru</h2>
+              <h2 className="font-heading text-xl text-ink">Utang terbaru</h2>
               <p className="mt-1 text-xs text-ink-soft">
-                Ringkasan akun yang sedang dipantau.
+                Ringkasan utang yang sedang dipantau.
               </p>
             </div>
             <Link
@@ -255,8 +241,8 @@ export default async function DebtDashboardPage() {
           {recentAccounts.length === 0 ? (
             <div className="mt-5">
               <EmptyState
-                title="Belum ada akun utang"
-                body="Tambahkan akun pertama untuk melihat saldo dan progresnya."
+                title="Belum ada utang"
+                body="Tambahkan utang pertama untuk melihat sisa dan progresnya."
                 icon={<Landmark className="size-8" aria-hidden />}
               />
             </div>
@@ -270,17 +256,10 @@ export default async function DebtDashboardPage() {
                   <div>
                     <p className="font-medium text-ink">{account.creditor_name}</p>
                     <p className="mt-1 text-xs text-ink-soft">
-                      {account.due_date
-                        ? `Jatuh tempo ${formatDebtDate(account.due_date)}`
-                        : account.nextSchedule
-                          ? `Jatuh tempo ${formatDebtDate(account.nextSchedule.due_date)}`
-                          : account.due_day
-                            ? `Setiap tanggal ${account.due_day}`
-                            : "Tanpa tanggal jatuh tempo"}
-                      {account.due_day ? ` · setiap tanggal ${account.due_day}` : ""}
-                      {account.installment_total_months > 0
-                        ? ` · ${account.installment_month}/${account.installment_total_months} bulan`
-                        : ""}
+                      {account.nextInstallment
+                        ? `Angsuran berikutnya ${formatDebtDate(account.nextInstallment.schedule.due_date)}`
+                        : "Semua angsuran lunas"}
+                      {` · ${account.paidInstallments}/${account.installmentCount} lunas`}
                     </p>
                   </div>
                   <div className="min-w-40 text-right">
@@ -300,76 +279,48 @@ export default async function DebtDashboardPage() {
         <Card className="border-[#e8e1d4] bg-[#fffdf9]">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-heading text-xl text-ink">Jadwal terdekat</h2>
+              <h2 className="font-heading text-xl text-ink">Tagihan jatuh tempo</h2>
               <p className="mt-1 text-xs text-ink-soft">
-                Tagihan dalam tujuh hari ke depan.
+                Angsuran yang jatuh tempo hari ini atau sudah lewat.
               </p>
             </div>
-            <Link
-              href="/debt/schedule"
-              className="text-xs font-medium text-olive-700 hover:underline"
-            >
-              Lihat jadwal
-            </Link>
           </div>
 
-          {totals.dueSoonSchedules.length === 0 ? (
+          {installments.filter((item) => item.schedule.due_date <= today).length === 0 ? (
             <div className="mt-5">
               <EmptyState
-                title="Minggu ini tenang"
-                body="Tidak ada jadwal yang jatuh tempo dalam tujuh hari ke depan."
+                title="Tidak ada tagihan tertunggak"
+                body="Semua angsuran yang sudah lewat tanggalnya telah dibayar."
                 icon={<CalendarClock className="size-8" aria-hidden />}
               />
             </div>
           ) : (
             <div className="mt-4 space-y-3">
-              {totals.dueSoonSchedules.map((schedule) => (
-                <div
-                  key={schedule.id}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-[#f8f4ec] px-3 py-2.5"
-                >
-                  <div>
+              {installments
+                .filter((item) => item.schedule.due_date <= today)
+                .slice(0, 5)
+                .map((item) => (
+                  <div
+                    key={item.schedule.id}
+                    className="flex items-center justify-between gap-3 rounded-xl bg-[#f8f4ec] px-3 py-2.5"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-ink">
+                        {item.account.creditor_name}
+                      </p>
+                      <p className="text-xs text-ink-soft">
+                        {formatDebtDate(item.schedule.due_date)}
+                      </p>
+                    </div>
                     <p className="text-sm font-medium text-ink">
-                      {accountNames.get(schedule.debt_account_id) ?? "Akun"}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-soft">
-                      {formatDebtDate(schedule.due_date)}
+                      {formatRupiah(item.remaining)}
                     </p>
                   </div>
-                  <Badge tone="warning">
-                    {formatRupiah(schedule.amount_due)}
-                  </Badge>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </Card>
       </div>
-
-      {totals.overdueAccounts.length > 0 ? (
-        <Card className="border-amber-200 bg-amber-50/60">
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 rounded-full bg-amber-100 p-2 text-amber-800">
-              <CircleAlert className="size-4" aria-hidden />
-            </span>
-            <div>
-              <h2 className="font-heading text-lg text-amber-950">
-                Perlu perhatian
-              </h2>
-              <p className="mt-1 text-sm leading-relaxed text-amber-900/80">
-                {totals.overdueAccounts.length} akun sudah melewati tanggal jatuh
-                tempo. Tinjau akun atau catat pembayaran agar statusnya terbarui.
-              </p>
-              <Link
-                href="/debt/accounts"
-                className="mt-3 inline-flex text-sm font-medium text-amber-900 underline underline-offset-4"
-              >
-                Buka akun utang
-              </Link>
-            </div>
-          </div>
-        </Card>
-      ) : null}
     </div>
   );
 }

@@ -7,7 +7,7 @@ import {
   parseWholeRupiah,
   text,
 } from "@/lib/wedding/validation";
-import { dueDateForMonth, nextDueDateForDay } from "@/lib/debt/format";
+import { dueDateForMonth } from "@/lib/debt/format";
 import type {
   DebtAccountStatus,
   DebtAccountType,
@@ -49,108 +49,43 @@ export type ParsedAccount = {
   notes: string | null;
 };
 
+/**
+ * Every account is driven by its installment schedule. The original debt is
+ * optional: leaving it empty keeps the schedule as the source of truth.
+ */
 export function parseDebtAccount(
   formData: FormData,
 ): { ok: true; values: ParsedAccount } | { ok: false; error: string } {
   const creditorName = text(formData, "creditorName").slice(0, 120);
-  if (!creditorName) return { ok: false, error: "Nama kreditur wajib diisi." };
+  if (!creditorName) return { ok: false, error: "Nama utang atau kreditur wajib diisi." };
 
   const accountType = enumValue(formData, "accountType", ACCOUNT_TYPES, "other");
 
-  const totalMonthsRaw = text(formData, "installmentTotalMonths");
-  const totalMonths = totalMonthsRaw ? parseCount(totalMonthsRaw) : 0;
-  if (totalMonths === null || totalMonths < 0) {
-    return { ok: false, error: "Total tenor tidak valid." };
-  }
-
-  const installmentMonthRaw = text(formData, "installmentMonth");
-  const installmentMonth = installmentMonthRaw
-    ? parseCount(installmentMonthRaw)
-    : 0;
-  if (installmentMonth === null || installmentMonth < 0) {
-    return { ok: false, error: "Angsuran sudah dibayar tidak valid." };
-  }
-  if (totalMonths === 0 && installmentMonth !== 0) {
-    return {
-      ok: false,
-      error: "Isi total tenor jika mengisi angsuran yang sudah dibayar.",
-    };
-  }
-  if (totalMonths > 0 && installmentMonth > totalMonths) {
-    return {
-      ok: false,
-      error: "Angsuran yang sudah dibayar tidak boleh melebihi total tenor.",
-    };
-  }
-
-  // Variable mode uses the total contract plus per-month rows from the
-  // Jadwal page. Fixed mode uses nominal × tenor.
-  const variableMode = text(formData, "variableMode") === "1";
-  let installmentAmount = 0;
+  const originalRaw = text(formData, "originalDebt");
   let total = 0;
-
-  if (variableMode) {
-    const totalValue = parseWholeRupiah(text(formData, "totalAmountDue"), {
-      allowZero: false,
-    });
-    if (totalValue === null) {
-      return {
-        ok: false,
-        error: "Total kontrak variabel harus lebih dari nol.",
-      };
+  if (originalRaw) {
+    const parsedTotal = parseWholeRupiah(originalRaw, { allowZero: false });
+    if (parsedTotal === null) {
+      return { ok: false, error: "Utang awal harus lebih dari nol." };
     }
-    total = totalValue;
-  } else {
-    const fixedAmount = parseWholeRupiah(
-      text(formData, "installmentAmount"),
-      { allowZero: false },
-    );
-    if (fixedAmount === null) {
-      return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
-    }
-    installmentAmount = fixedAmount;
-    total =
-      totalMonths > 0 ? installmentAmount * totalMonths : installmentAmount;
+    total = parsedTotal;
   }
-
-  // Existing interest/fees are preserved when editing, while the principal is
-  // adjusted to keep the DB invariant total = principal + interest/fees.
-  const interest = parseWholeRupiah(text(formData, "interestFees") || "0", {
-    allowZero: true,
-  });
-  if (interest === null || interest > total) {
-    return { ok: false, error: "Bunga/biaya tidak valid." };
-  }
-  const principal = total - interest;
 
   const openingDate = text(formData, "openingDate");
   if (!isRealDate(openingDate)) {
-    return { ok: false, error: "Tanggal pembukaan tidak valid." };
+    return { ok: false, error: "Tanggal mulai tidak valid." };
   }
 
-  const dueDayRaw = text(formData, "dueDay");
-  const dueDay = dueDayRaw ? parseCount(dueDayRaw) : null;
-  if (dueDayRaw && (dueDay === null || dueDay < 1 || dueDay > 31)) {
-    return { ok: false, error: "Tanggal jatuh tempo harus 1–31." };
+  const finalDueRaw = text(formData, "finalDueDate");
+  if (finalDueRaw && !isRealDate(finalDueRaw)) {
+    return { ok: false, error: "Tanggal akhir tidak valid." };
   }
-
-  const dueMonth = text(formData, "dueMonth");
-  if (dueMonth && !isRealDate(`${dueMonth}-01`)) {
-    return { ok: false, error: "Bulan jatuh tempo tidak valid." };
+  if (finalDueRaw && finalDueRaw < openingDate) {
+    return {
+      ok: false,
+      error: "Tanggal akhir tidak boleh sebelum tanggal mulai.",
+    };
   }
-  if (dueMonth && !dueDay) {
-    return { ok: false, error: "Pilih tanggal jatuh tempo." };
-  }
-
-  const submittedDueDate = text(formData, "dueDate") || null;
-  if (submittedDueDate && !isRealDate(submittedDueDate)) {
-    return { ok: false, error: "Tanggal jatuh tempo tidak valid." };
-  }
-  const dueDate = dueDay
-    ? dueMonth
-      ? dueDateForMonth(dueDay, dueMonth)
-      : nextDueDateForDay(dueDay)
-    : submittedDueDate;
 
   const status = enumValue(formData, "status", ACCOUNT_STATUSES, "active");
 
@@ -160,15 +95,15 @@ export function parseDebtAccount(
       creditor_name: creditorName,
       account_type: accountType,
       reference_label: optionalText(formData, "referenceLabel", 120),
-      original_principal: principal,
-      interest_fees: interest,
+      original_principal: total,
+      interest_fees: 0,
       total_amount_due: total,
       opening_date: openingDate,
-      due_date: dueDate,
-      due_day: dueDay,
-      installment_month: installmentMonth,
-      installment_total_months: totalMonths,
-      installment_amount: installmentAmount,
+      due_date: finalDueRaw || null,
+      due_day: null,
+      installment_month: 0,
+      installment_total_months: 0,
+      installment_amount: 0,
       status,
       notes: optionalText(formData, "notes", 2000),
     },
@@ -195,12 +130,10 @@ export function parseDebtPayment(formData: FormData):
 
   const scheduleId = text(formData, "scheduleId") || null;
   if (scheduleId && !isUuid(scheduleId)) {
-    return { ok: false, error: "Jadwal tidak valid." };
+    return { ok: false, error: "Angsuran tidak valid." };
   }
 
-  const amount = parseWholeRupiah(text(formData, "amount"), {
-    allowZero: false,
-  });
+  const amount = parseWholeRupiah(text(formData, "amount"), { allowZero: false });
   if (amount === null) {
     return { ok: false, error: "Nominal pembayaran harus lebih dari nol." };
   }
@@ -253,7 +186,7 @@ export function parseDebtSchedule(formData: FormData):
     allowZero: false,
   });
   if (amount === null) {
-    return { ok: false, error: "Nominal jadwal harus lebih dari nol." };
+    return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
   }
 
   return {
@@ -266,3 +199,94 @@ export function parseDebtSchedule(formData: FormData):
     },
   };
 }
+
+export type ParsedScheduleBatch = {
+  debt_account_id: string;
+  start_month: string;
+  due_day: number;
+  count: number;
+  amount_due: number;
+  notes: string | null;
+};
+
+export function parseDebtScheduleBatch(
+  formData: FormData,
+): { ok: true; values: ParsedScheduleBatch } | { ok: false; error: string } {
+  const accountId = text(formData, "debtAccountId");
+  if (!isUuid(accountId)) return { ok: false, error: "Pilih akun yang valid." };
+
+  const startMonth = text(formData, "startMonth");
+  if (!startMonth || !isRealDate(`${startMonth}-01`)) {
+    return { ok: false, error: "Bulan mulai tidak valid." };
+  }
+
+  const dueDay = parseCount(text(formData, "dueDay"));
+  if (dueDay === null || dueDay < 1 || dueDay > 31) {
+    return { ok: false, error: "Tanggal jatuh tempo harus 1-31." };
+  }
+
+  const count = parseCount(text(formData, "count"));
+  if (count === null || count < 1 || count > 60) {
+    return { ok: false, error: "Jumlah angsuran harus 1-60." };
+  }
+
+  const amount = parseWholeRupiah(text(formData, "amountDue"), {
+    allowZero: false,
+  });
+  if (amount === null) {
+    return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+  }
+
+  return {
+    ok: true,
+    values: {
+      debt_account_id: accountId,
+      start_month: startMonth,
+      due_day: dueDay,
+      count,
+      amount_due: amount,
+      notes: optionalText(formData, "notes", 2000),
+    },
+  };
+}
+
+export function parseDebtScheduleUpdate(
+  formData: FormData,
+):
+  | {
+      ok: true;
+      values: {
+        id: string;
+        due_date: string;
+        amount_due: number;
+        notes: string | null;
+      };
+    }
+  | { ok: false; error: string } {
+  const id = text(formData, "id");
+  if (!isUuid(id)) return { ok: false, error: "Angsuran tidak valid." };
+
+  const dueDate = text(formData, "dueDate");
+  if (!isRealDate(dueDate)) {
+    return { ok: false, error: "Tanggal jatuh tempo tidak valid." };
+  }
+
+  const amount = parseWholeRupiah(text(formData, "amountDue"), {
+    allowZero: false,
+  });
+  if (amount === null) {
+    return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
+  }
+
+  return {
+    ok: true,
+    values: {
+      id,
+      due_date: dueDate,
+      amount_due: amount,
+      notes: optionalText(formData, "notes", 2000),
+    },
+  };
+}
+
+export { dueDateForMonth };

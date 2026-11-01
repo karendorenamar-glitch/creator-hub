@@ -1,15 +1,13 @@
 import {
-  accountBalance,
   activePayments,
-  buildAccountBalances,
+  buildAccountSummaries,
+  buildInstallments,
   calculateDebtTotals,
+  deriveInstallmentStatus,
+  monthlySummary,
   nextSevenDays,
+  paidByScheduleId,
 } from "../lib/debt/ledger.ts";
-import {
-  formatDebtDate,
-  formatRupiah,
-  nextDueDateForDay,
-} from "../lib/debt/format.ts";
 
 let pass = 0;
 let fail = 0;
@@ -24,208 +22,231 @@ function t(name, got, want) {
   }
 }
 
-const owner = "owner-1";
-const accounts = [
-  {
-    id: "a",
-    owner_user_id: owner,
-    total_amount_due: 100_000,
-    original_principal: 90_000,
-    interest_fees: 10_000,
-    status: "active",
-    due_date: "2026-01-01",
-  },
-  {
-    id: "b",
-    owner_user_id: owner,
-    total_amount_due: 50_000,
-    original_principal: 50_000,
-    interest_fees: 0,
-    status: "active",
-    due_date: "2026-01-20",
-  },
-  {
-    id: "c",
-    owner_user_id: owner,
-    total_amount_due: 20_000,
-    original_principal: 20_000,
-    interest_fees: 0,
-    status: "closed",
-    due_date: null,
-  },
-];
+const today = "2026-11-10";
 
-const payments = [
-  {
-    id: "p1",
+function account(overrides) {
+  return {
+    id: "a",
+    owner_user_id: "owner-1",
+    creditor_name: "Shopee PayLater",
+    account_type: "installment",
+    reference_label: null,
+    original_principal: 0,
+    interest_fees: 0,
+    total_amount_due: 0,
+    opening_date: "2026-01-03",
+    due_date: null,
+    due_day: null,
+    installment_month: 0,
+    installment_total_months: 0,
+    installment_amount: 0,
+    status: "active",
+    notes: null,
+    created_at: "2026-01-03T00:00:00Z",
+    updated_at: "2026-01-03T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function schedule(overrides) {
+  return {
+    id: "s",
+    owner_user_id: "owner-1",
     debt_account_id: "a",
-    amount: 40_000,
-    payment_date: "2026-01-05",
-    reversed_at: null,
-  },
-  {
-    id: "p2",
+    due_date: "2026-11-03",
+    amount_due: 300_000,
+    status: "upcoming",
+    notes: null,
+    created_at: "2026-01-03T00:00:00Z",
+    updated_at: "2026-01-03T00:00:00Z",
+    ...overrides,
+  };
+}
+
+function payment(overrides) {
+  return {
+    id: "p",
+    owner_user_id: "owner-1",
     debt_account_id: "a",
-    amount: 10_000,
-    payment_date: "2026-01-06",
-    reversed_at: "2026-01-07T00:00:00Z",
-  },
-  {
-    id: "p3",
-    debt_account_id: "b",
-    amount: 50_000,
-    payment_date: "2025-12-31",
+    schedule_id: null,
+    amount: 0,
+    payment_date: "2026-11-05",
+    payment_method: null,
+    reference: null,
+    notes: null,
+    idempotency_key: null,
     reversed_at: null,
-  },
+    reversal_reason: null,
+    created_at: "2026-11-05T00:00:00Z",
+    ...overrides,
+  };
+}
+
+const accounts = [
+  account({ id: "a", total_amount_due: 1_200_000, original_principal: 1_200_000 }),
+  account({
+    id: "b",
+    creditor_name: "Bank Mandiri",
+    total_amount_due: 800_000,
+    original_principal: 800_000,
+  }),
+  account({ id: "c", status: "closed", total_amount_due: 500_000 }),
 ];
 
 const schedules = [
-  {
-    id: "s1",
-    debt_account_id: "a",
-    due_date: "2026-01-12",
-    amount_due: 25_000,
-    status: "upcoming",
-  },
-  {
-    id: "s2",
-    debt_account_id: "a",
-    due_date: "2026-01-28",
-    amount_due: 15_000,
-    status: "upcoming",
-  },
-  {
-    id: "s3",
-    debt_account_id: "a",
-    due_date: "2026-01-15",
-    amount_due: 5_000,
-    status: "paid",
-  },
-];
-
-t("active payments exclude reversed", activePayments(payments).length, 2);
-t("account A paid total", accountBalance(accounts[0], payments).paid, 40_000);
-t("account A remaining", accountBalance(accounts[0], payments).remaining, 60_000);
-t("account A progress", accountBalance(accounts[0], payments).progress, 40);
-t("account B fully paid", accountBalance(accounts[1], payments).remaining, 0);
-t("account B progress", accountBalance(accounts[1], payments).progress, 100);
-
-const balances = buildAccountBalances(accounts, payments);
-t("closed account remains represented", balances.length, 3);
-
-const target = calculateDebtTotals(accounts, payments, schedules, "2026-01-10");
-t("original total excludes closed", target.originalTotal, 150_000);
-t("total paid excludes closed account", target.totalPaid, 90_000);
-t("remaining is never negative", target.remaining, 60_000);
-t("overall progress", target.progress, 60);
-t("overdue account count", target.overdueCount, 1);
-t("due within seven days", target.dueSoonCount, 1);
-t("monthly target from upcoming schedules", target.monthlyTarget, 40_000);
-t("monthly paid from active payments", target.monthlyPaid, 40_000);
-t("seven day boundary", nextSevenDays("2026-01-10"), "2026-01-17");
-t("IDR has no unnecessary decimals", formatRupiah(1_234_567), "Rp 1.234.567");
-t("date format is Indonesia-friendly", formatDebtDate("2026-01-01"), "1 Jan 2026");
-t(
-  "next due day after this month",
-  nextDueDateForDay(5, "2026-01-10"),
-  "2026-02-05",
-);
-t(
-  "next due day this month",
-  nextDueDateForDay(15, "2026-01-10"),
-  "2026-01-15",
-);
-t(
-  "short month clamps due day",
-  nextDueDateForDay(31, "2026-02-01"),
-  "2026-02-28",
-);
-
-const installmentAccount = {
-  id: "d",
-  owner_user_id: owner,
-  total_amount_due: 2_400_000,
-  original_principal: 2_400_000,
-  interest_fees: 0,
-  installment_amount: 200_000,
-  installment_month: 10,
-  installment_total_months: 12,
-  status: "active",
-  due_date: "2026-02-03",
-};
-
-const installmentBalance = accountBalance(installmentAccount, []);
-t("10/12 tenor paid amount", installmentBalance.paid, 2_000_000);
-t("10/12 tenor remaining is two installments", installmentBalance.remaining, 400_000);
-t("10/12 tenor progress", installmentBalance.progress, 83);
-
-const installmentTotals = calculateDebtTotals(
-  [installmentAccount],
-  [],
-  [],
-  "2026-01-10",
-);
-t("tenor total paid reaches dashboard", installmentTotals.totalPaid, 2_000_000);
-t("tenor remaining reaches dashboard", installmentTotals.remaining, 400_000);
-
-const variableAccount = {
-  id: "e",
-  owner_user_id: owner,
-  total_amount_due: 2_000_000,
-  original_principal: 2_000_000,
-  interest_fees: 0,
-  installment_amount: 0,
-  installment_month: 0,
-  installment_total_months: 0,
-  status: "active",
-  due_date: "2026-01-10",
-};
-const variableSchedules = [
-  {
-    id: "vs1",
-    debt_account_id: "e",
-    due_date: "2026-01-10",
-    amount_due: 500_000,
-    status: "paid",
-  },
-  {
-    id: "vs2",
-    debt_account_id: "e",
-    due_date: "2026-02-10",
-    amount_due: 300_000,
-    status: "upcoming",
-  },
-  {
-    id: "vs3",
-    debt_account_id: "e",
-    due_date: "2026-03-10",
+  schedule({ id: "s1", due_date: "2026-11-03" }),
+  schedule({ id: "s2", due_date: "2026-12-03" }),
+  schedule({ id: "s3", due_date: "2026-10-03" }),
+  schedule({
+    id: "s4",
+    debt_account_id: "b",
+    due_date: "2026-11-15",
     amount_due: 400_000,
-    status: "upcoming",
-  },
-  {
-    id: "vs4",
-    debt_account_id: "e",
-    due_date: "2026-04-10",
-    amount_due: 800_000,
-    status: "upcoming",
-  },
+  }),
+  schedule({ id: "s5", due_date: "2026-11-20", status: "cancelled" }),
 ];
 
-const variableBalance = accountBalance(
-  variableAccount,
-  [],
-  variableSchedules,
+const payments = [
+  payment({ id: "p1", schedule_id: "s1", amount: 300_000 }),
+  payment({ id: "p2", schedule_id: "s3", amount: 100_000 }),
+  payment({
+    id: "p3",
+    debt_account_id: "b",
+    schedule_id: "s4",
+    amount: 150_000,
+    payment_date: "2026-11-08",
+  }),
+];
+
+const installments = buildInstallments(accounts, schedules, payments, today);
+const byId = new Map(installments.map((item) => [item.schedule.id, item]));
+
+// --- Installment statuses -------------------------------------------------
+t("paid installment status", byId.get("s1").status, "paid");
+t("paid installment remaining", byId.get("s1").remaining, 0);
+t("future installment status", byId.get("s2").status, "upcoming");
+t("overdue partial status", byId.get("s3").status, "overdue");
+t("overdue partial remaining", byId.get("s3").remaining, 200_000);
+t("future partial status", byId.get("s4").status, "partially_paid");
+t("cancelled status", byId.get("s5").status, "cancelled");
+
+// --- Pure status derivation ----------------------------------------------
+t(
+  "unpaid status for due month",
+  deriveInstallmentStatus(schedule({ due_date: "2026-11-28" }), 0, today),
+  "unpaid",
 );
-t("variable paid from paid schedule", variableBalance.paid, 500_000);
-t("variable remaining from unpaid schedules", variableBalance.remaining, 1_500_000);
-t("variable next schedule amount", variableBalance.nextSchedule?.amount_due, 300_000);
+t(
+  "no payment means no paid status",
+  deriveInstallmentStatus(schedule({ due_date: "2026-11-01" }), 0, today),
+  "overdue",
+);
+t(
+  "overpayment clamps to paid",
+  deriveInstallmentStatus(schedule({ amount_due: 100_000 }), 150_000, today),
+  "paid",
+);
 
-const overpaid = accountBalance(accounts[0], [
-  ...payments,
-  { id: "p4", debt_account_id: "a", amount: 150_000, reversed_at: null },
-]);
-t("overpayment never displays negative", overpaid.remaining, 0);
-t("overpayment caps progress", overpaid.progress, 100);
+// --- Payment helpers ------------------------------------------------------
+t("active payments exclude reversed", activePayments([
+  payment({ id: "x", amount: 10_000 }),
+  payment({ id: "y", amount: 5_000, reversed_at: "2026-11-09T00:00:00Z" }),
+]).length, 1);
+t(
+  "paid per installment",
+  paidByScheduleId(payments).get("s3"),
+  100_000,
+);
 
-console.log(`\nTOTAL: ${pass} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+// --- Account summaries ----------------------------------------------------
+const summaries = buildAccountSummaries(accounts, payments, schedules, today);
+const summaryA = summaries.find((item) => item.id === "a");
+const summaryB = summaries.find((item) => item.id === "b");
+const summaryC = summaries.find((item) => item.id === "c");
+
+t("account A original", summaryA.original, 1_200_000);
+t("account A paid", summaryA.paid, 400_000);
+t("account A remaining", summaryA.remaining, 500_000);
+t("account A progress", summaryA.progress, 44);
+t("account A installment count", summaryA.installmentCount, 3);
+t("account A paid installments", summaryA.paidInstallments, 1);
+t("account A open installments", summaryA.openInstallments, 2);
+t("account A overdue installments", summaryA.overdueInstallments, 1);
+t("account A mismatch flagged", summaryA.mismatch, true);
+t("account B remaining", summaryB.remaining, 250_000);
+t("closed account keeps its own remaining", summaryC.remaining, 0);
+
+// --- Monthly view ---------------------------------------------------------
+const november = monthlySummary("2026-11", accounts, payments, schedules, today);
+t("november scheduled", november.scheduled, 700_000);
+t("november paid", november.paid, 550_000);
+t("november remaining", november.remaining, 250_000);
+t("november paid count", november.counts.paid, 1);
+t("november partially paid count", november.counts.partially_paid, 1);
+t("november overdue count", november.counts.overdue, 0);
+t("november upcoming count", november.counts.upcoming, 0);
+t("november excludes october and december installments", november.installments.length, 3);
+t("november overdue amount", november.overdueAmount, 200_000);
+
+const october = monthlySummary("2026-10", accounts, payments, schedules, today);
+t("october scheduled", october.scheduled, 300_000);
+t("october paid in october", october.paid, 0);
+t("october remaining", october.remaining, 200_000);
+t("october overdue count", october.counts.overdue, 1);
+t("october paid installment is still tracked", october.installments.length, 1);
+
+const december = monthlySummary("2026-12", accounts, payments, schedules, today);
+t("december scheduled", december.scheduled, 300_000);
+t("december paid", december.paid, 0);
+t("december remaining carries its own installment", december.remaining, 300_000);
+t("december installment is upcoming", december.installments[0].status, "upcoming");
+t("december only has its own installment", december.installments.length, 1);
+
+// Payments dated in December are reported in December, not November.
+const decemberPayments = monthlySummary(
+  "2026-12",
+  accounts,
+  [...payments, payment({ id: "p4", schedule_id: "s2", amount: 300_000, payment_date: "2026-12-02" })],
+  schedules,
+  today,
+);
+t("december paid after december payment", decemberPayments.paid, 300_000);
+t("december remaining after payment", decemberPayments.remaining, 0);
+t(
+  "november does not include december payment",
+  monthlySummary(
+    "2026-11",
+    accounts,
+    [...payments, payment({ id: "p4", schedule_id: "s2", amount: 300_000, payment_date: "2026-12-02" })],
+    schedules,
+    today,
+  ).paid,
+  550_000,
+);
+
+// --- Dashboard totals -----------------------------------------------------
+const totals = calculateDebtTotals(accounts, payments, schedules, today);
+t("total original", totals.originalTotal, 2_000_000);
+t("total paid", totals.totalPaid, 550_000);
+t("total remaining", totals.remaining, 750_000);
+t("total progress", totals.progress, 42);
+t("overdue count", totals.overdueCount, 1);
+t("overdue amount", totals.overdueAmount, 200_000);
+t("monthly target", totals.monthlyTarget, 700_000);
+t("monthly paid", totals.monthlyPaid, 550_000);
+t("due soon count", totals.dueSoonCount, 1);
+t("next seven days", nextSevenDays("2026-11-10"), "2026-11-17");
+
+// --- No negative balances -------------------------------------------------
+const overpaid = buildInstallments(
+  [account({ id: "z", total_amount_due: 100_000 })],
+  [schedule({ id: "sz", debt_account_id: "z", amount_due: 100_000 })],
+  [payment({ id: "pz", debt_account_id: "z", schedule_id: "sz", amount: 150_000 })],
+  today,
+)[0];
+t("overpaid remaining is zero", overpaid.remaining, 0);
+t("overpaid is paid", overpaid.status, "paid");
+
+console.log(`\n${pass} passed, ${fail} failed`);
+
+if (fail > 0) process.exit(1);

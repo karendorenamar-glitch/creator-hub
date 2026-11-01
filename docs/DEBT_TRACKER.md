@@ -98,28 +98,81 @@ owner_user_id = auth.uid() and public.is_debt_owner()
   is granted only to `authenticated`.
 - `debt_allowed_users` has no ordinary user read/write access.
 
-## Balance semantics
+## Installment schedule model
 
-- Every payment is an individual row.
-- `total_paid` is the sum of payments where `reversed_at is null`.
-- `remaining = max(0, total_amount_due - total_paid)`.
-- Principal and interest/fees remain visible separately.
-- A full payment can set the account status to `paid`; a reversal recalculates
-  it back to `active` when needed.
+Every debt uses exactly one model: a manually configured list of installments
+stored in `debt_schedules`. There is no fixed-versus-flexible account type.
+
+- Each installment has its own due date and scheduled amount, and the amount
+  may differ month to month.
+- Amount paid and remaining per installment are derived from `debt_payments`
+  rows linked through `schedule_id`. Nothing is stored twice.
+- Status is derived, never typed by hand:
+  - `upcoming` - future month, nothing paid yet
+  - `unpaid` - due in the current month, nothing paid yet
+  - `partially_paid` - some amount paid, balance remains, not past due
+  - `paid` - paid amount covers the scheduled amount
+  - `overdue` - due date has passed and a balance remains
+- Opening or switching a month never changes a status. Only a recorded payment
+  can.
+- Installments without payments can be edited, cancelled, or deleted.
+- Installments with payments can no longer be edited. Deleting one cancels it
+  instead, so the history stays intact.
+
+### Balance semantics
+
+- Total paid = sum of payments where `reversed_at is null`.
+- Remaining = sum of remaining balances of all non-cancelled installments.
+  It is never negative.
+- Original debt = `total_amount_due` when filled, otherwise the sum of the
+  installments. When both exist and differ, the UI shows a mismatch notice and
+  keeps using the installments for remaining and progress.
+- Progress = paid / (paid + remaining).
+- Overdue amount = remaining of installments whose due date has passed.
+- A partial payment never closes an installment, and paying one installment
+  never advances another.
 - Payment history is never silently deleted. Reversal sets `reversed_at` and
-  `reversal_reason`, and the row remains visible.
-- A schedule becomes `paid` only when a payment explicitly linked to that
-  schedule covers its amount. An unrelated payment never changes a schedule.
-- Accounts with payment/schedule history are closed rather than hard-deleted.
-- The monthly target is the sum of upcoming schedules due in the current
-  business month.
+  `reversal_reason`; the row stays visible and stops counting toward balances.
+- Accounts with any installment or payment history are closed rather than
+  hard-deleted.
+- The monthly target is the sum of installments due in the current business
+  month; monthly paid is the sum of payments dated in that month.
+
+## Monthly view
+
+`/debt/schedule` defaults to the current month.
+
+- Month navigation uses `?month=YYYY-MM`, account filter uses `?account=<id>`.
+- Cards show scheduled total, payments dated in that month, and remaining on
+  that month's installments.
+- Counts show paid, partially paid, unpaid, overdue, and upcoming installments
+  for the selected month.
+- Each installment row shows the debt name, due date, scheduled amount, paid
+  amount, remaining, and status.
+- Actions: **Bayar penuh** (pays the remaining balance), **Bayar sebagian**
+  (opens `/debt/payments` pre-filled), **Edit** (only while nothing is paid),
+  **Batalkan**, **Aktifkan lagi**, and **Hapus** (only while nothing is paid).
+- "Buat beberapa angsuran" generates N monthly rows with one nominal; each row
+  can then be edited individually.
+
+## Paying an installment
+
+`/debt/payments` records a payment against one specific installment:
+
+- the installment list only shows rows that still have a remaining balance,
+- a partial amount is allowed, a full amount closes the installment,
+- the amount cannot exceed the installment's remaining balance,
+- the submit button is disabled while the request is pending, and the server
+  re-validates the remaining balance on every request.
+
+`Bayar penuh` writes a payment with an idempotency key derived from the
+installment state, so a double submit cannot create two payments.
 
 ## Privacy and SEO
 
 - `/debt/*` is excluded in `app/robots.ts`.
 - The debt layout and login page set `robots: noindex, nofollow, nocache`.
-- No debt data is placed in URLs; searches and filters are client-side on
-  server-fetched owner-only data.
+- No debt data is placed in URLs (only `month` and `account` identifiers).
 - Debt data is not written to analytics or error logs.
 
 ## Required environment variables
@@ -133,9 +186,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 No service-role key is required by the Debt Tracker application code.
 
+## Legacy migrations 041-043
+
+- `041_debt_installments.sql` and `042_debt_installment_amount.sql` added
+  columns (`installment_month`, `installment_total_months`, `due_day`,
+  `installment_amount`) that the schedule model no longer uses. The columns can
+  stay; nothing reads them anymore.
+- `043_debt_pay_installment.sql` added the `pay_debt_installment` RPC. The
+  server action now works without it, so this migration is optional.
+- No new migration is required for the schedule model.
+
 ## Manual verification after migration
 
-The migration is intentionally not applied by this implementation. After
+The base migration is intentionally not applied by this implementation. After
 approval and migration:
 
 1. Bootstrap the owner UUID.
@@ -144,105 +207,10 @@ approval and migration:
 4. Use a second authenticated Supabase user without an allowlist row and verify
    that REST access to all four tables is denied.
 5. Verify the second user cannot insert into `debt_allowed_users`.
-6. Test partial payment, full payment, reversal, overdue schedules, and the
-   seven-day window.
-7. Smoke-test the existing `/wedding`, `/checkout`, and `/admin` routes.
-
-## Implementation verification (before migration)
-
-- `npx tsc --noEmit` — pass.
-- `npx eslint app/debt components/debt lib/debt middleware.ts app/robots.ts tests/debt-ledger.test.mjs` — pass.
-- `npm run build` — pass; all five debt routes were built dynamically.
-- `node --experimental-strip-types --test tests/*.test.mjs` — 10 suites pass,
-  including 31 Debt Tracker calculation and formatting checks.
-- Unauthenticated smoke tests:
-  - `/debt`, `/debt/accounts`, `/debt/payments`, `/debt/schedule` redirect
-    (`307`) to `/debt/login`.
-  - `/debt/login` returns `200` and includes `noindex, nofollow, nocache`.
-  - `/robots.txt` disallows `/debt/` and `/debt/login`.
-  - `/`, `/wedding/login`, `/wedding/signup`, and `/studio` still return `200`.
-  - `/wedding/dashboard`, `/checkout`, and `/admin` still redirect to the
-    existing wedding login as before.
-- No migration was applied, no production data was read or changed, and no
-  deployment was performed.
-
-The following tests require the reviewed migration and explicit owner bootstrap:
-owner login/logout, authenticated CRUD, partial/full payment behavior, payment
-
-## Installment fields (migration 041)
-
-Account form supports:
-
-- application/creditor name,
-- optional loan label so one application can have multiple loans,
-- nominal amount,
-- installment status such as `5/12 bulan`,
-- recurring due day, e.g. every 5th.
-
-`041_debt_installments.sql` adds `installment_month`,
-`installment_total_months`, and `due_day`. Run it after `040` before deploying
-the updated account form. Existing `due_date` values are backfilled into
-`due_day`.
-
-Due days are calculated from the selected day each month; days 29–31 are
-
-## Per-installment nominal (migration 042)
-
-`042_debt_installment_amount.sql` adds `installment_amount`.
-
-Example:
-
-```text
-Nominal per angsuran : Rp 200.000
-Status tenor         : 10/12 bulan
-Remaining            : 2 × Rp 200.000 = Rp 400.000
-```
-
-The form also accepts a due month plus due day. `due_date` stores the selected
-next due date; `due_day` stores the recurring day for display. Existing due
-dates are preserved and can be backfilled by migration 041.
-
-clamped to the last valid day of shorter months.
-## Variable installments
-
-Choose **Nominal berbeda tiap bulan** in the account form. In this mode:
-
-- enter the total contract,
-- add one schedule row per month in `/debt/schedule` with its own amount and
-  due date,
-- the account card shows **Cicilan per bulan: Bervariasi**,
-- remaining is the sum of schedules that are not paid,
-- paying via the schedule button/RPC consumes the earliest upcoming schedule
-  amount and advances the account due date.
-
-Fixed and variable accounts can coexist under the same application name by
-using different loan labels.
-
-## Paying an installment
-
-The account card shows:
-
-- Total kontrak
-- Cicilan per bulan
-- Sisa
-
-For an eligible active account, **Bayar angsuran** calls the atomic
-`pay_debt_installment` RPC. It records the monthly payment, advances the due
-month by one, increments the installment status, and marks the account `paid`
-on the final installment.
-
-Example:
-
-```text
-Sebelum : 10/12 · Rp 200.000/bulan · sisa Rp 400.000
-Bayar   : Rp 200.000
-Sesudah : 11/12 · jatuh tempo bulan berikutnya · sisa Rp 200.000
-```
-
-Migration `043_debt_pay_installment.sql` is required for this button.
-
-
-reversal, schedule transitions, and cross-owner RLS/REST tests.
+6. Test partial payments, full payments, reversal, edits, deletion of unpaid
+   installments, overdue installments, and the seven-day window.
+7. Verify month switching does not change any installment status.
+8. Smoke-test the existing `/wedding`, `/checkout`, and `/admin` routes.
 
 ## Remaining setup steps
 
@@ -251,4 +219,3 @@ reversal, schedule transitions, and cross-owner RLS/REST tests.
 3. Bootstrap the owner UUID using the SQL above.
 4. Run the authenticated and unauthorized RLS tests.
 5. Only then deploy the application.
-

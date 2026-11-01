@@ -2,35 +2,30 @@ import { PageHeader } from "@/components/wedding/ui";
 import { DebtAccountManager } from "@/components/debt/account-manager";
 import { requireDebtOwner } from "@/lib/debt/auth";
 import { createDebtClient } from "@/lib/debt/supabase";
-import {
-  isDebtInstallmentPaymentReady,
-  loadDebtData,
-} from "@/lib/debt/queries";
-import { buildAccountBalances } from "@/lib/debt/calculations";
+import { loadDebtData } from "@/lib/debt/queries";
+import { buildAccountSummaries } from "@/lib/debt/calculations";
+import { todayISO } from "@/lib/debt/format";
 
-export const metadata = { title: "Akun Utang" };
+export const metadata = { title: "Daftar Utang" };
 
 export default async function DebtAccountsPage() {
   const owner = await requireDebtOwner();
   const supabase = await createDebtClient();
   const data = await loadDebtData(supabase, owner.userId);
-  const balances = buildAccountBalances(
+  const accounts = buildAccountSummaries(
     data.accounts,
     data.payments,
     data.schedules,
+    todayISO(),
   );
-  const paymentsReady = await isDebtInstallmentPaymentReady();
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Akun utang"
-        subtitle="Kelola pokok, bunga/biaya, jatuh tempo, dan status setiap akun. Riwayat pembayaran tidak akan dihapus saat akun ditutup."
+        title="Daftar utang"
+        subtitle="Setiap utang punya jadwal angsuran sendiri. Nominal tiap bulan boleh berbeda, dan pembayaran dicatat per angsuran."
       />
-      <DebtAccountManager
-        accounts={balances}
-        paymentsReady={paymentsReady}
-      />
+      <DebtAccountManager accounts={accounts} />
     </div>
   );
 }

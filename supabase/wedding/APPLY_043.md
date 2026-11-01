@@ -1,5 +1,10 @@
 # Apply 043 — Pay one debt installment
 
+> **Superseded.** The Debt Tracker now uses a per-installment schedule
+> (`debt_schedules` + `debt_payments.schedule_id`) and no longer calls the
+> `pay_debt_installment` RPC. Applying this migration is optional and does not
+> change current application behaviour.
+
 Adds `public.pay_debt_installment(uuid)`, an atomic operation that:
 
 - records one monthly payment for the stored `installment_amount`,

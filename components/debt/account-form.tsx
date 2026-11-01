@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import {
   createDebtAccountAction,
@@ -9,7 +9,7 @@ import {
 } from "@/app/debt/actions";
 import { Field, FormAlert, inputClass } from "@/components/wedding/form-kit";
 import type { DebtAccount } from "@/lib/debt/db-types";
-import { formatRupiah, nextDueDateForDay, todayISO } from "@/lib/debt/format";
+import { todayISO } from "@/lib/debt/format";
 
 const ACCOUNT_TYPES = [
   ["bank_loan", "Pinjaman bank"],
@@ -25,11 +25,6 @@ const STATUSES = [
   ["closed", "Ditutup"],
 ] as const;
 
-function digits(value: string): number {
-  const parsed = Number(value.replace(/[^\d]/g, ""));
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 export function DebtAccountForm({
   account,
   onDone,
@@ -37,36 +32,6 @@ export function DebtAccountForm({
   account?: DebtAccount;
   onDone: () => void;
 }) {
-  const [nominal, setNominal] = useState(
-    account
-      ? String(
-          account.installment_amount > 0
-            ? account.installment_amount
-            : account.installment_total_months > 0
-              ? Math.round(
-                  account.total_amount_due / account.installment_total_months,
-                )
-              : account.total_amount_due,
-        )
-      : "",
-  );
-  const [totalNominal, setTotalNominal] = useState(
-    account ? String(account.total_amount_due) : "",
-  );
-  const [variableMode, setVariableMode] = useState(
-    account ? account.installment_amount <= 0 : false,
-  );
-  const [totalMonths, setTotalMonths] = useState(
-    account ? String(account.installment_total_months) : "0",
-  );
-  const installments = digits(totalMonths);
-  const total = variableMode
-    ? digits(totalNominal)
-    : digits(nominal) * (installments > 0 ? installments : 1);
-  const interest = account ? account.interest_fees : 0;
-  const defaultDueMonth =
-    account?.due_date?.slice(0, 7) ??
-    nextDueDateForDay(account?.due_day ?? 3).slice(0, 7);
   const action = account ? updateDebtAccountAction : createDebtAccountAction;
   const [state, formAction, pending] = useActionState<
     DebtActionResult,
@@ -82,72 +47,8 @@ export function DebtAccountForm({
       {account ? <input type="hidden" name="id" value={account.id} /> : null}
       <FormAlert error={state?.error} />
 
-      <input type="hidden" name="interestFees" value={interest} />
-      <input
-        type="hidden"
-        name="openingDate"
-        value={account?.opening_date ?? todayISO()}
-      />
-      <input type="hidden" name="dueDate" value={account?.due_date ?? ""} />
-
-      <Field
-        label="Model cicilan"
-        hint="Pilih model yang sesuai. Pilihan variasi akan menampilkan field total kontrak."
-      >
-        <div
-          role="radiogroup"
-          aria-label="Model cicilan"
-          className="grid gap-2 sm:grid-cols-2"
-        >
-          <label
-            className={`cursor-pointer rounded-xl border p-3 transition-colors ${
-              !variableMode
-                ? "border-olive-600 bg-olive-50"
-                : "border-olive-100 bg-white hover:bg-olive-50/60"
-            }`}
-          >
-            <input
-              type="radio"
-              name="variableMode"
-              value="0"
-              checked={!variableMode}
-              onChange={() => setVariableMode(false)}
-              className="sr-only"
-            />
-            <span className="block text-sm font-medium text-ink">
-              Nominal tetap
-            </span>
-            <span className="mt-1 block text-xs leading-relaxed text-ink-soft">
-              Satu nominal cicilan setiap bulan.
-            </span>
-          </label>
-          <label
-            className={`cursor-pointer rounded-xl border p-3 transition-colors ${
-              variableMode
-                ? "border-olive-600 bg-olive-50"
-                : "border-olive-100 bg-white hover:bg-olive-50/60"
-            }`}
-          >
-            <input
-              type="radio"
-              name="variableMode"
-              value="1"
-              checked={variableMode}
-              onChange={() => setVariableMode(true)}
-              className="sr-only"
-            />
-            <span className="block text-sm font-medium text-ink">
-              Nominal berbeda tiap bulan
-            </span>
-            <span className="mt-1 block text-xs leading-relaxed text-ink-soft">
-              Isi nominal tiap bulan lewat halaman Jadwal.
-            </span>
-          </label>
-        </div>
-      </Field>
-
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Nama aplikasi" htmlFor="creditorName">
+        <Field label="Nama utang / kreditur" htmlFor="creditorName">
           <input
             id="creditorName"
             name="creditorName"
@@ -160,9 +61,9 @@ export function DebtAccountForm({
         </Field>
 
         <Field
-          label="Nama pinjaman / label"
+          label="Label (opsional)"
           htmlFor="referenceLabel"
-          hint="Satu aplikasi bisa memiliki beberapa pinjaman."
+          hint="Pembeda jika satu aplikasi punya beberapa pinjaman."
         >
           <input
             id="referenceLabel"
@@ -174,7 +75,7 @@ export function DebtAccountForm({
           />
         </Field>
 
-        <Field label="Jenis pinjaman" htmlFor="accountType">
+        <Field label="Jenis utang" htmlFor="accountType">
           <select
             id="accountType"
             name="accountType"
@@ -189,7 +90,51 @@ export function DebtAccountForm({
           </select>
         </Field>
 
-        <Field label="Status akun" htmlFor="accountStatus">
+        <Field
+          label="Utang awal (IDR)"
+          htmlFor="originalDebt"
+          hint="Opsional. Kosongkan jika hanya mencatat sisa angsuran."
+        >
+          <input
+            id="originalDebt"
+            name="originalDebt"
+            inputMode="numeric"
+            defaultValue={
+              account && account.total_amount_due > 0
+                ? String(account.total_amount_due)
+                : ""
+            }
+            placeholder="Contoh: 2.400.000"
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="Tanggal mulai" htmlFor="openingDate">
+          <input
+            id="openingDate"
+            name="openingDate"
+            type="date"
+            required
+            defaultValue={account?.opening_date ?? todayISO()}
+            className={inputClass}
+          />
+        </Field>
+
+        <Field
+          label="Tanggal akhir (opsional)"
+          htmlFor="finalDueDate"
+          hint="Perkiraan pelunasan terakhir."
+        >
+          <input
+            id="finalDueDate"
+            name="finalDueDate"
+            type="date"
+            defaultValue={account?.due_date ?? ""}
+            className={inputClass}
+          />
+        </Field>
+
+        <Field label="Status utang" htmlFor="accountStatus">
           <select
             id="accountStatus"
             name="status"
@@ -203,107 +148,13 @@ export function DebtAccountForm({
             ))}
           </select>
         </Field>
-
-        {variableMode ? (
-          <Field
-            label="Total kontrak (IDR)"
-            htmlFor="totalNominal"
-            hint="Rincian nominal tiap bulan ditambahkan di halaman Jadwal."
-            className="sm:col-span-2"
-          >
-            <input
-              id="totalNominal"
-              name="totalAmountDue"
-              required
-              inputMode="numeric"
-              value={totalNominal}
-              onChange={(event) => setTotalNominal(event.target.value)}
-              placeholder="Contoh: 2.000.000"
-              className={inputClass}
-            />
-          </Field>
-        ) : (
-          <Field
-            label="Nominal per angsuran (IDR)"
-            htmlFor="nominal"
-            hint={`Total kontrak yang dihitung: ${formatRupiah(total)}.`}
-            className="sm:col-span-2"
-          >
-            <input
-              id="nominal"
-              name="installmentAmount"
-              required
-              inputMode="numeric"
-              value={nominal}
-              onChange={(event) => setNominal(event.target.value)}
-              placeholder="Contoh: 200.000"
-              className={inputClass}
-            />
-          </Field>
-        )}
-
-        <Field
-          label="Sudah dibayar / total tenor"
-          htmlFor="installmentMonth"
-          hint="Contoh: 10 / 12 bulan. Sisa = 2 × nominal angsuran."
-        >
-          <div className="flex items-center gap-2">
-            <input
-              id="installmentMonth"
-              name="installmentMonth"
-              type="number"
-              min={0}
-              max={999}
-              defaultValue={account?.installment_month ?? 0}
-              className={`${inputClass} text-center`}
-            />
-            <span className="text-sm text-ink-soft">/</span>
-            <input
-              name="installmentTotalMonths"
-              type="number"
-              min={0}
-              max={999}
-              value={totalMonths}
-              onChange={(event) => setTotalMonths(event.target.value)}
-              className={`${inputClass} text-center`}
-            />
-            <span className="shrink-0 text-sm text-ink-soft">bulan</span>
-          </div>
-        </Field>
-
-        <Field
-          label="Bulan jatuh tempo"
-          htmlFor="dueMonth"
-          hint="Pilih bulan tagihan berikutnya."
-        >
-          <input
-            id="dueMonth"
-            name="dueMonth"
-            type="month"
-            defaultValue={defaultDueMonth}
-            className={inputClass}
-          />
-        </Field>
-
-        <Field
-          label="Tanggal jatuh tempo"
-          htmlFor="dueDay"
-          hint="Contoh: setiap tanggal 3."
-        >
-          <select
-            id="dueDay"
-            name="dueDay"
-            defaultValue={account?.due_day ? String(account.due_day) : "3"}
-            className={inputClass}
-          >
-            {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
-              <option key={day} value={day}>
-                Tanggal {day}
-              </option>
-            ))}
-          </select>
-        </Field>
       </div>
+
+      <p className="rounded-xl bg-olive-50 px-3 py-2.5 text-xs leading-relaxed text-ink-soft">
+        Nominal tiap angsuran diatur di halaman{" "}
+        <strong className="font-medium text-ink">Jadwal</strong>. Setiap bulan
+        boleh berbeda, dan pembayaran dicatat per angsuran.
+      </p>
 
       <Field label="Catatan" htmlFor="accountNotes">
         <textarea
@@ -331,7 +182,7 @@ export function DebtAccountForm({
           className="inline-flex items-center gap-2 rounded-xl bg-olive-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-olive-700 disabled:opacity-60"
         >
           {pending ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-          {pending ? "Menyimpan…" : account ? "Simpan perubahan" : "Tambah akun"}
+          {pending ? "Menyimpan…" : account ? "Simpan perubahan" : "Tambah utang"}
         </button>
       </div>
     </form>

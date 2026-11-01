@@ -31,14 +31,11 @@ or data migration is required. `039_split_plus_ones.sql` is superseded and
 must not be applied (see `APPLY_039.md`). `040_debt_tracker.sql` is the
 additive private Debt Tracker migration; review it and run it manually only
 after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
-`041_debt_installments.sql` adds recurring due day and installment status to
-`debt_accounts`; run it after 040 before deploying the updated account form.
-`042_debt_installment_amount.sql` adds the per-installment nominal so
-`10/12 × Rp 200.000 = Rp 400.000` remaining can be calculated; run it after 041.
-`043_debt_pay_installment.sql` adds the atomic installment-payment RPC used by
-the **Bayar angsuran** button; run it after 042. The same RPC supports fixed and
-variable schedules: variable accounts pay their earliest upcoming schedule
-amount.
+`041`–`043` are legacy: the Debt Tracker now derives everything from
+`debt_schedules` rows with their own due dates and amounts, so `due_day`,
+`installment_month`, `installment_total_months` and `installment_amount` are no
+longer read, and the `pay_debt_installment` RPC (043) is optional. No new
+migration is required for the installment-schedule model.
 
 `005` is required for the Budget tab: vendor payments are stored as individual
 rows, so "total sudah dibayarkan" is never counted twice. Existing

@@ -16,11 +16,6 @@ export type DebtData = {
  * Loads the owner's ledger through RLS. Every query is also filtered by owner
  * so an accidental policy regression does not turn into cross-owner reads.
  */
-export async function isDebtInstallmentPaymentReady(): Promise<boolean> {
-  // The UI has a server-side fallback for deployments where the optional
-  // atomic RPC has not been applied yet. The button is therefore available.
-  return true;
-}
 
 export async function loadDebtData(
   supabase: SupabaseClient<DebtDatabase>,
