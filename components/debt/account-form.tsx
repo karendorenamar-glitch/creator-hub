@@ -90,6 +90,23 @@ export function DebtAccountForm({
       />
       <input type="hidden" name="dueDate" value={account?.due_date ?? ""} />
 
+      <Field
+        label="Model cicilan"
+        htmlFor="variableMode"
+        hint="Pilih bervariasi jika nominal tiap bulan berbeda."
+      >
+        <select
+          id="variableMode"
+          name="variableMode"
+          value={variableMode ? "1" : "0"}
+          onChange={(event) => setVariableMode(event.target.value === "1")}
+          className={inputClass}
+        >
+          <option value="0">Nominal tetap setiap bulan</option>
+          <option value="1">Nominal berbeda tiap bulan</option>
+        </select>
+      </Field>
+
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Nama aplikasi" htmlFor="creditorName">
           <input
@@ -145,23 +162,6 @@ export function DebtAccountForm({
                 {label}
               </option>
             ))}
-          </select>
-        </Field>
-
-        <Field
-          label="Model cicilan"
-          htmlFor="variableMode"
-          className="sm:col-span-2"
-        >
-          <select
-            id="variableMode"
-            name="variableMode"
-            value={variableMode ? "1" : "0"}
-            onChange={(event) => setVariableMode(event.target.value === "1")}
-            className={inputClass}
-          >
-            <option value="0">Nominal tetap setiap bulan</option>
-            <option value="1">Nominal berbeda tiap bulan</option>
           </select>
         </Field>
 
