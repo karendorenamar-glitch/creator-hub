@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   CalendarClock,
+  Check,
   CircleAlert,
   CircleDollarSign,
   HandCoins,
@@ -25,6 +26,7 @@ import {
   calculateDebtTotals,
 } from "@/lib/debt/calculations";
 import { formatDebtDate, formatRupiah, todayISO } from "@/lib/debt/format";
+import { MarkPaidButton } from "@/components/debt/mark-paid-button";
 
 export const metadata = { title: "Ringkasan" };
 
@@ -59,6 +61,15 @@ export default async function DebtDashboardPage() {
       String(account.due_date) < today,
   );
   const recentAccounts = summaries.slice(0, 3);
+  const currentMonth = today.slice(0, 7);
+  const paidThisMonth = new Set(
+    data.payments
+      .filter(
+        (payment) =>
+          !payment.reversed_at && payment.payment_date.startsWith(currentMonth),
+      )
+      .map((payment) => payment.debt_account_id),
+  );
 
   return (
     <div className="space-y-7">
@@ -204,6 +215,21 @@ export default async function DebtDashboardPage() {
                   {account.installment_month}/{account.installment_total_months} bulan
                   · sisa {formatRupiah(account.remaining)}
                 </p>
+
+                {paidThisMonth.has(account.id) ? (
+                  <p className="mt-3 inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700">
+                    <Check className="size-3.5" aria-hidden /> Sudah dibayar bulan ini
+                  </p>
+                ) : (
+                  <MarkPaidButton
+                    accountId={account.id}
+                    amountLabel={formatRupiah(
+                      account.installment_amount > 0
+                        ? Math.min(account.installment_amount, account.remaining)
+                        : account.remaining,
+                    )}
+                  />
+                )}
               </div>
             ))}
           </div>
