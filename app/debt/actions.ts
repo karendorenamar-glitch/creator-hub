@@ -7,6 +7,7 @@ import { getDebtOwner } from "@/lib/debt/auth";
 import { isEmail, isUuid, text } from "@/lib/wedding/validation";
 import {
   parseDebtAccount,
+  type AccountPlan,
   parseDebtPayment,
   parseDebtSchedule,
   parseDebtScheduleBatch,
@@ -193,6 +194,35 @@ async function refreshAccountStatus(
   }
 }
 
+function buildPlanRows(
+  ownerId: string,
+  accountId: string,
+  plan: AccountPlan,
+  fallbackDueDate: string | null,
+  today: string,
+) {
+  if (plan.monthly_amount <= 0 || plan.tenor_months <= 0) return [];
+
+  const month =
+    plan.first_due_month ??
+    (fallbackDueDate ? fallbackDueDate.slice(0, 7) : today.slice(0, 7));
+  const day =
+    plan.due_day ??
+    (fallbackDueDate ? Number(fallbackDueDate.slice(8, 10)) : 1);
+
+  return Array.from({ length: plan.tenor_months }, (_, index) => {
+    const target = addMonthsISO(`${month}-01`, index).slice(0, 7);
+    return {
+      owner_user_id: ownerId,
+      debt_account_id: accountId,
+      due_date: dueDateForMonth(day, target),
+      amount_due: plan.monthly_amount,
+      notes: null,
+      status: "upcoming" as DebtScheduleStatus,
+    };
+  });
+}
+
 export async function createDebtAccountAction(
   _prev: DebtActionResult,
   formData: FormData,
@@ -203,16 +233,46 @@ export async function createDebtAccountAction(
   const parsed = parseDebtAccount(formData);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase.from("debt_accounts").insert({
-    owner_user_id: ctx.owner.userId,
-    ...parsed.values,
-  });
+  const { data: created, error } = await ctx.supabase
+    .from("debt_accounts")
+    .insert({
+      owner_user_id: ctx.owner.userId,
+      ...parsed.values,
+    })
+    .select("id, due_date")
+    .maybeSingle();
 
   if (error) return { error: messageForError(error) };
 
+  const rows = created
+    ? buildPlanRows(
+        ctx.owner.userId,
+        created.id,
+        parsed.plan,
+        created.due_date ?? null,
+        todayISO(),
+      )
+    : [];
+
+  if (rows.length > 0) {
+    const { error: rowsError } = await ctx.supabase
+      .from("debt_schedules")
+      .insert(rows);
+    if (rowsError) {
+      revalidateDebt();
+      return {
+        error:
+          "Utang tersimpan, tetapi angsuran gagal dibuat. Tambahkan manual di halaman Jadwal.",
+      };
+    }
+  }
+
   revalidateDebt();
   return {
-    success: "Utang dibuat. Tambahkan angsuran di halaman Jadwal.",
+    success:
+      rows.length > 0
+        ? `Utang dibuat dengan ${rows.length} angsuran.`
+        : "Utang dibuat. Tambahkan angsuran di halaman Jadwal.",
   };
 }
 
@@ -243,8 +303,53 @@ export async function updateDebtAccountAction(
   if (error) return { error: messageForError(error) };
   if (!updated) return { error: "Akun tidak ditemukan." };
 
+  const rows = buildPlanRows(
+    ctx.owner.userId,
+    id,
+    parsed.plan,
+    parsed.values.due_date,
+    todayISO(),
+  );
+  // Only regenerate when the tenor plan itself changed, so editing a name or a
+  // note never overwrites per-installment amounts that were edited by hand.
+  const planChanged =
+    Number(account.installment_amount) !== parsed.plan.monthly_amount ||
+    Number(account.installment_total_months) !== parsed.plan.tenor_months ||
+    (account.due_day ?? null) !== parsed.plan.due_day;
+
+  if (rows.length > 0 && planChanged) {
+    const { count: paidCount } = await ctx.supabase
+      .from("debt_payments")
+      .select("id", { count: "exact", head: true })
+      .eq("debt_account_id", id)
+      .eq("owner_user_id", ctx.owner.userId)
+      .not("schedule_id", "is", null);
+
+    if ((paidCount ?? 0) === 0) {
+      const { error: clearError } = await ctx.supabase
+        .from("debt_schedules")
+        .delete()
+        .eq("debt_account_id", id)
+        .eq("owner_user_id", ctx.owner.userId);
+
+      if (clearError) return { error: messageForError(clearError) };
+
+      const { error: rowsError } = await ctx.supabase
+        .from("debt_schedules")
+        .insert(rows);
+
+      if (rowsError) {
+        revalidateDebt();
+        return {
+          error:
+            "Utang diperbarui, tetapi angsuran gagal dibuat ulang. Tambahkan manual di halaman Jadwal.",
+        };
+      }
+    }
+  }
+
   revalidateDebt();
-  return { success: "Akun berhasil diperbarui." };
+  return { success: "Utang berhasil diperbarui." };
 }
 
 /**

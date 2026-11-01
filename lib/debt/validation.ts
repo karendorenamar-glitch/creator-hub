@@ -53,9 +53,18 @@ export type ParsedAccount = {
  * Every account is driven by its installment schedule. The original debt is
  * optional: leaving it empty keeps the schedule as the source of truth.
  */
+export type AccountPlan = {
+  monthly_amount: number;
+  tenor_months: number;
+  due_day: number | null;
+  first_due_month: string | null;
+};
+
 export function parseDebtAccount(
   formData: FormData,
-): { ok: true; values: ParsedAccount } | { ok: false; error: string } {
+):
+  | { ok: true; values: ParsedAccount; plan: AccountPlan }
+  | { ok: false; error: string } {
   const creditorName = text(formData, "creditorName").slice(0, 120);
   if (!creditorName) return { ok: false, error: "Nama utang atau kreditur wajib diisi." };
 
@@ -69,6 +78,45 @@ export function parseDebtAccount(
       return { ok: false, error: "Utang awal harus lebih dari nol." };
     }
     total = parsedTotal;
+  }
+
+  const monthlyRaw = text(formData, "monthlyAmount");
+  let monthlyAmount = 0;
+  if (monthlyRaw) {
+    const parsedMonthly = parseWholeRupiah(monthlyRaw, { allowZero: false });
+    if (parsedMonthly === null) {
+      return { ok: false, error: "Nominal per bulan harus lebih dari nol." };
+    }
+    monthlyAmount = parsedMonthly;
+  }
+
+  const tenorRaw = text(formData, "tenorMonths");
+  const tenorMonths = tenorRaw ? parseCount(tenorRaw) : 0;
+  if (tenorMonths === null || tenorMonths < 0 || tenorMonths > 600) {
+    return { ok: false, error: "Jumlah tenor tidak valid." };
+  }
+  if (monthlyAmount > 0 && tenorMonths === 0) {
+    return {
+      ok: false,
+      error: "Isi jumlah tenor (bulan) untuk nominal per bulan.",
+    };
+  }
+  if (!total && monthlyAmount > 0 && tenorMonths > 0) {
+    total = monthlyAmount * tenorMonths;
+  }
+
+  const dueDayRaw = text(formData, "dueDay");
+  const parsedDueDay = dueDayRaw ? parseCount(dueDayRaw) : null;
+  if (dueDayRaw && (parsedDueDay === null || parsedDueDay < 1 || parsedDueDay > 31)) {
+    return { ok: false, error: "Tanggal jatuh tempo harus 1-31." };
+  }
+
+  const firstDueMonthRaw = text(formData, "firstDueMonth");
+  if (firstDueMonthRaw && !isRealDate(`${firstDueMonthRaw}-01`)) {
+    return { ok: false, error: "Bulan jatuh tempo pertama tidak valid." };
+  }
+  if (firstDueMonthRaw && !parsedDueDay) {
+    return { ok: false, error: "Pilih tanggal jatuh tempo." };
   }
 
   const openingDate = text(formData, "openingDate");
@@ -99,13 +147,22 @@ export function parseDebtAccount(
       interest_fees: 0,
       total_amount_due: total,
       opening_date: openingDate,
-      due_date: finalDueRaw || null,
-      due_day: null,
+      due_date:
+        parsedDueDay && firstDueMonthRaw
+          ? dueDateForMonth(parsedDueDay, firstDueMonthRaw)
+          : finalDueRaw || null,
+      due_day: parsedDueDay,
       installment_month: 0,
-      installment_total_months: 0,
-      installment_amount: 0,
+      installment_total_months: tenorMonths,
+      installment_amount: monthlyAmount,
       status,
       notes: optionalText(formData, "notes", 2000),
+    },
+    plan: {
+      monthly_amount: monthlyAmount,
+      tenor_months: tenorMonths,
+      due_day: parsedDueDay,
+      first_due_month: firstDueMonthRaw || null,
     },
   };
 }

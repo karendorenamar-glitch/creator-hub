@@ -138,6 +138,25 @@ stored in `debt_schedules`. There is no fixed-versus-flexible account type.
 - The monthly target is the sum of installments due in the current business
   month; monthly paid is the sum of payments dated in that month.
 
+### Creating a debt with a monthly amount
+
+The account form accepts the familiar fields:
+
+- nominal per bulan,
+- tenor (jumlah bulan),
+- jatuh tempo tiap tanggal,
+- bulan jatuh tempo pertama,
+- utang awal (optional; filled automatically from nominal x tenor).
+
+Saving the form creates the debt **and** its installment rows in one step: one
+row per month, starting from the first due month, using the monthly amount.
+Each row can later be edited to a different amount on the Jadwal page, and
+payments are recorded per installment.
+
+Editing the monthly amount or the tenor regenerates the schedule only when no
+installment has a payment yet. Renaming a debt or editing notes never
+touches the installments.
+
 ### Debts that still use the older tenor columns
 
 Debts saved before the schedule model (`installment_amount`,

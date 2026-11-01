@@ -91,9 +91,84 @@ export function DebtAccountForm({
         </Field>
 
         <Field
+          label="Nominal per bulan (IDR)"
+          htmlFor="monthlyAmount"
+          hint="Dipakai untuk membuat angsuran bulanan."
+        >
+          <input
+            id="monthlyAmount"
+            name="monthlyAmount"
+            inputMode="numeric"
+            defaultValue={
+              account && account.installment_amount > 0
+                ? String(account.installment_amount)
+                : ""
+            }
+            placeholder="Contoh: 200.000"
+            className={inputClass}
+          />
+        </Field>
+
+        <Field
+          label="Tenor (bulan)"
+          htmlFor="tenorMonths"
+          hint="Jumlah angsuran, misal 12."
+        >
+          <input
+            id="tenorMonths"
+            name="tenorMonths"
+            type="number"
+            min={0}
+            max={600}
+            defaultValue={
+              account && account.installment_total_months > 0
+                ? String(account.installment_total_months)
+                : ""
+            }
+            placeholder="Contoh: 12"
+            className={inputClass}
+          />
+        </Field>
+
+        <Field
+          label="Jatuh tempo tiap tanggal"
+          htmlFor="dueDay"
+          hint="Contoh: setiap tanggal 3."
+        >
+          <select
+            id="dueDay"
+            name="dueDay"
+            defaultValue={account?.due_day ? String(account.due_day) : "3"}
+            className={inputClass}
+          >
+            {Array.from({ length: 31 }, (_, index) => index + 1).map((day) => (
+              <option key={day} value={day}>
+                Tanggal {day}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field
+          label="Bulan jatuh tempo pertama"
+          htmlFor="firstDueMonth"
+          hint="Angsuran pertama dimulai bulan ini."
+        >
+          <input
+            id="firstDueMonth"
+            name="firstDueMonth"
+            type="month"
+            defaultValue={
+              account?.due_date?.slice(0, 7) ?? todayISO().slice(0, 7)
+            }
+            className={inputClass}
+          />
+        </Field>
+
+        <Field
           label="Utang awal (IDR)"
           htmlFor="originalDebt"
-          hint="Opsional. Kosongkan jika hanya mencatat sisa angsuran."
+          hint="Opsional. Otomatis dari nominal × tenor jika kosong."
         >
           <input
             id="originalDebt"
@@ -151,9 +226,9 @@ export function DebtAccountForm({
       </div>
 
       <p className="rounded-xl bg-olive-50 px-3 py-2.5 text-xs leading-relaxed text-ink-soft">
-        Nominal tiap angsuran diatur di halaman{" "}
-        <strong className="font-medium text-ink">Jadwal</strong>. Setiap bulan
-        boleh berbeda, dan pembayaran dicatat per angsuran.
+        Nominal per bulan otomatis dibuat menjadi angsuran di halaman{" "}
+        <strong className="font-medium text-ink">Jadwal</strong>. Setiap angsuran
+        bisa diedit dengan nominal berbeda, dan pembayaran dicatat per angsuran.
       </p>
 
       <Field label="Catatan" htmlFor="accountNotes">
