@@ -92,19 +92,58 @@ export function DebtAccountForm({
 
       <Field
         label="Model cicilan"
-        htmlFor="variableMode"
-        hint="Pilih bervariasi jika nominal tiap bulan berbeda."
+        hint="Pilih model yang sesuai. Pilihan variasi akan menampilkan field total kontrak."
       >
-        <select
-          id="variableMode"
-          name="variableMode"
-          value={variableMode ? "1" : "0"}
-          onChange={(event) => setVariableMode(event.target.value === "1")}
-          className={inputClass}
+        <div
+          role="radiogroup"
+          aria-label="Model cicilan"
+          className="grid gap-2 sm:grid-cols-2"
         >
-          <option value="0">Nominal tetap setiap bulan</option>
-          <option value="1">Nominal berbeda tiap bulan</option>
-        </select>
+          <label
+            className={`cursor-pointer rounded-xl border p-3 transition-colors ${
+              !variableMode
+                ? "border-olive-600 bg-olive-50"
+                : "border-olive-100 bg-white hover:bg-olive-50/60"
+            }`}
+          >
+            <input
+              type="radio"
+              name="variableMode"
+              value="0"
+              checked={!variableMode}
+              onChange={() => setVariableMode(false)}
+              className="sr-only"
+            />
+            <span className="block text-sm font-medium text-ink">
+              Nominal tetap
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-ink-soft">
+              Satu nominal cicilan setiap bulan.
+            </span>
+          </label>
+          <label
+            className={`cursor-pointer rounded-xl border p-3 transition-colors ${
+              variableMode
+                ? "border-olive-600 bg-olive-50"
+                : "border-olive-100 bg-white hover:bg-olive-50/60"
+            }`}
+          >
+            <input
+              type="radio"
+              name="variableMode"
+              value="1"
+              checked={variableMode}
+              onChange={() => setVariableMode(true)}
+              className="sr-only"
+            />
+            <span className="block text-sm font-medium text-ink">
+              Nominal berbeda tiap bulan
+            </span>
+            <span className="mt-1 block text-xs leading-relaxed text-ink-soft">
+              Isi nominal tiap bulan lewat halaman Jadwal.
+            </span>
+          </label>
+        </div>
       </Field>
 
       <div className="grid gap-4 sm:grid-cols-2">
