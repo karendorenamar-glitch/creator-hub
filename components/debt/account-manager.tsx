@@ -13,6 +13,7 @@ import { Badge, Card, EmptyState, Progress } from "@/components/wedding/ui";
 import { FormModal } from "@/components/wedding/form-modal";
 import { ConfirmAction } from "@/components/debt/confirm-action";
 import { DebtAccountForm } from "@/components/debt/account-form";
+import { MonthlyAmountsForm } from "@/components/debt/monthly-amounts";
 import type { AccountSummary } from "@/lib/debt/calculations";
 import {
   deleteDebtAccountAction,
@@ -51,6 +52,7 @@ export function DebtAccountManager({
   const [editing, setEditing] = useState<AccountSummary | null | undefined>(
     undefined,
   );
+  const [amountsFor, setAmountsFor] = useState<AccountSummary | null>(null);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | AccountSummary["status"]>("all");
   const [due, setDue] = useState<DueFilter>("all");
@@ -291,6 +293,15 @@ export function DebtAccountManager({
                         message={`Catat pembayaran angsuran ${formatRupiah(payAmount)}. Jatuh tempo akan maju ke bulan berikutnya.`}
                       />
                     ) : null}
+                    {account.openInstallments > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setAmountsFor(account)}
+                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-olive-700 hover:bg-olive-50"
+                      >
+                        Atur nominal
+                      </button>
+                    ) : null}
                     <button
                       type="button"
                       onClick={() => setEditing(account)}
@@ -312,6 +323,19 @@ export function DebtAccountManager({
           })}
         </div>
       )}
+
+      <FormModal
+        open={amountsFor !== null}
+        onClose={() => setAmountsFor(null)}
+        title="Nominal tiap bulan"
+      >
+        {amountsFor ? (
+          <MonthlyAmountsForm
+            account={amountsFor}
+            onDone={() => setAmountsFor(null)}
+          />
+        ) : null}
+      </FormModal>
 
       <FormModal
         open={editing !== undefined}

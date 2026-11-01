@@ -172,7 +172,7 @@ t("account A installment count", summaryA.installmentCount, 3);
 t("account A paid installments", summaryA.paidInstallments, 1);
 t("account A open installments", summaryA.openInstallments, 2);
 t("account A overdue installments", summaryA.overdueInstallments, 1);
-t("account A mismatch flagged", summaryA.mismatch, true);
+t("account A mismatch flagged", summaryA.mismatch, false);
 t("account B remaining", summaryB.remaining, 250_000);
 t("closed account keeps its own remaining", summaryC.remaining, 0);
 
@@ -322,6 +322,40 @@ t("legacy next installment has no real id", legacy.nextInstallment.schedule.id, 
 const legacyTotals = calculateDebtTotals([legacyAccount], [], [], today);
 t("legacy total remaining", legacyTotals.remaining, 400_000);
 t("legacy total paid", legacyTotals.totalPaid, 2_000_000);
+
+// --- Different amount per month, same due day ------------------------------
+const variable = account({
+  id: "variable",
+  total_amount_due: 1_500_000,
+  original_principal: 1_500_000,
+  installment_amount: 0,
+  installment_total_months: 5,
+  installment_month: 2,
+  due_date: "2026-11-03",
+  due_day: 3,
+});
+const variableSchedules = [
+  schedule({ id: "v1", debt_account_id: "variable", due_date: "2026-11-03", amount_due: 500_000 }),
+  schedule({ id: "v2", debt_account_id: "variable", due_date: "2026-12-03", amount_due: 300_000 }),
+  schedule({ id: "v3", debt_account_id: "variable", due_date: "2027-01-03", amount_due: 200_000 }),
+];
+const variableSummary = buildAccountSummaries(
+  [variable],
+  [],
+  variableSchedules,
+  today,
+)[0];
+t("variable remaining", variableSummary.remaining, 1_000_000);
+t("variable monthly amounts", variableSummary.monthlyAmounts, [
+  500_000, 300_000, 200_000,
+]);
+t("variable paid from contract", variableSummary.paid, 500_000);
+t("variable progress", variableSummary.progress, 33);
+t(
+  "variable next installment",
+  variableSummary.nextInstallment.remaining,
+  500_000,
+);
 
 // --- Tenor model: due dates drive overdue and monthly target ---------------
 const tenorOverdue = account({

@@ -54,6 +54,8 @@ export type AccountSummary = DebtAccount & {
   overdueInstallments: number;
   nextInstallment: Installment | null;
   mismatch: boolean;
+  /** Amount per remaining month, in due-date order. */
+  monthlyAmounts: number[];
   /** True while the debt still relies on the older tenor columns. */
   legacy: boolean;
 };
@@ -233,6 +235,7 @@ function legacySummary(
     overdueInstallments: nextStatus === "overdue" ? 1 : 0,
     nextInstallment,
     mismatch: contract > 0 && amount * totalMonths !== contract,
+    monthlyAmounts: Array.from({ length: openMonths }, () => amount),
     legacy: true,
   };
 }
@@ -290,6 +293,7 @@ function singleAmountSummary(
     overdueInstallments: nextStatus === "overdue" ? 1 : 0,
     nextInstallment,
     mismatch: false,
+    monthlyAmounts: remaining > 0 ? [remaining] : [],
     legacy: true,
   };
 }
@@ -355,6 +359,7 @@ function tenorSummary(
     overdueInstallments: overdue ? 1 : 0,
     nextInstallment,
     mismatch: false,
+    monthlyAmounts: Array.from({ length: openMonths }, () => monthly),
     legacy: false,
   };
 }
@@ -367,7 +372,19 @@ export function summarizeAccount(
 ): AccountSummary {
   const tenorMonths = Number(account.installment_total_months ?? 0);
   const tenorAmount = Number(account.installment_amount ?? 0);
-  if (account.status !== "closed" && tenorMonths > 0 && tenorAmount > 0) {
+  const hasSchedules = installments.some(
+    (item) =>
+      item.schedule.debt_account_id === account.id &&
+      item.status !== "cancelled",
+  );
+  // A debt with its own per-month amounts uses those rows; otherwise the single
+  // monthly nominal plus tenor is the source of truth.
+  if (
+    account.status !== "closed" &&
+    !hasSchedules &&
+    tenorMonths > 0 &&
+    tenorAmount > 0
+  ) {
     return tenorSummary(account, payments, today);
   }
 
@@ -415,7 +432,10 @@ export function summarizeAccount(
     openInstallments: own.filter((item) => item.remaining > 0).length,
     overdueInstallments: own.filter((item) => item.status === "overdue").length,
     nextInstallment: own.find((item) => item.remaining > 0) ?? null,
-    mismatch: contract > 0 && scheduled > 0 && contract !== scheduled,
+    mismatch: contract > 0 && scheduled > contract,
+    monthlyAmounts: own
+      .filter((item) => item.remaining > 0)
+      .map((item) => Number(item.schedule.amount_due)),
     legacy: false,
   };
 }
