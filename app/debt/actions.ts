@@ -269,11 +269,7 @@ export async function materializeLegacySchedulesAction(
   if (accountsError) return { error: messageForError(accountsError) };
 
   const targets = ((accounts ?? []) as DebtAccount[]).filter(
-    (account) =>
-      (!onlySingle || account.id === id) &&
-      Number(account.installment_amount) > 0 &&
-      Number(account.installment_total_months) >
-        Number(account.installment_month),
+    (account) => (!onlySingle || account.id === id) && Number(account.total_amount_due) > 0,
   );
 
   if (targets.length === 0) {
@@ -292,25 +288,62 @@ export async function materializeLegacySchedulesAction(
 
     if ((count ?? 0) > 0) continue;
 
-    const totalMonths = Number(account.installment_total_months);
-    const paidMonths = Math.min(
-      Math.max(Number(account.installment_month), 0),
-      totalMonths,
+    const { data: accountPayments } = await ctx.supabase
+      .from("debt_payments")
+      .select("amount")
+      .eq("debt_account_id", account.id)
+      .eq("owner_user_id", ctx.owner.userId)
+      .is("reversed_at", null);
+    const recordedPaid = (accountPayments ?? []).reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0,
     );
-    const openMonths = totalMonths - paidMonths;
-    if (openMonths <= 0) continue;
 
-    const start =
-      account.due_date ??
-      nextDueDateForDay(Number(account.due_day ?? 1), today);
-    const rows = Array.from({ length: openMonths }, (_, index) => ({
-      owner_user_id: ctx.owner.userId,
-      debt_account_id: account.id,
-      due_date: addMonthsISO(start, index),
-      amount_due: Number(account.installment_amount),
-      notes: "Dibuat dari tenor lama",
-      status: "upcoming" as DebtScheduleStatus,
-    }));
+    const totalMonths = Number(account.installment_total_months);
+    const amount = Number(account.installment_amount);
+    let rows: {
+      owner_user_id: string;
+      debt_account_id: string;
+      due_date: string;
+      amount_due: number;
+      notes: string | null;
+      status: DebtScheduleStatus;
+    }[] = [];
+
+    if (amount > 0 && totalMonths > Number(account.installment_month)) {
+      const paidMonths = Math.min(
+        Math.max(Number(account.installment_month), 0),
+        totalMonths,
+      );
+      const openMonths = totalMonths - paidMonths;
+      const start =
+        account.due_date ??
+        nextDueDateForDay(Number(account.due_day ?? 1), today);
+      rows = Array.from({ length: openMonths }, (_, index) => ({
+        owner_user_id: ctx.owner.userId,
+        debt_account_id: account.id,
+        due_date: addMonthsISO(start, index),
+        amount_due: amount,
+        notes: "Dibuat dari tenor lama",
+        status: "upcoming" as DebtScheduleStatus,
+      }));
+    } else {
+      const remaining = Math.max(
+        0,
+        Number(account.total_amount_due) - recordedPaid,
+      );
+      if (remaining <= 0) continue;
+      rows = [
+        {
+          owner_user_id: ctx.owner.userId,
+          debt_account_id: account.id,
+          due_date: account.due_date ?? today,
+          amount_due: remaining,
+          notes: "Dibuat dari sisa tagihan",
+          status: "upcoming" as DebtScheduleStatus,
+        },
+      ];
+    }
 
     const { error } = await ctx.supabase.from("debt_schedules").insert(rows);
     if (error) return { error: messageForError(error) };

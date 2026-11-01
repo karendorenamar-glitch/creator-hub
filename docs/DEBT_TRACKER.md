@@ -138,6 +138,25 @@ stored in `debt_schedules`. There is no fixed-versus-flexible account type.
 - The monthly target is the sum of installments due in the current business
   month; monthly paid is the sum of payments dated in that month.
 
+### Debts that still use the older tenor columns
+
+Debts saved before the schedule model (`installment_amount`,
+`installment_total_months`, `installment_month`, `due_day`) are not reset to
+zero. While such a debt has no installment rows:
+
+- paid, remaining, and progress are computed from the tenor columns,
+- the next installment uses the stored due date (or the stored due day),
+- the card shows a notice and a **Buat angsuran** button.
+
+A debt with only an original amount and recorded payments falls back to that
+amount minus payments, so its balance stays visible too.
+
+**Buat angsuran dari tenor lama** (accounts page) converts every remaining
+month into a real installment row: `remaining months x installment amount`,
+starting from the stored due date, one row per month. Debts that already have
+installments are skipped, so the action is safe to repeat. After conversion the
+fallback stops being used and everything is driven by the schedule.
+
 ## Monthly view
 
 `/debt/schedule` defaults to the current month.

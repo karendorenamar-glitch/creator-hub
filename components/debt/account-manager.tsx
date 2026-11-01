@@ -258,7 +258,7 @@ export function DebtAccountManager({
                       }
                     >
                       {account.legacy
-                        ? "Masih memakai tenor lama"
+                        ? "Belum punya jadwal angsuran"
                         : account.installmentCount === 0
                           ? "Belum ada angsuran"
                           : nextDate
@@ -276,17 +276,19 @@ export function DebtAccountManager({
                 {account.legacy ? (
                   <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
                     <p>
-                      Angka di atas dihitung dari tenor lama (Rp{" "}
-                      {formatRupiah(account.installment_amount)} ×{" "}
-                      {account.installment_total_months} bulan). Buat angsuran agar
-                      bisa dibayar per bulan.
+                      {account.installment_total_months > 0
+                        ? `Angka di atas dihitung dari tenor lama (${formatRupiah(
+                            account.installment_amount,
+                          )} × ${account.installment_total_months} bulan).`
+                        : "Angka di atas dihitung dari utang awal dan pembayaran yang tercatat."}{" "}
+                      Buat angsuran agar bisa dibayar per bulan.
                     </p>
                     <ConfirmAction
                       action={materializeLegacySchedulesAction}
                       fields={{ id: account.id }}
-                      label="Buat angsuran dari tenor"
+                      label="Buat angsuran"
                       confirmLabel="Ya, buat"
-                      message="Jadwal angsuran akan dibuat dari sisa tenor utang ini."
+                      message="Jadwal angsuran akan dibuat dari sisa tagihan utang ini."
                       tone="neutral"
                     />
                   </div>

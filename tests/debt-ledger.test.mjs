@@ -278,6 +278,20 @@ const legacyTotals = calculateDebtTotals([legacyAccount], [], [], today);
 t("legacy total remaining", legacyTotals.remaining, 400_000);
 t("legacy total paid", legacyTotals.totalPaid, 2_000_000);
 
+// --- Single amount fallback -----------------------------------------------
+const single = buildAccountSummaries(
+  [account({ id: "single", total_amount_due: 500_000 })],
+  [payment({ id: "ps", debt_account_id: "single", amount: 200_000 })],
+  [],
+  today,
+)[0];
+t("single original", single.original, 500_000);
+t("single paid", single.paid, 200_000);
+t("single remaining", single.remaining, 300_000);
+t("single flagged legacy", single.legacy, true);
+t("single next remaining", single.nextInstallment.remaining, 300_000);
+t("single next has no real id", single.nextInstallment.schedule.id, "");
+
 console.log(`\n${pass} passed, ${fail} failed`);
 
 if (fail > 0) process.exit(1);

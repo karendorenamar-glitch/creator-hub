@@ -237,6 +237,63 @@ function legacySummary(
   };
 }
 
+/**
+ * Debts saved with only an original amount and payments, without any tenor or
+ * installments, still keep their balance visible.
+ */
+function singleAmountSummary(
+  account: DebtAccount,
+  payments: DebtPayment[],
+  today: string,
+): AccountSummary | null {
+  const contract = Number(account.total_amount_due ?? 0);
+  if (!(contract > 0)) return null;
+
+  const paid = activePayments(payments)
+    .filter((payment) => payment.debt_account_id === account.id)
+    .reduce((sum, payment) => sum + Number(payment.amount), 0);
+  const remaining = Math.max(0, contract - paid);
+  const dueDate = account.due_date;
+  const nextStatus =
+    dueDate && dueDate < today ? ("overdue" as const) : ("upcoming" as const);
+  const nextInstallment: Installment | null =
+    remaining > 0
+      ? {
+          schedule: {
+            id: "",
+            owner_user_id: account.owner_user_id,
+            debt_account_id: account.id,
+            due_date: dueDate ?? today,
+            amount_due: remaining,
+            status: "upcoming",
+            notes: null,
+            created_at: account.created_at,
+            updated_at: account.updated_at,
+          },
+          account,
+          paid,
+          remaining,
+          status: nextStatus,
+        }
+      : null;
+
+  return {
+    ...account,
+    original: contract,
+    scheduled: contract,
+    paid,
+    remaining,
+    progress: percentOf(paid, contract),
+    installmentCount: 0,
+    paidInstallments: 0,
+    openInstallments: remaining > 0 ? 1 : 0,
+    overdueInstallments: nextStatus === "overdue" ? 1 : 0,
+    nextInstallment,
+    mismatch: false,
+    legacy: true,
+  };
+}
+
 export function summarizeAccount(
   account: DebtAccount,
   installments: Installment[],
@@ -256,9 +313,11 @@ export function summarizeAccount(
   const paid = activePayments(payments)
     .filter((payment) => payment.debt_account_id === account.id)
     .reduce((sum, payment) => sum + Number(payment.amount), 0);
-  if (own.length === 0) {
+  if (own.length === 0 && account.status !== "closed") {
     const legacy = legacySummary(account, payments, today);
     if (legacy) return legacy;
+    const single = singleAmountSummary(account, payments, today);
+    if (single) return single;
   }
 
   const contract = Number(account.total_amount_due);
