@@ -28,6 +28,7 @@ import {
   formatDebtDate,
   formatRupiah,
   monthLabel,
+  nextDueDateForDay,
   todayISO,
 } from "@/lib/debt/format";
 
@@ -55,6 +56,24 @@ export default async function DebtDashboardPage() {
   const recentAccounts = balances
     .filter((account) => account.status !== "closed")
     .slice(0, 3);
+  const nextDueAccounts = balances
+    .filter((account) => account.status !== "closed" && account.remaining > 0)
+    .map((account) => {
+      const dueDate =
+        account.due_date ??
+        account.nextSchedule?.due_date ??
+        (account.due_day ? nextDueDateForDay(account.due_day) : null);
+      const amount =
+        account.installment_amount > 0
+          ? account.installment_amount
+          : account.nextSchedule?.amount_due ?? account.remaining;
+      return { account, dueDate, amount };
+    })
+    .filter((item): item is typeof item & { dueDate: string } =>
+      Boolean(item.dueDate),
+    )
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+    .slice(0, 5);
 
   return (
     <div className="space-y-7">
@@ -142,6 +161,64 @@ export default async function DebtDashboardPage() {
         </Card>
       </section>
 
+      <Card className="border-[#e8e1d4] bg-[#fffdf9]">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="font-heading text-xl text-ink">
+              Jatuh tempo berikutnya
+            </h2>
+            <p className="mt-1 text-xs text-ink-soft">
+              Tagihan terdekat, termasuk bulan yang sudah dipilih di akun.
+            </p>
+          </div>
+          <Link
+            href="/debt/accounts"
+            className="text-xs font-medium text-olive-700 hover:underline"
+          >
+            Lihat akun
+          </Link>
+        </div>
+
+        {nextDueAccounts.length === 0 ? (
+          <div className="mt-5">
+            <EmptyState
+              title="Belum ada jatuh tempo"
+              body="Atur bulan dan tanggal jatuh tempo pada akun, atau tambahkan jadwal."
+              icon={<CalendarClock className="size-8" aria-hidden />}
+            />
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {nextDueAccounts.map(({ account, dueDate, amount }) => (
+              <div
+                key={account.id}
+                className="rounded-2xl border border-olive-100 bg-[#f8f4ec] p-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="font-medium text-ink">{account.creditor_name}</p>
+                  <Badge tone={account.due_day ? "neutral" : "warning"}>
+                    {account.due_date === today ? "Hari ini" : "Berikutnya"}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-ink-soft">
+                  {account.reference_label ? `${account.reference_label} · ` : ""}
+                  {formatDebtDate(dueDate)}
+                </p>
+                <p className="mt-2 text-sm font-medium text-ink">
+                  {formatRupiah(amount)}
+                </p>
+                {account.installment_total_months > 0 ? (
+                  <p className="mt-1 text-[11px] text-ink-soft">
+                    {account.installment_month}/{account.installment_total_months} bulan
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+
       <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
         <Card className="border-[#e8e1d4] bg-[#fffdf9]">
           <div className="flex items-center justify-between gap-3">
@@ -177,11 +254,14 @@ export default async function DebtDashboardPage() {
                   <div>
                     <p className="font-medium text-ink">{account.creditor_name}</p>
                     <p className="mt-1 text-xs text-ink-soft">
-                      {account.due_day
-                        ? `Setiap tanggal ${account.due_day}`
-                        : account.due_date
-                          ? `Jatuh tempo ${formatDebtDate(account.due_date)}`
-                          : "Tanpa tanggal jatuh tempo"}
+                      {account.due_date
+                        ? `Jatuh tempo ${formatDebtDate(account.due_date)}`
+                        : account.nextSchedule
+                          ? `Jatuh tempo ${formatDebtDate(account.nextSchedule.due_date)}`
+                          : account.due_day
+                            ? `Setiap tanggal ${account.due_day}`
+                            : "Tanpa tanggal jatuh tempo"}
+                      {account.due_day ? ` · setiap tanggal ${account.due_day}` : ""}
                       {account.installment_total_months > 0
                         ? ` · ${account.installment_month}/${account.installment_total_months} bulan`
                         : ""}
