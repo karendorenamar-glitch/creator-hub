@@ -102,9 +102,6 @@ export function parseDebtAccount(
     };
   }
 
-  const mode = text(formData, "amountMode") === "custom" ? "custom" : "same";
-  const editing = text(formData, "formMode") === "edit";
-
   const monthlyRaw = text(formData, "monthlyAmount");
   let monthlyAmount = 0;
   if (monthlyRaw) {
@@ -123,22 +120,22 @@ export function parseDebtAccount(
 
   const firstDueMonthRaw = text(formData, "firstDueMonth");
   if (firstDueMonthRaw && !isRealDate(`${firstDueMonthRaw}-01`)) {
-    return { ok: false, error: "Bulan jatuh tempo pertama tidak valid." };
-  }
-  if (firstDueMonthRaw && !parsedDueDay) {
-    return { ok: false, error: "Pilih tanggal jatuh tempo." };
+    return { ok: false, error: "Bulan jatuh tempo tidak valid." };
   }
 
   const openMonths = Math.max(0, tenorMonths - paidMonths);
   const firstMonth = firstDueMonthRaw || "";
   const installments: { month: string; amount: number }[] = [];
 
-  if (mode === "same") {
-    if (tenorMonths > 0 && monthlyAmount <= 0) {
+  if (tenorMonths > 0) {
+    if (monthlyAmount <= 0) {
       return { ok: false, error: "Nominal per bulan wajib diisi." };
     }
-    if (tenorMonths > 0 && !firstMonth) {
-      return { ok: false, error: "Pilih bulan jatuh tempo pertama." };
+    if (!firstMonth) {
+      return { ok: false, error: "Pilih bulan jatuh tempo." };
+    }
+    if (!parsedDueDay) {
+      return { ok: false, error: "Pilih tanggal jatuh tempo." };
     }
     for (let index = 0; index < openMonths; index += 1) {
       installments.push({
@@ -146,48 +143,7 @@ export function parseDebtAccount(
         amount: monthlyAmount,
       });
     }
-  } else {
-    const months = formData.getAll("customMonth").map((value) => String(value));
-    const amounts = formData
-      .getAll("customAmount")
-      .map((value) => String(value));
-
-    // When editing, an empty custom list means "leave the schedule alone".
-    const skipCustomRows = editing && months.length === 0;
-
-    if (!skipCustomRows) {
-      if (months.length === 0) {
-        return { ok: false, error: "Isi nominal untuk minimal satu angsuran." };
-      }
-      if (months.length !== amounts.length) {
-        return { ok: false, error: "Data angsuran tidak lengkap." };
-      }
-      if (openMonths > 0 && months.length !== openMonths) {
-        return {
-          ok: false,
-          error: `Jumlah angsuran harus ${openMonths} baris sesuai sisa tenor.`,
-        };
-      }
-
-      for (let index = 0; index < months.length; index += 1) {
-        if (!isRealDate(`${months[index]}-01`)) {
-          return { ok: false, error: "Bulan angsuran tidak valid." };
-        }
-        const amount = parseWholeRupiah(amounts[index], { allowZero: false });
-        if (amount === null) {
-          return { ok: false, error: "Nominal angsuran harus lebih dari nol." };
-        }
-        installments.push({ month: months[index], amount });
-      }
-    }
-  }
-
-  if (mode === "same" && tenorMonths > 0 && monthlyAmount > 0) {
     total = monthlyAmount * tenorMonths;
-  } else if (mode === "custom" && !total && installments.length > 0) {
-    // The paid months are unknown in custom mode, so only the remaining rows
-    // are tracked. The tenor badge still shows how many months were paid.
-    total = installments.reduce((sum, item) => sum + item.amount, 0);
   }
 
   const openingDate = text(formData, "openingDate");
@@ -225,13 +181,13 @@ export function parseDebtAccount(
       due_day: parsedDueDay,
       installment_month: paidMonths,
       installment_total_months: tenorMonths,
-      installment_amount: mode === "same" ? monthlyAmount : 0,
+      installment_amount: monthlyAmount,
       status,
       notes: optionalText(formData, "notes", 2000),
     },
     plan: {
-      mode,
-      monthly_amount: mode === "same" ? monthlyAmount : 0,
+      mode: "same",
+      monthly_amount: monthlyAmount,
       tenor_months: tenorMonths,
       paid_months: paidMonths,
       due_day: parsedDueDay,
