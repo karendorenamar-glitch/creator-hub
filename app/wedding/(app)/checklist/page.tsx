@@ -5,6 +5,7 @@ import { TimelineList } from "@/components/wedding/checklist/timeline-list";
 import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { ensureKuaChecklist } from "@/lib/wedding/checklists";
+import { loadCustomerCountry } from "@/lib/wedding/country";
 import type { Checklist, ChecklistTask } from "@/lib/wedding/db-types";
 import { daysFromToday } from "@/lib/wedding/format";
 import { moduleCopy } from "@/lib/wedding/module-copy";
@@ -22,7 +23,13 @@ export default async function ChecklistPage() {
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  await ensureKuaChecklist(supabase, session.wedding.id);
+  // The KUA checklist is an Indonesian marriage-office flow. Customers outside
+  // Indonesia never get it seeded, and any row created before their country
+  // was known stays hidden. Their own checklists and timeline are unaffected.
+  const country = await loadCustomerCountry(supabase, session.userId);
+  const hidesKua = country !== null && country !== "ID";
+
+  if (!hidesKua) await ensureKuaChecklist(supabase, session.wedding.id);
 
   const [
     { data: checklistRows },
@@ -47,8 +54,18 @@ export default async function ChecklistPage() {
       .order("created_at", { ascending: true }),
   ]);
 
-  const lists = (checklistRows ?? []) as Checklist[];
-  const tasks = (taskRows ?? []) as ChecklistTask[];
+  const allLists = (checklistRows ?? []) as Checklist[];
+  const allTasks = (taskRows ?? []) as ChecklistTask[];
+
+  const lists = hidesKua
+    ? allLists.filter((checklist) => checklist.kind !== "builtin_kua")
+    : allLists;
+  const visibleListIds = new Set(lists.map((checklist) => checklist.id));
+  const tasks = hidesKua
+    ? allTasks.filter(
+        (task) => !task.checklist_id || visibleListIds.has(task.checklist_id),
+      )
+    : allTasks;
   const itemsByChecklist = new Map<string, ChecklistTask[]>();
   for (const task of tasks) {
     if (!task.checklist_id) continue;
