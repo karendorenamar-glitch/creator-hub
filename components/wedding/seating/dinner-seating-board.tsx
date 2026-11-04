@@ -1046,7 +1046,11 @@ export function DinnerSeatingBoard({
         onClose={() => setAddTableOpen(false)}
         copy={copy}
         eventId={eventId}
-        defaultName={`Meja ${summaries.length + 1}`}
+        defaultName={
+          locale === "en"
+            ? `Table ${summaries.length + 1}`
+            : `Meja ${summaries.length + 1}`
+        }
       />
 
       <DinnerTableNameModal

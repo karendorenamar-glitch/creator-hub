@@ -136,7 +136,7 @@ export function SidebarNav({
               {locked ? (
                 <Lock
                   className="ml-auto size-3.5 text-ink-soft/60"
-                  aria-label="Belum tersedia"
+                  aria-label={locale === "en" ? "Not available yet" : "Belum tersedia"}
                 />
               ) : null}
             </Link>

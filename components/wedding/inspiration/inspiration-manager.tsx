@@ -16,7 +16,7 @@ import type { InspirationItem } from "@/lib/wedding/db-types";
 import { isHttpUrl } from "@/lib/wedding/validation";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
-const STANDARD_CATEGORIES = [
+const STANDARD_CATEGORIES_ID = [
   "Dekorasi",
   "Wedding Ring",
   "MUA",
@@ -26,6 +26,20 @@ const STANDARD_CATEGORIES = [
   "Fotografi",
   "Catering",
   "Busana",
+  "Souvenir",
+  "Entertainment",
+];
+
+const STANDARD_CATEGORIES_EN = [
+  "Decoration",
+  "Wedding Ring",
+  "Makeup",
+  "Wedding Dress",
+  "Venue",
+  "Invitation",
+  "Photography",
+  "Catering",
+  "Attire",
   "Souvenir",
   "Entertainment",
 ];
@@ -267,6 +281,7 @@ export function InspirationManager({
   photosByItem,
   imageUrls,
   copy,
+  locale,
 }: {
   items: InspirationItem[];
   photosByItem: Record<
@@ -275,6 +290,7 @@ export function InspirationManager({
   >;
   imageUrls: Record<string, string>;
   copy: ModuleCopy;
+  locale: "en" | "id";
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<InspirationItem | null>(null);
@@ -289,7 +305,13 @@ export function InspirationManager({
   }, [items]);
 
   const formCategories = useMemo(
-    () => Array.from(new Set([...STANDARD_CATEGORIES, ...categoriesUsed])),
+    () =>
+      Array.from(
+        new Set([
+          ...(locale === "en" ? STANDARD_CATEGORIES_EN : STANDARD_CATEGORIES_ID),
+          ...categoriesUsed,
+        ]),
+      ),
     [categoriesUsed],
   );
 

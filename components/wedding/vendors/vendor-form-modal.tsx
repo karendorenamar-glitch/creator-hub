@@ -28,7 +28,7 @@ import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { PAYMENT_PROOF_TYPES } from "@/lib/wedding/uploads";
 import type { VendorOptionPrefill } from "@/lib/wedding/vendor-options";
 
-const CATEGORY_SUGGESTIONS = [
+const CATEGORY_SUGGESTIONS_ID = [
   "Venue",
   "Dekorasi",
   "Catering",
@@ -39,6 +39,19 @@ const CATEGORY_SUGGESTIONS = [
   "Entertainment",
   "Souvenir",
   "Lainnya",
+];
+
+const CATEGORY_SUGGESTIONS_EN = [
+  "Venue",
+  "Decoration",
+  "Catering",
+  "Makeup",
+  "Photography",
+  "Attire",
+  "Invitation",
+  "Entertainment",
+  "Souvenir",
+  "Other",
 ];
 
 export function VendorFormModal({
@@ -168,7 +181,7 @@ export function VendorFormModal({
               className={inputClass}
             />
             <datalist id="vendor-category-suggestions">
-              {CATEGORY_SUGGESTIONS.map((item) => (
+              {(locale === "en" ? CATEGORY_SUGGESTIONS_EN : CATEGORY_SUGGESTIONS_ID).map((item) => (
                 <option key={item} value={item} />
               ))}
             </datalist>

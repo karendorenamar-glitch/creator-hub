@@ -34,38 +34,43 @@ export default async function InvitationPage() {
   const session = await loadWeddingSession();
   if (!session) redirect("/wedding/onboarding");
 
+  const locale = await getLocale();
+
   // Locked until the builder is ready for customers.
   if (!E_INVITATION_ENABLED) {
     return (
       <div className="space-y-6">
         <PageHeader
           title="E-Invitation"
-          subtitle="Undangan digital sedang kami siapkan."
+          subtitle={
+            locale === "en"
+              ? "The digital invitation builder is being prepared."
+              : "Undangan digital sedang kami siapkan."
+          }
         />
         <Card className="space-y-3 text-center">
           <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-blush/50 text-rosewood">
             <Lock className="size-5" aria-hidden />
           </span>
           <h2 className="font-heading text-xl text-cocoa">
-            Fitur ini belum tersedia
+            {locale === "en" ? "This feature is not available yet" : "Fitur ini belum tersedia"}
           </h2>
           <p className="mx-auto max-w-md text-sm leading-relaxed text-cocoa/65">
-            Pembuat undangan digital masih dalam pengembangan dan belum bisa
-            dipakai. Undangan publik juga belum dapat diakses oleh tamu. Kami
-            akan mengabari Anda begitu fitur ini siap.
+            {locale === "en"
+              ? "The digital invitation builder is still in development. Public invitations are not accessible to guests yet. We will let you know as soon as it is ready."
+              : "Pembuat undangan digital masih dalam pengembangan dan belum bisa dipakai. Undangan publik juga belum dapat diakses oleh tamu. Kami akan mengabari Anda begitu fitur ini siap."}
           </p>
           <Link
             href="/wedding/dashboard"
             className="inline-flex rounded-full bg-rosewood px-5 py-2.5 text-sm text-ivory hover:bg-cocoa"
           >
-            Kembali ke dashboard
+            {locale === "en" ? "Back to dashboard" : "Kembali ke dashboard"}
           </Link>
         </Card>
       </div>
     );
   }
 
-  const locale = await getLocale();
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
@@ -205,7 +210,9 @@ export default async function InvitationPage() {
         </div>
         {!invitation ? (
           <p className="text-xs text-ink-soft">
-            Pilih desain untuk membuat undangan draf otomatis.
+            {locale === "en"
+              ? "Pick a design to generate a draft invitation."
+              : "Pilih desain untuk membuat undangan draf otomatis."}
           </p>
         ) : null}
       </Card>

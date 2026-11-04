@@ -85,6 +85,7 @@ export default async function InspirationPage() {
       photosByItem={photosByItem}
       imageUrls={imageUrls}
       copy={copy}
+      locale={locale}
     />
   );
 }

@@ -145,8 +145,8 @@ const en = {
     otherCostName: "Cost name",
     otherCostAmount: "Price",
     otherCostStatus: "Status",
-    otherCostPaid: "Lunas",
-    otherCostUnpaid: "Belum bayar",
+    otherCostPaid: "Paid",
+    otherCostUnpaid: "Not paid",
     otherCostPartial: "Terbayar sebagian",
     otherCostDonor: "Dari donatur",
     totalCost: "Total cost",
@@ -511,7 +511,7 @@ const en = {
     notSelected: "No option selected yet",
     chosenDp: "Vendor terpilih",
     chosenLunas: "Vendor lunas",
-    noVendorChosen: "Belum menentukan vendor!",
+    noVendorChosen: "No vendor selected yet!",
     select: "Select this option",
     compare: "View",
     archive: "Archive",
@@ -551,13 +551,13 @@ const en = {
     statusIntentHint:
       "Choose a status to open the payment form. The saved status still follows the actual transactions.",
     paymentRequiredForStatus:
-      "Enter the initial payment amount for DP, Termin Lanjutan, or Lunas.",
+      "Enter the initial payment amount for Down Payment, Progress Payment, or Final Payment.",
     vendorBudget: "Vendor Budget",
     remainingPayment: "Remaining Payment",
     overpayment: "Overpayment",
     paymentPercentage: "Payment Percentage",
     statusDiskusi: "Diskusi",
-    statusUnpaid: "Belum bayar",
+    statusUnpaid: "Not paid",
     statusPartial: "Terbayar sebagian",
     statusReset: "Status returned to Diskusi.",
     resetStatus: "Return to Diskusi",
@@ -565,7 +565,7 @@ const en = {
       "Return this vendor to Diskusi? This permanently deletes its recorded payments and proof files.",
     statusDp: "DP",
     statusTerminLanjutan: "Termin Lanjutan",
-    statusLunas: "Lunas",
+    statusLunas: "Paid",
     statusDonor: "From donations",
     fundingSource: "Payment source",
     fundingCash: "Paying ourselves",
@@ -573,7 +573,7 @@ const en = {
     donorHasPayments:
       "A donor-funded vendor cannot have cash payments. Delete its payments or switch it back to self-paid.",
     donorCannotPay: "This vendor is covered by donations. Switch the payment source to self-paid before recording cash.",
-    statusIncomplete: "Harga Belum Diisi",
+    statusIncomplete: "Price not filled in",
     markCompleted: "Mark this Rp0 vendor as completed",
     markCompletedHint:
       "For a Rp0 vendor. This confirms completion without recording cash paid.",
@@ -607,7 +607,7 @@ const en = {
     legacyProof: "Legacy proof file",
     deleteProofConfirm: "Delete this proof file? The payment transaction will remain.",
     pelunasanIncomplete:
-      "This Pelunasan amount is less than the outstanding balance. The vendor will not be marked Lunas yet.",
+      "This final payment is less than the outstanding balance. The vendor will not be marked as paid yet.",
     pelunasanSuggestion: "Current outstanding balance (suggested amount)",
     openBudget: "Open Budget",
 
