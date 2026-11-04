@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 import {
@@ -18,7 +19,6 @@ import {
 import { FormModal } from "@/components/wedding/form-modal";
 import { Badge } from "@/components/wedding/ui";
 import type { BudgetOtherCost } from "@/lib/wedding/budget-calc";
-import { formatIDR } from "@/lib/wedding/format";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 function OtherCostFormModal({
@@ -218,18 +218,18 @@ export function OtherCostManager({
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="text-right">
                       <p className="text-sm font-medium text-ink">
-                        {formatIDR(cost.amount)}
+                        <Money value={cost.amount} />
                       </p>
                       <p className="text-xs text-ink-soft">
-                        {copy.budget.totalPaid}: {formatIDR(cost.paidAmount)}
+                        {copy.budget.totalPaid}: <Money value={cost.paidAmount} />
                       </p>
                       {cost.fundedByDonor ? (
                         <p className="text-xs font-medium text-violet-700">
-                          {copy.budget.otherCostDonor}: {formatIDR(cost.amount)}
+                          {copy.budget.otherCostDonor}: <Money value={cost.amount} />
                         </p>
                       ) : null}
                       <p className="text-xs text-ink-soft">
-                        {copy.budget.remainingPayment}: {formatIDR(remaining)}
+                        {copy.budget.remainingPayment}: <Money value={remaining} />
                       </p>
                     </div>
                     <Badge

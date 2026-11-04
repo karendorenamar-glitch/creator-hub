@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useState } from "react";
 import { CalendarDays, FileText, Pencil, Trash2 } from "lucide-react";
 import {
@@ -136,7 +137,7 @@ export function PaymentFormModal({
             </div>
             <div>
               <p className="text-ink-soft">{copy.vendors.totalPaid}</p>
-              <p className="mt-0.5 font-medium text-ink">{formatIDR(totalPaid)}</p>
+              <p className="mt-0.5 font-medium text-ink"><Money value={totalPaid} /></p>
             </div>
             <div>
               <p className="text-ink-soft">{copy.vendors.remainingPayment}</p>
@@ -232,7 +233,7 @@ export function PaymentFormModal({
 
             {kind === "pelunasan" && outstanding !== null ? (
               <p className="rounded-xl border border-olive-100 bg-olive-50/60 px-3 py-2 text-xs text-ink-soft">
-                {copy.vendors.pelunasanSuggestion}: {formatIDR(outstanding)}
+                {copy.vendors.pelunasanSuggestion}: <Money value={outstanding} />
               </p>
             ) : null}
 
@@ -287,7 +288,7 @@ export function PaymentFormModal({
             {overpay ? (
               <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 {copy.vendors.overpaidWarning}:{" "}
-                {formatIDR(entered - (outstanding ?? 0))}.{" "}
+                <Money value={entered - (outstanding ?? 0)} />.{" "}
                 {copy.vendors.overpayConfirm}
               </p>
             ) : null}
@@ -397,7 +398,7 @@ export function PaymentFormModal({
                   >
                     <div className="min-w-0">
                       <p className="text-sm text-ink">
-                        {formatIDR(row.amount)}
+                        <Money value={row.amount} />
                         <span className="ml-2 text-xs text-ink-soft">
                           {label("paymentKind", row.payment_kind, locale)}
                         </span>

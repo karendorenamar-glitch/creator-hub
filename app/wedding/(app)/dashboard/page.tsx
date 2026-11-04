@@ -20,14 +20,16 @@ import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { InvitePartnerPanel } from "@/components/wedding/settings/invite-partner-panel";
-import { daysFromToday, formatIDR, formatWeddingDate } from "@/lib/wedding/format";
+import { daysFromToday, formatWeddingDate } from "@/lib/wedding/format";
+import { getMoneyFormatter } from "@/lib/currency/server";
+import { createWeddingClient } from "@/lib/wedding/supabase";
+import { loadCustomerCountry } from "@/lib/wedding/country";
 import { loadBudgetData } from "@/lib/wedding/budget-data";
 import {
   summarizeGuestSides,
   totalGuestPeople,
 } from "@/lib/wedding/guest-count";
 import { coupleNames, loadWeddingSession } from "@/lib/wedding/session";
-import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Dashboard" };
 
@@ -40,6 +42,8 @@ export default async function DashboardPage() {
   const copy = weddingCopy[locale];
   const moduleText = moduleCopy[locale];
   const supabase = await createWeddingClient();
+  const country = await loadCustomerCountry(supabase, session.userId);
+  const money = await getMoneyFormatter(supabase, session.userId, country);
 
   const [budgetData, guestsResult, tasksResult] = await Promise.all([
     loadBudgetData(
@@ -122,6 +126,19 @@ export default async function DashboardPage() {
         subtitle={`${coupleNames(session.wedding)} · ${copy.dashboard.subtitle}`}
       />
 
+      {money.currency !== "IDR" ? (
+        <p className="text-xs text-ink-soft">
+          {money.converted
+            ? `Converted from IDR${
+                money.fetchedAt
+                  ? ` · rates updated ${money.fetchedAt.slice(0, 10)}`
+                  : ""
+              }`
+            : "Exchange rates are unavailable right now — amounts are shown in IDR."}
+        </p>
+      ) : null}
+
+
       {weddingDateLabel ? (
         <Card className="flex flex-wrap items-center justify-between gap-4 bg-gradient-to-r from-olive-50 via-cream to-sand-100/70">
           <div className="flex items-center gap-3">
@@ -161,24 +178,24 @@ export default async function DashboardPage() {
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label={copy.dashboard.totalBudget}
-          value={formatIDR(calc.targetBudget)}
+          value={money.format(calc.targetBudget)}
           hint={targetLabel}
           icon={<CalendarDays className="size-4" aria-hidden />}
         />
         <StatCard
           label={copy.dashboard.vendorBudget}
-          value={formatIDR(calc.vendorBudget)}
+          value={money.format(calc.vendorBudget)}
           icon={<Wallet className="size-4" aria-hidden />}
         />
         <StatCard
           label={copy.dashboard.spent}
-          value={formatIDR(calc.totalPaid)}
+          value={money.format(calc.totalPaid)}
           tone="champagne"
           icon={<CheckCircle2 className="size-4" aria-hidden />}
         />
         <StatCard
           label={copy.dashboard.remainingPayment}
-          value={formatIDR(calc.remainingPayment)}
+          value={money.format(calc.remainingPayment)}
           hint={calc.overpayment > 0 ? copy.dashboard.overpayment : undefined}
           icon={<Clock className="size-4" aria-hidden />}
         />
@@ -204,7 +221,7 @@ export default async function DashboardPage() {
 
       {calc.overpayment > 0 ? (
         <Card className="border-amber-200 bg-amber-50/70 text-sm text-amber-900">
-          {copy.dashboard.overpayment}: {formatIDR(calc.overpayment)}
+          {copy.dashboard.overpayment}: {money.format(calc.overpayment)}
         </Card>
       ) : null}
 
@@ -339,7 +356,7 @@ export default async function DashboardPage() {
                       {vendor.name}
                     </span>
                     <span className="shrink-0 text-sm font-medium text-ink">
-                      {formatIDR(vendor.remaining)}
+                      {money.format(vendor.remaining)}
                     </span>
                   </li>
                 ))}

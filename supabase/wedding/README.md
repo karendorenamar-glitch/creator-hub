@@ -31,6 +31,10 @@ or data migration is required. `039_split_plus_ones.sql` is superseded and
 must not be applied (see `APPLY_039.md`). `040_debt_tracker.sql` is the
 additive private Debt Tracker migration; review it and run it manually only
 after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
+`046_display_currency.sql` adds `customer_currency_preferences` for the dashboard
+display currency (IDR/USD/MYR/SGD/AUD/GBP/EUR/JPY). Display only: checkout and
+payment currency never change.
+
 `045_customer_country_pricing.sql` adds `customer_profiles.country_code` and
 enforces country-based pricing in the payment insert policy: Indonesia = IDR
 30.000 BCA only, every other country = USD 3.00 PayPal only.

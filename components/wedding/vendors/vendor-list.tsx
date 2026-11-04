@@ -1,5 +1,7 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
+import { formatIDR } from "@/lib/wedding/format";
 import { useMemo, useState } from "react";
 import { History, Pencil } from "lucide-react";
 import { deleteVendorAction } from "@/app/wedding/(app)/vendors/actions";
@@ -17,7 +19,6 @@ import type {
   VendorPayment,
   VendorPaymentProof,
 } from "@/lib/wedding/db-types";
-import { formatIDR } from "@/lib/wedding/format";
 import { groupProofsByPayment } from "@/lib/wedding/payment-proofs";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import type { VendorOptionPrefill } from "@/lib/wedding/vendor-options";
@@ -65,7 +66,7 @@ function VendorRow({
               {price === null ? copy.vendors.priceUnknown : formatIDR(price)}
             </p>
             <p className="text-xs text-ink-soft">
-              {copy.vendors.totalPaid}: {formatIDR(summary.totalPaid)}
+              {copy.vendors.totalPaid}: <Money value={summary.totalPaid} />
             </p>
             <p className="text-xs text-ink-soft">
               {copy.vendors.remainingPayment}:{" "}
@@ -73,7 +74,7 @@ function VendorRow({
             </p>
             {summary.overpayment > 0 ? (
               <p className="text-xs font-medium text-amber-700">
-                {copy.vendors.overpayment}: {formatIDR(summary.overpayment)}
+                {copy.vendors.overpayment}: <Money value={summary.overpayment} />
               </p>
             ) : null}
           </div>

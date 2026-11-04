@@ -8,8 +8,9 @@ import {
   createWeddingAnonymousClient,
   createWeddingClient,
 } from "@/lib/wedding/supabase";
-import { loadWeddingSession } from "@/lib/wedding/session";
+import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
 import { isCountryCode } from "@/lib/wedding/countries";
+import { isCurrencyCode } from "@/lib/currency/currencies";
 import { saveCustomerCountry } from "@/lib/wedding/country";
 
 export type FormState =
@@ -221,6 +222,34 @@ export async function signUpAction(
   redirect(withRef(next, ref));
 }
 
+
+export async function saveDisplayCurrencyAction(
+  formData: FormData,
+): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/wedding/login?next=/wedding/settings");
+
+  const currency = text(formData, "currency");
+  if (!isCurrencyCode(currency)) {
+    redirect("/wedding/settings?currency=invalid");
+  }
+
+  const supabase = await createWeddingClient();
+  const { error } = await supabase
+    .from("customer_currency_preferences")
+    .upsert(
+      { user_id: user.id, display_currency: currency },
+      { onConflict: "user_id" },
+    );
+
+  if (error) {
+    console.error("[saveDisplayCurrencyAction]", error.code, error.message);
+    redirect("/wedding/settings?currency=error");
+  }
+
+  revalidatePath("/wedding", "layout");
+  redirect("/wedding/settings?currency=saved");
+}
 
 /**
  * Sends a Supabase recovery email. The link always comes back to

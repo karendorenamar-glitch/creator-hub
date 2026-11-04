@@ -541,6 +541,18 @@ export type WeddingDatabase = {
       music_tracks: Table<MusicTrack>;
       payments: Table<Payment>;
       user_entitlements: Table<UserEntitlement>;
+      customer_profiles: Table<{
+        user_id: string;
+        country_code: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      customer_currency_preferences: Table<{
+        user_id: string;
+        display_currency: string;
+        created_at: string;
+        updated_at: string;
+      }>;
     };
     Views: Record<string, never>;
     Functions: {

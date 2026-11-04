@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
 import { useState } from "react";
 import { Pencil } from "lucide-react";
 import { deleteCategoryAction } from "@/app/wedding/(app)/budget/actions";
@@ -7,7 +8,6 @@ import { CategoryFormModal } from "@/components/wedding/budget/category-form-mod
 import { DeleteForm } from "@/components/wedding/delete-form";
 import { AddButton } from "@/components/wedding/form-kit";
 import type { BudgetCategory } from "@/lib/wedding/db-types";
-import { formatIDR } from "@/lib/wedding/format";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 export function CategoryManager({
@@ -63,8 +63,8 @@ export function CategoryManager({
                     {category.name}
                   </p>
                   <p className="mt-0.5 text-xs text-ink-soft">
-                    {copy.budget.planned}: {formatIDR(category.planned_amount)} ·{" "}
-                    {copy.budget.actual}: {formatIDR(actual)}
+                    {copy.budget.planned}: <Money value={category.planned_amount} /> ·{" "}
+                    {copy.budget.actual}: <Money value={actual} />
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export function CategoryManager({
                       difference < 0 ? "text-rose-600" : "text-emerald-600"
                     }`}
                   >
-                    {copy.budget.difference}: {formatIDR(difference)}
+                    {copy.budget.difference}: <Money value={difference} />
                   </span>
                   <button
                     type="button"

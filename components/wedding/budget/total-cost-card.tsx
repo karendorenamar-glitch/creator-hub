@@ -1,9 +1,9 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Card } from "@/components/wedding/ui";
-import { formatIDR } from "@/lib/wedding/format";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 export function TotalCostCard({
@@ -33,7 +33,7 @@ export function TotalCostCard({
             {copy.budget.totalCost}
           </span>
           <span className="mt-2 block font-heading text-2xl text-[#49463F]">
-            {formatIDR(totalCost)}
+            <Money value={totalCost} />
           </span>
         </span>
         <ChevronDown
@@ -55,7 +55,7 @@ export function TotalCostCard({
             <div className="flex items-center justify-between gap-3">
               <span className="text-[#49463F]">{copy.budget.vendorBudget}</span>
               <span className="font-medium text-[#49463F]">
-                {formatIDR(vendorBudget)}
+                <Money value={vendorBudget} />
               </span>
             </div>
             <div className="flex items-center justify-between gap-3">
@@ -63,7 +63,7 @@ export function TotalCostCard({
                 {copy.budget.otherCostsTotal}
               </span>
               <span className="font-medium text-[#49463F]">
-                {formatIDR(otherCostsTotal)}
+                <Money value={otherCostsTotal} />
               </span>
             </div>
           </div>

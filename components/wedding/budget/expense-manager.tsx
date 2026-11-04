@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
 import { useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 import { deleteExpenseAction } from "@/app/wedding/(app)/budget/actions";
@@ -8,7 +9,7 @@ import { DeleteForm } from "@/components/wedding/delete-form";
 import { AddButton, inputClass } from "@/components/wedding/form-kit";
 import { Badge } from "@/components/wedding/ui";
 import type { BudgetCategory, Expense } from "@/lib/wedding/db-types";
-import { daysFromToday, formatIDR, formatWeddingDate } from "@/lib/wedding/format";
+import { daysFromToday, formatWeddingDate } from "@/lib/wedding/format";
 import { label } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
@@ -148,10 +149,10 @@ export function ExpenseManager({
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="text-right">
                     <p className="text-sm font-medium text-ink">
-                      {formatIDR(expense.amount)}
+                      <Money value={expense.amount} />
                     </p>
                     <p className="text-xs text-ink-soft">
-                      {formatIDR(expense.amount_paid)} {copy.budget.paidOf}
+                      <Money value={expense.amount_paid} /> {copy.budget.paidOf}
                     </p>
                   </div>
                   <Badge tone={statusTone[expense.payment_status]}>

@@ -1,5 +1,7 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
+import { formatIDR } from "@/lib/wedding/format";
 import { useActionState, useEffect, useState } from "react";
 import { Heart, Pencil, Plus } from "lucide-react";
 import {
@@ -26,7 +28,6 @@ import type {
   DonationAllocation,
   WeddingDonation,
 } from "@/lib/wedding/db-types";
-import { formatIDR } from "@/lib/wedding/format";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 function DonationFormModal({
@@ -274,7 +275,7 @@ function AllocationModal({
                         {allocation.label}
                       </p>
                       <p className="text-xs text-[#888176]">
-                        {formatIDR(allocation.amount)}
+                        <Money value={allocation.amount} />
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
@@ -402,7 +403,7 @@ export function DonationManager({
                   {donation.donor_name}
                 </p>
                 <p className="mt-0.5 text-xs text-[#888176]">
-                  {copy.budget.donationTotal}: {formatIDR(donation.amount)}
+                  {copy.budget.donationTotal}: <Money value={donation.amount} />
                 </p>
                 {(() => {
                   const donationAllocations =
@@ -428,18 +429,18 @@ export function DonationManager({
                                   {allocation.label}
                                 </span>
                                 <span className="shrink-0">
-                                  {formatIDR(allocation.amount)}
+                                  <Money value={allocation.amount} />
                                 </span>
                               </li>
                             ))}
                           </ul>
                           <p className="mt-1.5 flex justify-between gap-3 border-t border-[#EAE0D7] pt-1.5">
                             <span>{copy.budget.allocationTotal}</span>
-                            <span>{formatIDR(allocated)}</span>
+                            <span><Money value={allocated} /></span>
                           </p>
                           <p className="flex justify-between gap-3">
                             <span>{copy.budget.allocationRemaining}</span>
-                            <span>{formatIDR(Math.max(0, donation.amount - allocated))}</span>
+                            <span><Money value={Math.max(0, donation.amount - allocated)} /></span>
                           </p>
                         </>
                       ) : (

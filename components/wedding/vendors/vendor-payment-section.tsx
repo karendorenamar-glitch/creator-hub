@@ -1,5 +1,6 @@
 "use client";
 
+import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useState } from "react";
 import { CalendarDays, FileText, Plus } from "lucide-react";
 import { createVendorPaymentAction } from "@/app/wedding/(app)/vendors/actions";
@@ -12,7 +13,7 @@ import type {
   VendorPayment,
   VendorPaymentProof,
 } from "@/lib/wedding/db-types";
-import { formatIDR, formatWeddingDate } from "@/lib/wedding/format";
+import { formatWeddingDate } from "@/lib/wedding/format";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { PAYMENT_PROOF_TYPES } from "@/lib/wedding/uploads";
@@ -69,12 +70,12 @@ export function VendorPaymentSection({
           </p>
           <p className="mt-1 text-sm text-[#49463F]">
             {copy.vendors.totalPaid}:{" "}
-            <span className="font-medium">{formatIDR(totalPaid)}</span>
+            <span className="font-medium"><Money value={totalPaid} /></span>
           </p>
           {vendor.agreed_price !== null ? (
             <p className="mt-0.5 text-xs text-[#888176]">
               {copy.vendors.remainingPayment}:{" "}
-              {formatIDR(summary?.remainingPayment ?? 0)}
+              <Money value={summary?.remainingPayment ?? 0} />
             </p>
           ) : null}
         </div>
@@ -114,7 +115,7 @@ export function VendorPaymentSection({
                       {label("paymentKind", payment.payment_kind, locale)}
                     </p>
                     <p className="mt-0.5 text-sm text-[#49463F]">
-                      {formatIDR(payment.amount)}
+                      <Money value={payment.amount} />
                     </p>
                     <p className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-[#888176]">
                       <CalendarDays className="size-3" aria-hidden />

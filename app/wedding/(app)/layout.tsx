@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 import { WeddingShell } from "@/components/wedding/shell";
+import { CurrencyProvider } from "@/components/wedding/currency-provider";
+import { createWeddingClient } from "@/lib/wedding/supabase";
+import { loadCustomerCountry } from "@/lib/wedding/country";
+import { getCurrencyContext } from "@/lib/currency/server";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { getAdminStatus } from "@/lib/wedding/admin-status";
 import { weddingCopy } from "@/lib/wedding/copy";
@@ -31,13 +35,26 @@ export default async function WeddingAppLayout({
 
   // Locale lookup and the optional admin badge are independent. Running them
   // together removes one serial round trip from every app page.
-  const [locale, isAdmin] = await Promise.all([
+  const supabase = await createWeddingClient();
+  const [locale, isAdmin, country] = await Promise.all([
     getLocale(),
     getAdminStatus(session.userId),
+    loadCustomerCountry(supabase, session.userId),
   ]);
+  const currencyContext = await getCurrencyContext(
+    supabase,
+    session.userId,
+    country,
+  );
   const copy = weddingCopy[locale];
 
   return (
+    <CurrencyProvider
+      currency={currencyContext.currency}
+      rates={currencyContext.rates}
+      ratesAvailable={currencyContext.ratesAvailable}
+      fetchedAt={currencyContext.fetchedAt}
+    >
     <WeddingShell
       copy={copy}
       locale={locale}
@@ -47,5 +64,6 @@ export default async function WeddingAppLayout({
     >
       {children}
     </WeddingShell>
+    </CurrencyProvider>
   );
 }
