@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { updateBudgetAction } from "@/app/wedding/(app)/budget/actions";
 import { Field, FormAlert, inputClass } from "@/components/wedding/form-kit";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { useMoney } from "@/components/wedding/currency-provider";
 
 export function TotalBudgetForm({
   copy,
@@ -12,19 +13,23 @@ export function TotalBudgetForm({
   copy: ModuleCopy;
   totalBudget: number;
 }) {
+  const money = useMoney();
   const [state, formAction, pending] = useActionState(updateBudgetAction, null);
 
   return (
     <form action={formAction} className="space-y-3">
       <div className="flex flex-wrap items-end gap-3">
-        <Field label={copy.budget.totalBudgetLabel} className="min-w-52 flex-1">
+        <Field
+          label={`${copy.budget.totalBudgetLabel.replace(" (IDR)", "")} (${money.currency})`}
+          className="min-w-52 flex-1"
+        >
           <input
             name="totalBudget"
             type="number"
             min={0}
-            step={1000}
+            step={money.currency === "IDR" || money.currency === "JPY" ? 1000 : 0.01}
             inputMode="numeric"
-            defaultValue={totalBudget}
+            defaultValue={money.toInput(totalBudget)}
             className={inputClass}
           />
         </Field>

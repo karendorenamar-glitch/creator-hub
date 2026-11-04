@@ -11,6 +11,10 @@ import type { PaymentStatus } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { syncDonorAllocationForCost } from "@/lib/wedding/donation-allocation-sync";
 import {
+  convertInputAmounts,
+  recordFinancialEntry,
+} from "@/lib/currency/action";
+import {
   enumValue,
   isDateString,
   isUuid,
@@ -32,6 +36,12 @@ function budgetPaths() {
   revalidateWedding("/wedding/budget");
 }
 
+function ratesError(locale: "en" | "id") {
+  return locale === "en"
+    ? "Exchange rates are unavailable right now. Nothing was saved; please try again in a few minutes."
+    : "Kurs mata uang sedang tidak tersedia. Belum ada yang disimpan; coba lagi beberapa menit lagi.";
+}
+
 export async function updateBudgetAction(
   _prev: ActionResult,
   formData: FormData,
@@ -43,12 +53,22 @@ export async function updateBudgetAction(
 
   if (amount === null) return { error: ctx.copy.form.invalidNumber };
 
+  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [amount]);
+  if (!converted) return { error: ratesError(ctx.locale) };
+
   const { error } = await ctx.supabase
     .from("weddings")
-    .update({ total_budget: amount })
+    .update({ total_budget: converted.idr[0] })
     .eq("id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "wedding_budget",
+    recordId: ctx.session.wedding.id,
+    amounts: converted,
+  });
 
   budgetPaths();
   return { success: ctx.copy.budget.budgetUpdated };
@@ -64,14 +84,30 @@ export async function createCategoryAction(
 
   if (!name) return { error: ctx.copy.form.required };
 
-  const { error } = await ctx.supabase.from("budget_categories").insert({
-    wedding_id: ctx.session.wedding.id,
-    name,
-    planned_amount: planned,
-    sort_order: 0,
-  });
+  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [planned]);
+  if (!converted) return { error: ratesError(ctx.locale) };
+
+  const { data: created, error } = await ctx.supabase
+    .from("budget_categories")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      name,
+      planned_amount: converted.idr[0],
+      sort_order: 0,
+    })
+    .select("id")
+    .single();
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  if (created?.id) {
+    await recordFinancialEntry(ctx.supabase, {
+      userId: ctx.session.userId,
+      module: "budget_category",
+      recordId: created.id,
+      amounts: converted,
+    });
+  }
 
   budgetPaths();
   return { success: ctx.copy.form.saved };
@@ -89,13 +125,23 @@ export async function updateCategoryAction(
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
   if (!name) return { error: ctx.copy.form.required };
 
+  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [planned]);
+  if (!converted) return { error: ratesError(ctx.locale) };
+
   const { error } = await ctx.supabase
     .from("budget_categories")
-    .update({ name, planned_amount: planned })
+    .update({ name, planned_amount: converted.idr[0] })
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "budget_category",
+    recordId: id,
+    amounts: converted,
+  });
 
   budgetPaths();
   return { success: ctx.copy.form.saved };
@@ -180,12 +226,35 @@ export async function createExpenseAction(
   const parsed = readExpense(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase.from("expenses").insert({
-    wedding_id: ctx.session.wedding.id,
-    ...parsed.values,
-  });
+  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [
+    parsed.values.amount,
+    parsed.values.amount_paid,
+    parsed.values.deposit_amount,
+  ]);
+  if (!converted) return { error: ratesError(ctx.locale) };
+
+  const { data: created, error } = await ctx.supabase
+    .from("expenses")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      ...parsed.values,
+      amount: converted.idr[0],
+      amount_paid: converted.idr[1],
+      deposit_amount: converted.idr[2],
+    })
+    .select("id")
+    .single();
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  if (created?.id) {
+    await recordFinancialEntry(ctx.supabase, {
+      userId: ctx.session.userId,
+      module: "expense",
+      recordId: created.id,
+      amounts: converted,
+    });
+  }
 
   budgetPaths();
   return { success: ctx.copy.form.saved };
@@ -202,13 +271,32 @@ export async function updateExpenseAction(
   const parsed = readExpense(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [
+    parsed.values.amount,
+    parsed.values.amount_paid,
+    parsed.values.deposit_amount,
+  ]);
+  if (!converted) return { error: ratesError(ctx.locale) };
+
   const { error } = await ctx.supabase
     .from("expenses")
-    .update(parsed.values)
+    .update({
+      ...parsed.values,
+      amount: converted.idr[0],
+      amount_paid: converted.idr[1],
+      deposit_amount: converted.idr[2],
+    })
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "expense",
+    recordId: id,
+    amounts: converted,
+  });
 
   budgetPaths();
   return { success: ctx.copy.form.saved };
@@ -294,9 +382,21 @@ export async function createOtherCostAction(
   const parsed = readOtherCost(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [
+    parsed.values.amount,
+    parsed.values.paidAmount,
+  ]);
+  if (!converted) return { error: ratesError(ctx.locale) };
+
+  const storedValues = {
+    ...parsed.values,
+    amount: converted.idr[0],
+    paidAmount: converted.idr[1],
+  };
+
   const values = {
     wedding_id: ctx.session.wedding.id,
-    ...otherCostRow(parsed.values),
+    ...otherCostRow(storedValues),
   };
   let { data: created, error } = await ctx.supabase
     .from("expenses")
@@ -317,10 +417,16 @@ export async function createOtherCostAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
   if (created?.id) {
+    await recordFinancialEntry(ctx.supabase, {
+      userId: ctx.session.userId,
+      module: "other_cost",
+      recordId: created.id,
+      amounts: converted,
+    });
     await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
       expenseId: created.id,
       label: parsed.values.name,
-      amount: parsed.values.amount,
+      amount: storedValues.amount,
       fundedByDonor: parsed.values.status === "donor",
     });
   }
@@ -340,7 +446,19 @@ export async function updateOtherCostAction(
   const parsed = readOtherCost(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const values = otherCostRow(parsed.values);
+  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [
+    parsed.values.amount,
+    parsed.values.paidAmount,
+  ]);
+  if (!converted) return { error: ratesError(ctx.locale) };
+
+  const storedValues = {
+    ...parsed.values,
+    amount: converted.idr[0],
+    paidAmount: converted.idr[1],
+  };
+
+  const values = otherCostRow(storedValues);
   let { error } = await ctx.supabase
     .from("expenses")
     .update(values)
@@ -361,10 +479,17 @@ export async function updateOtherCostAction(
 
   if (error) return { error: actionError(error, ctx.copy) };
 
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "other_cost",
+    recordId: id,
+    amounts: converted,
+  });
+
   await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
     expenseId: id,
     label: parsed.values.name,
-    amount: parsed.values.amount,
+    amount: storedValues.amount,
     fundedByDonor: parsed.values.status === "donor",
   });
 

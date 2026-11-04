@@ -14,6 +14,7 @@ import {
 } from "@/components/wedding/form-kit";
 import type { BudgetCategory, Expense } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { useMoney } from "@/components/wedding/currency-provider";
 
 export function ExpenseFormModal({
   open,
@@ -31,6 +32,7 @@ export function ExpenseFormModal({
   vendors: { id: string; name: string }[];
 }) {
   const action = expense ? updateExpenseAction : createExpenseAction;
+  const money = useMoney();
   const [state, formAction, pending] = useActionState(action, null);
 
   useEffect(() => {
@@ -60,7 +62,10 @@ export function ExpenseFormModal({
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={copy.budget.amount} htmlFor="expense-amount">
+          <Field
+            label={`${copy.budget.amount} (${money.currency})`}
+            htmlFor="expense-amount"
+          >
             <input
               id="expense-amount"
               name="amount"
@@ -69,11 +74,14 @@ export function ExpenseFormModal({
               step={1000}
               inputMode="numeric"
               required
-              defaultValue={expense?.amount ?? ""}
+              defaultValue={expense ? money.toInput(expense.amount) : ""}
               className={inputClass}
             />
           </Field>
-          <Field label={copy.budget.amountPaid} htmlFor="expense-paid">
+          <Field
+            label={`${copy.budget.amountPaid} (${money.currency})`}
+            htmlFor="expense-paid"
+          >
             <input
               id="expense-paid"
               name="amountPaid"
@@ -81,7 +89,7 @@ export function ExpenseFormModal({
               min={0}
               step={1000}
               inputMode="numeric"
-              defaultValue={expense?.amount_paid ?? 0}
+              defaultValue={expense ? money.toInput(expense.amount_paid) : ""}
               className={inputClass}
             />
           </Field>
@@ -124,7 +132,10 @@ export function ExpenseFormModal({
               className={inputClass}
             />
           </Field>
-          <Field label={`${copy.vendors.deposit} (${copy.form.optional})`} htmlFor="expense-deposit">
+          <Field
+            label={`${copy.vendors.deposit} (${money.currency}) (${copy.form.optional})`}
+            htmlFor="expense-deposit"
+          >
             <input
               id="expense-deposit"
               name="depositAmount"
@@ -132,7 +143,7 @@ export function ExpenseFormModal({
               min={0}
               step={1000}
               inputMode="numeric"
-              defaultValue={expense?.deposit_amount ?? 0}
+              defaultValue={expense ? money.toInput(expense.deposit_amount) : ""}
               className={inputClass}
             />
           </Field>

@@ -20,6 +20,7 @@ import { FormModal } from "@/components/wedding/form-modal";
 import { Badge } from "@/components/wedding/ui";
 import type { BudgetOtherCost } from "@/lib/wedding/budget-calc";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { useMoney } from "@/components/wedding/currency-provider";
 
 function OtherCostFormModal({
   open,
@@ -33,6 +34,7 @@ function OtherCostFormModal({
   cost: BudgetOtherCost | null;
 }) {
   const action = cost ? updateOtherCostAction : createOtherCostAction;
+  const money = useMoney();
   const [state, formAction, pending] = useActionState(action, null);
   const initialStatus =
     cost?.fundedByDonor
@@ -71,7 +73,10 @@ function OtherCostFormModal({
           />
         </Field>
 
-        <Field label={`${copy.budget.otherCostAmount} (IDR)`} htmlFor="other-cost-amount">
+        <Field
+          label={`${copy.budget.otherCostAmount} (${money.currency})`}
+          htmlFor="other-cost-amount"
+        >
           <input
             id="other-cost-amount"
             name="amount"
@@ -80,7 +85,7 @@ function OtherCostFormModal({
             step={1}
             inputMode="numeric"
             required
-            defaultValue={cost?.amount ?? ""}
+            defaultValue={cost ? money.toInput(cost.amount) : ""}
             className={inputClass}
           />
         </Field>
@@ -115,7 +120,11 @@ function OtherCostFormModal({
               step={1}
               inputMode="numeric"
               required
-              defaultValue={initialStatus === "partial" ? cost?.paidAmount || "" : ""}
+              defaultValue={
+                initialStatus === "partial" && cost
+                  ? money.toInput(cost.paidAmount)
+                  : ""
+              }
               className={inputClass}
             />
           </Field>

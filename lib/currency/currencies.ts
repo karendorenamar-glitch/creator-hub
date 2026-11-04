@@ -46,7 +46,20 @@ export function currencyOption(code: string | null | undefined): CurrencyOption 
   );
 }
 
-/** Indonesian accounts default to IDR, everyone else to USD. */
-export function defaultCurrencyForCountry(country: string | null | undefined): CurrencyCode {
-  return country === "ID" ? "IDR" : "USD";
+/** Country-based default: ID→IDR, MY→MYR, SG→SGD, AU→AUD, others→USD. */
+export function defaultCurrencyForCountry(
+  country: string | null | undefined,
+): CurrencyCode {
+  switch (country) {
+    case "ID":
+      return "IDR";
+    case "MY":
+      return "MYR";
+    case "SG":
+      return "SGD";
+    case "AU":
+      return "AUD";
+    default:
+      return "USD";
+  }
 }

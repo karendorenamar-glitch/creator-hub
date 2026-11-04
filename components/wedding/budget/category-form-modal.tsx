@@ -14,6 +14,7 @@ import {
 } from "@/components/wedding/form-kit";
 import type { BudgetCategory } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { useMoney } from "@/components/wedding/currency-provider";
 
 export function CategoryFormModal({
   open,
@@ -27,6 +28,7 @@ export function CategoryFormModal({
   category: BudgetCategory | null;
 }) {
   const action = category ? updateCategoryAction : createCategoryAction;
+  const money = useMoney();
   const [state, formAction, pending] = useActionState(action, null);
 
   useEffect(() => {
@@ -54,7 +56,10 @@ export function CategoryFormModal({
           />
         </Field>
 
-        <Field label={copy.budget.planned} htmlFor="category-planned">
+        <Field
+          label={`${copy.budget.planned} (${money.currency})`}
+          htmlFor="category-planned"
+        >
           <input
             id="category-planned"
             name="plannedAmount"
@@ -62,7 +67,9 @@ export function CategoryFormModal({
             min={0}
             step={1000}
             inputMode="numeric"
-            defaultValue={category?.planned_amount ?? 0}
+            defaultValue={
+              category ? money.toInput(category.planned_amount) : ""
+            }
             className={inputClass}
           />
         </Field>
