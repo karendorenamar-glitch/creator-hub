@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { SidebarNav } from "@/components/wedding/sidebar-nav";
+import { LanguageSwitcher } from "@/components/wedding/language-switcher";
 import type { AppLocale } from "@/lib/i18n/types";
 import type { WeddingCopy } from "@/lib/wedding/copy";
 
@@ -47,7 +48,7 @@ export function WeddingShell({
         <span className="font-heading text-sm font-semibold text-ink">
           Kefoo Wedding Planner
         </span>
-        <span className="size-9" aria-hidden />
+        <LanguageSwitcher locale={locale} />
       </header>
 
       {menuOpen ? (

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { WeddingLanding } from "@/components/wedding/landing";
+import { getLocale } from "@/lib/i18n/get-locale";
 import {
   KEFOO_DESCRIPTION,
   KEFOO_KEYWORDS,
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
-  return <WeddingLanding />;
+export default async function HomePage() {
+  const locale = await getLocale();
+  return <WeddingLanding locale={locale} />;
 }

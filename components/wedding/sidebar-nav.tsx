@@ -85,6 +85,29 @@ export function SidebarNav({
         </p>
       </div>
 
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-olive-100 bg-white/70 px-3 py-2">
+        <span className="text-xs text-ink-soft">{copy.nav.language}</span>
+        <div className="flex overflow-hidden rounded-full border border-olive-100">
+          {(["id", "en"] as const).map((code) => (
+            <button
+              key={code}
+              type="button"
+              onClick={() => changeLocale(code)}
+              disabled={isSwitching}
+              className={cn(
+                "px-2.5 py-1 text-[11px] font-medium uppercase transition-colors",
+                locale === code
+                  ? "bg-olive-100 text-olive-700"
+                  : "bg-white text-ink-soft hover:bg-olive-50",
+              )}
+            >
+              {code}
+            </button>
+          ))}
+        </div>
+      </div>
+
+
       <nav className="flex flex-1 flex-col gap-1" aria-label={copy.nav.menu}>
         {NAV.map(({ key, href, Icon }) => {
           const locked = key === "invitation" && !E_INVITATION_ENABLED;
@@ -133,27 +156,6 @@ export function SidebarNav({
       ) : null}
 
       <div className="space-y-3 border-t border-olive-100 pt-4">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-ink-soft">{copy.nav.language}</span>
-          <div className="flex overflow-hidden rounded-full border border-olive-100">
-            {(["en", "id"] as const).map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => changeLocale(code)}
-                disabled={isSwitching}
-                className={cn(
-                  "px-2.5 py-1 text-[11px] font-medium uppercase transition-colors",
-                  locale === code
-                    ? "bg-olive-100 text-olive-700"
-                    : "bg-white text-ink-soft hover:bg-olive-50",
-                )}
-              >
-                {code}
-              </button>
-            ))}
-          </div>
-        </div>
         <form action={signOutAction}>
           <button
             type="submit"
