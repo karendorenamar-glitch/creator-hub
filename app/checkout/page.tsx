@@ -54,8 +54,8 @@ export default async function CheckoutPage({
 
   return (
     <div className="wedding-app wedding-surface min-h-screen px-4 py-10 text-cocoa sm:px-6">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div>
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="max-w-2xl">
           <p className="text-[11px] uppercase tracking-[0.3em] text-rosewood">
             Pembayaran
           </p>
@@ -69,7 +69,7 @@ export default async function CheckoutPage({
         </div>
 
         {active ? (
-          <Card className="space-y-3 border-emerald-100 bg-emerald-50/60">
+          <Card className="max-w-2xl space-y-3 border-emerald-100 bg-emerald-50/60">
             <Badge tone="success">Lifetime access aktif</Badge>
             <p className="text-sm text-cocoa/70">
               Pembayaran sudah diverifikasi. Seluruh fitur wedding planner
@@ -85,7 +85,7 @@ export default async function CheckoutPage({
             </Link>
           </Card>
         ) : pendingReview ? (
-          <Card className="space-y-3 text-sm">
+          <Card className="max-w-2xl space-y-3 text-sm">
             <Badge tone={justSubmitted ? "success" : "warning"}>
               {justSubmitted ? "Bukti pembayaran terkirim" : "Menunggu verifikasi"}
             </Badge>
@@ -105,7 +105,7 @@ export default async function CheckoutPage({
         ) : (
           <>
             {payment?.status === "rejected" ? (
-              <Card className="space-y-1 border-rose-100 bg-rose-50/60 text-sm">
+              <Card className="max-w-2xl space-y-1 border-rose-100 bg-rose-50/60 text-sm">
                 <Badge tone="warning">Pembayaran ditolak</Badge>
                 <p className="text-cocoa/75">
                   {payment.rejection_reason ?? "Bukti belum dapat diverifikasi."}
@@ -117,11 +117,12 @@ export default async function CheckoutPage({
             ) : null}
 
             {error ? (
-              <p className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <p className="max-w-2xl rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {ERRORS[error] ?? "Terjadi kesalahan."}
               </p>
             ) : null}
 
+            <div className="grid items-start gap-5 lg:grid-cols-2">
             <Card className="space-y-4 border-blush/70">
               <div className="flex items-center gap-2">
                 <span className="text-lg" aria-hidden>
@@ -303,6 +304,7 @@ export default async function CheckoutPage({
                 </p>
               </form>
             </Card>
+            </div>
 
           </>
         )}
