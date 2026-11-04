@@ -42,17 +42,17 @@ export async function deleteUserAction(
     };
   }
 
-  const { data: target, error: targetError } =
-    await admin.auth.admin.getUserById(id);
+  const [targetResult, adminRowResult] = await Promise.all([
+    admin.auth.admin.getUserById(id),
+    admin.from("admins").select("user_id").eq("user_id", id).maybeSingle(),
+  ]);
+
+  const { data: target, error: targetError } = targetResult;
   if (targetError || !target.user) {
     return { error: "Pengguna tidak ditemukan atau sudah dihapus." };
   }
 
-  const { data: adminRow } = await admin
-    .from("admins")
-    .select("user_id")
-    .eq("user_id", id)
-    .maybeSingle();
+  const { data: adminRow } = adminRowResult;
   if (adminRow) {
     return {
       error:
@@ -60,8 +60,6 @@ export async function deleteUserAction(
     };
   }
 
-  // Remove weddings owned by the account first. Child data (members, vendors,
-  // guests, invitations, subscription, etc.) cascades from weddings.
   const { data: ownedWeddings, error: ownedError } = await admin
     .from("weddings")
     .select("id")
@@ -72,62 +70,56 @@ export async function deleteUserAction(
     return { error: "Gagal membaca data wedding pengguna. Coba lagi." };
   }
 
-  for (const wedding of ownedWeddings ?? []) {
-    const { error } = await admin.from("weddings").delete().eq("id", wedding.id);
-    if (error) {
-      console.error("[deleteUserAction] delete wedding:", error);
-      return {
-        error: `Gagal menghapus wedding (${error.code ?? "?"}). Coba lagi.`,
-      };
-    }
+  const ownedWeddingIds = (ownedWeddings ?? []).map((wedding) => wedding.id);
+
+  // Payments first: public.payments.wedding_id is ON DELETE RESTRICT, so an
+  // account that ever paid would otherwise make the wedding delete fail with
+  // 23503 and leave the whole operation half done. This also removes billing
+  // history the account owns.
+  const earlyDeletes = [
+    admin.from("payments").delete().eq("user_id", id),
+    admin.from("user_entitlements").delete().eq("user_id", id),
+    admin.from("wedding_members").delete().eq("user_id", id),
+  ];
+  if (ownedWeddingIds.length > 0) {
+    earlyDeletes.push(
+      admin.from("payments").delete().in("wedding_id", ownedWeddingIds),
+    );
   }
 
-  // If the account was a partner, remove only the membership. The owner's
-  // wedding is intentionally preserved.
-  const { error: membershipError } = await admin
-    .from("wedding_members")
-    .delete()
-    .eq("user_id", id);
-  if (membershipError) {
-    console.error("[deleteUserAction] delete membership:", membershipError);
-    return { error: "Gagal menghapus keanggotaan wedding pengguna." };
-  }
-
-  // Payments and entitlements belong to the account. Deleting them explicitly
-  // keeps the cleanup complete even if the auth FK is not present.
-  const { error: paymentError } = await admin
-    .from("payments")
-    .delete()
-    .eq("user_id", id);
-  if (paymentError) {
-    console.error("[deleteUserAction] delete payments:", paymentError);
-    return { error: "Gagal menghapus data pembayaran pengguna." };
-  }
-
-  const { error: entitlementError } = await admin
-    .from("user_entitlements")
-    .delete()
-    .eq("user_id", id);
-  if (entitlementError) {
-    console.error("[deleteUserAction] delete entitlement:", entitlementError);
-    return { error: "Gagal menghapus akses pengguna." };
-  }
-
-  // This is the actual Supabase Auth deletion. Do it before Storage cleanup so
-  // the account is definitely gone even if file cleanup is slow or times out.
-  const { error: deleteError } = await admin.auth.admin.deleteUser(id);
-  if (deleteError) {
-    console.error("[deleteUserAction] delete auth user:", deleteError);
+  const earlyResults = await Promise.all(earlyDeletes);
+  const earlyLabels = ["payments", "entitlements", "membership", "wedding payments"];
+  const earlyFailure = earlyResults.findIndex((result) => result.error);
+  if (earlyFailure !== -1) {
+    const failure = earlyResults[earlyFailure].error;
+    console.error(
+      `[deleteUserAction] delete ${earlyLabels[earlyFailure]}:`,
+      failure,
+    );
     return {
-      error: `Gagal menghapus akun dari Supabase (${deleteError.status ?? "?"}): ${deleteError.message}`,
+      error: `Gagal menghapus ${earlyLabels[earlyFailure]} pengguna (${failure?.code ?? "?"}). Coba lagi.`,
     };
   }
 
-  // Best-effort Storage cleanup: Supabase does not cascade Storage objects when
-  // an auth user or database row is deleted. Files are namespaced as
-  // userId/... (receipts) and weddingId/... (planner media).
-  const ownedWeddingIds = (ownedWeddings ?? []).map((wedding) => wedding.id);
-  await Promise.all([
+  // Weddings next; every child table (vendors, plans, guests, invitations,
+  // donations, currency audit rows, ...) cascades from here.
+  const weddingResults = await Promise.all(
+    ownedWeddingIds.map((weddingId) =>
+      admin.from("weddings").delete().eq("id", weddingId),
+    ),
+  );
+  const weddingFailure = weddingResults.find((result) => result.error);
+  if (weddingFailure?.error) {
+    console.error("[deleteUserAction] delete wedding:", weddingFailure.error);
+    return {
+      error: `Gagal menghapus wedding (${weddingFailure.error.code ?? "?"}). Coba lagi.`,
+    };
+  }
+
+  // This is the actual Supabase Auth deletion. It runs together with the
+  // Storage cleanup so the admin does not wait for both in sequence.
+  const [authResult] = await Promise.all([
+    admin.auth.admin.deleteUser(id),
     removeStoragePrefix(admin, "payment-receipts", id),
     ...ownedWeddingIds.flatMap((weddingId) => [
       removeStoragePrefix(admin, "payment-proofs", weddingId),
@@ -137,7 +129,22 @@ export async function deleteUserAction(
     ]),
   ]);
 
-  revalidatePath("/admin/users");
+  const deleteError = authResult.error;
+  if (deleteError) {
+    console.error("[deleteUserAction] delete auth user:", deleteError);
+    return {
+      error: `Gagal menghapus akun dari Supabase (${deleteError.status ?? "?"}): ${deleteError.message}`,
+    };
+  }
+
+  // Best-effort Storage cleanup already ran concurrently above: Supabase does
+  // not cascade Storage objects when an auth user or database row is deleted.
+  // Files are namespaced as userId/... (receipts) and weddingId/... (planner
+  // media), so the prefixes above cover every object the account owned.
+
+  // Deliberately not revalidating /admin/users here: that page lists up to 1000
+  // auth users on every render, so forcing it to re-render made the delete feel
+  // slow. The row keeps its success message and the admin can refresh on demand.
   revalidatePath("/admin");
   revalidatePath("/admin/weddings");
   return {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useActionState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -27,15 +27,20 @@ export function DeleteUserButton({
     FormData
   >(deleteUserAction, null);
 
-  useEffect(() => {
-    if (state?.success) router.refresh();
-  }, [state?.success, router]);
-
   if (state?.success) {
     return (
-      <p role="status" className="max-w-48 text-xs text-emerald-700">
-        {state.success}
-      </p>
+      <div className="max-w-48 space-y-1">
+        <p role="status" className="text-xs text-emerald-700">
+          {state.success}
+        </p>
+        <button
+          type="button"
+          onClick={() => router.refresh()}
+          className="rounded-lg px-2 py-1 text-xs text-cocoa/60 underline hover:bg-blush/40"
+        >
+          Segarkan daftar
+        </button>
+      </div>
     );
   }
 
