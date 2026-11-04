@@ -77,3 +77,34 @@ export async function recordFinancialEntry(
     console.error("[currency] audit write failed", error.code, error.message);
   }
 }
+
+/** Convert using an explicit currency (first Target Budget entry). */
+export async function convertAmountsWithCurrency(
+  supabase: SupabaseClient,
+  currency: CurrencyCode,
+  amounts: number[],
+): Promise<InputAmounts | null> {
+  void supabase;
+  const { getExchangeRates } = await import("./rates");
+  const exchange = await getExchangeRates();
+  if (currency !== "IDR" && (!exchange.available || !exchange.rates)) {
+    return null;
+  }
+
+  const idr: number[] = [];
+  let rate = 1;
+  for (const amount of amounts) {
+    const converted = convertEnteredAmount(amount, currency, exchange.rates as never);
+    if (!converted.ok) return null;
+    idr.push(converted.amountIdr);
+    rate = converted.rate;
+  }
+
+  return {
+    currency,
+    rate,
+    rateAt: exchange.fetchedAt,
+    entered: amounts,
+    idr,
+  };
+}

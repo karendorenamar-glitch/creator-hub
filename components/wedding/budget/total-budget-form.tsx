@@ -5,13 +5,16 @@ import { updateBudgetAction } from "@/app/wedding/(app)/budget/actions";
 import { Field, FormAlert, inputClass } from "@/components/wedding/form-kit";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { useMoney } from "@/components/wedding/currency-provider";
+import { CURRENCIES } from "@/lib/currency/currencies";
 
 export function TotalBudgetForm({
   copy,
   totalBudget,
+  hasCurrencyPreference,
 }: {
   copy: ModuleCopy;
   totalBudget: number;
+  hasCurrencyPreference: boolean;
 }) {
   const money = useMoney();
   const [state, formAction, pending] = useActionState(updateBudgetAction, null);
@@ -33,6 +36,27 @@ export function TotalBudgetForm({
             className={inputClass}
           />
         </Field>
+        <Field label="Currency">
+          {hasCurrencyPreference ? (
+            <p className="rounded-xl border border-olive-100 bg-olive-50 px-3 py-2.5 text-sm font-medium text-ink">
+              {CURRENCIES.find((item) => item.code === money.currency)?.flag}{" "}
+              {money.currency}
+            </p>
+          ) : (
+            <select
+              name="currency"
+              defaultValue={money.currency}
+              className={inputClass}
+            >
+              {CURRENCIES.map((item) => (
+                <option key={item.code} value={item.code}>
+                  {item.flag} {item.code} ({item.symbol})
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
+
         <button
           type="submit"
           disabled={pending}

@@ -68,3 +68,34 @@ export async function getMoneyFormatter(
   const context = await getCurrencyContext(supabase, userId, country);
   return { ...moneyFromContext(context), context };
 }
+
+/** True when the customer already picked a currency (Settings or budget). */
+export async function hasStoredCurrencyPreference(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("customer_currency_preferences")
+    .select("display_currency")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return Boolean((data as { display_currency?: string } | null)?.display_currency);
+}
+
+export async function saveCurrencyPreference(
+  supabase: SupabaseClient,
+  userId: string,
+  currency: CurrencyCode,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("customer_currency_preferences")
+    .upsert(
+      { user_id: userId, display_currency: currency },
+      { onConflict: "user_id" },
+    );
+  if (error) {
+    console.error("[currency] preference save failed", error.code, error.message);
+    return false;
+  }
+  return true;
+}

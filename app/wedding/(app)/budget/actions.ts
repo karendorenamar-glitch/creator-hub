@@ -11,9 +11,18 @@ import type { PaymentStatus } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { syncDonorAllocationForCost } from "@/lib/wedding/donation-allocation-sync";
 import {
+  convertAmountsWithCurrency,
   convertInputAmounts,
   recordFinancialEntry,
 } from "@/lib/currency/action";
+import {
+  hasStoredCurrencyPreference,
+  saveCurrencyPreference,
+} from "@/lib/currency/server";
+import {
+  isCurrencyCode,
+  type CurrencyCode,
+} from "@/lib/currency/currencies";
 import {
   enumValue,
   isDateString,
@@ -53,7 +62,28 @@ export async function updateBudgetAction(
 
   if (amount === null) return { error: ctx.copy.form.invalidNumber };
 
-  const converted = await convertInputAmounts(ctx.supabase, ctx.session.userId, [amount]);
+  // First entry: the dropdown sets the primary currency. Once a preference
+  // exists (Settings or an earlier save) it is never overwritten here.
+  const alreadyChosen = await hasStoredCurrencyPreference(
+    ctx.supabase,
+    ctx.session.userId,
+  );
+  const submitted = text(formData, "currency");
+  let chosen: CurrencyCode | null = null;
+
+  if (!alreadyChosen && isCurrencyCode(submitted)) {
+    const saved = await saveCurrencyPreference(
+      ctx.supabase,
+      ctx.session.userId,
+      submitted,
+    );
+    if (!saved) return { error: ctx.copy.errors.generic };
+    chosen = submitted;
+  }
+
+  const converted = chosen
+    ? await convertAmountsWithCurrency(ctx.supabase, chosen, [amount])
+    : await convertInputAmounts(ctx.supabase, ctx.session.userId, [amount]);
   if (!converted) return { error: ratesError(ctx.locale) };
 
   const { error } = await ctx.supabase

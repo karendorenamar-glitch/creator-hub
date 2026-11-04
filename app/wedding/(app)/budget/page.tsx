@@ -8,7 +8,10 @@ import type { TargetBudgetStatus } from "@/lib/wedding/budget-calc";
 import { VendorList } from "@/components/wedding/vendors/vendor-list";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { loadVendorsPageData } from "@/lib/wedding/budget-data";
-import { getMoneyFormatter } from "@/lib/currency/server";
+import {
+  getMoneyFormatter,
+  hasStoredCurrencyPreference,
+} from "@/lib/currency/server";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 import { loadCustomerCountry } from "@/lib/wedding/country";
 import { moduleCopy } from "@/lib/wedding/module-copy";
@@ -90,6 +93,10 @@ export default async function BudgetPage({
     session.userId,
     country,
   );
+  const hasCurrencyPreference = await hasStoredCurrencyPreference(
+    currencyClient,
+    session.userId,
+  );
   const data = await loadVendorsPageData(session.wedding.id, targetBudget);
   const { calc } = data;
 
@@ -140,7 +147,11 @@ export default async function BudgetPage({
               <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-petal-500">
                 {copy.budget.targetBudget}
               </p>
-              <TotalBudgetForm copy={copy} totalBudget={targetBudget} />
+              <TotalBudgetForm
+              copy={copy}
+              totalBudget={targetBudget}
+              hasCurrencyPreference={hasCurrencyPreference}
+            />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
