@@ -10,6 +10,10 @@ import {
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import { isHttpUrl, isUuid, optionalText, parseWholeRupiah, text } from "@/lib/wedding/validation";
 import {
+  convertInputAmounts,
+  recordFinancialEntry,
+} from "@/lib/currency/action";
+import {
   INSPIRATION_IMAGE_BUCKET,
   validateInspirationImageFile,
 } from "@/lib/wedding/uploads";
@@ -576,24 +580,57 @@ export async function createInspirationVendorOptionAction(
   const parsed = readVendorOption(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const save = (values: VendorOptionValues) =>
-    ctx.supabase.from("inspiration_vendor_options").insert({
-      wedding_id: ctx.session.wedding.id,
-      item_id: itemId,
-      ...values,
-    });
+  const priceConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.reference_price ?? 0],
+  );
+  if (!priceConversion) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "Exchange rates are unavailable right now. Nothing was saved; please try again shortly."
+          : "Kurs mata uang sedang tidak tersedia. Belum ada yang disimpan; coba lagi sebentar lagi.",
+    };
+  }
+  const values = {
+    ...parsed.values,
+    reference_price:
+      parsed.values.reference_price === null ? null : priceConversion.idr[0],
+  };
 
-  let result = await save(parsed.values);
+  const save = (next: VendorOptionValues) =>
+    ctx.supabase
+      .from("inspiration_vendor_options")
+      .insert({
+        wedding_id: ctx.session.wedding.id,
+        item_id: itemId,
+        ...next,
+      })
+      .select("id")
+      .single();
+
+  let result = await save(values);
   // 026 relaxes the old non-empty-name constraint. Until it is applied, keep
   // the form usable by storing the neutral option label instead of failing.
-  if (result.error?.code === "23514" && !parsed.values.vendor_name) {
+  if (result.error?.code === "23514" && !values.vendor_name) {
     result = await save({
-      ...parsed.values,
+      ...values,
       vendor_name: ctx.copy.inspiration.untitledVendorOption,
-    });
+    } as VendorOptionValues);
   }
 
   if (result.error) return { error: actionError(result.error, ctx.copy) };
+
+  const created = result.data as { id?: string } | null;
+  if (created?.id) {
+    await recordFinancialEntry(ctx.supabase, {
+      userId: ctx.session.userId,
+      module: "vendor_option",
+      recordId: created.id,
+      amounts: priceConversion,
+    });
+  }
 
   revalidateWedding("/wedding/inspiration");
   return { success: ctx.copy.form.saved };
@@ -610,22 +647,48 @@ export async function updateInspirationVendorOptionAction(
   const parsed = readVendorOption(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const save = (values: VendorOptionValues) =>
+  const priceConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.reference_price ?? 0],
+  );
+  if (!priceConversion) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "Exchange rates are unavailable right now. Nothing was saved; please try again shortly."
+          : "Kurs mata uang sedang tidak tersedia. Belum ada yang disimpan; coba lagi sebentar lagi.",
+    };
+  }
+  const values = {
+    ...parsed.values,
+    reference_price:
+      parsed.values.reference_price === null ? null : priceConversion.idr[0],
+  };
+
+  const save = (next: VendorOptionValues) =>
     ctx.supabase
       .from("inspiration_vendor_options")
-      .update(values)
+      .update(next)
       .eq("id", id)
       .eq("wedding_id", ctx.session.wedding.id);
 
-  let result = await save(parsed.values);
-  if (result.error?.code === "23514" && !parsed.values.vendor_name) {
+  let result = await save(values);
+  if (result.error?.code === "23514" && !values.vendor_name) {
     result = await save({
-      ...parsed.values,
+      ...values,
       vendor_name: ctx.copy.inspiration.untitledVendorOption,
-    });
+    } as VendorOptionValues);
   }
 
   if (result.error) return { error: actionError(result.error, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "vendor_option",
+    recordId: id,
+    amounts: priceConversion,
+  });
 
   revalidateWedding("/wedding/inspiration");
   return { success: ctx.copy.form.saved };

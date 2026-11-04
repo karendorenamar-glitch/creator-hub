@@ -1,7 +1,6 @@
 "use client";
 
 import { Money } from "@/components/wedding/money";
-import { formatIDR } from "@/lib/wedding/format";
 import { useActionState, useEffect, useState } from "react";
 import { Heart, Pencil, Plus } from "lucide-react";
 import {
@@ -29,6 +28,7 @@ import type {
   WeddingDonation,
 } from "@/lib/wedding/db-types";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { useMoney } from "@/components/wedding/currency-provider";
 
 function DonationFormModal({
   open,
@@ -41,6 +41,7 @@ function DonationFormModal({
   copy: ModuleCopy;
   donation: WeddingDonation | null;
 }) {
+  const money = useMoney();
   const action = donation ? updateDonationAction : createDonationAction;
   const [state, formAction, pending] = useActionState(action, null);
 
@@ -70,18 +71,22 @@ function DonationFormModal({
         </Field>
 
         <Field
-          label={`${copy.budget.donationAmount} (IDR)`}
+          label={`${copy.budget.donationAmount} (${money.currency})`}
           htmlFor="donation-amount"
         >
           <input
             id="donation-amount"
             name="amount"
             type="number"
-            min={1}
-            step={1}
-            inputMode="numeric"
+            min={0}
+            step={money.currency === "IDR" || money.currency === "JPY" ? 1 : 0.01}
+            inputMode="decimal"
             required
-            defaultValue={donation?.amount ?? ""}
+            defaultValue={
+              donation?.amount !== null && donation?.amount !== undefined
+                ? money.toInput(donation.amount)
+                : ""
+            }
             className={inputClass}
           />
         </Field>
@@ -109,6 +114,8 @@ export function DonationNote({
   excess: number;
   copy: ModuleCopy;
 }) {
+  const money = useMoney();
+
   if (donations.length === 0) {
     return (
       <p className="mt-3 text-xs text-ink-soft">
@@ -122,17 +129,17 @@ export function DonationNote({
     donations.length === 1
       ? copy.budget.donationFromSingle
           .replace("{name}", donations[0].donor_name)
-          .replace("{amount}", formatIDR(donations[0].amount))
+          .replace("{amount}", money.format(donations[0].amount))
       : copy.budget.donationFromMultiple
           .replace("{count}", String(donations.length))
-          .replace("{amount}", formatIDR(total));
+          .replace("{amount}", money.format(total));
 
   return (
     <div className="mt-3 space-y-1 text-xs text-petal-500">
       <p className="font-medium">💗 {message}</p>
       {excess > 0 ? (
         <p className="text-rosewood">
-          {copy.budget.donationExcess.replace("{amount}", formatIDR(excess))}
+          {copy.budget.donationExcess.replace("{amount}", money.format(excess))}
         </p>
       ) : null}
     </div>
@@ -152,6 +159,7 @@ function AllocationForm({
   copy: ModuleCopy;
   onSaved: () => void;
 }) {
+  const money = useMoney();
   const [state, formAction, pending] = useActionState(
     allocation ? updateDonationAllocationAction : createDonationAllocationAction,
     null,
@@ -198,18 +206,22 @@ function AllocationForm({
         </Field>
       </div>
       <Field
-        label={`${copy.budget.allocationAmount} (IDR)`}
+        label={`${copy.budget.allocationAmount} (${money.currency})`}
         htmlFor="allocation-amount"
       >
         <input
           id="allocation-amount"
           name="amount"
           type="number"
-          min={1}
-          step={1}
-          inputMode="numeric"
+          min={0}
+          step={money.currency === "IDR" || money.currency === "JPY" ? 1 : 0.01}
+          inputMode="decimal"
           required
-          defaultValue={allocation?.amount ?? ""}
+          defaultValue={
+            allocation?.amount !== null && allocation?.amount !== undefined
+              ? money.toInput(allocation.amount)
+              : ""
+          }
           className={inputClass}
         />
       </Field>

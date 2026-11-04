@@ -23,9 +23,10 @@ import {
   inputClass,
 } from "@/components/wedding/form-kit";
 import { FormModal } from "@/components/wedding/form-modal";
+import { useMoney } from "@/components/wedding/currency-provider";
+import { Money } from "@/components/wedding/money";
 import { Badge, Card } from "@/components/wedding/ui";
 import type { VendorOption } from "@/lib/wedding/db-types";
-import { formatIDR } from "@/lib/wedding/format";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import {
   VENDOR_OPTION_CATEGORIES,
@@ -45,6 +46,7 @@ function OptionFormModal({
   option: VendorOption | null;
   categories: string[];
 }) {
+  const money = useMoney();
   const action = option ? updateVendorOptionAction : createVendorOptionAction;
   const [state, formAction, pending] = useActionState(action, null);
 
@@ -113,7 +115,7 @@ function OptionFormModal({
           </Field>
 
           <Field
-            label={`${copy.vendors.optionPrice} (${copy.form.optional})`}
+            label={`${copy.vendors.optionPrice} (${money.currency}, ${copy.form.optional})`}
             htmlFor="option-price"
             hint={copy.vendors.optionPriceHint}
           >
@@ -122,9 +124,14 @@ function OptionFormModal({
               name="referencePrice"
               type="number"
               min={0}
-              step={1}
-              inputMode="numeric"
-              defaultValue={option?.reference_price ?? ""}
+              step={money.currency === "IDR" || money.currency === "JPY" ? 1 : 0.01}
+              inputMode="decimal"
+              defaultValue={
+                option?.reference_price !== null &&
+                option?.reference_price !== undefined
+                  ? money.toInput(option.reference_price)
+                  : ""
+              }
               className={inputClass}
             />
           </Field>
@@ -352,7 +359,7 @@ export function VendorOptionsBoard({
                       {candidates.map((candidate) => (
                         <td key={candidate.id} className="border-l border-petal-100 px-4 py-3 text-sm font-medium text-ink">
                           {candidate.reference_price !== null
-                            ? formatIDR(candidate.reference_price)
+                            ? <Money value={candidate.reference_price} />
                             : copy.vendors.optionPriceEmpty}
                         </td>
                       ))}

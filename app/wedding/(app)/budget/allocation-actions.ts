@@ -8,6 +8,10 @@ import {
   type ActionResult,
 } from "@/lib/wedding/action-context";
 import { isUuid, optionalText, parseWholeRupiah, text } from "@/lib/wedding/validation";
+import {
+  convertInputAmounts,
+  recordFinancialEntry,
+} from "@/lib/currency/action";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 async function context() {
@@ -78,6 +82,13 @@ async function validateAllocation(
   return null;
 }
 
+
+function ratesError(locale: "en" | "id") {
+  return locale === "en"
+    ? "Exchange rates are unavailable right now. Nothing was saved; please try again shortly."
+    : "Kurs mata uang sedang tidak tersedia. Belum ada yang disimpan; coba lagi sebentar lagi.";
+}
+
 export async function createDonationAllocationAction(
   _prev: ActionResult,
   formData: FormData,
@@ -85,17 +96,39 @@ export async function createDonationAllocationAction(
   const ctx = await context();
   const parsed = readAllocation(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
-  const validation = await validateAllocation(ctx, parsed.values);
+
+  const amountConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.amount],
+  );
+  if (!amountConversion) return { error: ratesError(ctx.locale) };
+  const values = { ...parsed.values, amount: amountConversion.idr[0] };
+
+  const validation = await validateAllocation(ctx, values);
   if (validation) return { error: validation };
 
-  const { error } = await ctx.supabase.from("donation_allocations").insert({
-    wedding_id: ctx.session.wedding.id,
-    donation_id: parsed.values.donationId,
-    category_id: parsed.values.categoryId,
-    label: parsed.values.label,
-    amount: parsed.values.amount,
+  const { data: created, error } = await ctx.supabase
+    .from("donation_allocations")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      donation_id: values.donationId,
+      category_id: values.categoryId,
+      label: values.label,
+      amount: values.amount,
+    })
+    .select("id")
+    .single();
+  if (error || !created) {
+    return { error: actionError(error ?? { message: "" }, ctx.copy) };
+  }
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "allocation",
+    recordId: created.id,
+    amounts: amountConversion,
   });
-  if (error) return { error: actionError(error, ctx.copy) };
   revalidateWedding("/wedding/budget");
   return { success: ctx.copy.form.saved };
 }
@@ -109,20 +142,36 @@ export async function updateDonationAllocationAction(
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
   const parsed = readAllocation(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
-  const validation = await validateAllocation(ctx, parsed.values, id);
+
+  const amountConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.amount],
+  );
+  if (!amountConversion) return { error: ratesError(ctx.locale) };
+  const values = { ...parsed.values, amount: amountConversion.idr[0] };
+
+  const validation = await validateAllocation(ctx, values, id);
   if (validation) return { error: validation };
 
   const { error } = await ctx.supabase
     .from("donation_allocations")
     .update({
-      donation_id: parsed.values.donationId,
-      category_id: parsed.values.categoryId,
-      label: parsed.values.label,
-      amount: parsed.values.amount,
+      donation_id: values.donationId,
+      category_id: values.categoryId,
+      label: values.label,
+      amount: values.amount,
     })
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
   if (error) return { error: actionError(error, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "allocation",
+    recordId: id,
+    amounts: amountConversion,
+  });
   revalidateWedding("/wedding/budget");
   return { success: ctx.copy.form.saved };
 }

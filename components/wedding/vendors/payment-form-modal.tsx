@@ -1,5 +1,7 @@
 "use client";
 
+import { formatWeddingDate } from "@/lib/wedding/format";
+import { useMoney } from "@/components/wedding/currency-provider";
 import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useState } from "react";
 import { CalendarDays, FileText, Pencil, Trash2 } from "lucide-react";
@@ -26,7 +28,6 @@ import type {
 } from "@/lib/wedding/db-types";
 import type { BudgetVendor } from "@/lib/wedding/budget-calc";
 import { derivePaymentStatus } from "@/lib/wedding/budget-calc";
-import { formatIDR, formatWeddingDate } from "@/lib/wedding/format";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 import {
@@ -70,8 +71,9 @@ export function PaymentFormModal({
 }) {
   const action = payment ? updateVendorPaymentAction : createVendorPaymentAction;
   const [state, formAction, pending] = useActionState(action, null);
+  const money = useMoney();
   const [amount, setAmount] = useState<string>(
-    payment ? String(payment.amount) : "",
+    payment ? money.toInput(payment.amount) : "",
   );
   const [kind, setKind] = useState<"dp" | "lanjutan" | "pelunasan">(
     payment?.payment_kind ?? "dp",
@@ -89,7 +91,8 @@ export function PaymentFormModal({
     price === null
       ? null
       : Math.max(0, price - (payment ? otherPaid : totalPaid));
-  const entered = Number(amount || 0);
+  const enteredDisplay = Number(amount || 0);
+  const entered = money.toBase(enteredDisplay) ?? enteredDisplay;
   const overpay = outstanding !== null && entered > outstanding;
   const incompleteFinal =
     kind === "pelunasan" &&
@@ -132,7 +135,7 @@ export function PaymentFormModal({
             <div>
               <p className="text-ink-soft">{copy.vendors.agreedPrice}</p>
               <p className="mt-0.5 font-medium text-ink">
-                {price === null ? copy.vendors.priceUnknown : formatIDR(price)}
+                {price === null ? copy.vendors.priceUnknown : <Money value={price} />}
               </p>
             </div>
             <div>
@@ -142,7 +145,7 @@ export function PaymentFormModal({
             <div>
               <p className="text-ink-soft">{copy.vendors.remainingPayment}</p>
               <p className="mt-0.5 font-medium text-ink">
-                {outstanding === null ? "—" : formatIDR(outstanding)}
+                {outstanding === null ? "—" : <Money value={outstanding} />}
               </p>
             </div>
           </div>
@@ -189,13 +192,16 @@ export function PaymentFormModal({
                 </select>
               </Field>
 
-              <Field label={copy.vendors.paymentAmount} htmlFor="payment-amount">
+              <Field
+                label={`${copy.vendors.paymentAmount} (${money.currency})`}
+                htmlFor="payment-amount"
+              >
                 <input
                   id="payment-amount"
                   name="paymentAmount"
                   type="number"
-                  min={1}
-                  step={1}
+                  min={0}
+                  step={money.currency === "IDR" || money.currency === "JPY" ? 1 : 0.01}
                   inputMode="numeric"
                   required
                   value={amount}

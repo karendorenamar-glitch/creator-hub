@@ -10,7 +10,8 @@ export type FinancialModule =
   | "vendor_payment"
   | "expense"
   | "other_cost"
-  | "donation";
+  | "donation"
+  | "allocation";
 
 export type InputAmounts = {
   currency: CurrencyCode;

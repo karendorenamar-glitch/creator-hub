@@ -109,16 +109,16 @@ function OtherCostFormModal({
 
         {status === "partial" ? (
           <Field
-            label={`${copy.budget.otherCostAmountPaid} (IDR)`}
+            label={`${copy.budget.otherCostAmountPaid} (${money.currency})`}
             htmlFor="other-cost-amount-paid"
           >
             <input
               id="other-cost-amount-paid"
               name="amountPaid"
               type="number"
-              min={1}
-              step={1}
-              inputMode="numeric"
+              min={0}
+              step={money.currency === "IDR" || money.currency === "JPY" ? 1 : 0.01}
+              inputMode="decimal"
               required
               defaultValue={
                 initialStatus === "partial" && cost

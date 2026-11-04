@@ -25,6 +25,7 @@ import type {
 } from "@/lib/wedding/db-types";
 import { label, labelGroups } from "@/lib/wedding/labels";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
+import { useMoney } from "@/components/wedding/currency-provider";
 import { PAYMENT_PROOF_TYPES } from "@/lib/wedding/uploads";
 import type { VendorOptionPrefill } from "@/lib/wedding/vendor-options";
 
@@ -81,14 +82,15 @@ export function VendorFormModal({
   prefill?: VendorOptionPrefill | null;
   onPaymentSaved: () => void;
 }) {
+  const money = useMoney();
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
   const [price, setPrice] = useState(
     vendor?.agreed_price !== null && vendor?.agreed_price !== undefined
-      ? String(vendor.agreed_price)
+      ? money.toInput(vendor.agreed_price)
       : prefill?.referencePrice !== null &&
           prefill?.referencePrice !== undefined
-        ? String(prefill.referencePrice)
+        ? money.toInput(prefill.referencePrice)
         : "",
   );
   const [completed, setCompleted] = useState(
@@ -284,7 +286,7 @@ export function VendorFormModal({
           ) : null}
 
           <Field
-            label={`${copy.vendors.agreedPrice} (IDR)`}
+            label={`${copy.vendors.agreedPrice} (${money.currency})`}
             htmlFor="vendor-agreed-price"
             hint={copy.vendors.agreedPriceHint}
           >
@@ -293,7 +295,7 @@ export function VendorFormModal({
               name="agreedPrice"
               type="number"
               min={0}
-              step={1}
+              step={money.currency === "IDR" || money.currency === "JPY" ? 1 : 0.01}
               inputMode="numeric"
               value={price}
               onChange={(event) => setPrice(event.target.value)}
@@ -362,7 +364,7 @@ export function VendorFormModal({
               </Field>
 
               <Field
-                label={`${copy.vendors.paymentAmount} (${copy.form.optional})`}
+                label={`${copy.vendors.paymentAmount} (${money.currency}) - ${copy.form.optional}`}
                 htmlFor="vendor-initial-amount"
               >
                 <input

@@ -8,6 +8,10 @@ import {
   type ActionResult,
 } from "@/lib/wedding/action-context";
 import { isUuid, parseWholeRupiah, text } from "@/lib/wedding/validation";
+import {
+  convertInputAmounts,
+  recordFinancialEntry,
+} from "@/lib/currency/action";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 async function context() {
@@ -33,6 +37,13 @@ function readDonation(
   return { ok: true, donorName, amount };
 }
 
+
+function ratesError(locale: "en" | "id") {
+  return locale === "en"
+    ? "Exchange rates are unavailable right now. Nothing was saved; please try again shortly."
+    : "Kurs mata uang sedang tidak tersedia. Belum ada yang disimpan; coba lagi sebentar lagi.";
+}
+
 export async function createDonationAction(
   _prev: ActionResult,
   formData: FormData,
@@ -41,13 +52,33 @@ export async function createDonationAction(
   const parsed = readDonation(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
-  const { error } = await ctx.supabase.from("wedding_donations").insert({
-    wedding_id: ctx.session.wedding.id,
-    donor_name: parsed.donorName,
-    amount: parsed.amount,
-  });
+  const amountConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.amount],
+  );
+  if (!amountConversion) return { error: ratesError(ctx.locale) };
 
-  if (error) return { error: actionError(error, ctx.copy) };
+  const { data: created, error } = await ctx.supabase
+    .from("wedding_donations")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      donor_name: parsed.donorName,
+      amount: amountConversion.idr[0],
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) {
+    return { error: actionError(error ?? { message: "" }, ctx.copy) };
+  }
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "donation",
+    recordId: created.id,
+    amounts: amountConversion,
+  });
 
   revalidateWedding("/wedding/budget");
   return { success: ctx.copy.form.saved };
@@ -64,6 +95,14 @@ export async function updateDonationAction(
   const parsed = readDonation(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const amountConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.amount],
+  );
+  if (!amountConversion) return { error: ratesError(ctx.locale) };
+  const amountIdr = amountConversion.idr[0];
+
   const { data: allocations } = await ctx.supabase
     .from("donation_allocations")
     .select("amount")
@@ -73,17 +112,24 @@ export async function updateDonationAction(
     (sum, row) => sum + Number(row.amount),
     0,
   );
-  if (parsed.amount < allocated) {
+  if (amountIdr < allocated) {
     return { error: ctx.copy.budget.donationBelowAllocation };
   }
 
   const { error } = await ctx.supabase
     .from("wedding_donations")
-    .update({ donor_name: parsed.donorName, amount: parsed.amount })
+    .update({ donor_name: parsed.donorName, amount: amountIdr })
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: actionError(error, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "donation",
+    recordId: id,
+    amounts: amountConversion,
+  });
 
   revalidateWedding("/wedding/budget");
   return { success: ctx.copy.form.saved };

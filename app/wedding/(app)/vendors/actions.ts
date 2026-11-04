@@ -15,6 +15,10 @@ import {
 } from "@/lib/wedding/uploads";
 import { linkVendorOption } from "@/lib/wedding/vendor-option-selection";
 import {
+  convertInputAmounts,
+  recordFinancialEntry,
+} from "@/lib/currency/action";
+import {
   enumValue,
   isRealDate,
   isUuid,
@@ -30,6 +34,12 @@ async function context() {
   const ctx = await getActionContext();
   if (!ctx) redirect("/wedding/login");
   return ctx;
+}
+
+function ratesError(locale: "en" | "id") {
+  return locale === "en"
+    ? "Exchange rates are unavailable right now. Nothing was saved; please try again shortly."
+    : "Kurs mata uang sedang tidak tersedia. Belum ada yang disimpan; coba lagi sebentar lagi.";
 }
 
 type Ctx = Awaited<ReturnType<typeof context>>;
@@ -120,6 +130,15 @@ export async function createVendorAction(
     if (!payment.ok) return { error: payment.error };
   }
 
+  const priceConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.agreed_price ?? 0],
+  );
+  if (!priceConversion) return { error: ratesError(ctx.locale) };
+  const agreedPriceIdr =
+    parsed.values.agreed_price === null ? null : priceConversion.idr[0];
+
   const { collaboration_completed, ...vendorFields } = parsed.values;
   const completedAt =
     parsed.values.agreed_price === 0 && collaboration_completed
@@ -165,6 +184,7 @@ export async function createVendorAction(
   const values = {
     wedding_id: ctx.session.wedding.id,
     ...vendorFields,
+    agreed_price: agreedPriceIdr,
     collaboration_completed_at: completedAt,
     funded_by_donor: statusIntent === "donor",
     selection_status: "terpilih" as const,
@@ -189,12 +209,22 @@ export async function createVendorAction(
   if (error || !created) {
     return { error: actionError(error ?? { message: "" }, ctx.copy) };
   }
-  await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
-    vendorId: created.id,
-    label: parsed.values.name,
-    amount: parsed.values.agreed_price,
-    fundedByDonor: statusIntent === "donor",
-  });
+  // Audit row and donor-allocation sync are independent; run them together so
+  // Save does not pay for two sequential round trips.
+  await Promise.all([
+    recordFinancialEntry(ctx.supabase, {
+      userId: ctx.session.userId,
+      module: "vendor",
+      recordId: created.id,
+      amounts: priceConversion,
+    }),
+    syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
+      vendorId: created.id,
+      label: parsed.values.name,
+      amount: agreedPriceIdr ?? 0,
+      fundedByDonor: statusIntent === "donor",
+    }),
+  ]);
 
   if (hasInitialPayment) {
     formData.set("vendorId", created.id);
@@ -278,6 +308,15 @@ export async function updateVendorAction(
 
   if (!existing) return { error: ctx.copy.errors.notFound };
 
+  const priceConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.agreed_price ?? 0],
+  );
+  if (!priceConversion) return { error: ratesError(ctx.locale) };
+  const agreedPriceIdr =
+    parsed.values.agreed_price === null ? null : priceConversion.idr[0];
+
   const { collaboration_completed, ...vendorFields } = parsed.values;
   const fundingSource = text(formData, "fundingSource") || "cash";
   const fundedByDonor = fundingSource === "donor";
@@ -303,6 +342,7 @@ export async function updateVendorAction(
 
   const values = {
     ...vendorFields,
+    agreed_price: agreedPriceIdr,
     collaboration_completed_at: completedAt,
     funded_by_donor: fundedByDonor,
   };
@@ -323,12 +363,20 @@ export async function updateVendorAction(
   }
 
   if (error) return { error: actionError(error, ctx.copy) };
-  await syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
-    vendorId: id,
-    label: parsed.values.name,
-    amount: parsed.values.agreed_price,
-    fundedByDonor,
-  });
+  await Promise.all([
+    recordFinancialEntry(ctx.supabase, {
+      userId: ctx.session.userId,
+      module: "vendor",
+      recordId: id,
+      amounts: priceConversion,
+    }),
+    syncDonorAllocationForCost(ctx.supabase, ctx.session.wedding.id, {
+      vendorId: id,
+      label: parsed.values.name,
+      amount: agreedPriceIdr ?? 0,
+      fundedByDonor,
+    }),
+  ]);
 
   const vendorOptionId = text(formData, "vendorOptionId");
   if (vendorOptionId && isUuid(vendorOptionId)) {
@@ -610,6 +658,13 @@ export async function createVendorPaymentAction(
     if (existing) return { success: ctx.copy.form.saved };
   }
 
+  const amountConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.amount],
+  );
+  if (!amountConversion) return { error: ratesError(ctx.locale) };
+
   const paymentId = crypto.randomUUID();
   const files = readProofFiles(formData);
   const upload = await uploadProofFiles(ctx, paymentId, files);
@@ -622,6 +677,7 @@ export async function createVendorPaymentAction(
     wedding_id: weddingId,
     vendor_id: vendorId,
     ...parsed.values,
+    amount: amountConversion.idr[0],
     // First file is a legacy fallback; the proof table remains authoritative.
     proof_path: upload.proofs[0]?.path ?? null,
     idempotency_key: idempotencyKey,
@@ -634,6 +690,13 @@ export async function createVendorPaymentAction(
     }
     return { error: actionError(error, ctx.copy) };
   }
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "vendor_payment",
+    recordId: paymentId,
+    amounts: amountConversion,
+  });
 
   if (upload.proofs.length > 0) {
     const { error: proofErrorResult } = await ctx.supabase
@@ -687,6 +750,13 @@ export async function updateVendorPaymentAction(
   const parsed = readPayment(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const amountConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.amount],
+  );
+  if (!amountConversion) return { error: ratesError(ctx.locale) };
+
   const files = readProofFiles(formData);
   const upload = await uploadProofFiles(ctx, paymentId, files);
   if (!upload.ok) return { error: upload.error };
@@ -718,7 +788,7 @@ export async function updateVendorPaymentAction(
 
   const { error } = await ctx.supabase
     .from("vendor_payments")
-    .update(parsed.values)
+    .update({ ...parsed.values, amount: amountConversion.idr[0] })
     .eq("id", paymentId)
     .eq("wedding_id", weddingId);
 
@@ -733,6 +803,13 @@ export async function updateVendorPaymentAction(
     await removeStoredFiles(ctx, uploadedPaths);
     return { error: actionError(error, ctx.copy) };
   }
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "vendor_payment",
+    recordId: paymentId,
+    amounts: amountConversion,
+  });
 
   revalidateVendorPages();
   return { success: ctx.copy.form.saved };

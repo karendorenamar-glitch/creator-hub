@@ -1,5 +1,6 @@
 "use client";
 
+import { useMoney } from "@/components/wedding/currency-provider";
 import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useState } from "react";
 import { CalendarDays, FileText, Plus } from "lucide-react";
@@ -50,6 +51,7 @@ export function VendorPaymentSection({
     null,
   );
   const [kind, setKind] = useState<"dp" | "lanjutan" | "pelunasan">("dp");
+  const money = useMoney();
   const [amount, setAmount] = useState("");
 
   useEffect(() => {
@@ -169,7 +171,7 @@ export function VendorPaymentSection({
             </Field>
 
             <Field
-              label={copy.vendors.paymentAmount}
+              label={`${copy.vendors.paymentAmount} (${money.currency})`}
               htmlFor="vendor-payment-amount"
             >
               <input

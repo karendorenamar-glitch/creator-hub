@@ -1,5 +1,9 @@
 "use server";
 
+import {
+  convertInputAmounts,
+  recordFinancialEntry,
+} from "@/lib/currency/action";
 import { redirect } from "next/navigation";
 import {
   actionError,
@@ -72,6 +76,13 @@ function optionError(error: { code?: string; message: string }, copy: ModuleCopy
   return actionError(error, copy);
 }
 
+
+function ratesError(locale: "en" | "id") {
+  return locale === "en"
+    ? "Exchange rates are unavailable right now. Nothing was saved; please try again shortly."
+    : "Kurs mata uang sedang tidak tersedia. Belum ada yang disimpan; coba lagi sebentar lagi.";
+}
+
 export async function createVendorOptionAction(
   _prev: ActionResult,
   formData: FormData,
@@ -91,12 +102,32 @@ export async function createVendorOptionAction(
     return { error: ctx.copy.vendors.optionLimit };
   }
 
-  const { error } = await ctx.supabase.from("vendor_options").insert({
-    wedding_id: ctx.session.wedding.id,
-    ...parsed.values,
-  });
+  const priceConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.reference_price ?? 0],
+  );
+  if (!priceConversion) return { error: ratesError(ctx.locale) };
 
-  if (error) return { error: optionError(error, ctx.copy) };
+  const { data: created, error } = await ctx.supabase
+    .from("vendor_options")
+    .insert({
+      wedding_id: ctx.session.wedding.id,
+      ...parsed.values,
+      reference_price:
+        parsed.values.reference_price === null ? null : priceConversion.idr[0],
+    })
+    .select("id")
+    .single();
+
+  if (error || !created) return { error: optionError(error ?? { message: "" }, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "vendor_option",
+    recordId: created.id,
+    amounts: priceConversion,
+  });
 
   revalidateWedding("/wedding/vendors");
   return { success: ctx.copy.form.saved };
@@ -113,13 +144,31 @@ export async function updateVendorOptionAction(
   const parsed = readOption(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
+  const priceConversion = await convertInputAmounts(
+    ctx.supabase,
+    ctx.session.userId,
+    [parsed.values.reference_price ?? 0],
+  );
+  if (!priceConversion) return { error: ratesError(ctx.locale) };
+
   const { error } = await ctx.supabase
     .from("vendor_options")
-    .update(parsed.values)
+    .update({
+      ...parsed.values,
+      reference_price:
+        parsed.values.reference_price === null ? null : priceConversion.idr[0],
+    })
     .eq("id", id)
     .eq("wedding_id", ctx.session.wedding.id);
 
   if (error) return { error: optionError(error, ctx.copy) };
+
+  await recordFinancialEntry(ctx.supabase, {
+    userId: ctx.session.userId,
+    module: "vendor_option",
+    recordId: id,
+    amounts: priceConversion,
+  });
 
   revalidateWedding("/wedding/vendors");
   return { success: ctx.copy.form.saved };

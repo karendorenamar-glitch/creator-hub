@@ -1,7 +1,6 @@
 "use client";
 
 import { Money } from "@/components/wedding/money";
-import { formatIDR } from "@/lib/wedding/format";
 import { useMemo, useState } from "react";
 import { History, Pencil } from "lucide-react";
 import { deleteVendorAction } from "@/app/wedding/(app)/vendors/actions";
@@ -63,14 +62,14 @@ function VendorRow({
         <div className="flex flex-wrap items-center gap-2">
           <div className="text-right">
             <p className="text-sm font-medium text-ink">
-              {price === null ? copy.vendors.priceUnknown : formatIDR(price)}
+              {price === null ? copy.vendors.priceUnknown : <Money value={price} />}
             </p>
             <p className="text-xs text-ink-soft">
               {copy.vendors.totalPaid}: <Money value={summary.totalPaid} />
             </p>
             <p className="text-xs text-ink-soft">
               {copy.vendors.remainingPayment}:{" "}
-              {price === null ? "—" : formatIDR(summary.remainingPayment)}
+              {price === null ? "—" : <Money value={summary.remainingPayment} />}
             </p>
             {summary.overpayment > 0 ? (
               <p className="text-xs font-medium text-amber-700">
