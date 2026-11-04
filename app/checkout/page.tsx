@@ -24,8 +24,8 @@ const ERRORS: Record<string, string> = {
   upload: "Upload gagal. Coba lagi.",
   save: "Pembayaran gagal disimpan. Coba lagi.",
   duplicate: "Sudah ada pembayaran yang sedang diproses.",
-  payerEmail: "Email PayPal tidak valid.",
-  paypalTxn: "ID transaksi PayPal tidak valid (minimal 6 karakter).",
+  payerEmail: "Invalid PayPal email address.",
+  paypalTxn: "Invalid PayPal transaction ID (at least 6 characters).",
 };
 
 export default async function CheckoutPage({
@@ -51,6 +51,8 @@ export default async function CheckoutPage({
   const active = account.hasEntitlement;
   const pendingReview = payment?.status === "pending_review";
   const justSubmitted = sent === "1";
+  const isPaypalPayment = payment?.method === "paypal";
+
 
   return (
     <div className="wedding-app wedding-surface min-h-screen px-4 py-10 text-cocoa sm:px-6">
@@ -87,31 +89,64 @@ export default async function CheckoutPage({
         ) : pendingReview ? (
           <Card className="max-w-2xl space-y-3 text-sm">
             <Badge tone={justSubmitted ? "success" : "warning"}>
-              {justSubmitted ? "Bukti pembayaran terkirim" : "Menunggu verifikasi"}
+              {isPaypalPayment
+                ? justSubmitted
+                  ? "Payment submitted"
+                  : "Awaiting verification"
+                : justSubmitted
+                  ? "Bukti pembayaran terkirim"
+                  : "Menunggu verifikasi"}
             </Badge>
-            <PaymentVerificationNotice />
+            {isPaypalPayment ? (
+              <div className="space-y-2 text-sm text-cocoa/70">
+                <p className="font-medium text-cocoa">
+                  Please wait, your payment is being verified.
+                </p>
+                <p>
+                  We received your PayPal transaction ID. Our team verifies it
+                  before activating lifetime access.
+                </p>
+                <p>
+                  Business hours: {PAYMENT_CONFIG.verification.hours} (GMT+7).
+                  Requests outside these hours are reviewed on the next
+                  business day.
+                </p>
+              </div>
+            ) : (
+              <PaymentVerificationNotice />
+            )}
             <p className="text-cocoa/55">
-              Referensi <strong>{payment.reference}</strong> ·{" "}
-              {payment.sender_name} · {formatIDR(payment.amount_idr)} ·{" "}
-              {formatDateTime(payment.submitted_at, locale)}
+              Reference <strong>{payment.reference}</strong> ·{" "}
+              {payment.sender_name} ·{" "}
+              {isPaypalPayment
+                ? `USD ${Number(payment.amount_usd ?? 0).toFixed(2)}`
+                : formatIDR(payment.amount_idr)}{" "}
+              · {formatDateTime(payment.submitted_at, locale)}
             </p>
             <Link
               href="/checkout/status"
               className="inline-flex text-sm font-medium text-rosewood underline underline-offset-4"
             >
-              Lihat status pembayaran
+              {isPaypalPayment ? "View payment status" : "Lihat status pembayaran"}
             </Link>
           </Card>
         ) : (
           <>
             {payment?.status === "rejected" ? (
               <Card className="max-w-2xl space-y-1 border-rose-100 bg-rose-50/60 text-sm">
-                <Badge tone="warning">Pembayaran ditolak</Badge>
+                <Badge tone="warning">
+                  {isPaypalPayment ? "Payment rejected" : "Pembayaran ditolak"}
+                </Badge>
                 <p className="text-cocoa/75">
-                  {payment.rejection_reason ?? "Bukti belum dapat diverifikasi."}
+                  {payment.rejection_reason ??
+                    (isPaypalPayment
+                      ? "We could not verify this PayPal transaction."
+                      : "Bukti belum dapat diverifikasi.")}
                 </p>
                 <p className="text-xs text-cocoa/55">
-                  Silakan ajukan bukti transfer baru.
+                  {isPaypalPayment
+                    ? "Please submit a valid PayPal transaction ID."
+                    : "Silakan ajukan bukti transfer baru."}
                 </p>
               </Card>
             ) : null}
@@ -238,19 +273,19 @@ export default async function CheckoutPage({
 
               <div className="space-y-1.5 rounded-2xl border border-blush/60 bg-white/70 p-4">
                 <p className="text-sm font-medium">
-                  Sudah bayar lewat PayPal?
+                  Already paid with PayPal?
                 </p>
                 <p className="text-xs leading-relaxed text-cocoa/65">
-                  Salin <strong>Transaction ID</strong> dari email/resi PayPal,
-                  lalu kirim di bawah agar admin bisa memverifikasi pembayaranmu.
-                  Akses tidak aktif otomatis.
+                  Copy the <strong>Transaction ID</strong> from your PayPal
+                  receipt or email, then submit it below so we can verify your
+                  payment. Access is not activated automatically.
                 </p>
               </div>
 
               <form action={submitPaypalPaymentAction} className="space-y-3">
                 <div className="space-y-1.5">
                   <label htmlFor="payerEmail" className="text-sm font-medium">
-                    Email PayPal
+                    PayPal email
                   </label>
                   <input
                     id="payerEmail"
@@ -274,33 +309,34 @@ export default async function CheckoutPage({
                     required
                     minLength={6}
                     maxLength={64}
-                    placeholder="Contoh: 8AB12345CD678901E"
+                    placeholder="Example: 8AB12345CD678901E"
                     className="w-full rounded-xl border border-blush bg-white px-3.5 py-2.5 text-sm outline-none focus:border-rosewood"
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <label htmlFor="payerName" className="text-sm font-medium">
-                    Nama di akun PayPal (opsional)
+                    PayPal account name (optional)
                   </label>
                   <input
                     id="payerName"
                     name="payerName"
                     maxLength={120}
-                    placeholder="Nama pemilik akun PayPal"
+                    placeholder="PayPal account holder name"
                     className="w-full rounded-xl border border-blush bg-white px-3.5 py-2.5 text-sm outline-none focus:border-rosewood"
                   />
                 </div>
 
                 <SubmitButton
-                  label="Kirim ID Transaksi PayPal"
-                  pendingLabel="Mengirim…"
+                  label="Submit PayPal transaction ID"
+                  pendingLabel="Submitting…"
                 />
 
                 <p className="text-xs leading-relaxed text-cocoa/50">
-                  Admin memverifikasi transaksi di akun PayPal Business. Akses
-                  seumur hidup aktif hanya setelah disetujui, biasanya pada jam
-                  kerja {PAYMENT_CONFIG.verification.hours}.
+                  We verify the transaction in our PayPal Business account.
+                  Lifetime access is activated only after approval, usually
+                  within business hours {PAYMENT_CONFIG.verification.hours}
+                  (GMT+7).
                 </p>
               </form>
             </Card>
