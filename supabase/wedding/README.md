@@ -31,6 +31,10 @@ or data migration is required. `039_split_plus_ones.sql` is superseded and
 must not be applied (see `APPLY_039.md`). `040_debt_tracker.sql` is the
 additive private Debt Tracker migration; review it and run it manually only
 after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
+`047_financial_entry_currency.sql` adds `financial_entries`, an additive audit
+table that keeps the amount and currency a customer typed plus the FX rate used.
+Existing IDR columns stay the base; no historical row is converted.
+
 `046_display_currency.sql` adds `customer_currency_preferences` for the dashboard
 display currency (IDR/USD/MYR/SGD/AUD/GBP/EUR/JPY). Display only: checkout and
 payment currency never change.
