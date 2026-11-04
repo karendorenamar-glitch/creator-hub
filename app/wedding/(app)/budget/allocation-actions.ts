@@ -1,5 +1,6 @@
 "use server";
 
+import { submittedCurrencyIsStale } from "@/lib/currency/action";
 import { redirect } from "next/navigation";
 import {
   actionError,
@@ -94,6 +95,21 @@ export async function createDonationAllocationAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const parsed = readAllocation(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
@@ -138,6 +154,21 @@ export async function updateDonationAllocationAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
   const parsed = readAllocation(formData, ctx.copy);

@@ -1,5 +1,7 @@
 "use client";
 
+import { CurrencyField } from "@/components/wedding/currency-field";
+import { useMoney } from "@/components/wedding/currency-provider";
 import { useActionState } from "react";
 import { Loader2, Save } from "lucide-react";
 import {
@@ -22,7 +24,7 @@ export type WeddingFormValues = {
   weddingDate: string;
   location: string;
   estimatedGuests: string;
-  totalBudget: string;
+  totalBudget: number;
   notes?: string;
 };
 
@@ -39,11 +41,13 @@ export function WeddingDetailsForm({
   next?: string;
   refCode?: string;
 }) {
+  const money = useMoney();
   const action = mode === "create" ? createWeddingAction : updateWeddingAction;
   const [state, formAction, pending] = useActionState(action, initial);
 
   return (
     <form action={formAction} className="space-y-5">
+      <CurrencyField />
       {next ? <input type="hidden" name="next" value={next} /> : null}
       {refCode ? <input type="hidden" name="ref" value={refCode} /> : null}
       {state?.error ? (
@@ -130,16 +134,20 @@ export function WeddingDetailsForm({
         </div>
         <div className="space-y-1.5">
           <label htmlFor="totalBudget" className={labelClass}>
-            {copy.onboarding.totalBudget}
+            {copy.onboarding.totalBudget} ({money.currency})
           </label>
           <input
             id="totalBudget"
             name="totalBudget"
             type="number"
             min={0}
-            step={1000}
-            inputMode="numeric"
-            defaultValue={values?.totalBudget ?? ""}
+            step={money.currency === "IDR" || money.currency === "JPY" ? 1000 : 0.01}
+            inputMode="decimal"
+            defaultValue={
+              values?.totalBudget !== undefined
+                ? money.toInput(values.totalBudget)
+                : ""
+            }
             className={fieldClass}
           />
         </div>

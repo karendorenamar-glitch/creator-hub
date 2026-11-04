@@ -1,5 +1,7 @@
 "use client";
 
+import { CurrencyField } from "@/components/wedding/currency-field";
+import { useCurrencyReset } from "@/lib/currency/use-currency-reset";
 import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useState } from "react";
 import { Heart, Pencil, Plus } from "lucide-react";
@@ -44,6 +46,7 @@ function DonationFormModal({
   const money = useMoney();
   const action = donation ? updateDonationAction : createDonationAction;
   const [state, formAction, pending] = useActionState(action, null);
+  useCurrencyReset(onClose);
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -56,6 +59,7 @@ function DonationFormModal({
       title={donation ? copy.budget.editDonation : copy.budget.addDonation}
     >
       <form action={formAction} className="space-y-4">
+        <CurrencyField />
         {donation ? <input type="hidden" name="id" value={donation.id} /> : null}
         <FormAlert error={state?.error} />
 
@@ -171,6 +175,7 @@ function AllocationForm({
 
   return (
     <form action={formAction} className="space-y-3">
+      <CurrencyField />
       {allocation ? <input type="hidden" name="id" value={allocation.id} /> : null}
       <input type="hidden" name="donationId" value={donation.id} />
       <FormAlert error={state?.error} success={state?.success} />
@@ -256,6 +261,12 @@ function AllocationModal({
   copy: ModuleCopy;
 }) {
   const [editing, setEditing] = useState<DonationAllocation | null>(null);
+  // Close the allocation form when the display currency changes so an amount
+  // typed under the old currency is never submitted under the new one.
+  useCurrencyReset(() => {
+    setEditing(null);
+    onClose();
+  });
   if (!donation) return null;
 
   return (

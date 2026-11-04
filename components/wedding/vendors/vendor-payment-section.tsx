@@ -1,5 +1,6 @@
 "use client";
 
+import { CurrencyField } from "@/components/wedding/currency-field";
 import { useMoney } from "@/components/wedding/currency-provider";
 import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useState } from "react";
@@ -147,6 +148,7 @@ export function VendorPaymentSection({
 
       {showForm ? (
         <form action={formAction} className="space-y-3 border-t border-[#EAE0D7] pt-4">
+          <CurrencyField />
           <input type="hidden" name="vendorId" value={vendor.id} />
           <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
           <FormAlert error={state?.error} />

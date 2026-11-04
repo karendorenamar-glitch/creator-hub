@@ -1,5 +1,7 @@
 "use client";
 
+import { CurrencyField } from "@/components/wedding/currency-field";
+import { useCurrencyReset } from "@/lib/currency/use-currency-reset";
 import { Money } from "@/components/wedding/money";
 import { useActionState, useEffect, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
@@ -36,6 +38,7 @@ function OtherCostFormModal({
   const action = cost ? updateOtherCostAction : createOtherCostAction;
   const money = useMoney();
   const [state, formAction, pending] = useActionState(action, null);
+  useCurrencyReset(onClose);
   const initialStatus =
     cost?.fundedByDonor
       ? "donor"
@@ -59,6 +62,7 @@ function OtherCostFormModal({
       title={cost ? copy.budget.editOtherCost : copy.budget.addOtherCost}
     >
       <form action={formAction} className="space-y-4">
+        <CurrencyField />
         {cost?.id ? <input type="hidden" name="id" value={cost.id} /> : null}
         <FormAlert error={state?.error} />
 

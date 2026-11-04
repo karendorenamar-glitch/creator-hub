@@ -1,5 +1,7 @@
 "use client";
 
+import { CurrencyField } from "@/components/wedding/currency-field";
+import { useCurrencyReset } from "@/lib/currency/use-currency-reset";
 import { formatWeddingDate } from "@/lib/wedding/format";
 import { useMoney } from "@/components/wedding/currency-provider";
 import { Money } from "@/components/wedding/money";
@@ -71,6 +73,7 @@ export function PaymentFormModal({
 }) {
   const action = payment ? updateVendorPaymentAction : createVendorPaymentAction;
   const [state, formAction, pending] = useActionState(action, null);
+  useCurrencyReset(onClose);
   const money = useMoney();
   const [amount, setAmount] = useState<string>(
     payment ? money.toInput(payment.amount) : "",
@@ -153,6 +156,7 @@ export function PaymentFormModal({
 
         {!readOnly && !historyOnly ? (
           <form action={formAction} className="space-y-4">
+            <CurrencyField />
             <input type="hidden" name="vendorId" value={vendor?.id ?? ""} />
             {payment ? (
               <input type="hidden" name="paymentId" value={payment.id} />

@@ -1,5 +1,7 @@
 "use client";
 
+import { CurrencyField } from "@/components/wedding/currency-field";
+import { useCurrencyReset } from "@/lib/currency/use-currency-reset";
 import { useActionState, useEffect } from "react";
 import {
   createExpenseAction,
@@ -34,6 +36,7 @@ export function ExpenseFormModal({
   const action = expense ? updateExpenseAction : createExpenseAction;
   const money = useMoney();
   const [state, formAction, pending] = useActionState(action, null);
+  useCurrencyReset(onClose);
 
   useEffect(() => {
     if (state?.success) onClose();
@@ -47,6 +50,7 @@ export function ExpenseFormModal({
       title={expense ? copy.budget.editExpense : copy.budget.addExpense}
     >
       <form action={formAction} className="space-y-4">
+        <CurrencyField />
         {expense ? <input type="hidden" name="id" value={expense.id} /> : null}
         <FormAlert error={state?.error} />
 

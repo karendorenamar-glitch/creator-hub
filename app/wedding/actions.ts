@@ -13,6 +13,10 @@ import {
 import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
 import { isCountryCode } from "@/lib/wedding/countries";
 import { isCurrencyCode } from "@/lib/currency/currencies";
+import {
+  convertInputAmounts,
+  submittedCurrencyIsStale,
+} from "@/lib/currency/action";
 import { saveCustomerCountry } from "@/lib/wedding/country";
 
 export type FormState =
@@ -237,33 +241,46 @@ export async function signUpAction(
 }
 
 
-export async function saveDisplayCurrencyAction(
-  formData: FormData,
-): Promise<void> {
-  const user = await getCurrentUser();
-  if (!user) redirect("/wedding/login?next=/wedding/settings");
+export type CurrencyUpdateResult =
+  | { ok: true; currency: string }
+  | { ok: false; error: string };
 
-  const currency = text(formData, "currency");
-  if (!isCurrencyCode(currency)) {
-    redirect("/wedding/settings?currency=invalid");
+/**
+ * Persists the display-currency preference and nothing else. Base IDR amounts
+ * are never rewritten here: the preference only changes how they render.
+ *
+ * Returns a result instead of redirecting so the client store can keep the
+ * chosen currency, roll back on failure, and refresh without a page reload.
+ */
+export async function setDisplayCurrencyAction(
+  nextCurrency: string,
+): Promise<CurrencyUpdateResult> {
+  const user = await getCurrentUser();
+  if (!user) {
+    return { ok: false, error: "Sesi berakhir. Masuk lagi untuk mengganti mata uang." };
+  }
+
+  if (!isCurrencyCode(nextCurrency)) {
+    return { ok: false, error: "Mata uang tidak dikenal." };
   }
 
   const supabase = await createWeddingClient();
   const { error } = await supabase
     .from("customer_currency_preferences")
     .upsert(
-      { user_id: user.id, display_currency: currency },
+      { user_id: user.id, display_currency: nextCurrency },
       { onConflict: "user_id" },
     );
 
   if (error) {
-    console.error("[saveDisplayCurrencyAction]", error.code, error.message);
-    redirect("/wedding/settings?currency=error");
+    console.error("[setDisplayCurrencyAction]", error.code, error.message);
+    return { ok: false, error: "Mata uang gagal disimpan. Coba lagi." };
   }
 
   revalidatePath("/wedding", "layout");
-  redirect("/wedding/settings?currency=saved");
+  return { ok: true, currency: nextCurrency };
 }
+
 
 /**
  * Sends a Supabase recovery email. The link always comes back to
@@ -320,23 +337,43 @@ export async function createWeddingAction(
   const weddingDate = text(formData, "weddingDate");
   const location = text(formData, "location");
   const estimatedGuests = parseCount(text(formData, "estimatedGuests"));
-  const totalBudget = parseAmount(text(formData, "totalBudget"));
+  const displayBudget = parseAmount(text(formData, "totalBudget"));
 
   if (!partnerOne) return { error: copy.onboarding.required };
   if (!partnerTwo) return { error: copy.onboarding.partnerTwoRequired };
-  if (totalBudget === null) return { error: copy.onboarding.budgetInvalid };
+  if (displayBudget === null) return { error: copy.onboarding.budgetInvalid };
   if (estimatedGuests === null && text(formData, "estimatedGuests")) {
     return { error: copy.onboarding.guestsInvalid };
   }
 
   const supabase = await createWeddingClient();
+  const user = await getCurrentUser();
+  if (!user) redirect("/wedding/login");
+
+  if (
+    await submittedCurrencyIsStale(
+      supabase,
+      user.id,
+      text(formData, "displayCurrency"),
+    )
+  ) {
+    return { error: copy.common.genericError };
+  }
+
+
+  // The typed amount is in the customer's display currency; store the IDR base.
+  const budgetConversion = await convertInputAmounts(supabase, user.id, [
+    displayBudget,
+  ]);
+  if (!budgetConversion) return { error: copy.onboarding.budgetInvalid };
+
   const { error } = await supabase.rpc("create_wedding", {
     p_partner_one_name: partnerOne,
     p_partner_two_name: partnerTwo || null,
     p_wedding_date: weddingDate || null,
     p_location: location || null,
     p_estimated_guest_count: estimatedGuests,
-    p_total_budget: totalBudget,
+    p_total_budget: budgetConversion.idr[0],
   });
 
   if (error) {
@@ -365,12 +402,12 @@ export async function updateWeddingAction(
   const location = text(formData, "location");
   const notes = text(formData, "notes");
   const estimatedGuests = parseCount(text(formData, "estimatedGuests"));
-  const totalBudget = parseAmount(text(formData, "totalBudget"));
+  const displayBudget = parseAmount(text(formData, "totalBudget"));
 
   if (!partnerOne) return { error: copy.settings.partnerOneRequired };
   if (!partnerTwo) return { error: copy.onboarding.partnerTwoRequired };
 
-  if (totalBudget === null) return { error: copy.settings.budgetInvalid };
+  if (displayBudget === null) return { error: copy.settings.budgetInvalid };
   if (estimatedGuests === null && text(formData, "estimatedGuests")) {
     return { error: copy.settings.guestsInvalid };
   }
@@ -379,6 +416,24 @@ export async function updateWeddingAction(
   }
 
   const supabase = await createWeddingClient();
+
+  if (
+    await submittedCurrencyIsStale(
+      supabase,
+      session.userId,
+      text(formData, "displayCurrency"),
+    )
+  ) {
+    return { error: copy.common.genericError };
+  }
+
+  const budgetConversion = await convertInputAmounts(
+    supabase,
+    session.userId,
+    [displayBudget],
+  );
+  if (!budgetConversion) return { error: copy.settings.budgetInvalid };
+
   const { error } = await supabase
     .from("weddings")
     .update({
@@ -388,7 +443,7 @@ export async function updateWeddingAction(
       location: location || null,
       notes: notes || null,
       estimated_guest_count: estimatedGuests,
-      total_budget: totalBudget ?? 0,
+      total_budget: budgetConversion.idr[0],
     })
     .eq("id", session.wedding.id);
 

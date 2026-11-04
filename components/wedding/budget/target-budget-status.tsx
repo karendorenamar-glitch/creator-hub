@@ -1,6 +1,9 @@
+"use client";
+
+import type { ReactNode } from "react";
 import { Card } from "@/components/wedding/ui";
+import { Money } from "@/components/wedding/money";
 import type { TargetBudgetStatus } from "@/lib/wedding/budget-calc";
-import { formatIDR } from "@/lib/wedding/format";
 import type { ModuleCopy } from "@/lib/wedding/module-copy";
 
 function statusLabel(status: TargetBudgetStatus, copy: ModuleCopy) {
@@ -44,16 +47,24 @@ export function TargetBudgetStatusCard({
   missingAgreedPriceCount: number;
   copy: ModuleCopy;
 }) {
-  let detail: string;
+  let detail: ReactNode;
   if (status === "under" && difference !== null) {
-    detail = copy.budget.targetUnderDetail.replace(
-      "{amount}",
-      formatIDR(difference),
+    const [before, after] = copy.budget.targetUnderDetail.split("{amount}");
+    detail = (
+      <>
+        {before}
+        <Money value={difference} />
+        {after}
+      </>
     );
   } else if (status === "over" && difference !== null) {
-    detail = copy.budget.targetOverDetail.replace(
-      "{amount}",
-      formatIDR(difference),
+    const [before, after] = copy.budget.targetOverDetail.split("{amount}");
+    detail = (
+      <>
+        {before}
+        <Money value={difference} />
+        {after}
+      </>
     );
   } else if (status === "on") {
     detail = copy.budget.targetOnDetail;

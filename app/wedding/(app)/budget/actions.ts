@@ -1,5 +1,7 @@
 "use server";
 
+import { submittedCurrencyIsStale } from "@/lib/currency/action";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   actionError,
@@ -56,6 +58,21 @@ export async function updateBudgetAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const raw = text(formData, "totalBudget");
   // Empty means "unset", stored as 0. Reject negatives/scientific notation.
   const amount = raw === "" ? 0 : parseWholeRupiah(raw, { allowZero: true });
@@ -72,12 +89,6 @@ export async function updateBudgetAction(
   let chosen: CurrencyCode | null = null;
 
   if (!alreadyChosen && isCurrencyCode(submitted)) {
-    const saved = await saveCurrencyPreference(
-      ctx.supabase,
-      ctx.session.userId,
-      submitted,
-    );
-    if (!saved) return { error: ctx.copy.errors.generic };
     chosen = submitted;
   }
 
@@ -85,6 +96,21 @@ export async function updateBudgetAction(
     ? await convertAmountsWithCurrency(ctx.supabase, chosen, [amount])
     : await convertInputAmounts(ctx.supabase, ctx.session.userId, [amount]);
   if (!converted) return { error: ratesError(ctx.locale) };
+
+  // Persist the first choice only after the amount converted cleanly: a failed
+  // conversion must not lock the customer into a currency with no valid base.
+  if (chosen) {
+    const saved = await saveCurrencyPreference(
+      ctx.supabase,
+      ctx.session.userId,
+      chosen,
+    );
+    if (!saved) return { error: ctx.copy.errors.generic };
+    // The display currency lives in the app layout, so the layout has to be
+    // invalidated for the reactive store to receive the first choice without a
+    // page reload.
+    revalidatePath("/wedding", "layout");
+  }
 
   const { error } = await ctx.supabase
     .from("weddings")
@@ -109,6 +135,21 @@ export async function createCategoryAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const name = text(formData, "name").slice(0, 80);
   const planned = parseMoney(text(formData, "plannedAmount")) ?? 0;
 
@@ -148,6 +189,21 @@ export async function updateCategoryAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const id = text(formData, "id");
   const name = text(formData, "name").slice(0, 80);
   const planned = parseMoney(text(formData, "plannedAmount")) ?? 0;
@@ -253,6 +309,21 @@ export async function createExpenseAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const parsed = readExpense(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
@@ -295,6 +366,21 @@ export async function updateExpenseAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 
@@ -409,6 +495,21 @@ export async function createOtherCostAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const parsed = readOtherCost(formData, ctx.copy);
   if (!parsed.ok) return { error: parsed.error };
 
@@ -470,6 +571,21 @@ export async function updateOtherCostAction(
   formData: FormData,
 ): Promise<ActionResult> {
   const ctx = await context();
+  const submittedCurrency = text(formData, "displayCurrency");
+  if (
+    await submittedCurrencyIsStale(
+      ctx.supabase,
+      ctx.session.userId,
+      submittedCurrency,
+    )
+  ) {
+    return {
+      error:
+        ctx.locale === "en"
+          ? "The display currency changed. Reopen this form and try again."
+          : "Mata uang tampilan berubah. Buka ulang form ini lalu coba lagi.",
+    };
+  }
   const id = text(formData, "id");
   if (!isUuid(id)) return { error: ctx.copy.errors.notFound };
 

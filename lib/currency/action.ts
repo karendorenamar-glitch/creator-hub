@@ -109,3 +109,24 @@ export async function convertAmountsWithCurrency(
     idr,
   };
 }
+
+/**
+ * True when the form was rendered with a different display currency than the
+ * one stored right now (another tab changed it, or the page is stale).
+ * No stored preference means nothing can be stale.
+ */
+export async function submittedCurrencyIsStale(
+  supabase: SupabaseClient,
+  userId: string,
+  submitted: string | null | undefined,
+): Promise<boolean> {
+  if (!submitted) return false;
+  const { data } = await supabase
+    .from("customer_currency_preferences")
+    .select("display_currency")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const stored = (data as { display_currency?: string } | null)?.display_currency;
+  if (!stored) return false;
+  return stored !== submitted;
+}

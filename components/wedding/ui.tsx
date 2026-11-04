@@ -55,7 +55,7 @@ export function StatCard({
   children,
 }: {
   label: string;
-  value: string;
+  value: ReactNode;
   hint?: string;
   icon?: ReactNode;
   tone?: "blush" | "baby" | "champagne" | "neutral";

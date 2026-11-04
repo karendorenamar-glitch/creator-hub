@@ -1,3 +1,6 @@
+import { CurrencyConversionNote } from "@/components/wedding/currency-note";
+import type { ReactNode } from "react";
+import { Money } from "@/components/wedding/money";
 import { redirect } from "next/navigation";
 import { DonationManager } from "@/components/wedding/budget/donation-manager";
 import { OtherCostManager } from "@/components/wedding/budget/other-cost-manager";
@@ -9,11 +12,9 @@ import { VendorList } from "@/components/wedding/vendors/vendor-list";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { loadVendorsPageData } from "@/lib/wedding/budget-data";
 import {
-  getMoneyFormatter,
   hasStoredCurrencyPreference,
 } from "@/lib/currency/server";
 import { createWeddingClient } from "@/lib/wedding/supabase";
-import { loadCustomerCountry } from "@/lib/wedding/country";
 import { moduleCopy } from "@/lib/wedding/module-copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
 import type { VendorOptionPrefill } from "@/lib/wedding/vendor-options";
@@ -38,13 +39,26 @@ function targetStatusDetail(
   difference: number | null,
   missingAgreedPriceCount: number,
   copy: typeof moduleCopy.id,
-  format: (value: number) => string,
-) {
+): ReactNode {
   if (status === "under" && difference !== null) {
-    return copy.budget.targetUnderDetail.replace("{amount}", format(difference));
+    const [before, after] = copy.budget.targetUnderDetail.split("{amount}");
+    return (
+      <>
+        {before}
+        <Money value={difference} />
+        {after}
+      </>
+    );
   }
   if (status === "over" && difference !== null) {
-    return copy.budget.targetOverDetail.replace("{amount}", format(difference));
+    const [before, after] = copy.budget.targetOverDetail.split("{amount}");
+    return (
+      <>
+        {before}
+        <Money value={difference} />
+        {after}
+      </>
+    );
   }
   if (status === "on") return copy.budget.targetOnDetail;
   if (status === "provisional") {
@@ -87,12 +101,6 @@ export default async function BudgetPage({
   const copy = moduleCopy[locale];
   const targetBudget = Number(session.wedding.total_budget ?? 0);
   const currencyClient = await createWeddingClient();
-  const country = await loadCustomerCountry(currencyClient, session.userId);
-  const money = await getMoneyFormatter(
-    currencyClient,
-    session.userId,
-    country,
-  );
   const hasCurrencyPreference = await hasStoredCurrencyPreference(
     currencyClient,
     session.userId,
@@ -133,7 +141,6 @@ export default async function BudgetPage({
     calc.targetDifference,
     calc.missingAgreedPriceCount,
     copy,
-    money.format,
   );
 
   return (
@@ -151,6 +158,7 @@ export default async function BudgetPage({
               copy={copy}
               totalBudget={targetBudget}
               hasCurrencyPreference={hasCurrencyPreference}
+              locale={locale}
             />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -159,7 +167,7 @@ export default async function BudgetPage({
                   {copy.budget.targetBudget}
                 </p>
                 <p className="mt-1 text-lg font-semibold text-ink">
-                  {money.format(targetBudget)}
+                  <Money value={targetBudget} />
                 </p>
               </div>
               <div>
@@ -167,7 +175,7 @@ export default async function BudgetPage({
                   {copy.budget.totalCost}
                 </p>
                 <p className="mt-1 text-lg font-semibold text-ink">
-                  {money.format(totalCost)}
+                  <Money value={totalCost} />
                 </p>
               </div>
             </div>
@@ -211,7 +219,7 @@ export default async function BudgetPage({
               {copy.budget.sisaPerluDisiapkan}
             </p>
             <p className="mt-3 font-heading text-4xl leading-none tracking-tight text-[#49463F] sm:text-5xl">
-              {money.format(calc.sisaPerluDisiapkan)}
+              <Money value={calc.sisaPerluDisiapkan} />
             </p>
             <p className="mt-3 max-w-md text-xs leading-relaxed text-[#888176]">
               {copy.budget.sisaHint}
@@ -219,12 +227,12 @@ export default async function BudgetPage({
             <div className="mt-7 border-t border-[#EAE0D7] pt-4 text-xs text-[#888176]">
               <p>{copy.budget.sisaTagihan}</p>
               <p className="mt-1 font-medium text-[#49463F]">
-                {money.format(calc.sisaTagihan)}
+                <Money value={calc.sisaTagihan} />
               </p>
             </div>
             {calc.donationShortfall > 0 ? (
               <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
-                {copy.budget.donationShortfall}: {money.format(calc.donationShortfall)}
+                {copy.budget.donationShortfall}: <Money value={calc.donationShortfall} />
               </p>
             ) : null}
             <div className="mt-6">
@@ -238,8 +246,8 @@ export default async function BudgetPage({
               </div>
               <Progress value={calc.paymentPercentage} tone="olive" />
               <div className="mt-2 flex flex-wrap justify-between gap-2 text-[11px] text-[#888176]">
-                <span>{copy.budget.cashPaid}: {money.format(calc.cashPaid)}</span>
-                <span>{copy.budget.totalCost}: {money.format(totalCost)}</span>
+                <span>{copy.budget.cashPaid}: <Money value={calc.cashPaid} /></span>
+                <span>{copy.budget.totalCost}: <Money value={totalCost} /></span>
               </div>
             </div>
           </div>
@@ -253,24 +261,14 @@ export default async function BudgetPage({
             copy={copy}
           />
 
-      {money.currency !== "IDR" ? (
-        <p className="text-xs text-ink-soft">
-          {money.converted
-            ? `Converted from IDR${
-                money.fetchedAt
-                  ? ` · rates updated ${money.fetchedAt.slice(0, 10)}`
-                  : ""
-              }`
-            : "Exchange rates are unavailable right now — amounts are shown in IDR."}
-        </p>
-      ) : null}
+      <CurrencyConversionNote />
 
           <Card className="p-5">
             <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-ink-soft">
               {copy.budget.cashPaid}
             </p>
             <p className="mt-2 font-heading text-2xl text-ink">
-              {money.format(calc.cashPaid)}
+              <Money value={calc.cashPaid} />
             </p>
             <p className="mt-1 text-xs text-ink-soft">{copy.budget.cashPaidHint}</p>
           </Card>

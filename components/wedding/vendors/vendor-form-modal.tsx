@@ -1,5 +1,7 @@
 "use client";
 
+import { CurrencyField } from "@/components/wedding/currency-field";
+import { useCurrencyReset } from "@/lib/currency/use-currency-reset";
 import { useActionState, useEffect, useState } from "react";
 import {
   createVendorAction,
@@ -85,6 +87,7 @@ export function VendorFormModal({
   const money = useMoney();
   const action = vendor ? updateVendorAction : createVendorAction;
   const [state, formAction, pending] = useActionState(action, null);
+  useCurrencyReset(onClose);
   const [price, setPrice] = useState(
     vendor?.agreed_price !== null && vendor?.agreed_price !== undefined
       ? money.toInput(vendor.agreed_price)
@@ -140,6 +143,7 @@ export function VendorFormModal({
       title={vendor ? copy.vendors.edit : copy.vendors.add}
     >
       <form action={formAction} className="space-y-4">
+        <CurrencyField />
         {vendor ? <input type="hidden" name="id" value={vendor.id} /> : null}
         {!vendor && prefill ? (
           <input type="hidden" name="vendorOptionId" value={prefill.optionId} />
