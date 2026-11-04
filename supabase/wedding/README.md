@@ -34,6 +34,9 @@ after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
 `047_financial_entry_currency.sql` adds `financial_entries`, an additive audit
 table that keeps the amount and currency a customer typed plus the FX rate used.
 Existing IDR columns stay the base; no historical row is converted.
+`048_allocation_module.sql` only widens the `module` CHECK on that table to
+accept `allocation`; run it when the budget-allocation module starts writing
+audit rows. It changes no data and is safe to run twice.
 
 `046_display_currency.sql` adds `customer_currency_preferences` for the dashboard
 display currency (IDR/USD/MYR/SGD/AUD/GBP/EUR/JPY). Display only: checkout and
