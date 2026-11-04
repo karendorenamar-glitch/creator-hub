@@ -66,7 +66,7 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <LanguageSwitcher locale={locale} />
+            <LanguageSwitcher locale={locale} className="hidden md:inline-flex" />
             <Link href="/wedding/login" className="rounded-full px-3 py-2 text-sm font-medium text-cocoa/70 hover:bg-blush/50 hover:text-cocoa">
               {copy.header.login}
             </Link>

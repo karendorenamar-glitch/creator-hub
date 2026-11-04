@@ -78,13 +78,6 @@ export function SidebarNav({
         <BrandLogo />
       </Link>
 
-      <div className="rounded-2xl border border-petal-100 bg-gradient-to-br from-petal-50 to-olive-50/70 px-4 py-3">
-        <p className="font-heading text-sm font-semibold text-ink">{couple}</p>
-        <p className="mt-0.5 text-xs text-ink-soft">
-          {weddingDateLabel ?? copy.dashboard.dateTbc}
-        </p>
-      </div>
-
       <div className="flex items-center justify-between gap-2 rounded-xl border border-olive-100 bg-white/70 px-3 py-2">
         <span className="text-xs text-ink-soft">{copy.nav.language}</span>
         <div className="flex overflow-hidden rounded-full border border-olive-100">
@@ -107,6 +100,13 @@ export function SidebarNav({
         </div>
       </div>
 
+
+      <div className="rounded-2xl border border-petal-100 bg-gradient-to-br from-petal-50 to-olive-50/70 px-4 py-3">
+        <p className="font-heading text-sm font-semibold text-ink">{couple}</p>
+        <p className="mt-0.5 text-xs text-ink-soft">
+          {weddingDateLabel ?? copy.dashboard.dateTbc}
+        </p>
+      </div>
 
       <nav className="flex flex-1 flex-col gap-1" aria-label={copy.nav.menu}>
         {NAV.map(({ key, href, Icon }) => {
