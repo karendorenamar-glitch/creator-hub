@@ -31,6 +31,10 @@ or data migration is required. `039_split_plus_ones.sql` is superseded and
 must not be applied (see `APPLY_039.md`). `040_debt_tracker.sql` is the
 additive private Debt Tracker migration; review it and run it manually only
 after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
+`044_paypal_payments.sql` adds USD 2.99 PayPal payments next to the BCA flow:
+`amount_usd`, `payer_email`, `paypal_transaction_id`, relaxed checks, a unique
+transaction index, and an updated insert policy. BCA rules are unchanged.
+
 `041`–`043` are legacy: the Debt Tracker now derives everything from
 `debt_schedules` rows with their own due dates and amounts, so `due_day`,
 `installment_month`, `installment_total_months` and `installment_amount` are no

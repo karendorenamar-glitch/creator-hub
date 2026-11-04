@@ -321,10 +321,13 @@ export type Payment = {
   id: string;
   reference: string;
   user_id: string;
-  wedding_id: string;
+  wedding_id: string | null;
   amount_idr: number;
-  currency: "IDR";
-  method: "bank_transfer";
+  currency: "IDR" | "USD";
+  method: "bank_transfer" | "paypal";
+  amount_usd: number | null;
+  payer_email: string | null;
+  paypal_transaction_id: string | null;
   status: AccessPaymentStatus;
   sender_name: string;
   receipt_path: string | null;

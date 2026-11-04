@@ -8,7 +8,7 @@ import {
 } from "@/lib/wedding/session";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
-import { text } from "@/lib/wedding/validation";
+import { isEmail, text } from "@/lib/wedding/validation";
 
 const BUCKET = "payment-receipts";
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -113,6 +113,122 @@ export async function submitPaymentAction(formData: FormData): Promise<void> {
   });
 
   redirect("/checkout?sent=1");
+}
+
+export async function submitPaypalPaymentAction(
+  formData: FormData,
+): Promise<void> {
+  const account = await loadAccountContext();
+  if (!account) redirect("/wedding/login?next=/checkout");
+
+  const email = text(formData, "payerEmail").slice(0, 200);
+  if (!isEmail(email)) redirect("/checkout?error=payerEmail");
+
+  const transactionId = text(formData, "paypalTransactionId")
+    .replace(/\s+/g, "")
+    .slice(0, 64);
+  if (!/^[A-Za-z0-9-]{6,64}$/.test(transactionId)) {
+    redirect("/checkout?error=paypalTxn");
+  }
+
+  const payerName =
+    text(formData, "payerName").slice(0, 120) || email.slice(0, 120);
+
+  const supabase = await createWeddingClient();
+  const weddingId = ((await loadWeddingSession())?.wedding.id) ?? null;
+
+  const { data: payment, error } = await supabase
+    .from("payments")
+    .insert({
+      user_id: account.userId,
+      wedding_id: weddingId,
+      amount_idr: 0,
+      amount_usd: PAYMENT_CONFIG.paypal.amountUsd,
+      currency: PAYMENT_CONFIG.paypal.currency,
+      method: "paypal",
+      status: "pending_review",
+      sender_name: payerName,
+      payer_email: email,
+      paypal_transaction_id: transactionId,
+      receipt_path: null,
+    })
+    .select("id, reference")
+    .single();
+
+  if (error || !payment) {
+    if (error?.code === "23505") redirect("/checkout?error=duplicate");
+    redirect("/checkout?error=save");
+  }
+
+  await notifyAdminPaypal({
+    reference: payment.reference,
+    payerName,
+    email,
+    transactionId,
+    submittedAt: new Date().toISOString(),
+  }).then(async (ok) => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !serviceKey) return;
+    const admin = createServiceClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    await admin
+      .from("payments")
+      .update({
+        email_status: ok ? "sent" : "failed",
+        email_attempts: 1,
+        email_last_error: ok ? null : "Resend request failed",
+      })
+      .eq("id", payment.id);
+  });
+
+  redirect("/checkout?sent=1");
+}
+
+async function notifyAdminPaypal(input: {
+  reference: string;
+  payerName: string;
+  email: string;
+  transactionId: string;
+  submittedAt: string;
+}): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const to =
+    process.env.PAYMENT_NOTIFICATION_TO ?? PAYMENT_CONFIG.notificationEmail;
+  const from = process.env.PAYMENT_NOTIFICATION_FROM;
+
+  if (!apiKey || !from) return false;
+
+  const html = `
+    <h2>PayPal payment submitted — ${escapeHtml(input.reference)}</h2>
+    <p><strong>Payer name:</strong> ${escapeHtml(input.payerName)}</p>
+    <p><strong>Customer email:</strong> ${escapeHtml(input.email)}</p>
+    <p><strong>PayPal transaction ID:</strong> ${escapeHtml(input.transactionId)}</p>
+    <p><strong>Amount:</strong> USD ${PAYMENT_CONFIG.paypal.amountUsd.toFixed(2)}</p>
+    <p><strong>Reference:</strong> ${escapeHtml(input.reference)}</p>
+    <p><strong>Submitted:</strong> ${escapeHtml(input.submittedAt)}</p>
+    <p>Verify the transaction in your PayPal Business account, then approve it in the admin dashboard.</p>
+  `;
+
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to: [to],
+        subject: `PayPal payment submitted — ${input.reference}`,
+        html,
+      }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function notifyAdmin(input: {

@@ -176,9 +176,33 @@ export default async function AdminPaymentsPage({
                     <strong>{row.sender_name}</strong>
                   </p>
                   <p>
-                    <span className="text-cocoa/55">Nominal: </span>
-                    <strong>{formatIDR(row.amount_idr)}</strong>
+                    <span className="text-cocoa/55">Metode: </span>
+                    <strong>
+                      {row.method === "paypal" ? "PayPal" : "BCA transfer"}
+                    </strong>
                   </p>
+                  <p>
+                    <span className="text-cocoa/55">Nominal: </span>
+                    <strong>
+                      {row.method === "paypal"
+                        ? `USD ${Number(row.amount_usd ?? 0).toFixed(2)}`
+                        : formatIDR(row.amount_idr)}
+                    </strong>
+                  </p>
+                  {row.method === "paypal" ? (
+                    <>
+                      <p>
+                        <span className="text-cocoa/55">Email PayPal: </span>
+                        {row.payer_email ?? "-"}
+                      </p>
+                      <p className="sm:col-span-2">
+                        <span className="text-cocoa/55">Transaction ID: </span>
+                        <strong className="break-all">
+                          {row.paypal_transaction_id ?? "-"}
+                        </strong>
+                      </p>
+                    </>
+                  ) : null}
                   <p>
                     <span className="text-cocoa/55">Email: </span>
                     {row.email_status} ({row.email_attempts}x)

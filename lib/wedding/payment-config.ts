@@ -15,6 +15,15 @@ export const PAYMENT_CONFIG = {
     accountNumber: "2780205299",
     accountHolder: "Karen Dorena",
   },
+  paypal: {
+    amountUsd: 2.99,
+    currency: "USD",
+    // Hosted button + public client ID are safe to expose; no secret keys here.
+    hostedButtonId: "4USXNSB8AKRXS",
+    clientId:
+      "BAAvk1JNxRGyiAiekLk0FxwyEvqotupz5okhGYn2vZW-i1Vjyl9lV3c1zoiHjoHj5xDcT-uMUd5iYsuEjE",
+    note: "For customers outside Indonesia. Pay securely using PayPal.",
+  },
   notificationEmail: "hello@kefoo.tech",
   supportEmail: "hello@kefoo.tech",
   verification: {

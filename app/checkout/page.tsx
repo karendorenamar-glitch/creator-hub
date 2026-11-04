@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { submitPaymentAction } from "@/app/checkout/actions";
+import {
+  submitPaymentAction,
+  submitPaypalPaymentAction,
+} from "@/app/checkout/actions";
 import { Badge, Card } from "@/components/wedding/ui";
 import { PaymentVerificationNotice } from "@/components/wedding/payment-verification-notice";
+import { PaypalHostedButton } from "@/components/wedding/paypal-button";
 import { SubmitButton } from "@/components/wedding/submit-button";
 import { PAYMENT_CONFIG } from "@/lib/wedding/payment-config";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
@@ -20,6 +24,8 @@ const ERRORS: Record<string, string> = {
   upload: "Upload gagal. Coba lagi.",
   save: "Pembayaran gagal disimpan. Coba lagi.",
   duplicate: "Sudah ada pembayaran yang sedang diproses.",
+  payerEmail: "Email PayPal tidak valid.",
+  paypalTxn: "ID transaksi PayPal tidak valid (minimal 6 karakter).",
 };
 
 export default async function CheckoutPage({
@@ -116,14 +122,21 @@ export default async function CheckoutPage({
               </p>
             ) : null}
 
-            <Card className="space-y-4">
+            <Card className="space-y-4 border-blush/70">
+              <div className="flex items-center gap-2">
+                <span className="text-lg" aria-hidden>
+                  🇮🇩
+                </span>
+                <h2 className="font-heading text-xl">Pelanggan Indonesia</h2>
+              </div>
+
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-heading text-xl">
+                  <p className="text-sm font-medium">
                     {PAYMENT_CONFIG.productName}
-                  </h2>
-                  <p className="text-sm text-cocoa/60">
-                    {PAYMENT_CONFIG.productDescription}
+                  </p>
+                  <p className="text-xs text-cocoa/60">
+                    Sekali bayar · akses seumur hidup · tanpa langganan
                   </p>
                 </div>
                 <p className="shrink-0 font-heading text-2xl">
@@ -188,6 +201,105 @@ export default async function CheckoutPage({
                   Akses aktif setelah admin memverifikasi dana masuk ke rekening
                   BCA. Bukti transfer saja tidak membuka akses. Verifikasi
                   dilakukan pada jam kerja {PAYMENT_CONFIG.verification.hours}.
+                </p>
+              </form>
+            </Card>
+
+            <Card className="space-y-4 border-champagne/70">
+              <div className="flex items-center gap-2">
+                <span className="text-lg" aria-hidden>
+                  🌎
+                </span>
+                <h2 className="font-heading text-xl">
+                  International Customers
+                </h2>
+              </div>
+
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">
+                    Wedding Planner – Lifetime Access
+                  </p>
+                  <p className="text-xs text-cocoa/60">
+                    One-time payment · lifetime access · no subscription
+                  </p>
+                </div>
+                <p className="shrink-0 font-heading text-2xl">
+                  USD {PAYMENT_CONFIG.paypal.amountUsd.toFixed(2)}
+                </p>
+              </div>
+
+              <p className="rounded-2xl bg-champagne/20 p-4 text-sm leading-relaxed text-cocoa/80">
+                For customers outside Indonesia. Pay securely using PayPal.
+              </p>
+
+              <PaypalHostedButton />
+
+              <div className="space-y-1.5 rounded-2xl border border-blush/60 bg-white/70 p-4">
+                <p className="text-sm font-medium">
+                  Sudah bayar lewat PayPal?
+                </p>
+                <p className="text-xs leading-relaxed text-cocoa/65">
+                  Salin <strong>Transaction ID</strong> dari email/resi PayPal,
+                  lalu kirim di bawah agar admin bisa memverifikasi pembayaranmu.
+                  Akses tidak aktif otomatis.
+                </p>
+              </div>
+
+              <form action={submitPaypalPaymentAction} className="space-y-3">
+                <div className="space-y-1.5">
+                  <label htmlFor="payerEmail" className="text-sm font-medium">
+                    Email PayPal
+                  </label>
+                  <input
+                    id="payerEmail"
+                    name="payerEmail"
+                    type="email"
+                    required
+                    maxLength={200}
+                    defaultValue={account.email ?? ""}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-blush bg-white px-3.5 py-2.5 text-sm outline-none focus:border-rosewood"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="paypalTransactionId" className="text-sm font-medium">
+                    PayPal transaction ID
+                  </label>
+                  <input
+                    id="paypalTransactionId"
+                    name="paypalTransactionId"
+                    required
+                    minLength={6}
+                    maxLength={64}
+                    placeholder="Contoh: 8AB12345CD678901E"
+                    className="w-full rounded-xl border border-blush bg-white px-3.5 py-2.5 text-sm outline-none focus:border-rosewood"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="payerName" className="text-sm font-medium">
+                    Nama di akun PayPal (opsional)
+                  </label>
+                  <input
+                    id="payerName"
+                    name="payerName"
+                    maxLength={120}
+                    placeholder="Nama pemilik akun PayPal"
+                    className="w-full rounded-xl border border-blush bg-white px-3.5 py-2.5 text-sm outline-none focus:border-rosewood"
+                  />
+                </div>
+
+                <SubmitButton
+                  label="Kirim ID Transaksi PayPal"
+                  pendingLabel="Mengirim…"
+                />
+
+                <p className="text-xs leading-relaxed text-cocoa/50">
+                  Admin memverifikasi transaksi di akun PayPal Business. Akses
+                  seumur hidup aktif hanya setelah disetujui, biasanya pada jam
+                  kerja {PAYMENT_CONFIG.verification.hours}.
                 </p>
               </form>
             </Card>
