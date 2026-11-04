@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { PAYMENT_CONFIG } from "@/lib/wedding/payment-config";
 import {
@@ -9,6 +10,11 @@ import {
 import { createWeddingClient } from "@/lib/wedding/supabase";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { isEmail, text } from "@/lib/wedding/validation";
+import { isCountryCode, isIndonesian } from "@/lib/wedding/countries";
+import {
+  loadCustomerCountry,
+  saveCustomerCountry,
+} from "@/lib/wedding/country";
 
 const BUCKET = "payment-receipts";
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -31,6 +37,21 @@ function escapeHtml(value: string): string {
   });
 }
 
+export async function saveCountryAction(formData: FormData): Promise<void> {
+  const account = await loadAccountContext();
+  if (!account) redirect("/wedding/login?next=/checkout");
+
+  const country = text(formData, "country");
+  if (!isCountryCode(country)) redirect("/checkout?error=country");
+
+  const supabase = await createWeddingClient();
+  const saved = await saveCustomerCountry(supabase, account.userId, country);
+  if (!saved.ok) redirect("/checkout?error=country");
+
+  revalidatePath("/checkout");
+  redirect("/checkout");
+}
+
 export async function submitPaymentAction(formData: FormData): Promise<void> {
   const account = await loadAccountContext();
   if (!account) redirect("/wedding/login?next=/checkout");
@@ -39,6 +60,14 @@ export async function submitPaymentAction(formData: FormData): Promise<void> {
   if (senderName.length < 1) {
     redirect("/checkout?error=sender");
   }
+
+  // Bank transfer is only for Indonesian customers; the price is fixed here.
+  const countryCheckClient = await createWeddingClient();
+  const bankCountry = await loadCustomerCountry(
+    countryCheckClient,
+    account.userId,
+  );
+  if (!isIndonesian(bankCountry)) redirect("/checkout?error=method");
 
   const file = formData.get("receipt");
   if (!(file instanceof File) || file.size === 0) {
@@ -123,6 +152,13 @@ export async function submitPaypalPaymentAction(
 
   const email = text(formData, "payerEmail").slice(0, 200);
   if (!isEmail(email)) redirect("/checkout?error=payerEmail");
+
+  // PayPal is only for customers outside Indonesia.
+  const paypalClient = await createWeddingClient();
+  const paypalCountry = await loadCustomerCountry(paypalClient, account.userId);
+  if (!paypalCountry || isIndonesian(paypalCountry)) {
+    redirect("/checkout?error=method");
+  }
 
   const transactionId = text(formData, "paypalTransactionId")
     .replace(/\s+/g, "")

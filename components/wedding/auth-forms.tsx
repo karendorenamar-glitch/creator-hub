@@ -9,6 +9,7 @@ import {
   type FormState,
 } from "@/app/wedding/actions";
 import type { WeddingCopy } from "@/lib/wedding/copy";
+import { COUNTRIES } from "@/lib/wedding/countries";
 
 const initial: FormState = null;
 
@@ -161,6 +162,27 @@ export function SignUpForm({
           className={fieldClass}
           placeholder="••••••••"
         />
+      </div>
+      <div className="space-y-1.5">
+        <label htmlFor="country" className="text-sm font-medium text-ink">
+          {copy.auth.country}
+        </label>
+        <select
+          id="country"
+          name="country"
+          required
+          defaultValue=""
+          className={fieldClass}
+        >
+          <option value="" disabled>
+            {copy.auth.selectCountry}
+          </option>
+          {COUNTRIES.map((country) => (
+            <option key={country.code} value={country.code}>
+              {country.name}
+            </option>
+          ))}
+        </select>
       </div>
       <button
         type="submit"

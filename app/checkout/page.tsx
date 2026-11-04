@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
+  saveCountryAction,
   submitPaymentAction,
   submitPaypalPaymentAction,
 } from "@/app/checkout/actions";
@@ -9,6 +10,8 @@ import { PaymentVerificationNotice } from "@/components/wedding/payment-verifica
 import { PaypalHostedButton } from "@/components/wedding/paypal-button";
 import { SubmitButton } from "@/components/wedding/submit-button";
 import { PAYMENT_CONFIG } from "@/lib/wedding/payment-config";
+import { COUNTRIES, countryName, isIndonesian } from "@/lib/wedding/countries";
+import { loadCustomerCountry } from "@/lib/wedding/country";
 import { formatDateTime, formatIDR } from "@/lib/wedding/format";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { loadAccountContext } from "@/lib/wedding/session";
@@ -24,6 +27,8 @@ const ERRORS: Record<string, string> = {
   upload: "Upload gagal. Coba lagi.",
   save: "Pembayaran gagal disimpan. Coba lagi.",
   duplicate: "Sudah ada pembayaran yang sedang diproses.",
+  country: "Negara belum tersimpan. Pilih negara lalu coba lagi.",
+  method: "Metode pembayaran tidak sesuai dengan negara akun ini.",
   payerEmail: "Invalid PayPal email address.",
   paypalTxn: "Invalid PayPal transaction ID (at least 6 characters).",
 };
@@ -47,6 +52,7 @@ export default async function CheckoutPage({
     .order("created_at", { ascending: false })
     .limit(1);
 
+  const country = await loadCustomerCountry(supabase, account.userId);
   const payment = rows?.[0] ?? null;
   const active = account.hasEntitlement;
   const pendingReview = payment?.status === "pending_review";
@@ -157,13 +163,53 @@ export default async function CheckoutPage({
               </p>
             ) : null}
 
-            <div className="grid items-start gap-5 lg:grid-cols-2">
-            <Card className="space-y-4 border-blush/70">
+            {!country ? (
+              <Card className="max-w-2xl space-y-4">
+                <div>
+                  <h2 className="font-heading text-xl">
+                    Select your country
+                  </h2>
+                  <p className="mt-1 text-sm text-cocoa/65">
+                    Your country decides the one-time price and payment method.
+                  </p>
+                </div>
+                <form action={saveCountryAction} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <label htmlFor="country" className="text-sm font-medium">
+                      Country
+                    </label>
+                    <select
+                      id="country"
+                      name="country"
+                      required
+                      defaultValue=""
+                      className="w-full rounded-xl border border-blush bg-white px-3.5 py-2.5 text-sm outline-none focus:border-rosewood"
+                    >
+                      <option value="" disabled>
+                        Select your country
+                      </option>
+                      {COUNTRIES.map((item) => (
+                        <option key={item.code} value={item.code}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <SubmitButton label="Continue to payment" pendingLabel="Saving…" />
+                </form>
+              </Card>
+            ) : isIndonesian(country) ? (
+            <Card className="max-w-2xl space-y-4 border-blush/70">
               <div className="flex items-center gap-2">
                 <span className="text-lg" aria-hidden>
                   🇮🇩
                 </span>
-                <h2 className="font-heading text-xl">Pelanggan Indonesia</h2>
+                <div>
+                  <h2 className="font-heading text-xl">Pelanggan Indonesia</h2>
+                  <p className="text-xs text-cocoa/55">
+                    Negara akun: {countryName(country)}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-start justify-between gap-3">
@@ -240,15 +286,20 @@ export default async function CheckoutPage({
                 </p>
               </form>
             </Card>
-
-            <Card className="space-y-4 border-champagne/70">
+            ) : (
+            <Card className="max-w-2xl space-y-4 border-champagne/70">
               <div className="flex items-center gap-2">
                 <span className="text-lg" aria-hidden>
                   🌎
                 </span>
-                <h2 className="font-heading text-xl">
-                  International Customers
-                </h2>
+                <div>
+                  <h2 className="font-heading text-xl">
+                    International Customers
+                  </h2>
+                  <p className="text-xs text-cocoa/55">
+                    Account country: {countryName(country)}
+                  </p>
+                </div>
               </div>
 
               <div className="flex items-start justify-between gap-3">
@@ -340,7 +391,7 @@ export default async function CheckoutPage({
                 </p>
               </form>
             </Card>
-            </div>
+            )}
 
           </>
         )}

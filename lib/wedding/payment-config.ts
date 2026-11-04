@@ -4,9 +4,8 @@
  * Never put API keys or credentials in this file.
  */
 export const PAYMENT_CONFIG = {
-  productName: "Wedding Planner Lifetime Access",
-  productDescription:
-    "Akses seumur hidup ke seluruh fitur wedding planner yang tersedia.",
+  productName: "Kefoo Wedding Planner",
+  productDescription: "Lifetime Access · one-time payment · no subscription.",
   amountIdr: 30_000,
   currency: "IDR",
   method: "bank_transfer",
@@ -16,7 +15,7 @@ export const PAYMENT_CONFIG = {
     accountHolder: "Karen Dorena",
   },
   paypal: {
-    amountUsd: 2.99,
+    amountUsd: 3,
     currency: "USD",
     // Hosted button + public client ID are safe to expose; no secret keys here.
     hostedButtonId: "4USXNSB8AKRXS",

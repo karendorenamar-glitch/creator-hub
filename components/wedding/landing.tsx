@@ -117,7 +117,7 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
               </Reveal>
               <Reveal delay={0.15}>
                 <div className="mt-7 flex flex-wrap items-center gap-3">
-                  <Link href="/checkout" className="group inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory shadow-[0_16px_36px_-24px_rgba(168,111,122,0.9)] transition-all hover:-translate-y-0.5 hover:bg-cocoa">
+                  <Link href="/wedding/signup" className="group inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory shadow-[0_16px_36px_-24px_rgba(168,111,122,0.9)] transition-all hover:-translate-y-0.5 hover:bg-cocoa">
                     {copy.hero.ctaPrimary}
                     <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" aria-hidden />
                   </Link>
@@ -288,7 +288,7 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
                 {copy.inspiration.body}
               </p>
               <Link
-                href="/checkout"
+                href="/wedding/signup"
                 className="mt-6 inline-flex items-center gap-2 rounded-full bg-rosewood px-5 py-2.5 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
               >
                 {copy.inspiration.cta}
@@ -549,7 +549,12 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
 
             <Reveal delay={0.1}>
               <div className="relative mt-8 overflow-hidden rounded-[2rem] border border-champagne/60 bg-blush/35 p-8 sm:p-10">
-                <p className="font-heading text-5xl text-cocoa sm:text-6xl">{copy.pricing.price}</p>
+                <p className="font-heading text-3xl text-cocoa sm:text-4xl">
+                  Kefoo Wedding Planner
+                </p>
+                <p className="mt-2 font-heading text-lg italic text-rosewood">
+                  {copy.pricing.price}
+                </p>
                 <p className="mt-3 text-sm text-cocoa/70">{copy.pricing.note}</p>
                 <ul className="mx-auto mt-6 grid max-w-sm gap-2 text-left text-sm text-cocoa/75">
                   {copy.pricing.bullets.map((item) => (
@@ -560,7 +565,7 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
                   ))}
                 </ul>
                 <Link
-                  href="/checkout"
+                  href="/wedding/signup"
                   className="mt-7 inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
                 >
                   {copy.pricing.cta}
@@ -584,7 +589,7 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
               {copy.finalCta.body}
             </p>
             <Link
-              href="/checkout"
+              href="/wedding/signup"
               className="group mt-7 inline-flex items-center gap-2 rounded-full bg-rosewood px-6 py-3 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa"
             >
               {copy.finalCta.cta}

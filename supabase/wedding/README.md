@@ -31,6 +31,10 @@ or data migration is required. `039_split_plus_ones.sql` is superseded and
 must not be applied (see `APPLY_039.md`). `040_debt_tracker.sql` is the
 additive private Debt Tracker migration; review it and run it manually only
 after approval, then follow `docs/DEBT_TRACKER.md` for owner bootstrap.
+`045_customer_country_pricing.sql` adds `customer_profiles.country_code` and
+enforces country-based pricing in the payment insert policy: Indonesia = IDR
+30.000 BCA only, every other country = USD 3.00 PayPal only.
+
 `044_paypal_payments.sql` adds USD 2.99 PayPal payments next to the BCA flow:
 `amount_usd`, `payer_email`, `paypal_transaction_id`, relaxed checks, a unique
 transaction index, and an updated insert policy. BCA rules are unchanged.

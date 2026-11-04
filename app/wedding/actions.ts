@@ -9,6 +9,8 @@ import {
   createWeddingClient,
 } from "@/lib/wedding/supabase";
 import { loadWeddingSession } from "@/lib/wedding/session";
+import { isCountryCode } from "@/lib/wedding/countries";
+import { saveCustomerCountry } from "@/lib/wedding/country";
 
 export type FormState =
   | { error?: string; success?: string; info?: string }
@@ -99,10 +101,19 @@ export async function signUpAction(
   if (password.length < 8) return { error: copy.auth.passwordTooShort };
   if (password !== confirmPassword) return { error: copy.auth.passwordMismatch };
 
+  const country = text(formData, "country");
+  if (!isCountryCode(country)) return { error: copy.auth.countryRequired };
+
   // Session-less client: never send the visitor's existing cookie/token,
   // otherwise a stale session produces 401 bad_jwt.
   const supabase = createWeddingAnonymousClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    // Kept on the user so the country survives even when email confirmation
+    // delays the customer_profiles row.
+    options: { data: { country_code: country } },
+  });
 
   if (error) {
     const message = error.message.toLowerCase();
@@ -191,6 +202,15 @@ export async function signUpAction(
         `/wedding/login?next=${encodeURIComponent(next)}`,
         ref,
       ),
+    );
+  }
+
+  if (data.user) {
+    await saveCustomerCountry(sessionClient, data.user.id, country).catch(
+      (error: unknown) => {
+        console.error("[signUpAction] country save failed", error);
+        return null;
+      },
     );
   }
 
