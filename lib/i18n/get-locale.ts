@@ -6,7 +6,8 @@ import {
 } from "@/lib/i18n/types";
 
 export function parseLocale(value: string | undefined | null): AppLocale {
-  return value === "id" ? "id" : DEFAULT_LOCALE;
+  if (value === "en" || value === "id") return value;
+  return DEFAULT_LOCALE;
 }
 
 export async function getLocale(): Promise<AppLocale> {

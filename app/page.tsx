@@ -9,6 +9,8 @@ import {
   KEFOO_TITLE,
 } from "@/lib/wedding/seo";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: { absolute: KEFOO_TITLE },
   description: KEFOO_DESCRIPTION,
