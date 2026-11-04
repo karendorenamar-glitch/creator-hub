@@ -39,6 +39,8 @@ export type MoneyFormatter = {
   fetchedAt: string | null;
   format: (amountIdr: number | null | undefined) => string;
   formatOriginal: (amountIdr: number | null | undefined) => string;
+  /** Base IDR -> display number for prefilling an input (no currency symbol). */
+  toInput: (amountIdr: number | null | undefined) => string;
 };
 
 export function createMoneyFormatter(
@@ -59,6 +61,17 @@ export function createMoneyFormatter(
     ratesAvailable,
     fetchedAt,
     formatOriginal,
+    toInput: (amountIdr) => {
+      const base =
+        typeof amountIdr === "number" && Number.isFinite(amountIdr)
+          ? amountIdr
+          : 0;
+      const option = currencyOption(currency);
+      const converted = convertFromIDR(base, currency, rates);
+      if (converted === null) return String(Math.round(base));
+      const rounded = Number(converted.toFixed(option.decimals));
+      return option.decimals === 0 ? String(Math.round(rounded)) : rounded.toFixed(2);
+    },
     format: (amountIdr) => {
       if (currency === "IDR") return formatOriginal(amountIdr);
       const converted = convertFromIDR(amountIdr, currency, rates);
