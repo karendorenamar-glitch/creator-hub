@@ -510,7 +510,7 @@ const en = {
     selected: "Selected",
     notSelected: "No option selected yet",
     chosenDp: "Vendor terpilih",
-    chosenLunas: "Vendor lunas",
+    chosenLunas: "Vendor paid off",
     noVendorChosen: "No vendor selected yet!",
     select: "Select this option",
     compare: "View",
