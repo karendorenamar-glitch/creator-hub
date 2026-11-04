@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { LOCALE_COOKIE } from "@/lib/i18n/types";
 import { weddingCopy } from "@/lib/wedding/copy";
 import {
   createWeddingAnonymousClient,
@@ -213,6 +215,18 @@ export async function signUpAction(
         return null;
       },
     );
+
+    // International customers onboard in English, so the dashboard must open in
+    // English too. Only seed the cookie when the visitor has not chosen a
+    // language explicitly.
+    const cookieStore = await cookies();
+    if (!cookieStore.get(LOCALE_COOKIE)) {
+      cookieStore.set(LOCALE_COOKIE, country === "ID" ? "id" : "en", {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
   }
 
   revalidatePath("/wedding", "layout");
