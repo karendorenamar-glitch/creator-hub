@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Card, StatCard } from "@/components/wedding/ui";
 import { requireAdmin } from "@/lib/wedding/admin";
 import { createWeddingClient } from "@/lib/wedding/supabase";
+import { deleteAffiliate, setAffiliateStatus } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +66,43 @@ export default async function AdminAffiliateDetailPage({
         </div>
         <p className="text-xs text-cocoa/60">https://www.kefoo.tech/ref/{affiliate.referral_code}</p>
       </div>
+
+      <Card className="space-y-3">
+        <p className="text-xs text-cocoa/60">Status: <strong className="capitalize">{affiliate.status}</strong></p>
+        {affiliate.status === "active" ? (
+          <form action={setAffiliateStatus} className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="affiliateId" value={affiliate.id} />
+            <input type="hidden" name="status" value="suspended" />
+            <label className="text-[11px] text-cocoa/70">Reason
+              <input name="reason" className="mt-1 block w-64 rounded-lg border border-olive-100 px-2 py-1.5 text-xs" />
+            </label>
+            <button className="rounded-full border border-rose-300 px-4 py-2 text-xs text-rose-700 hover:bg-rose-50">
+              Suspend affiliate
+            </button>
+          </form>
+        ) : (
+          <form action={setAffiliateStatus}>
+            <input type="hidden" name="affiliateId" value={affiliate.id} />
+            <input type="hidden" name="status" value="active" />
+            <button className="rounded-full border border-olive-200 px-4 py-2 text-xs text-olive-800 hover:bg-olive-50">
+              Activate affiliate
+            </button>
+          </form>
+        )}
+
+        {totalClicks === 0 && referralRows.length === 0 && commissionRows.length === 0 && payoutRows.length === 0 ? (
+          <form action={deleteAffiliate}>
+            <input type="hidden" name="affiliateId" value={affiliate.id} />
+            <button className="text-[11px] text-rose-600 underline">
+              Delete affiliate (no history)
+            </button>
+          </form>
+        ) : (
+          <p className="text-[11px] text-cocoa/50">
+            This affiliate has history, so it cannot be deleted. Suspend it instead.
+          </p>
+        )}
+      </Card>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Clicks" value={String(totalClicks)} />

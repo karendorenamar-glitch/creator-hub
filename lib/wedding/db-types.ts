@@ -625,6 +625,14 @@ export type WeddingDatabase = {
     };
     Views: Record<string, never>;
     Functions: {
+      admin_set_affiliate_status: {
+        Args: { p_affiliate: string; p_status: string; p_reason?: string | null };
+        Returns: undefined;
+      };
+      admin_delete_affiliate: {
+        Args: { p_affiliate: string };
+        Returns: undefined;
+      };
       affiliate_payout_processing: { Args: { p_payout: string }; Returns: undefined };
       affiliate_payout_paid: {
         Args: {
