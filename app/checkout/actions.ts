@@ -67,7 +67,7 @@ export async function saveCountryAction(formData: FormData): Promise<void> {
 
   // Align the language with the country the customer just confirmed, so the
   // sign-in page they reach after paying is not in the wrong language.
-  await seedLocaleFromCountry(country);
+  await seedLocaleFromCountry(country, { force: true });
 
   revalidatePath("/checkout");
   redirect("/checkout");

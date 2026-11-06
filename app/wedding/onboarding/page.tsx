@@ -31,12 +31,17 @@ export default async function OnboardingPage({
   // Pay first: onboarding is locked until the payment is approved.
   if (!account.hasEntitlement) redirect("/checkout");
 
-  const copy = weddingCopy[await getLocale()];
   const { next, ref } = await searchParams;
 
-  // Country decides whether the Malaysian state selector is shown.
   const supabase = await createWeddingClient();
   const country = await loadCustomerCountry(supabase, account.userId);
+
+  // Onboarding follows the account country, not a leftover language cookie:
+  // Indonesian customers see Indonesian, everyone else sees English.
+  const cookieLocale = await getLocale();
+  const locale: "id" | "en" =
+    country === "ID" ? "id" : country ? "en" : cookieLocale;
+  const copy = weddingCopy[locale];
   // Onboarding lives outside the (app) layout, so it needs its own provider;
   // otherwise useMoney falls back to IDR instead of the customer currency.
   const currencyContext = await getCurrencyContext(

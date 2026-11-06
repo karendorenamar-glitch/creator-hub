@@ -8,11 +8,12 @@ import { LOCALE_COOKIE, type AppLocale } from "./types";
  */
 export async function seedLocaleFromCountry(
   country: string | null | undefined,
+  options: { force?: boolean } = {},
 ): Promise<void> {
   if (!country) return;
 
   const store = await cookies();
-  if (store.get(LOCALE_COOKIE)) return;
+  if (store.get(LOCALE_COOKIE) && !options.force) return;
 
   const locale: AppLocale = country === "ID" ? "id" : "en";
   store.set(LOCALE_COOKIE, locale, {
