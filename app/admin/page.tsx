@@ -66,19 +66,6 @@ export default async function AdminOverviewPage() {
           </Link>
         </Card>
 
-        <Card className="space-y-2">
-          <h2 className="font-heading text-lg">Affiliate payouts</h2>
-          <p className="text-sm text-cocoa/60">
-            {pendingPayouts.length} permintaan menunggu · {formatIDR(pendingPayoutIdr)}
-            {pendingPayoutUsd > 0 ? ` · $${pendingPayoutUsd.toFixed(2)}` : ""}
-          </p>
-          <Link
-            href="/admin/affiliate-payouts"
-            className="inline-flex rounded-full border border-blush px-4 py-2 text-sm text-rosewood hover:bg-blush/40"
-          >
-            Proses payout
-          </Link>
-        </Card>
 
         <Card className="space-y-2">
           <h2 className="font-heading text-lg">Affiliators</h2>
@@ -87,12 +74,24 @@ export default async function AdminOverviewPage() {
             {signupCount.count ?? 0} signup lewat referral ·{" "}
             {approvedCount.count ?? 0} pembayaran disetujui.
           </p>
-          <Link
-            href="/admin/affiliates"
-            className="inline-flex rounded-full border border-blush px-4 py-2 text-sm text-rosewood hover:bg-blush/40"
-          >
-            Kelola affiliator
-          </Link>
+          <p className="rounded-xl bg-blush/20 px-3 py-2 text-xs text-cocoa/70">
+            Payout menunggu: {pendingPayouts.length} · {formatIDR(pendingPayoutIdr)}
+            {pendingPayoutUsd > 0 ? ` · ${pendingPayoutUsd.toFixed(2)}` : ""}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/affiliates"
+              className="inline-flex rounded-full border border-blush px-4 py-2 text-sm text-rosewood hover:bg-blush/40"
+            >
+              Kelola affiliator
+            </Link>
+            <Link
+              href="/admin/affiliate-payouts"
+              className="inline-flex rounded-full border border-blush px-4 py-2 text-sm text-rosewood hover:bg-blush/40"
+            >
+              Proses payout
+            </Link>
+          </div>
         </Card>
 
         <Card className="space-y-2">
