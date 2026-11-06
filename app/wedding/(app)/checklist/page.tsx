@@ -70,9 +70,18 @@ export default async function ChecklistPage() {
 
   // Only the active built-in template is shown; custom checklists are always
   // kept, and snapshots from another country stay in the database untouched.
+  // Never hide a checklist the customer already owns. Several Indonesian
+  // accounts have no country row, which resolved to the international template
+  // and made their KUA snapshot disappear. If a KUA list exists, show it.
+  const hasKuaSnapshot = allLists.some((item) => item.kind === "builtin_kua");
+  const activeKind =
+    hasKuaSnapshot && template.kind === "builtin_generic"
+      ? "builtin_kua"
+      : template.kind;
+
   const lists = allLists.filter(
     (checklist) =>
-      checklist.kind === "custom" || checklist.kind === template.kind,
+      checklist.kind === "custom" || checklist.kind === activeKind,
   );
   const visibleListIds = new Set(lists.map((checklist) => checklist.id));
   const tasks = allTasks.filter(
