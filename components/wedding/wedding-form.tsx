@@ -140,7 +140,10 @@ export function WeddingDetailsForm({
         </div>
         <div className="space-y-1.5">
           <label htmlFor="totalBudget" className={labelClass}>
-            {copy.onboarding.totalBudget} ({money.currency})
+            {`${copy.onboarding.totalBudget
+              .replace(" (IDR)", "")
+              .replace("(IDR)", "")
+              .trim()} (${money.currency})`}
           </label>
           <input
             id="totalBudget"
