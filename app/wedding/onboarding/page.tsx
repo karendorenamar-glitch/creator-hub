@@ -3,6 +3,8 @@ import { createWeddingClient } from "@/lib/wedding/supabase";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/wedding/brand-logo";
 import { WeddingDetailsForm } from "@/components/wedding/wedding-form";
+import { CurrencyProvider } from "@/components/wedding/currency-provider";
+import { getCurrencyContext } from "@/lib/currency/server";
 import { Card } from "@/components/wedding/ui";
 import { signOutAction } from "@/app/wedding/actions";
 import { getLocale } from "@/lib/i18n/get-locale";
@@ -35,6 +37,13 @@ export default async function OnboardingPage({
   // Country decides whether the Malaysian state selector is shown.
   const supabase = await createWeddingClient();
   const country = await loadCustomerCountry(supabase, account.userId);
+  // Onboarding lives outside the (app) layout, so it needs its own provider;
+  // otherwise useMoney falls back to IDR instead of the customer currency.
+  const currencyContext = await getCurrencyContext(
+    supabase,
+    account.userId,
+    country,
+  );
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-4 py-12 sm:px-6">
@@ -57,13 +66,20 @@ export default async function OnboardingPage({
         <p className="mt-2 mb-7 text-sm leading-relaxed text-ink-soft">
           {copy.onboarding.subtitle}
         </p>
-        <WeddingDetailsForm
-          copy={copy}
-          mode="create"
-          next={next}
-          refCode={ref}
-          country={country}
-        />
+        <CurrencyProvider
+          currency={currencyContext.currency}
+          rates={currencyContext.rates}
+          ratesAvailable={currencyContext.ratesAvailable}
+          fetchedAt={currencyContext.fetchedAt}
+        >
+          <WeddingDetailsForm
+            copy={copy}
+            mode="create"
+            next={next}
+            refCode={ref}
+            country={country}
+          />
+        </CurrencyProvider>
       </Card>
     </div>
   );

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { LOCALE_COOKIE } from "@/lib/i18n/types";
+import { seedLocaleFromCountry } from "@/lib/i18n/seed-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 import {
   createWeddingAnonymousClient,
@@ -18,7 +19,10 @@ import {
   convertInputAmounts,
   submittedCurrencyIsStale,
 } from "@/lib/currency/action";
-import { saveCustomerCountry } from "@/lib/wedding/country";
+import {
+  loadCustomerCountry,
+  saveCustomerCountry,
+} from "@/lib/wedding/country";
 
 export type FormState =
   | { error?: string; success?: string; info?: string }
@@ -96,6 +100,16 @@ export async function signInAction(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) return { error: copy.auth.invalidCredentials };
+
+  // Keep the dashboard language aligned with the account country.
+  const { data: signedIn } = await supabase.auth.getUser();
+  if (signedIn.user) {
+    const signedInCountry = await loadCustomerCountry(
+      supabase,
+      signedIn.user.id,
+    );
+    await seedLocaleFromCountry(signedInCountry);
+  }
 
   revalidatePath("/wedding", "layout");
   const next = text(formData, "next");

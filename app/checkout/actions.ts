@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { seedLocaleFromCountry } from "@/lib/i18n/seed-locale";
 import { redirect } from "next/navigation";
 import { PAYMENT_CONFIG } from "@/lib/wedding/payment-config";
 import {
@@ -47,6 +48,10 @@ export async function saveCountryAction(formData: FormData): Promise<void> {
   const supabase = await createWeddingClient();
   const saved = await saveCustomerCountry(supabase, account.userId, country);
   if (!saved.ok) redirect("/checkout?error=country");
+
+  // Align the language with the country the customer just confirmed, so the
+  // sign-in page they reach after paying is not in the wrong language.
+  await seedLocaleFromCountry(country);
 
   revalidatePath("/checkout");
   redirect("/checkout");
