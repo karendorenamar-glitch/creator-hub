@@ -66,11 +66,9 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageSwitcher locale={locale} className="hidden md:inline-flex" />
             <Link href="/wedding/login" className="rounded-full px-3 py-2 text-sm font-medium text-cocoa/70 hover:bg-blush/50 hover:text-cocoa">
               {copy.header.login}
-            </Link>
-            <Link href="/wedding/signup" className="rounded-full bg-rosewood px-4 py-2 text-sm font-medium text-ivory transition-all hover:-translate-y-0.5 hover:bg-cocoa">
-              {copy.header.signup}
             </Link>
             <details className="relative md:hidden">
               <summary className="cursor-pointer list-none rounded-full border border-blush px-3 py-2 text-xs text-cocoa/70">
@@ -87,9 +85,6 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
                 ))}
                 <Link href="/wedding/login" className="block rounded-xl px-3 py-2 text-sm text-cocoa/75 hover:bg-blush/40">
                   {copy.header.login}
-                </Link>
-                <Link href="/wedding/signup" className="mt-1 block rounded-xl bg-rosewood px-3 py-2 text-center text-sm font-medium text-ivory">
-                  {copy.header.signup}
                 </Link>
               </div>
             </details>
