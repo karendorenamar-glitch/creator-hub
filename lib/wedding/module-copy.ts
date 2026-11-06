@@ -660,7 +660,7 @@ const en = {
     otherTasksHint:
       "Existing tasks that are not part of a checklist remain available here.",
     templateDisclaimer:
-      "Practical preparation template. Requirements can differ by KUA and personal situation; confirm with your local KUA.",
+      "A practical preparation template for your marriage registration. Requirements can differ by country and personal situation; confirm with your local registry office.",
   },
   inspiration: {
     title: "Wedding Inspiration",

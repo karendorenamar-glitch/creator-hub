@@ -112,7 +112,11 @@ export default async function ChecklistPage() {
     <div className="space-y-7">
       <PageHeader
         title={copy.checklist.title}
-        subtitle={copy.checklist.subtitle}
+        subtitle={
+          template.kind === "builtin_my"
+            ? "A practical preparation template for your marriage registration. Requirements and application procedures may vary by state; please confirm with your local State Religious Department."
+            : copy.checklist.subtitle
+        }
       />
 
       {template.needsPartnerNationality ? (
