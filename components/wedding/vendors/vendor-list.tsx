@@ -38,6 +38,10 @@ function VendorRow({
   onHistory: () => void;
 }) {
   const price = vendor.agreed_price;
+  const paidPercent =
+    price && price > 0
+      ? Math.min(100, Math.round((summary.totalPaid / price) * 100))
+      : null;
   return (
     <div className="rounded-2xl border border-olive-100 bg-white px-4 py-3">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -71,6 +75,20 @@ function VendorRow({
               {copy.vendors.remainingPayment}:{" "}
               {price === null ? "—" : <Money value={summary.remainingPayment} />}
             </p>
+            {paidPercent !== null ? (
+              <div className="mt-2 w-40">
+                <div className="flex items-center justify-between text-[11px] text-ink-soft">
+                  <span>{copy.vendors.paymentPercentage}</span>
+                  <span className="font-medium text-ink">{paidPercent}%</span>
+                </div>
+                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-blush/40">
+                  <div
+                    className="h-full rounded-full bg-[#788568]"
+                    style={{ width: `${paidPercent}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
             {summary.overpayment > 0 ? (
               <p className="text-xs font-medium text-amber-700">
                 {copy.vendors.overpayment}: <Money value={summary.overpayment} />
