@@ -43,11 +43,18 @@ export async function saveCountryAction(formData: FormData): Promise<void> {
   if (!account) redirect("/wedding/login?next=/checkout");
 
   const country = text(formData, "country");
-  if (!isCountryCode(country)) redirect("/checkout?error=country");
+  if (!isCountryCode(country)) {
+    redirect(`/checkout?error=country&reason=${encodeURIComponent(`invalid code: ${country}`)}`);
+  }
 
   const supabase = await createWeddingClient();
   const saved = await saveCustomerCountry(supabase, account.userId, country);
-  if (!saved.ok) redirect("/checkout?error=country");
+  if (!saved.ok) {
+    console.error("[saveCountryAction]", saved.message);
+    redirect(
+      `/checkout?error=country&reason=${encodeURIComponent(saved.message ?? "unknown")}`,
+    );
+  }
 
   // Align the language with the country the customer just confirmed, so the
   // sign-in page they reach after paying is not in the wrong language.
