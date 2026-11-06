@@ -34,7 +34,13 @@ export default async function ChecklistPage() {
     partnerNationality: session.wedding.partner_nationality ?? null,
   });
 
-  await ensureMarriageChecklist(supabase, session.wedding.id, template);
+  // Seeding is best-effort: a permission or session problem must never make
+  // the whole page fail to render.
+  try {
+    await ensureMarriageChecklist(supabase, session.wedding.id, template);
+  } catch (error) {
+    console.error("[checklist] seeding failed", error);
+  }
 
   const [
     { data: checklistRows },
