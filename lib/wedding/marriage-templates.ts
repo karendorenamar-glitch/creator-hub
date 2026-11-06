@@ -221,7 +221,11 @@ export function resolveMarriageTemplate({
   stateCode?: string | null;
   partnerNationality?: string | null;
 }): MarriageTemplate {
-  if (country === "ID") return INDONESIA_TEMPLATE;
+  // Unknown or OTHER is treated as Indonesia: most existing customers paid and
+  // onboarded before the country was stored, and they expect the KUA list.
+  if (country === "ID" || country === null || country === "OTHER") {
+    return INDONESIA_TEMPLATE;
+  }
   if (country === "MY") {
     const state = MALAYSIA_STATES.find((item) => item.code === stateCode) ?? null;
     const known = Boolean(partnerNationality);
