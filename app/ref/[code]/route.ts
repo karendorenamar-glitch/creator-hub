@@ -16,12 +16,17 @@ export async function GET(
   }
 
   const supabase = createWeddingAnonymousClient();
-  await supabase.rpc("record_affiliate_click", {
+  const { data: affiliateId } = await supabase.rpc("record_affiliate_click", {
     p_code: clean,
     p_session: crypto.randomUUID(),
     p_landing: "/ref",
     p_referrer: request.headers.get("referer"),
   });
+
+  // Unknown or suspended code: no cookie, no attribution, plain signup.
+  if (!affiliateId) {
+    return NextResponse.redirect(new URL("/wedding/signup", request.url));
+  }
 
   const response = NextResponse.redirect(
     new URL(`/wedding/signup?ref=${clean}`, request.url),

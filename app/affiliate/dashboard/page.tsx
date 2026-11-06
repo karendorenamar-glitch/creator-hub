@@ -29,6 +29,22 @@ export default async function AffiliateDashboardPage() {
     p_affiliate_id: affiliate.id,
   });
   const stats = await loadAffiliateStats(supabase, affiliate.id);
+  const { data: payoutRows } = await supabase
+    .from("affiliate_payouts")
+    .select("id, currency, amount, status, requested_at, paid_at, transfer_reference, rejection_reason")
+    .eq("affiliate_id", affiliate.id)
+    .order("requested_at", { ascending: false })
+    .limit(20);
+  const payouts = (payoutRows ?? []) as {
+    id: string;
+    currency: string;
+    amount: number;
+    status: string;
+    requested_at: string;
+    paid_at: string | null;
+    transfer_reference: string | null;
+    rejection_reason: string | null;
+  }[];
   const balances = ((data ?? []) as Balance[]).filter(
     (row) => row.currency === "IDR" || row.currency === "USD",
   );
@@ -111,6 +127,40 @@ export default async function AffiliateDashboardPage() {
           accountHolder={affiliate.account_holder_name ?? affiliate.full_name}
           accountNumber={affiliate.bank_account_number ?? ""}
         />
+      </section>
+
+      <section className="mt-10">
+        <h2 className="font-heading text-xl text-ink">Payout history</h2>
+        {payouts.length === 0 ? (
+          <p className="mt-3 rounded-2xl border border-blush/60 bg-white p-5 text-xs text-ink-soft">
+            No payout requested yet.
+          </p>
+        ) : (
+          <div className="mt-3 overflow-x-auto rounded-2xl border border-blush/60 bg-white">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-blush/40 text-ink-soft">
+                <tr>
+                  {["Requested", "Amount", "Status", "Paid", "Reference / note"].map((h) => (
+                    <th key={h} className="px-4 py-3 font-medium">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {payouts.map((row) => (
+                  <tr key={row.id} className="border-b border-blush/20 last:border-0">
+                    <td className="px-4 py-3 text-ink-soft">{row.requested_at.slice(0, 10)}</td>
+                    <td className="px-4 py-3 text-ink">{money(row.currency, row.amount)}</td>
+                    <td className="px-4 py-3 capitalize text-ink-soft">{row.status}</td>
+                    <td className="px-4 py-3 text-ink-soft">{row.paid_at ? row.paid_at.slice(0, 10) : "—"}</td>
+                    <td className="px-4 py-3 text-ink-soft">
+                      {row.transfer_reference ?? row.rejection_reason ?? "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <Link href="/affiliate" className="mt-8 inline-block text-xs text-ink-soft underline">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, StatCard } from "@/components/wedding/ui";
 import { formatIDR } from "@/lib/wedding/format";
 import { getAdminOverview, requireAdmin } from "@/lib/wedding/admin";
+import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Admin — Overview" };
 export const dynamic = "force-dynamic";
@@ -9,6 +10,15 @@ export const dynamic = "force-dynamic";
 export default async function AdminOverviewPage() {
   await requireAdmin();
   const kpi = await getAdminOverview();
+
+  const supabase = await createWeddingClient();
+  const [affiliateRows, signupCount, approvedCount] = await Promise.all([
+    supabase.from("affiliates").select("id, status"),
+    supabase.from("affiliate_referrals").select("id", { count: "exact", head: true }),
+    supabase.from("affiliate_commissions").select("id", { count: "exact", head: true }),
+  ]);
+  const affiliates = affiliateRows.data ?? [];
+  const activeAffiliates = affiliates.filter((row) => row.status === "active").length;
 
   return (
     <div className="space-y-6">
@@ -45,6 +55,21 @@ export default async function AdminOverviewPage() {
             className="inline-flex rounded-full bg-rosewood px-4 py-2 text-sm text-ivory hover:bg-cocoa"
           >
             Review pembayaran
+          </Link>
+        </Card>
+
+        <Card className="space-y-2">
+          <h2 className="font-heading text-lg">Affiliators</h2>
+          <p className="text-sm text-cocoa/60">
+            {affiliates.length} affiliator ({activeAffiliates} aktif) ·{" "}
+            {signupCount.count ?? 0} signup lewat referral ·{" "}
+            {approvedCount.count ?? 0} pembayaran disetujui.
+          </p>
+          <Link
+            href="/admin/affiliates"
+            className="inline-flex rounded-full border border-blush px-4 py-2 text-sm text-rosewood hover:bg-blush/40"
+          >
+            Kelola affiliator
           </Link>
         </Card>
 

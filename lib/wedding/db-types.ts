@@ -515,6 +515,23 @@ type Table<Row> = {
 export type WeddingDatabase = {
   public: {
     Tables: {
+      affiliate_payouts: Table<{
+        id: string;
+        affiliate_id: string;
+        currency: string;
+        amount: number;
+        bank_name: string;
+        account_holder_name: string;
+        bank_account_number: string;
+        status: string;
+        exchange_rate_usd_idr: number | null;
+        amount_idr_converted: number | null;
+        requested_at: string;
+        paid_at: string | null;
+        transfer_reference: string | null;
+        rejection_reason: string | null;
+        admin_note: string | null;
+      }>;
       affiliate_clicks: Table<{
         id: string;
         affiliate_id: string;
@@ -525,8 +542,11 @@ export type WeddingDatabase = {
         id: string;
         affiliate_id: string;
         customer_user_id: string | null;
+        customer_reference: string | null;
         attribution_status: string;
         attributed_at: string;
+        signup_completed_at: string | null;
+        created_at: string;
       }>;
       affiliate_commissions: Table<{
         id: string;
