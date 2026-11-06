@@ -51,6 +51,15 @@ export async function saveCountryAction(formData: FormData): Promise<void> {
   const saved = await saveCustomerCountry(supabase, account.userId, country);
   if (!saved.ok) {
     console.error("[saveCountryAction]", saved.message);
+
+    // A session can outlive its auth user (the account was deleted). Clear it
+    // so the visitor can register again instead of hitting a foreign key error
+    // on every save.
+    if ((saved.message ?? "").includes("customer_profiles_user_id_fkey")) {
+      await supabase.auth.signOut();
+      redirect("/wedding/signup?error=stale-session");
+    }
+
     redirect(
       `/checkout?error=country&reason=${encodeURIComponent(saved.message ?? "unknown")}`,
     );
