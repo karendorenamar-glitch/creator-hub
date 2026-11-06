@@ -531,10 +531,16 @@ export type WeddingDatabase = {
       affiliate_commissions: Table<{
         id: string;
         affiliate_id: string;
+        referral_id: string | null;
         payment_id: string | null;
+        payment_reference: string | null;
+        commission_rate: number;
         currency: string;
+        original_payment_amount: number;
         commission_amount: number;
         status: string;
+        created_at: string;
+        updated_at: string;
       }>;
       affiliates: Table<{
         id: string;
@@ -599,6 +605,20 @@ export type WeddingDatabase = {
     };
     Views: Record<string, never>;
     Functions: {
+      affiliate_referrals_overview: {
+        Args: Record<string, never>;
+        Returns: {
+          customer_reference: string | null;
+          attributed_at: string;
+          signup_completed_at: string | null;
+          payments_total: number;
+          payments_approved: number;
+          payments_pending: number;
+          payments_rejected: number;
+          commission_idr: number;
+          commission_usd: number;
+        }[];
+      };
       affiliate_request_payout: {
         Args: {
           p_currency: string;
