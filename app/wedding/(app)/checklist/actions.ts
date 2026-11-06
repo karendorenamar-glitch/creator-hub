@@ -221,7 +221,7 @@ function readChecklistItem(
 async function checklistKind(
   ctx: Awaited<ReturnType<typeof context>>,
   checklistId: string,
-): Promise<"custom" | "builtin_kua" | null> {
+): Promise<"custom" | "builtin_kua" | "builtin_my" | "builtin_generic" | null> {
   const { data } = await ctx.supabase
     .from("checklists")
     .select("kind")
@@ -261,7 +261,7 @@ export async function renameChecklistAction(
 
   const kind = await checklistKind(ctx, id);
   if (!kind) return { error: ctx.copy.errors.notFound };
-  if (kind === "builtin_kua") {
+  if (kind !== null && kind !== "custom") {
     return { error: ctx.copy.checklist.protectedChecklist };
   }
 
@@ -285,7 +285,7 @@ export async function deleteChecklistAction(
 
   const kind = await checklistKind(ctx, id);
   if (!kind) return { error: ctx.copy.errors.notFound };
-  if (kind === "builtin_kua") {
+  if (kind !== null && kind !== "custom") {
     return { error: ctx.copy.checklist.protectedChecklist };
   }
 
@@ -310,7 +310,7 @@ export async function createChecklistItemAction(
 
   const kind = await checklistKind(ctx, checklistId);
   if (!kind) return { error: ctx.copy.errors.notFound };
-  if (kind === "builtin_kua") {
+  if (kind !== null && kind !== "custom") {
     return { error: ctx.copy.checklist.protectedChecklist };
   }
 
@@ -367,7 +367,7 @@ export async function updateChecklistItemAction(
   if (!parsed.ok) return { error: parsed.error };
 
   const values =
-    kind === "builtin_kua" || task.is_required
+    kind !== null && kind !== "custom" || task.is_required
       ? {
           description: parsed.values.description,
           due_date: parsed.values.due_date,
@@ -403,7 +403,7 @@ export async function deleteChecklistItemAction(
 
   if (!task?.checklist_id) return { error: ctx.copy.errors.notFound };
   const kind = await checklistKind(ctx, task.checklist_id);
-  if (kind === "builtin_kua" || task.is_required) {
+  if (kind !== null && kind !== "custom" || task.is_required) {
     return { error: ctx.copy.checklist.protectedItem };
   }
 
@@ -437,7 +437,7 @@ export async function moveChecklistItemAction(
 
   if (!task?.checklist_id) return { error: ctx.copy.errors.notFound };
   const kind = await checklistKind(ctx, task.checklist_id);
-  if (kind === "builtin_kua") {
+  if (kind !== null && kind !== "custom") {
     return { error: ctx.copy.checklist.protectedChecklist };
   }
 

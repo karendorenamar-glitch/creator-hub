@@ -1,20 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Checklist, WeddingDatabase } from "@/lib/wedding/db-types";
 import {
-  KUA_TEMPLATE,
-  KUA_TEMPLATE_KEY,
-  kuaChecklistTitle,
-} from "@/lib/wedding/kua-checklist";
+  INDONESIA_TEMPLATE,
+  type MarriageTemplate,
+} from "@/lib/wedding/marriage-templates";
 
 type WeddingClient = SupabaseClient<WeddingDatabase>;
 
 /**
- * Creates the current-year KUA snapshot once per wedding. Existing checklist
- * rows are never rewritten; missing template items are filled idempotently.
+ * Creates the current-year checklist snapshot once per wedding for any
+ * country-specific template. Existing rows are never rewritten; missing
+ * template items are filled idempotently.
  */
-export async function ensureKuaChecklist(
+export async function ensureMarriageChecklist(
   supabase: WeddingClient,
   weddingId: string,
+  template: MarriageTemplate,
 ): Promise<void> {
   let checklist: Checklist | null = null;
 
@@ -22,7 +23,7 @@ export async function ensureKuaChecklist(
     .from("checklists")
     .select("*")
     .eq("wedding_id", weddingId)
-    .eq("template_key", KUA_TEMPLATE_KEY)
+    .eq("template_key", template.key)
     .maybeSingle();
 
   if (findError) throw new Error(findError.message);
@@ -34,9 +35,9 @@ export async function ensureKuaChecklist(
       .from("checklists")
       .insert({
         wedding_id: weddingId,
-        title: kuaChecklistTitle(year),
-        kind: "builtin_kua",
-        template_key: KUA_TEMPLATE_KEY,
+        title: template.title(year),
+        kind: template.kind,
+        template_key: template.key,
         template_year: year,
       })
       .select("*")
@@ -51,7 +52,7 @@ export async function ensureKuaChecklist(
         .from("checklists")
         .select("*")
         .eq("wedding_id", weddingId)
-        .eq("template_key", KUA_TEMPLATE_KEY)
+        .eq("template_key", template.key)
         .maybeSingle();
       if (racedError || !raced) {
         throw new Error(racedError?.message ?? createError.message);
@@ -75,7 +76,7 @@ export async function ensureKuaChecklist(
   // newly created or empty checklist; never inject later template additions.
   if (count && count > 0) return;
 
-  const rows = KUA_TEMPLATE.map((item, index) => ({
+  const rows = template.items.map((item, index) => ({
     wedding_id: weddingId,
     checklist_id: checklist.id,
     group_name: item.group,
@@ -83,7 +84,7 @@ export async function ensureKuaChecklist(
     template_item_key: item.key,
     is_required: true,
     title: item.title,
-    description: null,
+    description: item.note ?? null,
     stage: item.stage,
     priority: "medium" as const,
     status: "todo" as const,
@@ -101,4 +102,12 @@ export async function ensureKuaChecklist(
   );
 
   if (itemError) throw new Error(itemError.message);
+}
+
+/** Indonesian KUA checklist. Kept for backward compatibility. */
+export async function ensureKuaChecklist(
+  supabase: WeddingClient,
+  weddingId: string,
+): Promise<void> {
+  await ensureMarriageChecklist(supabase, weddingId, INDONESIA_TEMPLATE);
 }

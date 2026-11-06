@@ -274,7 +274,11 @@ export type RoomAssignment = {
   created_at: string;
 };
 
-export type ChecklistKind = "custom" | "builtin_kua";
+export type ChecklistKind =
+  | "custom"
+  | "builtin_kua"
+  | "builtin_my"
+  | "builtin_generic";
 
 export type Checklist = {
   id: string;
