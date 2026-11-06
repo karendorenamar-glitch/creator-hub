@@ -83,13 +83,10 @@ export const landingCopy: Record<AppLocale, LandingCopy> = {
   id: {
     nav: [
       { label: "Fitur", href: "#fitur" },
-      { label: "Testimoni", href: "#testimoni" },
       { label: "Inspirasi", href: "#inspirasi" },
-      { label: "Anggaran", href: "#anggaran" },
-      { label: "Akses", href: "#harga" },
-      { label: "Affiliate", href: "/affiliate" },
+      { label: "Harga", href: "#harga" },
     ],
-    header: { login: "Masuk", signup: "Daftar", menu: "Menu" },
+    header: { login: "Masuk", signup: "Mulai", menu: "Menu" },
     hero: {
       eyebrow: "Wedding planner untuk persiapan yang lebih tenang",
       title: "Merencanakan Hari Istimewa,",
@@ -208,13 +205,10 @@ export const landingCopy: Record<AppLocale, LandingCopy> = {
   en: {
     nav: [
       { label: "Features", href: "#fitur" },
-      { label: "Stories", href: "#testimoni" },
       { label: "Inspiration", href: "#inspirasi" },
-      { label: "Budget", href: "#anggaran" },
-      { label: "Access", href: "#harga" },
-      { label: "Affiliate", href: "/affiliate" },
+      { label: "Pricing", href: "#harga" },
     ],
-    header: { login: "Sign in", signup: "Sign up", menu: "Menu" },
+    header: { login: "Log in", signup: "Get Started", menu: "Menu" },
     hero: {
       eyebrow: "A wedding planner for calmer preparation",
       title: "Plan Your Special Day,",

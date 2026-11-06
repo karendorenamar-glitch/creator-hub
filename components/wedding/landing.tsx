@@ -66,7 +66,6 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
           </nav>
 
           <div className="flex items-center gap-2">
-            <LanguageSwitcher locale={locale} className="hidden md:inline-flex" />
             <Link href="/wedding/login" className="rounded-full px-3 py-2 text-sm font-medium text-cocoa/70 hover:bg-blush/50 hover:text-cocoa">
               {copy.header.login}
             </Link>
@@ -86,6 +85,12 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
                     {label}
                   </a>
                 ))}
+                <Link href="/wedding/login" className="block rounded-xl px-3 py-2 text-sm text-cocoa/75 hover:bg-blush/40">
+                  {copy.header.login}
+                </Link>
+                <Link href="/wedding/signup" className="mt-1 block rounded-xl bg-rosewood px-3 py-2 text-center text-sm font-medium text-ivory">
+                  {copy.header.signup}
+                </Link>
               </div>
             </details>
           </div>
@@ -616,6 +621,7 @@ export function WeddingLanding({ locale }: { locale: AppLocale }) {
             ))}
             <Link href="/wedding/login" className="hover:text-rosewood">{copy.footer.login}</Link>
             <Link href="/wedding/signup" className="hover:text-rosewood">{copy.footer.signup}</Link>
+            <Link href="/affiliate" className="hover:text-rosewood">Affiliate</Link>
             <Link href="/privacy" className="hover:text-rosewood">{copy.footer.privacy}</Link>
             <Link href="/terms" className="hover:text-rosewood">{copy.footer.terms}</Link>
             <Link href="/refund" className="hover:text-rosewood">{copy.footer.refund}</Link>
