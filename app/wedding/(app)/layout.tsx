@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { WeddingShell } from "@/components/wedding/shell";
 import { CurrencyProvider } from "@/components/wedding/currency-provider";
+import { VersionGuard } from "@/components/wedding/version-guard";
 import { createWeddingClient } from "@/lib/wedding/supabase";
 import { loadCustomerCountry } from "@/lib/wedding/country";
 import { getCurrencyContext } from "@/lib/currency/server";
@@ -47,8 +48,12 @@ export default async function WeddingAppLayout({
     country,
   );
   const copy = weddingCopy[locale];
+  const build =
+    process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VERCEL_DEPLOYMENT_ID ?? "dev";
 
   return (
+    <>
+    <VersionGuard build={build} />
     <CurrencyProvider
       currency={currencyContext.currency}
       rates={currencyContext.rates}
@@ -65,5 +70,6 @@ export default async function WeddingAppLayout({
       {children}
     </WeddingShell>
     </CurrencyProvider>
+    </>
   );
 }

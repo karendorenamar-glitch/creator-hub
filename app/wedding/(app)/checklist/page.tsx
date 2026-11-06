@@ -1,3 +1,4 @@
+import { VersionGuard } from "@/components/wedding/version-guard";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChecklistBoard } from "@/components/wedding/checklist/checklist-board";
@@ -117,6 +118,13 @@ export default async function ChecklistPage() {
 
   return (
     <div className="space-y-7">
+      <VersionGuard
+        build={
+          process.env.VERCEL_GIT_COMMIT_SHA ??
+          process.env.VERCEL_DEPLOYMENT_ID ??
+          "dev"
+        }
+      />
       <PageHeader
         title={copy.checklist.title}
         subtitle={
