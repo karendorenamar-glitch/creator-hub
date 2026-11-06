@@ -39,8 +39,26 @@ export default async function OnboardingPage({
   // Onboarding follows the account country, not a leftover language cookie:
   // Indonesian customers see Indonesian, everyone else sees English.
   const cookieLocale = await getLocale();
-  const locale: "id" | "en" =
-    country === "ID" ? "id" : country ? "en" : cookieLocale;
+
+  // The payment is the strongest signal: a BCA/IDR payment means an Indonesian
+  // customer, even when the stored country is missing or set to OTHER.
+  const { data: paidRows } = await supabase
+    .from("payments")
+    .select("currency, method")
+    .eq("user_id", account.userId)
+    .eq("status", "approved")
+    .order("reviewed_at", { ascending: false })
+    .limit(1);
+  const paid = paidRows?.[0];
+  const paidInIdr = paid?.currency === "IDR" || paid?.method === "bank_transfer";
+
+  const locale: "id" | "en" = paidInIdr
+    ? "id"
+    : country === "ID"
+      ? "id"
+      : country
+        ? "en"
+        : cookieLocale;
   const copy = weddingCopy[locale];
   // Onboarding lives outside the (app) layout, so it needs its own provider;
   // otherwise useMoney falls back to IDR instead of the customer currency.
