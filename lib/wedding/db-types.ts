@@ -625,6 +625,21 @@ export type WeddingDatabase = {
     };
     Views: Record<string, never>;
     Functions: {
+      affiliate_payout_processing: { Args: { p_payout: string }; Returns: undefined };
+      affiliate_payout_paid: {
+        Args: {
+          p_payout: string;
+          p_transfer_date: string | null;
+          p_reference: string;
+          p_rate: number | null;
+          p_note?: string | null;
+        };
+        Returns: undefined;
+      };
+      affiliate_payout_reject: {
+        Args: { p_payout: string; p_reason: string };
+        Returns: undefined;
+      };
       affiliate_referrals_overview: {
         Args: Record<string, never>;
         Returns: {
