@@ -240,21 +240,26 @@ export async function signUpAction(
   }
 
   if (data.user) {
-    // Affiliate attribution: only runs when the visitor arrived through a
-    // referral link. Failures never block the signup itself.
+    // signUp above used a session-less client, so the browser has no session
+    // yet. Persist it on the cookie-aware client; without this the next step
+    // (saving the country at checkout) fails with error=country.
+    const { error: signInError } = await sessionClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (signInError) {
+      console.error("[signUpAction] session persist failed", signInError.message);
+    }
+
+    // Affiliate attribution: only when the visitor came through a referral
+    // link. Failures never block the signup itself.
     try {
       const refCode = (await cookies()).get("kefoo_ref")?.value;
-      if (refCode) {
-        const { error: refSignIn } = await sessionClient.auth.signInWithPassword({
-          email,
-          password,
+      if (refCode && !signInError) {
+        await sessionClient.rpc("attribute_affiliate_referral", {
+          p_code: refCode,
+          p_customer: data.user.id,
         });
-        if (!refSignIn) {
-          await sessionClient.rpc("attribute_affiliate_referral", {
-            p_code: refCode,
-            p_customer: data.user.id,
-          });
-        }
       }
     } catch (error) {
       console.error("[signUpAction] referral attribution failed", error);
