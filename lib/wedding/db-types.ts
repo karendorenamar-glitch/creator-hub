@@ -21,6 +21,8 @@ export type Wedding = {
   partner_one_name: string;
   partner_two_name: string | null;
   wedding_date: string | null;
+  state_code: string | null;
+  partner_nationality: string | null;
   location: string | null;
   estimated_guest_count: number | null;
   room_target?: number | null;
@@ -578,6 +580,8 @@ export type WeddingDatabase = {
           partner_one_name: string;
           partner_two_name: string | null;
           wedding_date: string | null;
+          state_code: string | null;
+          partner_nationality: string | null;
           location: string | null;
         }[];
       };

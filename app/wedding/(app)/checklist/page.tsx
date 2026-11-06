@@ -1,10 +1,12 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChecklistBoard } from "@/components/wedding/checklist/checklist-board";
 import { TaskManager } from "@/components/wedding/checklist/task-manager";
 import { TimelineList } from "@/components/wedding/checklist/timeline-list";
 import { Card, PageHeader, StatCard } from "@/components/wedding/ui";
 import { getLocale } from "@/lib/i18n/get-locale";
-import { ensureKuaChecklist } from "@/lib/wedding/checklists";
+import { ensureMarriageChecklist } from "@/lib/wedding/checklists";
+import { resolveMarriageTemplate } from "@/lib/wedding/marriage-templates";
 import { loadCustomerCountry } from "@/lib/wedding/country";
 import type { Checklist, ChecklistTask } from "@/lib/wedding/db-types";
 import { daysFromToday } from "@/lib/wedding/format";
@@ -23,13 +25,16 @@ export default async function ChecklistPage() {
   const copy = moduleCopy[locale];
   const supabase = await createWeddingClient();
 
-  // The KUA checklist is an Indonesian marriage-office flow. Customers outside
-  // Indonesia never get it seeded, and any row created before their country
-  // was known stays hidden. Their own checklists and timeline are unaffected.
+  // One country/state template per customer. Seeding is idempotent, so opening
+  // the page repeatedly never duplicates a checklist or overwrites progress.
   const country = await loadCustomerCountry(supabase, session.userId);
-  const hidesKua = country !== null && country !== "ID";
+  const template = resolveMarriageTemplate({
+    country,
+    stateCode: session.wedding.state_code ?? null,
+    partnerNationality: session.wedding.partner_nationality ?? null,
+  });
 
-  if (!hidesKua) await ensureKuaChecklist(supabase, session.wedding.id);
+  await ensureMarriageChecklist(supabase, session.wedding.id, template);
 
   const [
     { data: checklistRows },
@@ -57,15 +62,16 @@ export default async function ChecklistPage() {
   const allLists = (checklistRows ?? []) as Checklist[];
   const allTasks = (taskRows ?? []) as ChecklistTask[];
 
-  const lists = hidesKua
-    ? allLists.filter((checklist) => checklist.kind !== "builtin_kua")
-    : allLists;
+  // Only the active built-in template is shown; custom checklists are always
+  // kept, and snapshots from another country stay in the database untouched.
+  const lists = allLists.filter(
+    (checklist) =>
+      checklist.kind === "custom" || checklist.kind === template.kind,
+  );
   const visibleListIds = new Set(lists.map((checklist) => checklist.id));
-  const tasks = hidesKua
-    ? allTasks.filter(
-        (task) => !task.checklist_id || visibleListIds.has(task.checklist_id),
-      )
-    : allTasks;
+  const tasks = allTasks.filter(
+    (task) => !task.checklist_id || visibleListIds.has(task.checklist_id),
+  );
   const itemsByChecklist = new Map<string, ChecklistTask[]>();
   for (const task of tasks) {
     if (!task.checklist_id) continue;
@@ -108,6 +114,31 @@ export default async function ChecklistPage() {
         title={copy.checklist.title}
         subtitle={copy.checklist.subtitle}
       />
+
+      {template.needsPartnerNationality ? (
+        <Card className="border-amber-200 bg-amber-50">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-amber-900">
+                {locale === "en"
+                  ? "Complete your partner's nationality"
+                  : "Lengkapi kewarganegaraan pasangan"}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                {locale === "en"
+                  ? "Please update your partner's nationality in Settings to see the correct marriage document requirements."
+                  : "Perbarui kewarganegaraan pasangan di Settings untuk melihat persyaratan dokumen pernikahan yang tepat."}
+              </p>
+            </div>
+            <Link
+              href="/wedding/settings"
+              className="shrink-0 rounded-xl bg-olive-600 px-3.5 py-2 text-xs font-medium text-white hover:bg-olive-700"
+            >
+              {locale === "en" ? "Update Settings" : "Buka Settings"}
+            </Link>
+          </div>
+        </Card>
+      ) : null}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label={copy.checklist.title} value={String(tasks.length)} />

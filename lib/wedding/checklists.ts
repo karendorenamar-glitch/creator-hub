@@ -65,16 +65,16 @@ export async function ensureMarriageChecklist(
 
   if (!checklist) return;
 
-  const { count, error: countError } = await supabase
+  const { error: countError } = await supabase
     .from("checklist_tasks")
     .select("id", { count: "exact", head: true })
     .eq("checklist_id", checklist.id)
     .eq("wedding_id", weddingId);
 
   if (countError) throw new Error(countError.message);
-  // Existing snapshots are immutable sources for their wedding. Only seed a
-  // newly created or empty checklist; never inject later template additions.
-  if (count && count > 0) return;
+  // Never rewrite an existing snapshot: the upsert below only inserts template
+  // items that are missing (ignoreDuplicates), so adding the conditional
+  // foreign-spouse documents later keeps every existing task, note and status.
 
   const rows = template.items.map((item, index) => ({
     wedding_id: weddingId,

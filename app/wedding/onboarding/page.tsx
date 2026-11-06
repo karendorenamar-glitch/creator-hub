@@ -1,3 +1,5 @@
+import { loadCustomerCountry } from "@/lib/wedding/country";
+import { createWeddingClient } from "@/lib/wedding/supabase";
 import { redirect } from "next/navigation";
 import { BrandLogo } from "@/components/wedding/brand-logo";
 import { WeddingDetailsForm } from "@/components/wedding/wedding-form";
@@ -30,6 +32,10 @@ export default async function OnboardingPage({
   const copy = weddingCopy[await getLocale()];
   const { next, ref } = await searchParams;
 
+  // Country decides whether the Malaysian state selector is shown.
+  const supabase = await createWeddingClient();
+  const country = await loadCustomerCountry(supabase, account.userId);
+
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center px-4 py-12 sm:px-6">
       <div className="mb-6 flex items-center justify-between">
@@ -51,7 +57,13 @@ export default async function OnboardingPage({
         <p className="mt-2 mb-7 text-sm leading-relaxed text-ink-soft">
           {copy.onboarding.subtitle}
         </p>
-        <WeddingDetailsForm copy={copy} mode="create" next={next} refCode={ref} />
+        <WeddingDetailsForm
+          copy={copy}
+          mode="create"
+          next={next}
+          refCode={ref}
+          country={country}
+        />
       </Card>
     </div>
   );

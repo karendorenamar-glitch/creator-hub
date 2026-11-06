@@ -5,6 +5,8 @@ import { WeddingDetailsForm } from "@/components/wedding/wedding-form";
 import { getLocale } from "@/lib/i18n/get-locale";
 import { weddingCopy } from "@/lib/wedding/copy";
 import { loadWeddingSession } from "@/lib/wedding/session";
+import { loadCustomerCountry } from "@/lib/wedding/country";
+import { createWeddingClient } from "@/lib/wedding/supabase";
 
 export const metadata = { title: "Wedding Settings" };
 
@@ -17,6 +19,8 @@ export default async function WeddingSettingsPage() {
 
   const copy = weddingCopy[locale];
   const wedding = session.wedding;
+  const supabase = await createWeddingClient();
+  const country = await loadCustomerCountry(supabase, session.userId);
 
   return (
     <div className="space-y-7">
@@ -26,6 +30,7 @@ export default async function WeddingSettingsPage() {
         <WeddingDetailsForm
           copy={copy}
           mode="update"
+          country={country}
           values={{
             partnerOne: wedding.partner_one_name,
             partnerTwo: wedding.partner_two_name ?? "",
@@ -36,6 +41,8 @@ export default async function WeddingSettingsPage() {
                 ? ""
                 : String(wedding.estimated_guest_count),
             totalBudget: wedding.total_budget,
+            stateCode: wedding.state_code ?? null,
+            partnerNationality: wedding.partner_nationality ?? null,
             notes: wedding.notes ?? "",
           }}
         />

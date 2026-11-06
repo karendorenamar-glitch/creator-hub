@@ -1,5 +1,7 @@
 "use client";
 
+import { MALAYSIA_STATES } from "@/lib/wedding/marriage-templates";
+import { COUNTRIES } from "@/lib/wedding/countries";
 import { CurrencyField } from "@/components/wedding/currency-field";
 import { useMoney } from "@/components/wedding/currency-provider";
 import { useActionState } from "react";
@@ -25,6 +27,8 @@ export type WeddingFormValues = {
   location: string;
   estimatedGuests: string;
   totalBudget: number;
+  stateCode?: string | null;
+  partnerNationality?: string | null;
   notes?: string;
 };
 
@@ -34,12 +38,14 @@ export function WeddingDetailsForm({
   values,
   next,
   refCode,
+  country,
 }: {
   copy: WeddingCopy;
   mode: "create" | "update";
   values?: WeddingFormValues;
   next?: string;
   refCode?: string;
+  country?: string | null;
 }) {
   const money = useMoney();
   const action = mode === "create" ? createWeddingAction : updateWeddingAction;
@@ -152,6 +158,58 @@ export function WeddingDetailsForm({
           />
         </div>
       </div>
+
+      {country === "MY" ? (
+        <div className="space-y-1.5">
+          <label htmlFor="stateCode" className={labelClass}>
+            Negeri Tempat Permohonan Nikah
+          </label>
+          <select
+            id="stateCode"
+            name="stateCode"
+            defaultValue={values?.stateCode ?? ""}
+            className={fieldClass}
+          >
+            <option value="">Sila pilih negeri</option>
+            {MALAYSIA_STATES.map((state) => (
+              <option key={state.code} value={state.code}>
+                {state.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs leading-relaxed text-ink-soft">
+            Digunakan untuk menyediakan checklist urusan perkahwinan negeri anda.
+          </p>
+        </div>
+      ) : null}
+
+      {country === "MY" ? (
+        <div className="space-y-1.5">
+          <label htmlFor="partnerNationality" className={labelClass}>
+            Partner&apos;s Nationality / Kewarganegaraan Pasangan
+          </label>
+          <select
+            id="partnerNationality"
+            name="partnerNationality"
+            defaultValue={values?.partnerNationality ?? ""}
+            className={fieldClass}
+          >
+            <option value="">Belum diisi</option>
+            <option value="MY">Malaysian</option>
+            <option value="ID">Indonesian</option>
+            {COUNTRIES.filter((item) =>
+              ["SG", "US", "GB", "AU"].includes(item.code),
+            ).map((item) => (
+              <option key={item.code} value={item.code}>
+                Other — {item.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs leading-relaxed text-ink-soft">
+            Menentukan sama ada dokumen pasangan warga asing diperlukan.
+          </p>
+        </div>
+      ) : null}
 
       {mode === "update" ? (
         <div className="space-y-1.5">

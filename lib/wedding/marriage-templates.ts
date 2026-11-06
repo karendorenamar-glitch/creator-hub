@@ -26,6 +26,11 @@ export type MarriageTemplate = {
   title: (year: number) => string;
   groups: string[];
   items: MarriageTemplateItem[];
+  /**
+   * True when the conditional foreign-spouse documents cannot be decided yet
+   * because the customer has not provided the partner nationality.
+   */
+  needsPartnerNationality?: boolean;
 };
 
 export type MalaysiaStateCode =
@@ -210,20 +215,27 @@ export const INTERNATIONAL_TEMPLATE: MarriageTemplate = {
 export function resolveMarriageTemplate({
   country,
   stateCode,
+  partnerNationality,
 }: {
   country: string | null;
   stateCode?: string | null;
+  partnerNationality?: string | null;
 }): MarriageTemplate {
   if (country === "ID") return INDONESIA_TEMPLATE;
   if (country === "MY") {
     const state = MALAYSIA_STATES.find((item) => item.code === stateCode) ?? null;
+    const known = Boolean(partnerNationality);
+    const isForeign = known && partnerNationality !== "MY";
     return {
       key: MALAYSIA_TEMPLATE_KEY,
       kind: "builtin_my",
       country: "MY",
       title: (year) => `Urusan Perkahwinan Islam Malaysia ${year}`,
-      groups: [...MY_GROUPS],
-      items: malaysiaItems(state),
+      groups: isForeign ? [...MY_GROUPS] : [...MY_GROUPS.slice(0, 5)],
+      items: isForeign
+        ? [...malaysiaItems(state), ...foreignPartnerItems()]
+        : malaysiaItems(state),
+      needsPartnerNationality: !known,
     };
   }
   return INTERNATIONAL_TEMPLATE;

@@ -12,6 +12,7 @@ import {
 } from "@/lib/wedding/supabase";
 import { getCurrentUser, loadWeddingSession } from "@/lib/wedding/session";
 import { isCountryCode } from "@/lib/wedding/countries";
+import { MALAYSIA_STATES } from "@/lib/wedding/marriage-templates";
 import { isCurrencyCode } from "@/lib/currency/currencies";
 import {
   convertInputAmounts,
@@ -23,6 +24,18 @@ export type FormState =
   | { error?: string; success?: string; info?: string }
   | null;
 
+
+function readMalaysiaState(formData: FormData): string | null {
+  const code = text(formData, "stateCode");
+  return MALAYSIA_STATES.some((state) => state.code === code) ? code : null;
+}
+
+const PARTNER_NATIONALITIES = ["MY", "ID", "SG", "US", "GB", "AU"] as const;
+
+function readPartnerNationality(formData: FormData): string | null {
+  const code = text(formData, "partnerNationality");
+  return (PARTNER_NATIONALITIES as readonly string[]).includes(code) ? code : null;
+}
 
 function safeNext(value: string, fallback = "/wedding/dashboard") {
   if (!value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
@@ -383,6 +396,21 @@ export async function createWeddingAction(
     return { error: copy.common.genericError };
   }
 
+  // The RPC signature predates state_code, so it is stored right after creation.
+  const newStateCode = readMalaysiaState(formData);
+  if (newStateCode) {
+    const { error: stateError } = await supabase
+      .from("weddings")
+      .update({
+        state_code: newStateCode,
+        partner_nationality: readPartnerNationality(formData),
+      })
+      .eq("created_by", user.id);
+    if (stateError) {
+      console.error("[createWeddingAction] state save failed", stateError.message);
+    }
+  }
+
   revalidatePath("/wedding", "layout");
   redirect(withRef("/wedding/dashboard", text(formData, "ref")));
 }
@@ -444,6 +472,8 @@ export async function updateWeddingAction(
       notes: notes || null,
       estimated_guest_count: estimatedGuests,
       total_budget: budgetConversion.idr[0],
+      state_code: readMalaysiaState(formData),
+      partner_nationality: readPartnerNationality(formData),
     })
     .eq("id", session.wedding.id);
 
