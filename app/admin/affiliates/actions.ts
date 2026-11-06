@@ -29,7 +29,11 @@ export async function deleteAffiliate(formData: FormData): Promise<void> {
   const id = text(formData, "affiliateId");
 
   const supabase = await createWeddingClient();
-  const { error } = await supabase.rpc("admin_delete_affiliate", { p_affiliate: id });
+  const deleteLogin = text(formData, "deleteLogin") === "yes";
+  const { error } = await supabase.rpc("admin_delete_affiliate", {
+    p_affiliate: id,
+    p_delete_login: deleteLogin,
+  });
   if (error) {
     console.error("[deleteAffiliate]", error.message);
     revalidatePath(`/admin/affiliates/${id}`);

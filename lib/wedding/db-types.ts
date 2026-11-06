@@ -630,7 +630,7 @@ export type WeddingDatabase = {
         Returns: undefined;
       };
       admin_delete_affiliate: {
-        Args: { p_affiliate: string };
+        Args: { p_affiliate: string; p_delete_login?: boolean };
         Returns: undefined;
       };
       affiliate_payout_processing: { Args: { p_payout: string }; Returns: undefined };

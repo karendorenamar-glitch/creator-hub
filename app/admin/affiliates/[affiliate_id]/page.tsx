@@ -90,16 +90,20 @@ export default async function AdminAffiliateDetailPage({
           </form>
         )}
 
-        {totalClicks === 0 && referralRows.length === 0 && commissionRows.length === 0 && payoutRows.length === 0 ? (
-          <form action={deleteAffiliate}>
+        {commissionRows.length === 0 && payoutRows.length === 0 ? (
+          <form action={deleteAffiliate} className="space-y-1">
             <input type="hidden" name="affiliateId" value={affiliate.id} />
+            <label className="flex items-center gap-2 text-[11px] text-cocoa/70">
+              <input type="checkbox" name="deleteLogin" value="yes" />
+              Also delete the login account (email can register again)
+            </label>
             <button className="text-[11px] text-rose-600 underline">
-              Delete affiliate (no history)
+              Delete affiliate (clicks and referrals are removed too)
             </button>
           </form>
         ) : (
           <p className="text-[11px] text-cocoa/50">
-            This affiliate has history, so it cannot be deleted. Suspend it instead.
+            This affiliate has commission or payout history, so it cannot be deleted. Suspend it instead.
           </p>
         )}
       </Card>
