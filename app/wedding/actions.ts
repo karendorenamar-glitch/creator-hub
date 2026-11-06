@@ -240,6 +240,26 @@ export async function signUpAction(
   }
 
   if (data.user) {
+    // Affiliate attribution: only runs when the visitor arrived through a
+    // referral link. Failures never block the signup itself.
+    try {
+      const refCode = (await cookies()).get("kefoo_ref")?.value;
+      if (refCode) {
+        const { error: refSignIn } = await sessionClient.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (!refSignIn) {
+          await sessionClient.rpc("attribute_affiliate_referral", {
+            p_code: refCode,
+            p_customer: data.user.id,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("[signUpAction] referral attribution failed", error);
+    }
+
     await saveCustomerCountry(sessionClient, data.user.id, country).catch(
       (error: unknown) => {
         console.error("[signUpAction] country save failed", error);

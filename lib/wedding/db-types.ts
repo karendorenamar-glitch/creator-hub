@@ -515,6 +515,43 @@ type Table<Row> = {
 export type WeddingDatabase = {
   public: {
     Tables: {
+      affiliate_clicks: Table<{
+        id: string;
+        affiliate_id: string;
+        session_id: string | null;
+        clicked_at: string;
+      }>;
+      affiliate_referrals: Table<{
+        id: string;
+        affiliate_id: string;
+        customer_user_id: string | null;
+        attribution_status: string;
+        attributed_at: string;
+      }>;
+      affiliate_commissions: Table<{
+        id: string;
+        affiliate_id: string;
+        payment_id: string | null;
+        currency: string;
+        commission_amount: number;
+        status: string;
+      }>;
+      affiliates: Table<{
+        id: string;
+        user_id: string | null;
+        email: string;
+        full_name: string;
+        referral_code: string;
+        status: "active" | "suspended";
+        suspended_reason: string | null;
+        instagram_username: string | null;
+        tiktok_username: string | null;
+        bank_name: string | null;
+        account_holder_name: string | null;
+        bank_account_number: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
       app_settings: Table<AppSettings>;
       admins: Table<Admin>;
       weddings: Table<Wedding>;
@@ -562,6 +599,46 @@ export type WeddingDatabase = {
     };
     Views: Record<string, never>;
     Functions: {
+      affiliate_request_payout: {
+        Args: {
+          p_currency: string;
+          p_amount: number;
+          p_bank: string;
+          p_holder: string;
+          p_account: string;
+        };
+        Returns: string;
+      };
+      record_affiliate_click: {
+        Args: {
+          p_code: string;
+          p_session?: string | null;
+          p_landing?: string | null;
+          p_referrer?: string | null;
+        };
+        Returns: string | null;
+      };
+      attribute_affiliate_referral: {
+        Args: { p_code: string; p_customer: string };
+        Returns: boolean;
+      };
+      register_affiliate: {
+        Args: { p_full_name: string; p_email: string };
+        Returns: string;
+      };
+      affiliate_balances: {
+        Args: { p_affiliate_id: string };
+        Returns: {
+          currency: string;
+          commissions_count: number;
+          earned: number;
+          reserved: number;
+          released: number;
+          paid: number;
+          available: number;
+          pending_payout: number;
+        }[];
+      };
       get_public_invitation: {
         Args: { p_slug: string };
         Returns: {

@@ -87,6 +87,7 @@ export const landingCopy: Record<AppLocale, LandingCopy> = {
       { label: "Inspirasi", href: "#inspirasi" },
       { label: "Anggaran", href: "#anggaran" },
       { label: "Akses", href: "#harga" },
+      { label: "Affiliate", href: "/affiliate" },
     ],
     header: { login: "Masuk", signup: "Daftar", menu: "Menu" },
     hero: {
@@ -211,6 +212,7 @@ export const landingCopy: Record<AppLocale, LandingCopy> = {
       { label: "Inspiration", href: "#inspirasi" },
       { label: "Budget", href: "#anggaran" },
       { label: "Access", href: "#harga" },
+      { label: "Affiliate", href: "/affiliate" },
     ],
     header: { login: "Sign in", signup: "Sign up", menu: "Menu" },
     hero: {
