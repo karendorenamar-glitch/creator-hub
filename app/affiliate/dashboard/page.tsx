@@ -4,6 +4,7 @@ import { createWeddingClient } from "@/lib/wedding/supabase";
 import { loadAffiliate } from "@/lib/affiliate/session";
 import { loadAffiliateStats } from "@/lib/affiliate/stats";
 import { PayoutForm } from "@/components/affiliate/payout-form";
+import { CopyLink } from "@/components/affiliate/copy-link";
 
 const money = (currency: string, value: number) =>
   currency === "USD"
@@ -61,9 +62,7 @@ export default async function AffiliateDashboardPage() {
 
       <div className="mt-8 rounded-2xl border border-blush/60 bg-white p-5">
         <p className="text-xs uppercase tracking-[0.2em] text-ink-soft">Your referral link</p>
-        <p className="mt-2 break-all text-sm font-medium text-ink">
-          https://www.kefoo.tech/ref/{affiliate.referral_code}
-        </p>
+        <CopyLink url={`https://www.kefoo.tech/ref/${affiliate.referral_code}`} />
       </div>
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

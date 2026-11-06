@@ -16,7 +16,16 @@ export async function loginAffiliateAction(
 
   const supabase = await createWeddingClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: "Email or password is incorrect." };
+  if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("confirm")) {
+      return { error: "This email is not confirmed yet. Check your inbox for the confirmation link." };
+    }
+    if (message.includes("rate") || message.includes("too many") || error.status === 429) {
+      return { error: "Too many attempts. Wait a few minutes and try again." };
+    }
+    return { error: `Sign in failed (${error.message}).` };
+  }
 
   const { data: affiliate } = await supabase
     .from("affiliates")

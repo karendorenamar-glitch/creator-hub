@@ -25,11 +25,11 @@ export async function GET(
 
   // Unknown or suspended code: no cookie, no attribution, plain signup.
   if (!affiliateId) {
-    return NextResponse.redirect(new URL("/wedding/signup", request.url));
+    return NextResponse.redirect(new URL("/wedding-budget-planner", request.url));
   }
 
   const response = NextResponse.redirect(
-    new URL(`/wedding/signup?ref=${clean}`, request.url),
+    new URL("/wedding-budget-planner", request.url),
   );
   response.cookies.set(COOKIE, clean, {
     httpOnly: true,
