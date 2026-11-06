@@ -12,13 +12,21 @@ export default async function AdminOverviewPage() {
   const kpi = await getAdminOverview();
 
   const supabase = await createWeddingClient();
-  const [affiliateRows, signupCount, approvedCount] = await Promise.all([
+  const [affiliateRows, signupCount, approvedCount, payoutRows] = await Promise.all([
     supabase.from("affiliates").select("id, status"),
     supabase.from("affiliate_referrals").select("id", { count: "exact", head: true }),
     supabase.from("affiliate_commissions").select("id", { count: "exact", head: true }),
+    supabase.from("affiliate_payouts").select("currency, amount, status").eq("status", "pending"),
   ]);
   const affiliates = affiliateRows.data ?? [];
   const activeAffiliates = affiliates.filter((row) => row.status === "active").length;
+  const pendingPayouts = payoutRows.data ?? [];
+  const pendingPayoutIdr = pendingPayouts
+    .filter((row) => row.currency === "IDR")
+    .reduce((sum, row) => sum + Number(row.amount), 0);
+  const pendingPayoutUsd = pendingPayouts
+    .filter((row) => row.currency === "USD")
+    .reduce((sum, row) => sum + Number(row.amount), 0);
 
   return (
     <div className="space-y-6">
@@ -55,6 +63,20 @@ export default async function AdminOverviewPage() {
             className="inline-flex rounded-full bg-rosewood px-4 py-2 text-sm text-ivory hover:bg-cocoa"
           >
             Review pembayaran
+          </Link>
+        </Card>
+
+        <Card className="space-y-2">
+          <h2 className="font-heading text-lg">Affiliate payouts</h2>
+          <p className="text-sm text-cocoa/60">
+            {pendingPayouts.length} permintaan menunggu · {formatIDR(pendingPayoutIdr)}
+            {pendingPayoutUsd > 0 ? ` · $${pendingPayoutUsd.toFixed(2)}` : ""}
+          </p>
+          <Link
+            href="/admin/affiliate-payouts"
+            className="inline-flex rounded-full border border-blush px-4 py-2 text-sm text-rosewood hover:bg-blush/40"
+          >
+            Proses payout
           </Link>
         </Card>
 
