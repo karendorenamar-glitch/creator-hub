@@ -610,6 +610,37 @@ export type WeddingDatabase = {
       music_tracks: Table<MusicTrack>;
       payments: Table<Payment>;
       user_entitlements: Table<UserEntitlement>;
+      seserahan_categories: Table<{
+        id: string;
+        wedding_id: string;
+        name: string;
+        sort_order: number;
+        created_at: string;
+        updated_at: string;
+      }>;
+      seserahan_items: Table<{
+        id: string;
+        wedding_id: string;
+        party: "groom" | "bride";
+        name: string;
+        category_id: string | null;
+        price: number;
+        quantity: number;
+        status: "purchased" | "not_purchased";
+        notes: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      seserahan_photos: Table<{
+        id: string;
+        wedding_id: string;
+        item_id: string;
+        path: string;
+        mime_type: string | null;
+        original_name: string | null;
+        sort_order: number;
+        created_at: string;
+      }>;
       customer_profiles: Table<{
         user_id: string;
         country_code: string;

@@ -34,6 +34,7 @@ const NAV: { key: NavKey; href: string; Icon: typeof LayoutDashboard }[] = [
   { key: "vendors", href: "/wedding/vendors", Icon: Store },
   { key: "budget", href: "/wedding/budget", Icon: Wallet },
   { key: "checklist", href: "/wedding/checklist", Icon: ListOrdered },
+  { key: "seserahan", href: "/wedding/seserahan", Icon: ListOrdered },
   { key: "guests", href: "/wedding/guests", Icon: Users },
   { key: "invitation", href: "/wedding/invitation", Icon: Mail },
   { key: "seating", href: "/wedding/seating", Icon: Map },
