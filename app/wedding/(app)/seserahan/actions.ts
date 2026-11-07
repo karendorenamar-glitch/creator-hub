@@ -299,6 +299,56 @@ export async function deleteCategoryAction(formData: FormData): Promise<void> {
   revalidatePath(PATH);
 }
 
+/**
+ * Reorders one photo inside its item. `mode` is "left" | "right" | "cover".
+ * Order is written as 0..n-1 so the first photo is always the cover.
+ */
+export async function movePhotoAction(formData: FormData): Promise<void> {
+  const ctx = await context();
+  const id = text(formData, "id");
+  const mode = text(formData, "mode");
+  if (!isUuid(id)) return;
+  if (!["left", "right", "cover"].includes(mode)) return;
+
+  const { data: photo } = await ctx.supabase
+    .from("seserahan_photos")
+    .select("id, item_id")
+    .eq("id", id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .maybeSingle();
+  if (!photo) return;
+
+  const { data: siblings } = await ctx.supabase
+    .from("seserahan_photos")
+    .select("id, sort_order, created_at")
+    .eq("item_id", photo.item_id)
+    .eq("wedding_id", ctx.session.wedding.id)
+    .order("sort_order")
+    .order("created_at");
+  if (!siblings || siblings.length < 2) return;
+
+  const order = siblings.map((row) => row.id);
+  const current = order.indexOf(id);
+  if (current === -1) return;
+
+  const target =
+    mode === "cover" ? 0 : mode === "left" ? current - 1 : current + 1;
+  if (target < 0 || target >= order.length || target === current) return;
+
+  order.splice(current, 1);
+  order.splice(target, 0, id);
+
+  for (const [index, photoId] of order.entries()) {
+    await ctx.supabase
+      .from("seserahan_photos")
+      .update({ sort_order: index })
+      .eq("id", photoId)
+      .eq("wedding_id", ctx.session.wedding.id);
+  }
+
+  revalidatePath(PATH);
+}
+
 export async function deletePhotoAction(formData: FormData): Promise<void> {
   const ctx = await context();
   const id = text(formData, "id");

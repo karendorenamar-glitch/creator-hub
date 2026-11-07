@@ -7,6 +7,7 @@ import {
   deleteCategoryAction,
   deleteItemAction,
   deletePhotoAction,
+  movePhotoAction,
   toggleItemStatusAction,
   updateCategoryAction,
   updateItemAction,
@@ -279,20 +280,59 @@ export default async function SeserahanPage() {
 
                       {gallery.length > 0 ? (
                         <div className="flex gap-2 overflow-x-auto pb-1">
-                          {gallery.map((photo) => (
-                            <div key={photo.id} className="relative shrink-0">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={photo.url}
-                                alt={item.name}
-                                className="h-20 w-20 rounded-xl border border-rose-100 object-cover"
-                              />
-                              <form action={deletePhotoAction}>
-                                <input type="hidden" name="id" value={photo.id} />
-                                <button className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] text-red-600 shadow">
-                                  ✕
-                                </button>
-                              </form>
+                          {gallery.map((photo, index) => (
+                            <div key={photo.id} className="shrink-0 space-y-1">
+                              <div className="relative">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={photo.url}
+                                  alt={item.name}
+                                  className="h-20 w-20 rounded-xl border border-rose-100 object-cover"
+                                />
+                                {index === 0 ? (
+                                  <span className="absolute bottom-0.5 left-0.5 rounded bg-amber-400/90 px-1 text-[9px] font-semibold text-stone-800">
+                                    Cover
+                                  </span>
+                                ) : null}
+                                <form action={deletePhotoAction}>
+                                  <input type="hidden" name="id" value={photo.id} />
+                                  <button className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-[10px] text-red-600 shadow">
+                                    ✕
+                                  </button>
+                                </form>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <form action={movePhotoAction}>
+                                  <input type="hidden" name="id" value={photo.id} />
+                                  <input type="hidden" name="mode" value="left" />
+                                  <button
+                                    className="rounded bg-white px-1 text-[10px] text-stone-500 shadow-sm hover:text-rose-600 disabled:opacity-30"
+                                    title="Geser kiri"
+                                  >
+                                    ◀
+                                  </button>
+                                </form>
+                                <form action={movePhotoAction}>
+                                  <input type="hidden" name="id" value={photo.id} />
+                                  <input type="hidden" name="mode" value="right" />
+                                  <button
+                                    className="rounded bg-white px-1 text-[10px] text-stone-500 shadow-sm hover:text-rose-600"
+                                    title="Geser kanan"
+                                  >
+                                    ▶
+                                  </button>
+                                </form>
+                                <form action={movePhotoAction}>
+                                  <input type="hidden" name="id" value={photo.id} />
+                                  <input type="hidden" name="mode" value="cover" />
+                                  <button
+                                    className="rounded bg-white px-1 text-[10px] text-amber-500 shadow-sm hover:text-amber-600"
+                                    title="Jadikan cover"
+                                  >
+                                    ★
+                                  </button>
+                                </form>
+                              </div>
                             </div>
                           ))}
                         </div>
