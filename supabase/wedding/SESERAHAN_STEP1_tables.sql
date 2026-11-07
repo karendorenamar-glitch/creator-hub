@@ -87,6 +87,8 @@ revoke all on public.seserahan_categories, public.seserahan_items, public.sesera
 
 -- Storage: private bucket, path <weddingId>/<itemId>/<file>
 
+commit;
+
 select table_name
 from information_schema.tables
 where table_schema = 'public' and table_name like 'seserahan%'
