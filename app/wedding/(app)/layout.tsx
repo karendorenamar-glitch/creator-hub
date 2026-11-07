@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { WeddingShell } from "@/components/wedding/shell";
+import { FloralDecor } from "@/components/wedding/floral-decor";
 import { CurrencyProvider } from "@/components/wedding/currency-provider";
 import { VersionGuard } from "@/components/wedding/version-guard";
 import { createWeddingClient } from "@/lib/wedding/supabase";
@@ -67,7 +68,10 @@ export default async function WeddingAppLayout({
       weddingDateLabel={formatWeddingDate(session.wedding.wedding_date, locale)}
       isAdmin={isAdmin}
     >
-      {children}
+      <div className="relative">
+        <FloralDecor />
+        <div className="relative z-10">{children}</div>
+      </div>
     </WeddingShell>
     </CurrencyProvider>
     </>
