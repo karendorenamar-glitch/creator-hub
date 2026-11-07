@@ -623,6 +623,7 @@ export type WeddingDatabase = {
         wedding_id: string;
         party: "groom" | "bride";
         name: string;
+        brand: string | null;
         category_id: string | null;
         price: number;
         quantity: number;

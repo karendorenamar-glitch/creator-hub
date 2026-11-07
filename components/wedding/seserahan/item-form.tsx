@@ -12,6 +12,7 @@ export type ItemValues = {
   id: string;
   party: "groom" | "bride";
   name: string;
+  brand: string | null;
   categoryName: string | null;
   quantity: number;
   status: "purchased" | "not_purchased";
@@ -49,6 +50,20 @@ export function ItemForm({
           maxLength={120}
           defaultValue={item?.name ?? ""}
           placeholder="Contoh: Perhiasan emas"
+          className={inputClass}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass} htmlFor={`brand-${item?.id ?? party}`}>
+          Merk / brand
+        </label>
+        <input
+          id={`brand-${item?.id ?? party}`}
+          name="brand"
+          maxLength={80}
+          defaultValue={item?.brand ?? ""}
+          placeholder="Opsional, contoh: Wardah"
           className={inputClass}
         />
       </div>

@@ -111,6 +111,7 @@ export async function createItemAction(
       wedding_id: ctx.session.wedding.id,
       party: side,
       name,
+      brand: optionalText(formData, "brand", 80),
       category_id: categoryId,
       price: conversion.idr[0],
       quantity,
@@ -167,6 +168,7 @@ export async function updateItemAction(
     .update({
       party: side,
       name,
+      brand: optionalText(formData, "brand", 80),
       category_id: categoryId,
       ...(priceIdr === undefined ? {} : { price: priceIdr }),
       quantity,

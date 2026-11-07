@@ -67,7 +67,7 @@ export default async function SeserahanPage() {
 
   const { data: items } = await supabase
     .from("seserahan_items")
-    .select("id, party, name, category_id, price, quantity, status, notes, created_at")
+    .select("id, party, name, brand, category_id, price, quantity, status, notes, created_at")
     .eq("wedding_id", weddingId)
     .order("created_at", { ascending: false });
 
@@ -209,6 +209,7 @@ export default async function SeserahanPage() {
                         <div>
                           <h3 className="font-medium text-stone-800">{item.name}</h3>
                           <p className="text-[11px] text-stone-500">
+                            {item.brand ? `${item.brand} · ` : ""}
                             {item.category_id ? (categoryName.get(item.category_id) ?? "Tanpa kategori") : "Tanpa kategori"}
                           </p>
                         </div>
@@ -321,6 +322,7 @@ export default async function SeserahanPage() {
                               id: item.id,
                               party: item.party,
                               name: item.name,
+                              brand: item.brand,
                               categoryName: item.category_id
                                 ? (categoryName.get(item.category_id) ?? null)
                                 : null,
