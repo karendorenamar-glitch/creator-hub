@@ -6,6 +6,7 @@ import { DonationManager } from "@/components/wedding/budget/donation-manager";
 import { OtherCostManager } from "@/components/wedding/budget/other-cost-manager";
 import { TotalBudgetForm } from "@/components/wedding/budget/total-budget-form";
 import { TotalCostCard } from "@/components/wedding/budget/total-cost-card";
+import { SeserahanBudgetCard } from "@/components/wedding/budget/seserahan-budget-card";
 import { Card, PageHeader, Progress } from "@/components/wedding/ui";
 import type { TargetBudgetStatus } from "@/lib/wedding/budget-calc";
 import { VendorList } from "@/components/wedding/vendors/vendor-list";
@@ -106,6 +107,19 @@ export default async function BudgetPage({
     session.userId,
   );
   const data = await loadVendorsPageData(session.wedding.id, targetBudget);
+
+  // Seserahan money is derived, never stored: reads straight from the module.
+  const seserahanClient = await createWeddingClient();
+  const { data: seserahanRows } = await seserahanClient
+    .from("seserahan_items")
+    .select("party, price, quantity, status")
+    .eq("wedding_id", session.wedding.id);
+  const seserahanSummaryRows = (seserahanRows ?? []).map((row) => ({
+    party: row.party,
+    price: Number(row.price),
+    quantity: Number(row.quantity),
+    status: row.status,
+  }));
   const { calc } = data;
 
   // Pilih Vendor only prefills this existing form. Nothing is created until
@@ -302,6 +316,8 @@ export default async function BudgetPage({
       <Card className="space-y-4">
         <OtherCostManager otherCosts={data.otherCosts} copy={copy} />
       </Card>
+
+      <SeserahanBudgetCard rows={seserahanSummaryRows} />
     </div>
   );
 }
