@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import type { SeserahanState } from "@/app/wedding/(app)/seserahan/actions";
 
 const inputClass =
-  "w-full rounded-xl border border-rose-200/70 bg-white/80 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-rose-400 focus:ring-2 focus:ring-rose-200/60";
+  "w-full rounded-xl border border-olive-200/70 bg-white/80 px-3 py-2 text-sm text-stone-800 shadow-sm outline-none transition focus:border-olive-400 focus:ring-2 focus:ring-olive-200/50";
 
 const labelClass = "mb-1 block text-xs font-medium text-stone-600";
 
@@ -40,6 +40,23 @@ export function ItemForm({
       <input type="hidden" name="party" value={party} />
 
       <div>
+        <label className={labelClass}>Kategori</label>
+        <input
+          name="categoryName"
+          list="seserahan-category-options"
+          maxLength={60}
+          defaultValue={item?.categoryName ?? ""}
+          placeholder="Pilih atau ketik kategori"
+          className={inputClass}
+        />
+        <datalist id="seserahan-category-options">
+          {categories.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+      </div>
+
+      <div>
         <label className={labelClass} htmlFor={`name-${item?.id ?? party}`}>
           Nama item *
         </label>
@@ -66,23 +83,6 @@ export function ItemForm({
           placeholder="Opsional, contoh: Wardah"
           className={inputClass}
         />
-      </div>
-
-      <div>
-        <label className={labelClass}>Kategori</label>
-        <input
-          name="categoryName"
-          list="seserahan-category-options"
-          maxLength={60}
-          defaultValue={item?.categoryName ?? ""}
-          placeholder="Pilih atau ketik kategori"
-          className={inputClass}
-        />
-        <datalist id="seserahan-category-options">
-          {categories.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">
@@ -138,7 +138,7 @@ export function ItemForm({
           name="photos"
           multiple
           accept="image/jpeg,image/png,image/webp"
-          className="block w-full text-xs text-stone-600 file:mr-3 file:rounded-full file:border-0 file:bg-rose-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-rose-700"
+          className="block w-full text-xs text-stone-600 file:mr-3 file:rounded-full file:border-0 file:bg-petal-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-rosewood"
         />
       </div>
 
@@ -152,7 +152,7 @@ export function ItemForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-full bg-rose-500 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-rose-600 disabled:opacity-60"
+        className="w-full rounded-full bg-olive-700 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-olive-800 disabled:opacity-60"
       >
         {pending ? "Menyimpan..." : submitLabel}
       </button>

@@ -30,8 +30,8 @@ const rupiah = new Intl.NumberFormat("id-ID", {
 });
 
 const PARTIES = [
-  { key: "bride" as const, title: "Pihak Wanita", accent: "from-rose-50 to-amber-50" },
-  { key: "groom" as const, title: "Pihak Pria", accent: "from-stone-100 to-rose-50" },
+  { key: "bride" as const, title: "Pihak Wanita", accent: "from-petal-50 to-cream" },
+  { key: "groom" as const, title: "Pihak Pria", accent: "from-olive-50 to-cream" },
 ];
 
 export default async function SeserahanPage() {
@@ -119,7 +119,7 @@ export default async function SeserahanPage() {
   ) => (
     <div
       key={label}
-      className={`rounded-2xl border border-rose-100 px-4 py-3 ${tone === "rose" ? "bg-rose-50/70" : tone === "stone" ? "bg-stone-50" : "bg-[#fdfaf5]"}`}
+      className={`rounded-2xl border border-petal-100 px-4 py-3 ${tone === "rose" ? "bg-petal-50/70" : tone === "stone" ? "bg-stone-50" : "bg-[#fdfaf5]"}`}
     >
       <p className="text-[11px] uppercase tracking-wide text-stone-500">{label}</p>
       <p className="mt-1 text-sm font-semibold text-stone-800">{value}</p>
@@ -143,17 +143,17 @@ export default async function SeserahanPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-8 px-4 py-8 sm:px-6">
       <header className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.2em] text-rose-400">Seserahan</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-rosewood/70">Seserahan</p>
         <h1 className="font-serif text-2xl text-stone-800 sm:text-3xl">Daftar Seserahan</h1>
         <p className="text-sm text-stone-500">
           Kelola seserahan pihak pria dan wanita, lengkap dengan foto dan status pembelian.
         </p>
       </header>
 
-      <section className="rounded-3xl border border-rose-100 bg-white/70 p-5 shadow-sm">
+      <section className="rounded-3xl border border-petal-100 bg-white/70 p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-serif text-lg text-stone-800">Ringkasan keseluruhan</h2>
-          <span className="rounded-full bg-rose-100 px-3 py-1 text-[11px] font-medium text-rose-700">
+          <span className="rounded-full bg-petal-100 px-3 py-1 text-[11px] font-medium text-rosewood">
             {overall.total} item
           </span>
         </div>
@@ -171,13 +171,13 @@ export default async function SeserahanPage() {
         const rows = party.key === "groom" ? groomItems : brideItems;
         return (
           <section key={party.key} className="space-y-4">
-            <div className={`rounded-3xl border border-rose-100 bg-gradient-to-r ${party.accent} px-5 py-4`}>
+            <div className={`rounded-3xl border border-petal-100 bg-gradient-to-r ${party.accent} px-5 py-4`}>
               <h2 className="font-serif text-xl text-stone-800">{party.title}</h2>
               <div className="mt-3">{partySummary(rows)}</div>
             </div>
 
-            <details className="rounded-2xl border border-rose-100 bg-white/80 p-4 shadow-sm">
-              <summary className="cursor-pointer text-sm font-medium text-rose-600">
+            <details className="rounded-2xl border border-petal-100 bg-white/80 p-4 shadow-sm">
+              <summary className="cursor-pointer text-sm font-medium text-rosewood">
                 + Tambah item {party.title.toLowerCase()}
               </summary>
               <div className="mt-4">
@@ -191,7 +191,7 @@ export default async function SeserahanPage() {
             </details>
 
             {rows.length === 0 ? (
-              <p className="rounded-2xl border border-dashed border-rose-200 px-4 py-8 text-center text-sm text-stone-500">
+              <p className="rounded-2xl border border-dashed border-petal-200 px-4 py-8 text-center text-sm text-stone-500">
                 Belum ada item untuk {party.title.toLowerCase()}.
               </p>
             ) : (
@@ -203,7 +203,7 @@ export default async function SeserahanPage() {
                   return (
                     <article
                       key={item.id}
-                      className="flex flex-col gap-3 rounded-2xl border border-rose-100 bg-white/85 p-4 shadow-sm"
+                      className="flex flex-col gap-3 rounded-2xl border border-petal-100 bg-white/85 p-4 shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -238,7 +238,7 @@ export default async function SeserahanPage() {
                                 <img
                                   src={photo.url}
                                   alt={item.name}
-                                  className="h-20 w-20 rounded-xl border border-rose-100 object-cover"
+                                  className="h-20 w-20 rounded-xl border border-petal-100 object-cover"
                                 />
                                 {index === 0 ? (
                                   <span className="absolute bottom-0.5 left-0.5 rounded bg-amber-400/90 px-1 text-[9px] font-semibold text-stone-800">
@@ -257,7 +257,7 @@ export default async function SeserahanPage() {
                                   <input type="hidden" name="id" value={photo.id} />
                                   <input type="hidden" name="mode" value="left" />
                                   <button
-                                    className="rounded bg-white px-1 text-[10px] text-stone-500 shadow-sm hover:text-rose-600 disabled:opacity-30"
+                                    className="rounded bg-white px-1 text-[10px] text-stone-500 shadow-sm hover:text-rosewood disabled:opacity-30"
                                     title="Geser kiri"
                                   >
                                     ◀
@@ -267,7 +267,7 @@ export default async function SeserahanPage() {
                                   <input type="hidden" name="id" value={photo.id} />
                                   <input type="hidden" name="mode" value="right" />
                                   <button
-                                    className="rounded bg-white px-1 text-[10px] text-stone-500 shadow-sm hover:text-rose-600"
+                                    className="rounded bg-white px-1 text-[10px] text-stone-500 shadow-sm hover:text-rosewood"
                                     title="Geser kanan"
                                   >
                                     ▶
@@ -297,7 +297,7 @@ export default async function SeserahanPage() {
                             name="status"
                             value={purchased ? "not_purchased" : "purchased"}
                           />
-                          <button className="w-full rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-medium text-rose-700 hover:bg-rose-50">
+                          <button className="w-full rounded-full border border-petal-200 px-3 py-1.5 text-[11px] font-medium text-rosewood hover:bg-petal-50">
                             {purchased ? "Tandai belum dibeli" : "Tandai sudah dibeli"}
                           </button>
                         </form>
