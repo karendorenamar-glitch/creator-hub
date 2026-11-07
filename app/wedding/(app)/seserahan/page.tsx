@@ -2,29 +2,25 @@ import { redirect } from "next/navigation";
 import { getActionContext } from "@/lib/wedding/action-context";
 import { ItemForm } from "@/components/wedding/seserahan/item-form";
 import {
-  addCategoryAction,
   createItemAction,
-  deleteCategoryAction,
   deleteItemAction,
   deletePhotoAction,
   movePhotoAction,
   toggleItemStatusAction,
-  updateCategoryAction,
   updateItemAction,
 } from "./actions";
 
 const BUCKET = "seserahan-photos";
 
 const DEFAULT_CATEGORIES = [
-  "Perhiasan",
-  "Pakaian",
-  "Sepatu",
-  "Tas",
-  "Makeup",
-  "Al-Quran",
-  "Mukena/Sarung",
-  "Perlengkapan Mandi",
-  "Aksesoris",
+  "Skincare/makeup",
+  "Fashion/pakaian",
+  "Tas/sepatu/aksesoris",
+  "Bodycare/fragrance",
+  "Ibadah",
+  "Makanan",
+  "Mahar",
+  "Lainnya",
 ];
 
 const rupiah = new Intl.NumberFormat("id-ID", {
@@ -34,8 +30,8 @@ const rupiah = new Intl.NumberFormat("id-ID", {
 });
 
 const PARTIES = [
-  { key: "groom" as const, title: "Pihak Pria", accent: "from-stone-100 to-rose-50" },
   { key: "bride" as const, title: "Pihak Wanita", accent: "from-rose-50 to-amber-50" },
+  { key: "groom" as const, title: "Pihak Pria", accent: "from-stone-100 to-rose-50" },
 ];
 
 export default async function SeserahanPage() {
@@ -99,6 +95,7 @@ export default async function SeserahanPage() {
   }
 
   const categoryName = new Map((categories ?? []).map((category) => [category.id, category.name]));
+  const categoryNames = (categories ?? []).map((category) => category.name);
   const allItems = items ?? [];
 
   const summarize = (rows: typeof allItems) => {
@@ -170,54 +167,7 @@ export default async function SeserahanPage() {
         </div>
       </section>
 
-      <section className="rounded-3xl border border-rose-100 bg-white/70 p-5 shadow-sm">
-        <h2 className="font-serif text-lg text-stone-800">Kategori</h2>
-        <p className="mt-1 text-xs text-stone-500">
-          Tambah, ubah, atau hapus kategori. Item tidak ikut terhapus — kategori item tersebut
-          menjadi kosong dan bisa diatur ulang.
-        </p>
-        <form action={addCategoryAction} className="mt-3 flex gap-2">
-          <input
-            name="name"
-            required
-            maxLength={60}
-            placeholder="Kategori baru"
-            className="w-full max-w-xs rounded-xl border border-rose-200/70 bg-white px-3 py-2 text-sm outline-none focus:border-rose-400"
-          />
-          <button className="rounded-full bg-stone-800 px-4 py-2 text-xs font-medium text-white hover:bg-stone-900">
-            Tambah
-          </button>
-        </form>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {(categories ?? []).map((category) => (
-            <li
-              key={category.id}
-              className="flex items-center gap-2 rounded-full border border-rose-100 bg-[#fdfaf5] px-3 py-1.5 text-xs text-stone-700"
-            >
-              <form action={updateCategoryAction} className="flex items-center gap-1">
-                <input type="hidden" name="id" value={category.id} />
-                <input
-                  name="name"
-                  defaultValue={category.name}
-                  maxLength={60}
-                  className="w-28 bg-transparent outline-none"
-                />
-                <button className="text-rose-500 hover:text-rose-700" title="Simpan nama">
-                  ✓
-                </button>
-              </form>
-              <form action={deleteCategoryAction}>
-                <input type="hidden" name="id" value={category.id} />
-                <button className="text-stone-400 hover:text-red-600" title="Hapus kategori">
-                  ✕
-                </button>
-              </form>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {PARTIES.map((party) => {
+{PARTIES.map((party) => {
         const rows = party.key === "groom" ? groomItems : brideItems;
         return (
           <section key={party.key} className="space-y-4">
@@ -234,7 +184,7 @@ export default async function SeserahanPage() {
                 <ItemForm
                   action={createItemAction}
                   party={party.key}
-                  categories={categories ?? []}
+                  categories={categoryNames}
                   submitLabel="Simpan item"
                 />
               </div>
@@ -366,12 +316,14 @@ export default async function SeserahanPage() {
                           <ItemForm
                             action={updateItemAction}
                             party={item.party}
-                            categories={categories ?? []}
+                            categories={categoryNames}
                             item={{
                               id: item.id,
                               party: item.party,
                               name: item.name,
-                              category_id: item.category_id,
+                              categoryName: item.category_id
+                                ? (categoryName.get(item.category_id) ?? null)
+                                : null,
                               quantity: item.quantity,
                               status: item.status,
                               notes: item.notes,

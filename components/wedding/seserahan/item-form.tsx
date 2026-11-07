@@ -8,13 +8,11 @@ const inputClass =
 
 const labelClass = "mb-1 block text-xs font-medium text-stone-600";
 
-type Category = { id: string; name: string };
-
 export type ItemValues = {
   id: string;
   party: "groom" | "bride";
   name: string;
-  category_id: string | null;
+  categoryName: string | null;
   quantity: number;
   status: "purchased" | "not_purchased";
   notes: string | null;
@@ -29,7 +27,7 @@ export function ItemForm({
 }: {
   action: (state: SeserahanState, formData: FormData) => Promise<SeserahanState>;
   party: "groom" | "bride";
-  categories: Category[];
+  categories: string[];
   item?: ItemValues;
   submitLabel: string;
 }) {
@@ -55,31 +53,21 @@ export function ItemForm({
         />
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className={labelClass}>Kategori</label>
-          <select
-            name="categoryId"
-            defaultValue={item?.category_id ?? ""}
-            className={inputClass}
-          >
-            <option value="">Tanpa kategori</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className={labelClass}>atau ketik kategori baru</label>
-          <input
-            name="newCategory"
-            maxLength={60}
-            placeholder="Kategori baru"
-            className={inputClass}
-          />
-        </div>
+      <div>
+        <label className={labelClass}>Kategori</label>
+        <input
+          name="categoryName"
+          list="seserahan-category-options"
+          maxLength={60}
+          defaultValue={item?.categoryName ?? ""}
+          placeholder="Pilih atau ketik kategori"
+          className={inputClass}
+        />
+        <datalist id="seserahan-category-options">
+          {categories.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-3">

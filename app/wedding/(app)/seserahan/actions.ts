@@ -101,11 +101,9 @@ export async function createItemAction(
   const quantityRaw = Number(text(formData, "quantity") || "1");
   const quantity = Number.isFinite(quantityRaw) ? Math.min(999, Math.max(1, Math.round(quantityRaw))) : 1;
 
-  const categoryRaw = text(formData, "categoryId");
-  let categoryId = isUuid(categoryRaw) ? categoryRaw : null;
-
-  const newCategory = text(formData, "newCategory");
-  if (newCategory) categoryId = (await ensureCategory(ctx, newCategory)) ?? categoryId;
+  // One free-text field: an existing category is reused, a new one is created.
+  const categoryName = text(formData, "categoryName");
+  const categoryId = categoryName ? await ensureCategory(ctx, categoryName) : null;
 
   const { data: created, error } = await ctx.supabase
     .from("seserahan_items")
@@ -160,11 +158,9 @@ export async function updateItemAction(
 
   const quantityRaw = Number(text(formData, "quantity") || "1");
   const quantity = Number.isFinite(quantityRaw) ? Math.min(999, Math.max(1, Math.round(quantityRaw))) : 1;
-  const categoryRaw = text(formData, "categoryId");
-  let categoryId = isUuid(categoryRaw) ? categoryRaw : null;
-
-  const newCategory = text(formData, "newCategory");
-  if (newCategory) categoryId = (await ensureCategory(ctx, newCategory)) ?? categoryId;
+  // One free-text field: an existing category is reused, a new one is created.
+  const categoryName = text(formData, "categoryName");
+  const categoryId = categoryName ? await ensureCategory(ctx, categoryName) : null;
 
   const { error } = await ctx.supabase
     .from("seserahan_items")
@@ -254,51 +250,6 @@ async function ensureCategory(ctx: Ctx, name: string): Promise<string | null> {
   return created?.id ?? null;
 }
 
-export async function createCategoryAction(
-  _prev: SeserahanState,
-  formData: FormData,
-): Promise<SeserahanState> {
-  const ctx = await context();
-  const name = text(formData, "name").trim().slice(0, 60);
-  if (!name) return { error: "Nama kategori wajib diisi." };
-
-  const id = await ensureCategory(ctx, name);
-  if (!id) return { error: "Kategori gagal disimpan (mungkin sudah ada)." };
-
-  revalidatePath(PATH);
-  return { success: "Kategori ditambahkan." };
-}
-
-export async function updateCategoryAction(formData: FormData): Promise<void> {
-  const ctx = await context();
-  const id = text(formData, "id");
-  const name = text(formData, "name").trim().slice(0, 60);
-  if (!isUuid(id) || !name) return;
-
-  await ctx.supabase
-    .from("seserahan_categories")
-    .update({ name })
-    .eq("id", id)
-    .eq("wedding_id", ctx.session.wedding.id);
-
-  revalidatePath(PATH);
-}
-
-export async function deleteCategoryAction(formData: FormData): Promise<void> {
-  const ctx = await context();
-  const id = text(formData, "id");
-  if (!isUuid(id)) return;
-
-  // Items keep existing: the foreign key is ON DELETE SET NULL.
-  await ctx.supabase
-    .from("seserahan_categories")
-    .delete()
-    .eq("id", id)
-    .eq("wedding_id", ctx.session.wedding.id);
-
-  revalidatePath(PATH);
-}
-
 /**
  * Reorders one photo inside its item. `mode` is "left" | "right" | "cover".
  * Order is written as 0..n-1 so the first photo is always the cover.
@@ -331,8 +282,7 @@ export async function movePhotoAction(formData: FormData): Promise<void> {
   const current = order.indexOf(id);
   if (current === -1) return;
 
-  const target =
-    mode === "cover" ? 0 : mode === "left" ? current - 1 : current + 1;
+  const target = mode === "cover" ? 0 : mode === "left" ? current - 1 : current + 1;
   if (target < 0 || target >= order.length || target === current) return;
 
   order.splice(current, 1);
